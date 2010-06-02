@@ -1728,7 +1728,7 @@ class normpath:
         if not self.normsubpaths:
             raise NormpathException("cannot join to empty path")
         if not other.normsubpaths:
-            raise path.PathException("cannot join empty path")
+            raise NormpathException("cannot join empty path")
         self.normsubpaths[-1].join(other.normsubpaths[0])
         self.normsubpaths.extend(other.normsubpaths[1:])
 
