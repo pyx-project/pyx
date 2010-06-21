@@ -699,7 +699,7 @@ class graphxyz(graphxy):
             yaxis = self.axes["y"]
         if zaxis is None:
             zaxis = self.axes["z"]
-        return self.vpos_pt(xaxis.convert(x), yaxis.convert(y), zaxis.convert(y))
+        return self.vpos_pt(xaxis.convert(x), yaxis.convert(y), zaxis.convert(z))
 
     def pos(self, x, y, z, xaxis=None, yaxis=None, zaxis=None):
         if xaxis is None:
@@ -708,7 +708,7 @@ class graphxyz(graphxy):
             yaxis = self.axes["y"]
         if zaxis is None:
             zaxis = self.axes["z"]
-        return self.vpos(xaxis.convert(x), yaxis.convert(y), zaxis.convert(y))
+        return self.vpos(xaxis.convert(x), yaxis.convert(y), zaxis.convert(z))
 
     def vpos_pt(self, vx, vy, vz):
         x, y = self.projector.point(2*self.xscale*(vx - 0.5),
