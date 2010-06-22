@@ -1688,7 +1688,7 @@ class surface(_style):
     def midcolor(self, c1, c2, c3, c4):
         return 0.25*(c1+c2+c3+c4)
 
-    def lightning(self, angle, zindex):
+    def lighting(self, angle, zindex):
         if angle < 0 and self.backcolor is not None:
             return self.backcolor
         return self.gradient.getcolor(0.7-0.4*abs(angle)+0.1*zindex)
@@ -1822,10 +1822,10 @@ class surface(_style):
                         c4d = c3d = c5d = self.backcolor
                 else:
                     zindex = graph.vzindex(*v5)
-                    c1a = c2a = c5a = self.lightning(sign*graph.vangle(*(v1+v2+v5)), zindex)
-                    c3b = c1b = c5b = self.lightning(sign*graph.vangle(*(v3+v1+v5)), zindex)
-                    c2c = c4c = c5c = self.lightning(sign*graph.vangle(*(v2+v4+v5)), zindex)
-                    c4d = c3d = c5d = self.lightning(sign*graph.vangle(*(v4+v3+v5)), zindex)
+                    c1a = c2a = c5a = self.lighting(sign*graph.vangle(*(v1+v2+v5)), zindex)
+                    c3b = c1b = c5b = self.lighting(sign*graph.vangle(*(v3+v1+v5)), zindex)
+                    c2c = c4c = c5c = self.lighting(sign*graph.vangle(*(v2+v4+v5)), zindex)
+                    c4d = c3d = c5d = self.lighting(sign*graph.vangle(*(v4+v3+v5)), zindex)
                 for zindex, i in sortElements:
                     if i == 0:
                         elements.append(mesh.element((mesh.node_pt((x1_pt, y1_pt), c1a),
