@@ -3,6 +3,7 @@
 #
 # Copyright (C) 2003-2004 Jörg Lehmann <joergl@users.sourceforge.net>
 # Copyright (C) 2003-2004 André Wobst <wobsta@users.sourceforge.net>
+# Copyright (C) 2010 Michael Schinler <m-schindler@users.sourceforge.net>
 #
 # This file is part of PyX (http://pyx.sourceforge.net/).
 #
@@ -24,13 +25,21 @@
 try:
     from _pykpathsea import * 
 except:
-    import os
     find_file_cache = {}
-    def find_file(filename, kpse_file_format):
-        command = 'kpsewhich --format="%s" %s' % (kpse_file_format, filename)
-        if not find_file_cache.has_key(command):
-            find_file_cache[command] = os.popen(command, "r").readline().strip()
-        return find_file_cache[command]
+    try:
+        import subprocess
+        def find_file(filename, kpse_file_format):
+            command = ("kpsewhich", "--format=%s"%kpse_file_format, filename)
+            if not find_file_cache.has_key(command):
+                find_file_cache[command] = subprocess.Popen(command, stdout=subprocess.PIPE).communicate(input=None)[0].strip()
+            return find_file_cache[command]
+    except ImportError:
+        import os
+        def find_file(filename, kpse_file_format):
+            command = 'kpsewhich --format="%s" %s' % (kpse_file_format, filename)
+            if not find_file_cache.has_key(command):
+                find_file_cache[command] = os.popen(command, "r").readline().strip()
+            return find_file_cache[command]
     kpse_gf_format = "gf"
     kpse_pk_format = "pk"
     kpse_any_glyph_format = "bitmap font"
@@ -69,9 +78,22 @@ except:
     kpse_ist_format = "ist"
     kpse_truetype_format = "truetype fonts"
     kpse_type42_format = "type42 fonts"
-    kpse_web2c_format = "web2c"
+    kpse_web2c_format = "web2c files"
     kpse_program_text_format = "other text files"
     kpse_program_binary_format = "other binary files"
     kpse_miscfonts_format = "misc fonts"
     kpse_web_format = "web"
     kpse_cweb_format = "cweb"
+    kpse_enc_format = "enc files"
+    kpse_cmap_format = "cmap files"
+    kpse_subfont_definition_format = "subfont definition files"
+    kpse_opentype_format = "opentype fonts"
+    kpse_pdftex_config_format = "pdftex config"
+    kpse_lig_format = "lig files"
+    kpse_texmfscripts_format = "texmfscripts"
+    kpse_lua_format = "lua"
+    kpse_font_feature_format = "font feature files"
+    kpse_cid_maps_format = "cid maps"
+    kpse_mlbib_format = "mlbib"
+    kpse_mlbst_format = "mlbst"
+
