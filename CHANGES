@@ -113,6 +113,7 @@ TODO:
       - fix position of z4 axis
       - set correct errorname for z axis (thanks to Axel Freyn)
       - fix wrong y value usage instead of z value in pos methods
+    - fix unused color range settings in surface style (thanks to Michael J Gruber)
     - fallbackrange for axes with vanishing range
     - dokeyitem method (to be called with a plotitem) to alter the key order
     - doplot() was renamed to doplotitem(), dodata() was renamed to doplot()

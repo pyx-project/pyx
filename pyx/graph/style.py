@@ -1758,6 +1758,7 @@ class surface(_style):
         sortElements = [(zindex, i) for i, zindex in enumerate(sortElements)]
         sortElements.sort()
 
+        mincolor, maxcolor = privatedata.mincolor, privatedata.maxcolor
         if self.mincolor is not None:
             mincolor = self.mincolor
         if self.maxcolor is not None:
@@ -1800,8 +1801,14 @@ class surface(_style):
                 x5_pt, y5_pt = graph.vpos_pt(*v5)
                 if privatedata.colorize:
                     def colorfromgradient(c):
-                        return self.gradient.getcolor((c - privatedata.mincolor) /
-                                                      float(privatedata.maxcolor - privatedata.mincolor))
+                        vc = (c - mincolor) / float(maxcolor - mincolor)
+                        if vc < 0:
+                            warnings.warn("gradiend color range is exceeded due to mincolor setting")
+                            vc = 0
+                        if vc > 1:
+                            warnings.warn("gradiend color range is exceeded due to maxcolor setting")
+                            vc = 1
+                        return self.gradient.getcolor(vc)
                     c1 = privatedata.colors[value1a][value2a]
                     c2 = privatedata.colors[value1a][value2b]
                     c3 = privatedata.colors[value1b][value2a]
