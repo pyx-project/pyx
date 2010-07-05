@@ -744,7 +744,7 @@ class graphxyz(graphxy):
 
     def vgeodesic_el(self, vx1, vy1, vz1, vx2, vy2, vz2):
         """returns a geodesic path element between two points in graph coordinates"""
-        return path.lineto_pt(*(self.vpos_pt(vx1, vy1, vz1) + self.vpos_pt(vx2, vy2, vz2)))
+        return path.lineto_pt(*self.vpos_pt(vx2, vy2, vz2))
 
     def vcap_pt(self, coordinate, length_pt, vx, vy, vz):
         """returns an error cap path for a given coordinate, lengths and
