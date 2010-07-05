@@ -1483,57 +1483,82 @@ class bar(_style):
         self.barattrs = barattrs
 
     def columnnames(self, privatedata, sharedata, graph, columnnames):
-        if len(graph.axesnames) != 2:
-            raise TypeError("bar style restricted on two-dimensional graphs")
         return []
 
     def selectstyle(self, privatedata, sharedata, graph, selectindex, selecttotal):
         privatedata.barattrs = attr.selectattrs(self.defaultbarattrs + self.barattrs, selectindex, selecttotal)
 
     def initdrawpoints(self, privatedata, sharedata, graph):
-        privatedata.rectcanvas = graph.insert(canvas.canvas())
+        privatedata.barcanvas = graph.insert(canvas.canvas())
         sharedata.stackedbardraw = 1
         privatedata.stackedbar = sharedata.stackedbar
 
     def drawpointfill(self, privatedata, p):
         if p:
-            privatedata.rectcanvas.fill(p, privatedata.barattrs)
+            privatedata.barcanvas.fill(p, privatedata.barattrs)
 
     def drawpoint(self, privatedata, sharedata, graph, point):
-        xvmin = sharedata.vbarrange[0][0]
-        xvmax = sharedata.vbarrange[0][1]
-        yvmin = sharedata.vbarrange[1][0]
-        yvmax = sharedata.vbarrange[1][1]
-        try:
-            if xvmin > xvmax:
-                xvmin, xvmax = xvmax, xvmin
-        except:
-            pass
-        try:
-            if yvmin > yvmax:
-                yvmin, yvmax = yvmax, yvmin
-        except:
-            pass
-        if (xvmin is not None and xvmin < 1 and
-            xvmax is not None and xvmax > 0 and
-            yvmin is not None and yvmin < 1 and
-            yvmax is not None and yvmax > 0):
-            if xvmin < 0:
-                xvmin = 0
-            elif xvmax > 1:
-                xvmax = 1
-            if yvmin < 0:
-                yvmin = 0
-            elif yvmax > 1:
-                yvmax = 1
-            p = graph.vgeodesic(xvmin, yvmin, xvmax, yvmin)
-            p.append(graph.vgeodesic_el(xvmax, yvmin, xvmax, yvmax))
-            p.append(graph.vgeodesic_el(xvmax, yvmax, xvmin, yvmax))
-            p.append(graph.vgeodesic_el(xvmin, yvmax, xvmin, yvmin))
+        vbarrange = []
+        for vmin, vmax in sharedata.vbarrange:
+            if vmin is None or vmax is None:
+                self.drawpointfill(privatedata, None)
+                return
+            if vmin > vmax:
+                vmin, vmax = vmax, vmin
+            if vmin > 1 or vmax < 0:
+                self.drawpointfill(privatedata, None)
+                return
+            if vmin < 0:
+                vmin = 0
+            if vmax > 1:
+                vmax = 1
+            vbarrange.append((vmin, vmax))
+        if len(vbarrange) == 2:
+            p = graph.vgeodesic(vbarrange[0][0], vbarrange[1][0], vbarrange[0][1], vbarrange[1][0])
+            p.append(graph.vgeodesic_el(vbarrange[0][1], vbarrange[1][0], vbarrange[0][1], vbarrange[1][1]))
+            p.append(graph.vgeodesic_el(vbarrange[0][1], vbarrange[1][1], vbarrange[0][0], vbarrange[1][1]))
+            p.append(graph.vgeodesic_el(vbarrange[0][0], vbarrange[1][1], vbarrange[0][0], vbarrange[1][0]))
+            p.append(path.closepath())
+            self.drawpointfill(privatedata, p)
+        elif len(vbarrange) == 3:
+            p = graph.vgeodesic(vbarrange[0][0], vbarrange[1][0], vbarrange[2][0], vbarrange[0][1], vbarrange[1][0], vbarrange[2][0])
+            p.append(graph.vgeodesic_el(vbarrange[0][1], vbarrange[1][0], vbarrange[2][0], vbarrange[0][1], vbarrange[1][1], vbarrange[2][0]))
+            p.append(graph.vgeodesic_el(vbarrange[0][1], vbarrange[1][1], vbarrange[2][0], vbarrange[0][0], vbarrange[1][1], vbarrange[2][0]))
+            p.append(graph.vgeodesic_el(vbarrange[0][0], vbarrange[1][1], vbarrange[2][0], vbarrange[0][0], vbarrange[1][0], vbarrange[2][0]))
+            p.append(path.closepath())
+            self.drawpointfill(privatedata, p)
+            p = graph.vgeodesic(vbarrange[0][0], vbarrange[1][0], vbarrange[2][1], vbarrange[0][1], vbarrange[1][0], vbarrange[2][1])
+            p.append(graph.vgeodesic_el(vbarrange[0][1], vbarrange[1][0], vbarrange[2][1], vbarrange[0][1], vbarrange[1][1], vbarrange[2][1]))
+            p.append(graph.vgeodesic_el(vbarrange[0][1], vbarrange[1][1], vbarrange[2][1], vbarrange[0][0], vbarrange[1][1], vbarrange[2][1]))
+            p.append(graph.vgeodesic_el(vbarrange[0][0], vbarrange[1][1], vbarrange[2][1], vbarrange[0][0], vbarrange[1][0], vbarrange[2][1]))
+            p.append(path.closepath())
+            self.drawpointfill(privatedata, p)
+            p = graph.vgeodesic(vbarrange[0][0], vbarrange[1][0], vbarrange[2][0], vbarrange[0][1], vbarrange[1][0], vbarrange[2][0])
+            p.append(graph.vgeodesic_el(vbarrange[0][1], vbarrange[1][0], vbarrange[2][0], vbarrange[0][1], vbarrange[1][0], vbarrange[2][1]))
+            p.append(graph.vgeodesic_el(vbarrange[0][1], vbarrange[1][0], vbarrange[2][1], vbarrange[0][0], vbarrange[1][0], vbarrange[2][1]))
+            p.append(graph.vgeodesic_el(vbarrange[0][0], vbarrange[1][0], vbarrange[2][1], vbarrange[0][0], vbarrange[1][0], vbarrange[2][0]))
+            p.append(path.closepath())
+            self.drawpointfill(privatedata, p)
+            p = graph.vgeodesic(vbarrange[0][0], vbarrange[1][1], vbarrange[2][0], vbarrange[0][1], vbarrange[1][1], vbarrange[2][0])
+            p.append(graph.vgeodesic_el(vbarrange[0][1], vbarrange[1][1], vbarrange[2][0], vbarrange[0][1], vbarrange[1][1], vbarrange[2][1]))
+            p.append(graph.vgeodesic_el(vbarrange[0][1], vbarrange[1][1], vbarrange[2][1], vbarrange[0][0], vbarrange[1][1], vbarrange[2][1]))
+            p.append(graph.vgeodesic_el(vbarrange[0][0], vbarrange[1][1], vbarrange[2][1], vbarrange[0][0], vbarrange[1][1], vbarrange[2][0]))
+            p.append(path.closepath())
+            self.drawpointfill(privatedata, p)
+            p = graph.vgeodesic(vbarrange[0][0], vbarrange[1][0], vbarrange[2][0], vbarrange[0][0], vbarrange[1][1], vbarrange[2][0])
+            p.append(graph.vgeodesic_el(vbarrange[0][0], vbarrange[1][1], vbarrange[2][0], vbarrange[0][0], vbarrange[1][1], vbarrange[2][1]))
+            p.append(graph.vgeodesic_el(vbarrange[0][0], vbarrange[1][1], vbarrange[2][1], vbarrange[0][0], vbarrange[1][0], vbarrange[2][1]))
+            p.append(graph.vgeodesic_el(vbarrange[0][0], vbarrange[1][0], vbarrange[2][1], vbarrange[0][0], vbarrange[1][0], vbarrange[2][0]))
+            p.append(path.closepath())
+            self.drawpointfill(privatedata, p)
+            p = graph.vgeodesic(vbarrange[0][1], vbarrange[1][0], vbarrange[2][0], vbarrange[0][1], vbarrange[1][1], vbarrange[2][0])
+            p.append(graph.vgeodesic_el(vbarrange[0][1], vbarrange[1][1], vbarrange[2][0], vbarrange[0][1], vbarrange[1][1], vbarrange[2][1]))
+            p.append(graph.vgeodesic_el(vbarrange[0][1], vbarrange[1][1], vbarrange[2][1], vbarrange[0][1], vbarrange[1][0], vbarrange[2][1]))
+            p.append(graph.vgeodesic_el(vbarrange[0][1], vbarrange[1][0], vbarrange[2][1], vbarrange[0][1], vbarrange[1][0], vbarrange[2][0]))
             p.append(path.closepath())
             self.drawpointfill(privatedata, p)
         else:
-            self.drawpointfill(privatedata, None)
+            raise TypeError("bar style restricted to two- and three dimensional graphs")
 
     def key_pt(self, privatedata, sharedata, graph, x_pt, y_pt, width_pt, height_pt):
         selectindex = privatedata.stackedbar
@@ -1548,6 +1573,8 @@ class changebar(bar):
             raise RuntimeError("Changebar can't change its appearance. Thus you can't use it to plot several bars side by side on a subaxis.")
 
     def initdrawpoints(self, privatedata, sharedata, graph):
+        if len(graph.axesnames) != 2:
+            raise TypeError("changebar style restricted on two-dimensional graphs (at least for the moment)")
         bar.initdrawpoints(self, privatedata, sharedata, graph)
         privatedata.bars = []
 
@@ -1559,7 +1586,7 @@ class changebar(bar):
         for selectindex, p in enumerate(privatedata.bars):
             if p:
                 barattrs = attr.selectattrs(self.defaultbarattrs + self.barattrs, selectindex, selecttotal)
-                privatedata.rectcanvas.fill(p, barattrs)
+                privatedata.barcanvas.fill(p, barattrs)
 
     def key_pt(self, privatedata, sharedata, graph, x_pt, y_pt, width_pt, height_pt):
         raise RuntimeError("Style currently doesn't provide a graph key")
