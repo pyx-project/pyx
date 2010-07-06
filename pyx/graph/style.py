@@ -1479,8 +1479,13 @@ class bar(_style):
 
     defaultbarattrs = [color.gradient.Rainbow, deco.stroked([color.grey.black])]
 
-    def __init__(self, barattrs=[]):
+    def __init__(self, barattrs=[], epsilon=1e-10, gradient=color.gradient.RedBlack):
         self.barattrs = barattrs
+        self.epsilon = epsilon
+        self.gradient = gradient
+
+    def lighting(self, angle, zindex):
+        return self.gradient.getcolor(0.7-0.4*abs(angle)+0.1*zindex)
 
     def columnnames(self, privatedata, sharedata, graph, columnnames):
         return []
@@ -1492,6 +1497,7 @@ class bar(_style):
         privatedata.barcanvas = graph.insert(canvas.canvas())
         sharedata.stackedbardraw = 1
         privatedata.stackedbar = sharedata.stackedbar
+        privatedata.todraw = []
 
     def drawpointfill(self, privatedata, p):
         if p:
@@ -1521,44 +1527,58 @@ class bar(_style):
             p.append(path.closepath())
             self.drawpointfill(privatedata, p)
         elif len(vbarrange) == 3:
-            p = graph.vgeodesic(vbarrange[0][0], vbarrange[1][0], vbarrange[2][0], vbarrange[0][1], vbarrange[1][0], vbarrange[2][0])
-            p.append(graph.vgeodesic_el(vbarrange[0][1], vbarrange[1][0], vbarrange[2][0], vbarrange[0][1], vbarrange[1][1], vbarrange[2][0]))
-            p.append(graph.vgeodesic_el(vbarrange[0][1], vbarrange[1][1], vbarrange[2][0], vbarrange[0][0], vbarrange[1][1], vbarrange[2][0]))
-            p.append(graph.vgeodesic_el(vbarrange[0][0], vbarrange[1][1], vbarrange[2][0], vbarrange[0][0], vbarrange[1][0], vbarrange[2][0]))
-            p.append(path.closepath())
-            self.drawpointfill(privatedata, p)
-            p = graph.vgeodesic(vbarrange[0][0], vbarrange[1][0], vbarrange[2][1], vbarrange[0][1], vbarrange[1][0], vbarrange[2][1])
-            p.append(graph.vgeodesic_el(vbarrange[0][1], vbarrange[1][0], vbarrange[2][1], vbarrange[0][1], vbarrange[1][1], vbarrange[2][1]))
-            p.append(graph.vgeodesic_el(vbarrange[0][1], vbarrange[1][1], vbarrange[2][1], vbarrange[0][0], vbarrange[1][1], vbarrange[2][1]))
-            p.append(graph.vgeodesic_el(vbarrange[0][0], vbarrange[1][1], vbarrange[2][1], vbarrange[0][0], vbarrange[1][0], vbarrange[2][1]))
-            p.append(path.closepath())
-            self.drawpointfill(privatedata, p)
-            p = graph.vgeodesic(vbarrange[0][0], vbarrange[1][0], vbarrange[2][0], vbarrange[0][1], vbarrange[1][0], vbarrange[2][0])
-            p.append(graph.vgeodesic_el(vbarrange[0][1], vbarrange[1][0], vbarrange[2][0], vbarrange[0][1], vbarrange[1][0], vbarrange[2][1]))
-            p.append(graph.vgeodesic_el(vbarrange[0][1], vbarrange[1][0], vbarrange[2][1], vbarrange[0][0], vbarrange[1][0], vbarrange[2][1]))
-            p.append(graph.vgeodesic_el(vbarrange[0][0], vbarrange[1][0], vbarrange[2][1], vbarrange[0][0], vbarrange[1][0], vbarrange[2][0]))
-            p.append(path.closepath())
-            self.drawpointfill(privatedata, p)
-            p = graph.vgeodesic(vbarrange[0][0], vbarrange[1][1], vbarrange[2][0], vbarrange[0][1], vbarrange[1][1], vbarrange[2][0])
-            p.append(graph.vgeodesic_el(vbarrange[0][1], vbarrange[1][1], vbarrange[2][0], vbarrange[0][1], vbarrange[1][1], vbarrange[2][1]))
-            p.append(graph.vgeodesic_el(vbarrange[0][1], vbarrange[1][1], vbarrange[2][1], vbarrange[0][0], vbarrange[1][1], vbarrange[2][1]))
-            p.append(graph.vgeodesic_el(vbarrange[0][0], vbarrange[1][1], vbarrange[2][1], vbarrange[0][0], vbarrange[1][1], vbarrange[2][0]))
-            p.append(path.closepath())
-            self.drawpointfill(privatedata, p)
-            p = graph.vgeodesic(vbarrange[0][0], vbarrange[1][0], vbarrange[2][0], vbarrange[0][0], vbarrange[1][1], vbarrange[2][0])
-            p.append(graph.vgeodesic_el(vbarrange[0][0], vbarrange[1][1], vbarrange[2][0], vbarrange[0][0], vbarrange[1][1], vbarrange[2][1]))
-            p.append(graph.vgeodesic_el(vbarrange[0][0], vbarrange[1][1], vbarrange[2][1], vbarrange[0][0], vbarrange[1][0], vbarrange[2][1]))
-            p.append(graph.vgeodesic_el(vbarrange[0][0], vbarrange[1][0], vbarrange[2][1], vbarrange[0][0], vbarrange[1][0], vbarrange[2][0]))
-            p.append(path.closepath())
-            self.drawpointfill(privatedata, p)
-            p = graph.vgeodesic(vbarrange[0][1], vbarrange[1][0], vbarrange[2][0], vbarrange[0][1], vbarrange[1][1], vbarrange[2][0])
-            p.append(graph.vgeodesic_el(vbarrange[0][1], vbarrange[1][1], vbarrange[2][0], vbarrange[0][1], vbarrange[1][1], vbarrange[2][1]))
-            p.append(graph.vgeodesic_el(vbarrange[0][1], vbarrange[1][1], vbarrange[2][1], vbarrange[0][1], vbarrange[1][0], vbarrange[2][1]))
-            p.append(graph.vgeodesic_el(vbarrange[0][1], vbarrange[1][0], vbarrange[2][1], vbarrange[0][1], vbarrange[1][0], vbarrange[2][0]))
-            p.append(path.closepath())
-            self.drawpointfill(privatedata, p)
+            planes = []
+            if abs(vbarrange[0][0] - vbarrange[0][1]) > self.epsilon and abs(vbarrange[1][0] - vbarrange[1][1]):
+                planes.append((vbarrange[0][0], vbarrange[1][0], vbarrange[2][0],
+                               vbarrange[0][1], vbarrange[1][0], vbarrange[2][0],
+                               vbarrange[0][1], vbarrange[1][1], vbarrange[2][0],
+                               vbarrange[0][0], vbarrange[1][1], vbarrange[2][0]))
+                planes.append((vbarrange[0][0], vbarrange[1][0], vbarrange[2][1],
+                               vbarrange[0][0], vbarrange[1][1], vbarrange[2][1],
+                               vbarrange[0][1], vbarrange[1][1], vbarrange[2][1],
+                               vbarrange[0][1], vbarrange[1][0], vbarrange[2][1]))
+            if abs(vbarrange[0][0] - vbarrange[0][1]) > self.epsilon and abs(vbarrange[2][0] - vbarrange[2][1]):
+                planes.append((vbarrange[0][0], vbarrange[1][0], vbarrange[2][0],
+                               vbarrange[0][0], vbarrange[1][0], vbarrange[2][1],
+                               vbarrange[0][1], vbarrange[1][0], vbarrange[2][1],
+                               vbarrange[0][1], vbarrange[1][0], vbarrange[2][0]))
+                planes.append((vbarrange[0][0], vbarrange[1][1], vbarrange[2][0],
+                               vbarrange[0][1], vbarrange[1][1], vbarrange[2][0],
+                               vbarrange[0][1], vbarrange[1][1], vbarrange[2][1],
+                               vbarrange[0][0], vbarrange[1][1], vbarrange[2][1]))
+            if abs(vbarrange[1][0] - vbarrange[1][1]) > self.epsilon and abs(vbarrange[2][0] - vbarrange[2][1]):
+                planes.append((vbarrange[0][0], vbarrange[1][0], vbarrange[2][0],
+                               vbarrange[0][0], vbarrange[1][1], vbarrange[2][0],
+                               vbarrange[0][0], vbarrange[1][1], vbarrange[2][1],
+                               vbarrange[0][0], vbarrange[1][0], vbarrange[2][1]))
+                planes.append((vbarrange[0][1], vbarrange[1][0], vbarrange[2][0],
+                               vbarrange[0][1], vbarrange[1][0], vbarrange[2][1],
+                               vbarrange[0][1], vbarrange[1][1], vbarrange[2][1],
+                               vbarrange[0][1], vbarrange[1][1], vbarrange[2][0]))
+            v = [0.5 * (vbarrange[0][0] + vbarrange[0][1]),
+                 0.5 * (vbarrange[1][0] + vbarrange[1][1]),
+                 0.5 * (vbarrange[2][0] + vbarrange[2][1])]
+            v[sharedata.barvalueindex] = 0.5
+            zindex = graph.vzindex(*v)
+            for v11, v12, v13, v21, v22, v23, v31, v32, v33, v41, v42, v43 in planes:
+                angle = graph.vangle(v11, v12, v13, v21, v22, v23, v41, v42, v43)
+                if angle > 0:
+                    p = graph.vgeodesic(v11, v12, v13, v21, v22, v23)
+                    p.append(graph.vgeodesic_el(v21, v22, v23, v31, v32, v33))
+                    p.append(graph.vgeodesic_el(v31, v32, v33, v41, v42, v43))
+                    p.append(graph.vgeodesic_el(v41, v42, v43, v11, v12, v13))
+                    p.append(path.closepath())
+                    if self.gradient:
+                        privatedata.todraw.append((-zindex, p, privatedata.barattrs + [self.lighting(angle, zindex)]))
+                    else:
+                        privatedata.todraw.append((-zindex, p, privatedata.barattrs))
         else:
             raise TypeError("bar style restricted to two- and three dimensional graphs")
+
+    def donedrawpoints(self, privatedata, sharedata, graph):
+        privatedata.todraw.sort()
+        for vzindex, p, a in privatedata.todraw:
+            privatedata.barcanvas.fill(p, a)
 
     def key_pt(self, privatedata, sharedata, graph, x_pt, y_pt, width_pt, height_pt):
         selectindex = privatedata.stackedbar

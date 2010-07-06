@@ -1002,11 +1002,18 @@ definition is:
   top of the bar.
 \end{classdesc} % }}}
 
-\begin{classdesc}{bar}{barattrs=[]} % {{{
+\begin{classdesc}{bar}{barattrs=[], epsilon=1e-10, gradient=color.gradient.RedBlack} % {{{
   This class draws bars in a bar graph. The bars are filled using
   \var{barattrs}. \var{barattrs} is merged with \code{defaultbarattrs}
   which is a list containing \code{[color.gradient.Rainbow,
   deco.stroked([color.grey.black])]}.
+
+  On 3d graphs \var{epsilon} is used to prevent numerical
+  instabilities on bars without hight. When \var{gradient} is not
+  \code{None} it is used to calculate a lighting coloring taking into
+  account the angle between the view ray and the bar and the distance
+  between viewer and bar. The precise conversion is defined in the
+  \method{lighting} method.
 \end{classdesc} % }}}
 
 \begin{classdesc}{changebar}{barattrs=[]} % {{{
@@ -1014,7 +1021,7 @@ definition is:
   \var{barattrs} to be changed on subsequent data instances the
   \var{barattrs} are changed for each value within a single data
   instance. In the result the style can't be applied to several data
-  instances. The style raises an error instead.
+  instances and does not support 3d. The style raises an error instead.
 \end{classdesc} % }}}
 
 \begin{classdesc}{gridpos}{index1=0, index2=1, % {{{
