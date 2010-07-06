@@ -1008,12 +1008,13 @@ definition is:
   which is a list containing \code{[color.gradient.Rainbow,
   deco.stroked([color.grey.black])]}.
 
-  On 3d graphs \var{epsilon} is used to prevent numerical
-  instabilities on bars without hight. When \var{gradient} is not
-  \code{None} it is used to calculate a lighting coloring taking into
-  account the angle between the view ray and the bar and the distance
-  between viewer and bar. The precise conversion is defined in the
-  \method{lighting} method.
+  The bar style has limited support for 3d graphs: Occlusion does not
+  work properly on stacked bars or multiple dataset. \var{epsilon} is
+  used in 3d to prevent numerical instabilities on bars without hight.
+  When \var{gradient} is not \code{None} it is used to calculate a
+  lighting coloring taking into account the angle between the view ray
+  and the bar and the distance between viewer and bar. The precise
+  conversion is defined in the \method{lighting} method.
 \end{classdesc} % }}}
 
 \begin{classdesc}{changebar}{barattrs=[]} % {{{
