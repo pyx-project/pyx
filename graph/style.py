@@ -1386,13 +1386,13 @@ class barpos(_style):
         sharedata.stackedbar = sharedata.stackedbardraw = 0
 
         if self.fromvalue is not None:
-            privatedata.vfromvalue = graph.axes[sharedata.barposcolumnnames[sharedata.barvalueindex][0]].convert(self.fromvalue)
+            privatedata.vfromvalue = graph.axes[sharedata.barposcolumnnames[sharedata.barvalueindex]].convert(self.fromvalue)
             if privatedata.vfromvalue < 0:
                 privatedata.vfromvalue = 0
             if privatedata.vfromvalue > 1:
                 privatedata.vfromvalue = 1
             if self.frompathattrs is not None and privatedata.insertfrompath:
-                graph.stroke(graph.axes[sharedata.barposcolumnnames[sharedata.barvalueindex][0]].vgridpath(privatedata.vfromvalue),
+                graph.stroke(graph.axes[sharedata.barposcolumnnames[sharedata.barvalueindex]].vgridpath(privatedata.vfromvalue),
                              self.defaultfrompathattrs + self.frompathattrs)
         else:
             privatedata.vfromvalue = 0
