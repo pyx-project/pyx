@@ -327,6 +327,12 @@ class closepath(pathitem):
         file.write("closepath\n")
 
 
+class pdfmoveto_pt(normline_pt):
+
+    def outputPDF(self, file, writer):
+        pass
+
+
 class moveto_pt(pathitem):
 
     """Start a new subpath and set current point to (x_pt, y_pt) (coordinates in pts)"""
@@ -349,6 +355,9 @@ class moveto_pt(pathitem):
     def createnormpath(self, epsilon=_marker):
         if epsilon is _marker:
             return normpath([normsubpath([normline_pt(self.x_pt, self.y_pt, self.x_pt, self.y_pt)])])
+        elif epsilon is None:
+            return normpath([normsubpath([pdfmoveto_pt(self.x_pt, self.y_pt, self.x_pt, self.y_pt)],
+                                         epsilon=epsilon)])
         else:
             return normpath([normsubpath([normline_pt(self.x_pt, self.y_pt, self.x_pt, self.y_pt)],
                                          epsilon=epsilon)])
