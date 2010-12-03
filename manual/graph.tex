@@ -910,8 +910,9 @@ definition is:
   \code{size} and \code{angle} define the size and angle for each
   arrow. \code{size} is taken as a factor to \var{arrowsize} and
   \var{linelength}, the size of the arrow and the length of the line
-  the arrow is plotted at. \code{angle} is the angle the arrow points
-  to with respect to a horizontal line. The \code{angle} is taken in
+  the arrow is plotted at. When \var{arrowsize} is \code{None} only
+  the line is stroked. \code{angle} is the angle the arrow points to
+  with respect to a horizontal line. The \code{angle} is taken in
   degrees and used in mathematically positive sense. \var{lineattrs}
   and \var{arrowattrs} are styles for the arrow line and arrow head,
   respectively. \var{arrowpos} defines the position of the arrow line
