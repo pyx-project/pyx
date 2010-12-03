@@ -916,8 +916,11 @@ class arrow(_styleneedingpointpos):
                     y1 = y_pt-self.arrowpos*dy*linelength_pt*size
                     x2 = x_pt+(1-self.arrowpos)*dx*linelength_pt*size
                     y2 = y_pt+(1-self.arrowpos)*dy*linelength_pt*size
-                    privatedata.arrowcanvas.stroke(path.line_pt(x1, y1, x2, y2), privatedata.lineattrs +
-                                                 [deco.earrow(privatedata.arrowattrs, size=self.arrowsize*size)])
+                    if self.arrowsize is not None:
+                        privatedata.arrowcanvas.stroke(path.line_pt(x1, y1, x2, y2), privatedata.lineattrs +
+                                                     [deco.earrow(privatedata.arrowattrs, size=self.arrowsize*size)])
+                    else:
+                        privatedata.arrowcanvas.stroke(path.line_pt(x1, y1, x2, y2), privatedata.lineattrs)
 
     def donedrawpoints(self, privatedata, sharedata, graph):
         graph.insert(privatedata.arrowcanvas)
