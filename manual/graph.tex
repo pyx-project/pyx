@@ -903,16 +903,15 @@ definition is:
 \begin{classdesc}{arrow}{linelength=0.25*unit.v\_cm, % {{{
                          arrowsize=0.15*unit.v\_cm,
                          lineattrs=[], arrowattrs=[], arrowpos=0.5,
-                         epsilon=1e-10}
+                         epsilon=1e-10, decorator=deco.earrow}
   This class is a style to plot short lines with arrows into a
   two-dimensional graph to a given graph position. The arrow
   parameters are defined by two additional data columns named
   \code{size} and \code{angle} define the size and angle for each
   arrow. \code{size} is taken as a factor to \var{arrowsize} and
   \var{linelength}, the size of the arrow and the length of the line
-  the arrow is plotted at. When \var{arrowsize} is \code{None} only
-  the line is stroked. \code{angle} is the angle the arrow points to
-  with respect to a horizontal line. The \code{angle} is taken in
+  the arrow is plotted at. \code{angle} is the angle the arrow points
+  to with respect to a horizontal line. The \code{angle} is taken in
   degrees and used in mathematically positive sense. \var{lineattrs}
   and \var{arrowattrs} are styles for the arrow line and arrow head,
   respectively. \var{arrowpos} defines the position of the arrow line
@@ -920,7 +919,8 @@ definition is:
   means centered at the graph position, whereas \code{0} and \code{1}
   creates the arrows to start or end at the graph position,
   respectively. \var{epsilon} is used as a cutoff for short arrows in
-  order to prevent numerical instabilities.
+  order to prevent numerical instabilities. \var{decorator} defines
+  the decorator to be added to the line.
 \end{classdesc} % }}}
 
 \begin{classdesc}{rect}{gradient=color.gradient.Grey} % {{{
