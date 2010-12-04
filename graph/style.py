@@ -869,13 +869,14 @@ class arrow(_styleneedingpointpos):
     defaultlineattrs = []
     defaultarrowattrs = []
 
-    def __init__(self, linelength=0.25*unit.v_cm, arrowsize=0.15*unit.v_cm, lineattrs=[], arrowattrs=[], arrowpos=0.5, epsilon=1e-5):
+    def __init__(self, linelength=0.25*unit.v_cm, arrowsize=0.15*unit.v_cm, lineattrs=[], arrowattrs=[], arrowpos=0.5, epsilon=1e-5, decorator=deco.earrow):
         self.linelength = linelength
         self.arrowsize = arrowsize
         self.lineattrs = lineattrs
         self.arrowattrs = arrowattrs
         self.arrowpos = arrowpos
         self.epsilon = epsilon
+        self.decorator = decorator
 
     def columnnames(self, privatedata, sharedata, graph, columnnames):
         if len(graph.axesnames) != 2:
@@ -916,9 +917,9 @@ class arrow(_styleneedingpointpos):
                     y1 = y_pt-self.arrowpos*dy*linelength_pt*size
                     x2 = x_pt+(1-self.arrowpos)*dx*linelength_pt*size
                     y2 = y_pt+(1-self.arrowpos)*dy*linelength_pt*size
-                    if self.arrowsize is not None:
-                        privatedata.arrowcanvas.stroke(path.line_pt(x1, y1, x2, y2), privatedata.lineattrs +
-                                                     [deco.earrow(privatedata.arrowattrs, size=self.arrowsize*size)])
+                    if self.decorator:
+                        privatedata.arrowcanvas.stroke(path.line_pt(x1, y1, x2, y2),
+                                                       privatedata.lineattrs+[self.decorator(privatedata.arrowattrs, size=self.arrowsize*size)])
                     else:
                         privatedata.arrowcanvas.stroke(path.line_pt(x1, y1, x2, y2), privatedata.lineattrs)
 
