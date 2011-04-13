@@ -378,6 +378,7 @@ class texmessagepattern(texmessage):
 texmessage.fontwarning = texmessagepattern(re.compile(r"^LaTeX Font Warning: .*$(\n^\(Font\).*$)*", re.MULTILINE), "ignoring font warning")
 texmessage.boxwarning = texmessagepattern(re.compile(r"^(Overfull|Underfull) \\[hv]box.*$(\n^..*$)*\n^$\n", re.MULTILINE), "ignoring overfull/underfull box warning")
 texmessage.rerunwarning = texmessagepattern(re.compile(r"^(LaTeX Warning: Label\(s\) may have changed\. Rerun to get cross-references right\s*\.)$", re.MULTILINE), "ignoring rerun warning")
+texmessage.nobblwarning = texmessagepattern(re.compile(r"^[\s\*]*(No file .*\.bbl.)\s*", re.MULTILINE), "ignoring no-bbl warning")
 
 
 
@@ -740,7 +741,7 @@ def _cleantmp(texrunner):
             os.rename(texrunner.texfilename + usefile[extpos:], usefile)
         except OSError:
             pass
-    for file in glob.glob("%s.*" % texrunner.texfilename):
+    for file in glob.glob("%s.*" % texrunner.texfilename) + ["%sNotes.bib" % texrunner.texfilename]:
         try:
             os.unlink(file)
         except OSError:
@@ -772,7 +773,7 @@ class texrunner:
     defaulttexmessagesstart = [texmessage.start]
     defaulttexmessagesdocclass = [texmessage.load]
     defaulttexmessagesbegindoc = [texmessage.load, texmessage.noaux]
-    defaulttexmessagesend = [texmessage.end, texmessage.fontwarning, texmessage.rerunwarning]
+    defaulttexmessagesend = [texmessage.end, texmessage.fontwarning, texmessage.rerunwarning, texmessage.nobblwarning]
     defaulttexmessagesdefaultpreamble = [texmessage.load]
     defaulttexmessagesdefaultrun = [texmessage.loaddef, texmessage.graphicsload,
                                     texmessage.fontwarning, texmessage.boxwarning]
