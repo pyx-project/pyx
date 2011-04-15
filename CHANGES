@@ -135,6 +135,7 @@ TODO:
     - fix "<" token handling in mapping file parser (thanks to Matthew West)
     - fix start message parse error in MiKTeX (thanks to Wojciech Jaskowski)
     - fix rigid aux file checking (thanks to Clayton E. Myers)
+    - use subprocess module if available
   - style module:
     - implement style.fillrule
   - bitmap module:
