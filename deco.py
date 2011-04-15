@@ -2,7 +2,7 @@
 #
 #
 # Copyright (C) 2002-2006 Jörg Lehmann <joergl@users.sourceforge.net>
-# Copyright (C) 2003-2004 Michael Schindler <m-schindler@users.sourceforge.net>
+# Copyright (C) 2003-2011 Michael Schindler <m-schindler@users.sourceforge.net>
 # Copyright (C) 2002-2006 André Wobst <wobsta@users.sourceforge.net>
 #
 # This file is part of PyX (http://pyx.sourceforge.net/).
@@ -590,3 +590,30 @@ class shownormpath(deco, attr.attr):
                     dp.ornaments.draw(path.circle_pt(x_pt, y_pt, r_pt), [filled])
                 x_pt, y_pt = normsubpathitem.atend_pt()
                 dp.ornaments.draw(path.circle_pt(x_pt, y_pt, r_pt), [filled])
+
+
+class colorgradient(deco, attr.attr):
+    """inserts pieces of the path in different colors"""
+
+    def __init__(self, grad, attrs=[], steps=20):
+        self.attrs = attrs
+        self.grad = grad
+        self.steps = steps
+
+    def decorate(self, dp, texrunner):
+        dp.ensurenormpath()
+        l = dp.path.arclen()
+
+        colors = [self.grad.select(n, self.steps) for n in range(self.steps)]
+        colors.reverse()
+        params = dp.path.arclentoparam([l*i/float(self.steps) for i in range(self.steps)])
+        params.reverse()
+
+        c = canvas.canvas()
+        # treat the end pieces separately
+        c.stroke(dp.path.split(params[1])[1], attr.mergeattrs([colors[0]] + self.attrs))
+        for n in range(1,self.steps-1):
+            c.stroke(dp.path.split([params[n-1],params[n+1]])[1], attr.mergeattrs([colors[n]] + self.attrs))
+        c.stroke(dp.path.split(params[-2])[0], attr.mergeattrs([colors[-1]] + self.attrs))
+        dp.ornaments.insert(c)
+
