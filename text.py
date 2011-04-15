@@ -2,7 +2,7 @@
 #
 #
 # Copyright (C) 2002-2004 Jörg Lehmann <joergl@users.sourceforge.net>
-# Copyright (C) 2003-2007 Michael Schindler <m-schindler@users.sourceforge.net>
+# Copyright (C) 2003-2011 Michael Schindler <m-schindler@users.sourceforge.net>
 # Copyright (C) 2002-2006 André Wobst <wobsta@users.sourceforge.net>
 #
 # This file is part of PyX (http://pyx.sourceforge.net/).
@@ -182,12 +182,12 @@ class _texmessageend(texmessage):
     def check(self, texrunner):
         m = self.auxPattern.search(texrunner.texmessageparsed)
         if m:
-            texrunner.texmessageparsed = texrunner.texmessageparsed[:m.start()] + texrunner.texmessageparsed[m.end():]
+            texrunner.texmessageparsed = (texrunner.texmessageparsed[:m.start()] + texrunner.texmessageparsed[m.end():]).strip()
 
         # check for "(see the transcript file for additional information)"
         try:
             s1, s2 = texrunner.texmessageparsed.split("(see the transcript file for additional information)", 1)
-            texrunner.texmessageparsed = s1 + s2
+            texrunner.texmessageparsed = (s1 + s2).strip()
         except (IndexError, ValueError):
             pass
 
@@ -302,8 +302,9 @@ class _texmessageloaddef(_texmessageload):
     """validates the inclusion of font description files (fd-files)
     - works like _texmessageload
     - filename must end with .def or .fd and no further text is allowed"""
+    - further text is allowed"""
 
-    pattern = re.compile(r"\((?P<filename>[^)]+(\.fd|\.def))\)")
+    pattern = re.compile(r"\([\"]?(?P<filename>(?:(?:(?<!\")[^\(\)\s\n\"]+)|(?:(?<=\")[^\(\)\"]+))(\.fd|\.def))[\"]?[\s\n]*(?P<additional>[\(]?[^\(\)]*[\)]?)[\s\n]*\)")
 
     def baselevels(self, s, **kwargs):
         return s
@@ -378,6 +379,7 @@ class texmessagepattern(texmessage):
 texmessage.fontwarning = texmessagepattern(re.compile(r"^LaTeX Font Warning: .*$(\n^\(Font\).*$)*", re.MULTILINE), "ignoring font warning")
 texmessage.boxwarning = texmessagepattern(re.compile(r"^(Overfull|Underfull) \\[hv]box.*$(\n^..*$)*\n^$\n", re.MULTILINE), "ignoring overfull/underfull box warning")
 texmessage.rerunwarning = texmessagepattern(re.compile(r"^(LaTeX Warning: Label\(s\) may have changed\. Rerun to get cross-references right\s*\.)$", re.MULTILINE), "ignoring rerun warning")
+texmessage.packagewarning = texmessagepattern(re.compile(r"^package\s+(?P<packagename>\S+)\s+warning\s*:[^\n]+(?:\n\(?(?P=packagename)\)?[^\n]*)*", re.MULTILINE | re.IGNORECASE), "ignoring generic package warning")
 texmessage.nobblwarning = texmessagepattern(re.compile(r"^[\s\*]*(No file .*\.bbl.)\s*", re.MULTILINE), "ignoring no-bbl warning")
 
 
@@ -776,7 +778,7 @@ class texrunner:
     defaulttexmessagesend = [texmessage.end, texmessage.fontwarning, texmessage.rerunwarning, texmessage.nobblwarning]
     defaulttexmessagesdefaultpreamble = [texmessage.load]
     defaulttexmessagesdefaultrun = [texmessage.loaddef, texmessage.graphicsload,
-                                    texmessage.fontwarning, texmessage.boxwarning]
+                                    texmessage.fontwarning, texmessage.boxwarning, texmessage.packagewarning]
 
     def __init__(self, mode="tex",
                        lfs="10pt",
