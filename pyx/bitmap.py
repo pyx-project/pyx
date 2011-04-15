@@ -2,6 +2,7 @@
 #
 #
 # Copyright (C) 2004-2006 André Wobst <wobsta@users.sourceforge.net>
+# Copyright (C) 2011 Michael Schindler<m-schindler@users.sourceforge.net>
 #
 # This file is part of PyX (http://pyx.sourceforge.net/).
 #
@@ -512,7 +513,7 @@ class bitmap_pt(canvasitem.canvasitem):
     def processPDF(self, file, writer, context, registry, bbox):
         mode, data, alpha, palettemode, palettedata = self.imagedata(False)
 
-        name = "image-%d-%s" % (id(self.image), self.compressmode or self.imagecompress)
+        name = "image-%d-%s" % (id(self.image), self.compressmode or self.imagecompressed)
         if alpha:
             alpha = PDFimage("%s-smask" % name, self.imagewidth, self.imageheight,
                              None, None, "L", 8,
@@ -520,7 +521,7 @@ class bitmap_pt(canvasitem.canvasitem):
             registry.add(alpha)
         registry.add(PDFimage(name, self.imagewidth, self.imageheight,
                               palettemode, palettedata, mode, 8,
-                              self.compressmode or self.imagecompress, data, alpha, registry))
+                              self.compressmode or self.imagecompressed, data, alpha, registry))
 
         bbox += self.bbox()
         imagematrixPDF = (trafo.scale_pt(self.width_pt, self.height_pt)
