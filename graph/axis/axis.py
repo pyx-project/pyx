@@ -2,7 +2,7 @@
 #
 #
 # Copyright (C) 2002-2004 Jörg Lehmann <joergl@users.sourceforge.net>
-# Copyright (C) 2003-2004 Michael Schindler <m-schindler@users.sourceforge.net>
+# Copyright (C) 2003-2011 Michael Schindler <m-schindler@users.sourceforge.net>
 # Copyright (C) 2002-2006 André Wobst <wobsta@users.sourceforge.net>
 #
 # This file is part of PyX (http://pyx.sourceforge.net/).
@@ -124,7 +124,10 @@ class _regularaxis(_axis):
             raise RuntimeError("incomplete axis range%s" % errorname)
         if data.max == data.min:
             if self.fallbackrange is not None:
-                data.min, data.max = data.min - 0.5*self.fallbackrange, data.min + 0.5*self.fallbackrange
+                try:
+                    data.min, data.max = data.min - 0.5*self.fallbackrange, data.min + 0.5*self.fallbackrange
+                except TypeError:
+                    data.min, data.max = self.fallbackrange[0], self.fallbackrange[1]
             else:
                 raise RuntimeError("zero axis range%s" % errorname)
 
@@ -491,7 +494,7 @@ class anchoredaxis:
         self.axis = axis
         self.errorname = errorname
         self.graphtexrunner = graphtexrunner
-        self.data = axis.createdata(errorname)
+        self.data = axis.createdata(self.errorname)
         self.canvas = None
         self.positioner = None
 
@@ -584,7 +587,7 @@ class linkedaxis(anchoredaxis):
             self.setlinkedaxis(linkedaxis)
 
     def setlinkedaxis(self, linkedaxis):
-        assert isinstance(linkedaxis, anchoredaxis), errorname
+        assert isinstance(linkedaxis, anchoredaxis), self.errorname
         self.linkedto = linkedaxis
         self.axis = linkedaxis.axis
         self.graphtexrunner = self.linkedto.graphtexrunner
