@@ -26,6 +26,13 @@ import config, siteconfig, unit, box, canvas, trafo, version, attr, style
 from pyx.dvi import dvifile
 import bbox as bboxmodule
 
+try:
+    import subprocess
+except ImportError:
+    have_subprocess = False
+else:
+    have_subprocess = True
+
 ###############################################################################
 # texmessages
 # - please don't get confused:
@@ -301,7 +308,7 @@ class _texmessageload(texmessage):
 class _texmessageloaddef(_texmessageload):
     """validates the inclusion of font description files (fd-files)
     - works like _texmessageload
-    - filename must end with .def or .fd and no further text is allowed"""
+    - filename must end with .def or .fd
     - further text is allowed"""
 
     pattern = re.compile(r"\([\"]?(?P<filename>(?:(?:(?<!\")[^\(\)\s\n\"]+)|(?:(?<=\")[^\(\)\"]+))(\.fd|\.def))[\"]?[\s\n]*(?P<additional>[\(]?[^\(\)]*[\)]?)[\s\n]*\)")
@@ -895,11 +902,16 @@ class texrunner:
                 ipcflag = " --ipc"
             else:
                 ipcflag = ""
-            try:
-                self.texinput, self.texoutput = os.popen4("%s%s %s" % (self.mode, ipcflag, self.texfilename), "t", 0)
-            except ValueError:
-                # XXX: workaround for MS Windows (bufsize = 0 makes trouble!?)
-                self.texinput, self.texoutput = os.popen4("%s%s %s" % (self.mode, ipcflag, self.texfilename), "t")
+            if have_subprocess:
+                p = subprocess.Popen("%s%s %s" % (self.mode, ipcflag, self.texfilename), shell=True, bufsize=0,
+                                     stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, close_fds=True)
+                self.texinput, self.texoutput = p.stdin, p.stdout
+            else:
+                try:
+                    self.texinput, self.texoutput = os.popen4("%s%s %s" % (self.mode, ipcflag, self.texfilename), "t", 0)
+                except ValueError:
+                    # XXX: workaround for MS Windows (bufsize = 0 makes trouble!?)
+                    self.texinput, self.texoutput = os.popen4("%s%s %s" % (self.mode, ipcflag, self.texfilename), "t")
             atexit.register(_cleantmp, self)
             self.expectqueue = Queue.Queue(1)  # allow for a single entry only -> keeps the next InputMarker to be wait for
             self.gotevent = threading.Event()  # keeps the got inputmarker event
