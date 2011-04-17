@@ -604,7 +604,7 @@ class _T1setcurrentpoint(T1cmd):
         T1cmd.__init__(self, 33, subcmd=1)
 
     def __str__(self):
-        return "setcurrentpoint" % self.x, self.y
+        return "setcurrentpoint"
 
     def updatepath(self, path, trafo, context):
         x = context.t1stack.pop(0)
@@ -738,7 +738,7 @@ class T1file:
         # hasflexhintsubrs is a boolean indicating that the font uses flex or
         # hint replacement subrs as specified by Adobe (tm). When it does, the
         # first 4 subrs should all be copied except when none of them are used
-        # in the stripped version of the font since we than get a font not
+        # in the stripped version of the font since we then get a font not
         # using flex or hint replacement subrs at all.
         self.hasflexhintsubrs = (arraycount >= len(self.flexhintsubrs) and
                                  [self.getsubrcmds(i)
