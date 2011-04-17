@@ -23,9 +23,6 @@ def texttest():
     c.stroke(path.rect(llx-d, lly-d, w+2*d, h+2*d))
     c.insert(textfield(llx, lly, w, h, name="another"))
 
-    # XXX scaling of textsize
-    # XXX font does not work
-
     return c
 
 def checkboxtest():
@@ -61,8 +58,6 @@ def choicetest():
     c.insert(choicefield(llx, lly, w, h, name="choicefield", values=values, defaultvalue=values[0],
         font=PDFTimesBold))
 
-    # XXX font does not work
-
     return c
 
 # write all test into one canvas
@@ -73,10 +68,10 @@ for cc in [texttest(), checkboxtest(), radiotest(), choicetest()]:
     else:
         t = [trafo.translate(0, c.bbox().bottom() - cc.bbox().top() - 1)]
     c.insert(cc, t)
-    c.stroke(cc.bbox().path(), t + [color.rgb.red, style.linestyle.dotted])
+    #c.stroke(cc.bbox().path(), t + [color.rgb.red, style.linestyle.dotted])
 
 # test the transformation behaviour:
-cc = canvas.canvas([trafo.scale(0.3), trafo.rotate(90)])
+cc = canvas.canvas([trafo.scale(0.3)])#, trafo.rotate(90)])
 cc.fill(c.bbox().path(), [color.gray(0.9)])
 cc.insert(c)
 d = document.document([document.page(cc, bboxenlarge=1)])
