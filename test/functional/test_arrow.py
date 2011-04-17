@@ -1,7 +1,4 @@
 #!/usr/bin/env python
-import sys, os
-sys.path.insert(0, os.path.expanduser("~/python/pyx-trunk"))
-
 import pyx
 from pyx import *
 from pyx.path import *
@@ -104,10 +101,26 @@ def linehatched(c):
     c.stroke(p, [trafo.translate(4,0), deco.linehatched90.normal])
     c.draw(p, [trafo.translate(6,0), deco.linehatched(0.1, 30, strokestyles=[color.rgb.red, style.linewidth.normal], cross=1)])
 
+def testbrace(c):
+    p = line(0, 0, 5, 0).transformed(trafo.rotate(60))
+    c.stroke(p, [deco.brace(dist=-0.1, stretch=1.1), deco.text(r"hallo", textdist=20*unit.x_pt, relangle=-90), trafo.translate(8,0)])
 
-c=canvas.canvas()
+    tr = trafo.translate(12, 0)
+    c.draw(line(0,0,0,4), [deco.leftbrace, tr])
+    c.draw(line(4,0,4,4), [deco.rightbrace, tr])
+    c.draw(line(0,0,4,0), [deco.belowbrace, tr])
+    c.stroke(line(0,4,4,4), [deco.abovebrace, tr, style.linewidth.THin])
+
+    tr = trafo.translate(12.5, 0.5)
+    c.stroke(line(0,0,3,0), [deco.straightbrace, tr, color.rgb.red])
+    c.draw(line(3,0,3,3), [deco.straightbrace(fillattrs=[color.rgb.blue]), tr])
+    c.draw(line(3,3,0,3), [deco.straightbrace, tr])
+    c.draw(line(0,3,0,0), [deco.straightbrace, tr])
+
+c = canvas.canvas()
 testarrow(c)
 linehatched(c)
+testbrace(c)
 c.writeEPSfile("test_arrow", paperformat=document.paperformat.A4, rotated=0, fittosize=1)
 c.writePDFfile("test_arrow", paperformat=document.paperformat.A4)
 
