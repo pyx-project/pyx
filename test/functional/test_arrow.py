@@ -1,5 +1,6 @@
 #!/usr/bin/env python
-import sys; sys.path[:0] = ["../.."]
+import sys, os
+sys.path.insert(0, os.path.expanduser("~/python/pyx-trunk"))
 
 import pyx
 from pyx import *
@@ -22,21 +23,27 @@ def testarrow(c):
 
     base = 2
 
+    pal = color.lineargradient(color.rgb.red, color.rgb.blue)
+
     c.stroke(path(moveto(5,10), rlineto(5,0)),
            [#deco.barrow(size=base/math.sqrt(8)*unit.t_pt, constriction=1),
             deco.earrow.SMall,
+            deco.colorgradient(pal),
             deco.text("start", arclenfrombegin=0, angle=90)])
     c.stroke(path(moveto(5,10.5), rlineto(5,0)),
            [deco.barrow(size=base/math.sqrt(4)*unit.t_pt, constriction=1),
             deco.earrow.Small,
+            deco.colorgradient(pal),
             deco.text("start+1", arclenfrombegin=1, angle=90)])
     c.stroke(path(moveto(5,11), rlineto(5,0)),
            [deco.barrow(size=base/math.sqrt(2)*unit.t_pt, constriction=1),
             deco.earrow.small,
+            deco.colorgradient(pal),
             deco.text("center", angle=90)])
     c.stroke(path(moveto(5,11.5), rlineto(5,0)),
            [deco.barrow(size=base/math.sqrt(1)*unit.t_pt, constriction=1),
             deco.earrow.normal,
+            deco.colorgradient(pal),
             deco.text("end-1", arclenfromend=1, angle=90)])
     c.stroke(path(moveto(5,12), rlineto(5,0)),
            [deco.barrow(size=base*math.sqrt(2)*unit.t_pt, constriction=1),
@@ -57,7 +64,8 @@ def testarrow(c):
     c.stroke(path(moveto(11,10), rlineto(5,0)),
            [lt,
             deco.barrow(size=base/math.sqrt(8)*unit.t_pt, constriction=1),
-            deco.earrow.SMall])
+            deco.earrow.SMall,
+            deco.colorgradient(pal, [style.linewidth.THIN])])
     c.stroke(path(moveto(11,10.5), rlineto(5,0)),
            [lt,
             deco.barrow(size=base/math.sqrt(4)*unit.t_pt, constriction=1),
@@ -89,9 +97,17 @@ def testarrow(c):
                                      deco.stroked([style.linejoin.round]),
                                      deco.filled([color.rgb.blue])])])
 
+def linehatched(c):
+    p = rect(0, 0, 5, 0.5).transformed(trafo.rotate(60))
+    c.draw(p, [deco.linehatched45.normal])
+    c.fill(p, [trafo.translate(2,0), deco.linehatched(0.1, 60, cross=1)]) # should not be filled, but hatched
+    c.stroke(p, [trafo.translate(4,0), deco.linehatched90.normal])
+    c.draw(p, [trafo.translate(6,0), deco.linehatched(0.1, 30, strokestyles=[color.rgb.red, style.linewidth.normal], cross=1)])
+
 
 c=canvas.canvas()
 testarrow(c)
+linehatched(c)
 c.writeEPSfile("test_arrow", paperformat=document.paperformat.A4, rotated=0, fittosize=1)
 c.writePDFfile("test_arrow", paperformat=document.paperformat.A4)
 
