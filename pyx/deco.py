@@ -592,6 +592,154 @@ class shownormpath(deco, attr.attr):
                 dp.ornaments.draw(path.circle_pt(x_pt, y_pt, r_pt), [filled])
 
 
+
+class linehatched(deco, attr.exclusiveattr, attr.clearclass):
+    """draws a pattern with explicit lines
+
+    This class acts as a drop-in replacement for postscript patterns
+    from the pattern module which are not understood by some printers"""
+
+    def __init__(self, dist, angle, strokestyles=[], cross=0):
+        attr.clearclass.__init__(self, _filled)
+        attr.exclusiveattr.__init__(self, linehatched)
+        self.dist = dist
+        self.angle = angle
+        self.strokestyles = attr.mergeattrs([style.linewidth.THIN] + strokestyles)
+        attr.checkattrs(self.strokestyles, [style.strokestyle])
+        self.cross = cross
+
+    def __call__(self, dist=None, angle=None, strokestyles=None, cross=None):
+        if dist is None:
+            dist = self.dist
+        if angle is None:
+            angle = self.angle
+        if strokestyles is None:
+            strokestyles = self.strokestyles
+        if cross is None:
+            cross = self.cross
+        return linehatched(dist, angle, strokestyles, cross)
+
+    def _decocanvas(self, angle, dp, texrunner):
+        dp.ensurenormpath()
+        dist_pt = unit.topt(self.dist)
+
+        c = canvas.canvas([canvas.clip(dp.path)])
+        llx_pt, lly_pt, urx_pt, ury_pt = dp.path.bbox().highrestuple_pt()
+        center_pt = 0.5*(llx_pt+urx_pt), 0.5*(lly_pt+ury_pt)
+        radius_pt = 0.5*math.hypot(urx_pt-llx_pt, ury_pt-lly_pt) + dist_pt
+        n = int(2*radius_pt / dist_pt) + 1
+        for i in range(n):
+            x_pt = center_pt[0] - radius_pt + i*dist_pt
+            c.stroke(path.line_pt(x_pt, center_pt[1]-radius_pt, x_pt, center_pt[1]+radius_pt),
+                     [trafo.rotate_pt(angle, center_pt[0], center_pt[1])] + self.strokestyles)
+        return c
+
+    def decorate(self, dp, texrunner):
+        dp.ornaments.insert(self._decocanvas(self.angle, dp, texrunner))
+        if self.cross:
+            dp.ornaments.insert(self._decocanvas(self.angle+90, dp, texrunner))
+
+    def merge(self, attrs):
+        # act as attr.clearclass and as attr.exclusiveattr at the same time
+        newattrs = attr.exclusiveattr.merge(self, attrs)
+        return attr.clearclass.merge(self, newattrs)
+
+linehatched.clear = attr.clearclass(linehatched)
+
+_hatch_base = 0.1 * unit.v_cm
+
+linehatched0 = linehatched(_hatch_base, 0)
+linehatched0.SMALL = linehatched0(_hatch_base/math.sqrt(64))
+linehatched0.SMALL = linehatched0(_hatch_base/math.sqrt(64))
+linehatched0.SMALl = linehatched0(_hatch_base/math.sqrt(32))
+linehatched0.SMAll = linehatched0(_hatch_base/math.sqrt(16))
+linehatched0.SMall = linehatched0(_hatch_base/math.sqrt(8))
+linehatched0.Small = linehatched0(_hatch_base/math.sqrt(4))
+linehatched0.small = linehatched0(_hatch_base/math.sqrt(2))
+linehatched0.normal = linehatched0(_hatch_base)
+linehatched0.large = linehatched0(_hatch_base*math.sqrt(2))
+linehatched0.Large = linehatched0(_hatch_base*math.sqrt(4))
+linehatched0.LArge = linehatched0(_hatch_base*math.sqrt(8))
+linehatched0.LARge = linehatched0(_hatch_base*math.sqrt(16))
+linehatched0.LARGe = linehatched0(_hatch_base*math.sqrt(32))
+linehatched0.LARGE = linehatched0(_hatch_base*math.sqrt(64))
+
+linehatched45 = linehatched(_hatch_base, 45)
+linehatched45.SMALL = linehatched45(_hatch_base/math.sqrt(64))
+linehatched45.SMALl = linehatched45(_hatch_base/math.sqrt(32))
+linehatched45.SMAll = linehatched45(_hatch_base/math.sqrt(16))
+linehatched45.SMall = linehatched45(_hatch_base/math.sqrt(8))
+linehatched45.Small = linehatched45(_hatch_base/math.sqrt(4))
+linehatched45.small = linehatched45(_hatch_base/math.sqrt(2))
+linehatched45.normal = linehatched45(_hatch_base)
+linehatched45.large = linehatched45(_hatch_base*math.sqrt(2))
+linehatched45.Large = linehatched45(_hatch_base*math.sqrt(4))
+linehatched45.LArge = linehatched45(_hatch_base*math.sqrt(8))
+linehatched45.LARge = linehatched45(_hatch_base*math.sqrt(16))
+linehatched45.LARGe = linehatched45(_hatch_base*math.sqrt(32))
+linehatched45.LARGE = linehatched45(_hatch_base*math.sqrt(64))
+
+linehatched90 = linehatched(_hatch_base, 90)
+linehatched90.SMALL = linehatched90(_hatch_base/math.sqrt(64))
+linehatched90.SMALl = linehatched90(_hatch_base/math.sqrt(32))
+linehatched90.SMAll = linehatched90(_hatch_base/math.sqrt(16))
+linehatched90.SMall = linehatched90(_hatch_base/math.sqrt(8))
+linehatched90.Small = linehatched90(_hatch_base/math.sqrt(4))
+linehatched90.small = linehatched90(_hatch_base/math.sqrt(2))
+linehatched90.normal = linehatched90(_hatch_base)
+linehatched90.large = linehatched90(_hatch_base*math.sqrt(2))
+linehatched90.Large = linehatched90(_hatch_base*math.sqrt(4))
+linehatched90.LArge = linehatched90(_hatch_base*math.sqrt(8))
+linehatched90.LARge = linehatched90(_hatch_base*math.sqrt(16))
+linehatched90.LARGe = linehatched90(_hatch_base*math.sqrt(32))
+linehatched90.LARGE = linehatched90(_hatch_base*math.sqrt(64))
+
+linehatched135 = linehatched(_hatch_base, 135)
+linehatched135.SMALL = linehatched135(_hatch_base/math.sqrt(64))
+linehatched135.SMALl = linehatched135(_hatch_base/math.sqrt(32))
+linehatched135.SMAll = linehatched135(_hatch_base/math.sqrt(16))
+linehatched135.SMall = linehatched135(_hatch_base/math.sqrt(8))
+linehatched135.Small = linehatched135(_hatch_base/math.sqrt(4))
+linehatched135.small = linehatched135(_hatch_base/math.sqrt(2))
+linehatched135.normal = linehatched135(_hatch_base)
+linehatched135.large = linehatched135(_hatch_base*math.sqrt(2))
+linehatched135.Large = linehatched135(_hatch_base*math.sqrt(4))
+linehatched135.LArge = linehatched135(_hatch_base*math.sqrt(8))
+linehatched135.LARge = linehatched135(_hatch_base*math.sqrt(16))
+linehatched135.LARGe = linehatched135(_hatch_base*math.sqrt(32))
+linehatched135.LARGE = linehatched135(_hatch_base*math.sqrt(64))
+
+crosslinehatched0 = linehatched(_hatch_base, 0, cross=1)
+crosslinehatched0.SMALL = crosslinehatched0(_hatch_base/math.sqrt(64))
+crosslinehatched0.SMALl = crosslinehatched0(_hatch_base/math.sqrt(32))
+crosslinehatched0.SMAll = crosslinehatched0(_hatch_base/math.sqrt(16))
+crosslinehatched0.SMall = crosslinehatched0(_hatch_base/math.sqrt(8))
+crosslinehatched0.Small = crosslinehatched0(_hatch_base/math.sqrt(4))
+crosslinehatched0.small = crosslinehatched0(_hatch_base/math.sqrt(2))
+crosslinehatched0.normal = crosslinehatched0
+crosslinehatched0.large = crosslinehatched0(_hatch_base*math.sqrt(2))
+crosslinehatched0.Large = crosslinehatched0(_hatch_base*math.sqrt(4))
+crosslinehatched0.LArge = crosslinehatched0(_hatch_base*math.sqrt(8))
+crosslinehatched0.LARge = crosslinehatched0(_hatch_base*math.sqrt(16))
+crosslinehatched0.LARGe = crosslinehatched0(_hatch_base*math.sqrt(32))
+crosslinehatched0.LARGE = crosslinehatched0(_hatch_base*math.sqrt(64))
+
+crosslinehatched45 = linehatched(_hatch_base, 45, cross=1)
+crosslinehatched45.SMALL = crosslinehatched45(_hatch_base/math.sqrt(64))
+crosslinehatched45.SMALl = crosslinehatched45(_hatch_base/math.sqrt(32))
+crosslinehatched45.SMAll = crosslinehatched45(_hatch_base/math.sqrt(16))
+crosslinehatched45.SMall = crosslinehatched45(_hatch_base/math.sqrt(8))
+crosslinehatched45.Small = crosslinehatched45(_hatch_base/math.sqrt(4))
+crosslinehatched45.small = crosslinehatched45(_hatch_base/math.sqrt(2))
+crosslinehatched45.normal = crosslinehatched45
+crosslinehatched45.large = crosslinehatched45(_hatch_base*math.sqrt(2))
+crosslinehatched45.Large = crosslinehatched45(_hatch_base*math.sqrt(4))
+crosslinehatched45.LArge = crosslinehatched45(_hatch_base*math.sqrt(8))
+crosslinehatched45.LARge = crosslinehatched45(_hatch_base*math.sqrt(16))
+crosslinehatched45.LARGe = crosslinehatched45(_hatch_base*math.sqrt(32))
+crosslinehatched45.LARGE = crosslinehatched45(_hatch_base*math.sqrt(64))
+
+
 class colorgradient(deco, attr.attr):
     """inserts pieces of the path in different colors"""
 
