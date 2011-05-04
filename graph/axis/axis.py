@@ -176,8 +176,8 @@ class _regularaxis(_axis):
                 ticks = partfunction()
                 if ticks is None:
                     break
-                ticks = [tick for tick in tick.mergeticklists(self.manualticks, ticks, mergeequal=0)
-                         if tick.ticklevel is not None and tick.labellevel is not None]
+                ticks = [t for t in tick.mergeticklists(self.manualticks, ticks, mergeequal=0)
+                         if t.ticklevel is not None and t.labellevel is not None]
                 if ticks:
                     rate = rater.rateticks(self, ticks, self.density)
                     if self.reverse:
