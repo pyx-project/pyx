@@ -123,6 +123,8 @@ TODO:
       to the axis (reported by Christian Delfosse)
     - graph.style.arrow: decorator is an parameter of the constructor now
       (thanks to Axel Freyn)
+    - remove ticks with unset ticklevel and labellevel to prevent rating failures
+      (thanks to Brendon Higgins)
   - canvas and document modules:
     - auto-guess output filename from the script filename
     - add ciecolor flag and input type to the pipeGS method of canvas
