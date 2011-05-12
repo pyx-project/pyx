@@ -3,6 +3,6 @@ from pyx import *
 
 g = graph.graphxyz(size=4, x2=None, y2=None)
 g.plot(graph.data.file("surface.dat", x=1, y=2, z=3), [graph.style.surface()])
-g.dodata()
+g.doplot()
 g.writeEPSfile("surface")
 g.writePDFfile("surface")
