@@ -148,6 +148,8 @@ TODO:
     - remove incorrect zero length line in PDF output for each first moveto
       path element (thanks to Michael J Gruber)
     - raise correct normpath exception (thanks to Axel Freyn)
+  - epsfile module:
+    - an ugly way to import EPS in PDF using a bitmap (requires PIL)
 
 
 0.10 (2007/10/03):
