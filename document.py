@@ -32,6 +32,7 @@ class paperformat:
         self.height = height
         self.name = name
 
+paperformat.A5 = paperformat(148.5 * unit.t_mm, 210  * unit.t_mm, "A5")
 paperformat.A4 = paperformat(210 * unit.t_mm, 297  * unit.t_mm, "A4")
 paperformat.A3 = paperformat(297 * unit.t_mm, 420  * unit.t_mm, "A3")
 paperformat.A2 = paperformat(420 * unit.t_mm, 594  * unit.t_mm, "A2")
@@ -81,7 +82,7 @@ class page:
         elif bbox:
             bbox.enlarge(self.bboxenlarge)
         else:
-            bbox.set(self.canvas.bbox())
+            bbox.set(self.canvas.bbox()) # this bbox is not accurate
             bbox.enlarge(self.bboxenlarge)
 
         cc = self.canvas
@@ -125,6 +126,8 @@ class page:
             cc.insert(self.canvas, [pagetrafo])
 
         getattr(style.linewidth.normal, processMethod)(contentfile, writer, context, registry, bbox)
+        if self.pagebbox:
+            bbox = bbox.copy() # don't alter the bbox provided to the constructor -> use a copy
         getattr(cc, processMethod)(contentfile, writer, context, registry, bbox)
 
     def processPS(self, *args):
