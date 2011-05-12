@@ -20,7 +20,7 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import string
+import os, string, tempfile, warnings
 import canvasitem, bbox, pykpathsea, unit, trafo, pswriter
 
 # PostScript-procedure definitions (cf. 5002.EPSF_Spec_v3.0.pdf)
@@ -335,4 +335,20 @@ class epsfile(canvasitem.canvasitem):
         file.write("EndEPSF\n")
 
     def processPDF(self, file, writer, context, registry, bbox):
-        raise RuntimeError("Including EPS files in PDF files not supported")
+        warnings.warn("EPS file is included as a bitmap created using pipeGS")
+        from pyx import bitmap, canvas
+        import Image
+        c = canvas.canvas()
+        c.insert(self)
+        fd, fname = tempfile.mkstemp()
+        f = os.fdopen(fd, "wb")
+        f.close()
+        c.pipeGS(fname, device="pngalpha", resolution=600)
+        i = Image.open(fname)
+        os.unlink(fname)
+        b = bitmap.bitmap_pt(self.bbox().llx_pt, self.bbox().lly_pt, i)
+        # we slightly shift the bitmap to re-center it, as the bitmap might contain some additional border
+        # unfortunately we need to construct another bitmap instance for that ...
+        b = bitmap.bitmap_pt(self.bbox().llx_pt + 0.5*(self.bbox().width_pt()-b.bbox().width_pt()),
+                             self.bbox().lly_pt + 0.5*(self.bbox().height_pt()-b.bbox().height_pt()), i)
+        b.processPDF(file, writer, context, registry, bbox)
