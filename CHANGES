@@ -138,6 +138,7 @@ TODO:
     - fix start message parse error in MiKTeX (thanks to Wojciech Jaskowski)
     - fix rigid aux file checking (thanks to Clayton E. Myers)
     - use subprocess module if available
+    - proper error messages when TeX is stopped due to unrecoverable error
   - style module:
     - implement style.fillrule
   - deco module:
