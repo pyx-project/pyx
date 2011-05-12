@@ -110,8 +110,9 @@ class image:
         if self.compressed is not None:
             raise RuntimeError("cannot extract bands from compressed image")
         bands = len(self.mode)
-        return [image(self.width, self.height, "L", "".join([self.data[i*bands+band]
-                                                             for i in range(self.width*self.height)]))
+        width, height = self.size
+        return [image(width, height, "L", "".join([self.data[i*bands+band]
+                                                             for i in range(width*height)]))
                 for band in range(bands)]
 
     def tostring(self, *args):
