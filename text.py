@@ -33,6 +33,9 @@ except ImportError:
 else:
     have_subprocess = True
 
+class PyXTeXWarning(UserWarning): pass
+warnings.filterwarnings('always', category=PyXTeXWarning)
+
 ###############################################################################
 # texmessages
 # - please don't get confused:
@@ -865,9 +868,9 @@ class texrunner:
                 hasevent = event.isSet()
                 if not hasevent:
                     if waited < self.waitfortex:
-                        warnings.warn("still waiting for %s after %i (of %i) seconds..." % (self.mode, waited, self.waitfortex))
+                        warnings.warn("still waiting for %s after %i (of %i) seconds..." % (self.mode, waited, self.waitfortex), PyXTeXWarning)
                     else:
-                        warnings.warn("the timeout of %i seconds expired and %s did not respond." % (waited, self.mode))
+                        warnings.warn("the timeout of %i seconds expired and %s did not respond." % (waited, self.mode), PyXTeXWarning)
             return hasevent
         else:
             event.wait(self.waitfortex)
@@ -1217,9 +1220,13 @@ class texrunner:
             expr = textattrs[lentextattrs-1-i].apply(expr)
         try:
             self.execute(expr, self.defaulttexmessagesdefaultrun + self.texmessagesdefaultrun + texmessages)
-        except TexResultError:
-            self.finishdvi(ignoretail=1)
-            raise
+        except TexResultError, e:
+            warnings.warn("We try to finish the dvi due to an unhandled tex error", PyXTeXWarning)
+            try:
+                self.finishdvi(ignoretail=1)
+            except TexResultError:
+                pass
+            raise e
         if self.texipc:
             if first:
                 self.dvifile = dvifile.DVIfile("%s.dvi" % self.texfilename, debug=self.dvidebug)
