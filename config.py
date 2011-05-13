@@ -23,40 +23,57 @@
 import ConfigParser, os.path, warnings
 import siteconfig
 
+class _marker: pass
+
 cflist = [os.path.join(siteconfig.pyxrcdir, "pyxrc"),  os.path.expanduser("~/.pyxrc")]
 
 config = ConfigParser.ConfigParser()
 config.read(cflist)
 
-def get(section, option, default):
-    try:
+def get(section, option, default=_marker):
+    if default is _marker:
         return config.get(section, option)
-    except:
-        return default
+    else:
+        try:
+            return config.get(section, option)
+        except ConfigParser.Error:
+            return default
 
-def getint(section, option, default):
-    try:
+def getint(section, option, default=_marker):
+    if default is _marker:
         return config.getint(section, option)
-    except:
-        return default
+    else:
+        try:
+            return config.getint(section, option)
+        except ConfigParser.Error:
+            return default
 
-def getfloat(section, option, default):
-    try:
+def getfloat(section, option, default=_marker):
+    if default is _marker:
         return config.getfloat(section, option)
-    except:
-        return default
+    else:
+        try:
+            return config.getfloat(section, option)
+        except ConfigParser.Error:
+            return default
 
-def getboolean(section, option, default):
-    try:
+def getboolean(section, option, default=_marker):
+    if default is _marker:
         return config.getboolean(section, option)
-    except:
-        return default
+    else:
+        try:
+            return config.getboolean(section, option)
+        except ConfigParser.Error:
+            return default
 
-def getlist(section, option, default):
-    try:
+def getlist(section, option, default=_marker):
+    if default is _marker:
         l = config.get(section, option).split()
-    except:
-        return default
+    else:
+        try:
+            l = config.get(section, option).split()
+        except ConfigParser.Error:
+            return default
     if space:
         l = [item.replace(space, ' ') for item in l]
     return l
