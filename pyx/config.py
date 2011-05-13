@@ -54,11 +54,15 @@ def getboolean(section, option, default):
 
 def getlist(section, option, default):
     try:
-        return config.get(section, option).split()
+        l = config.get(section, option).split()
     except:
         return default
+    if space:
+        l = [item.replace(space, ' ') for item in l]
+    return l
 
 
+space = get("general", "space", None)
 formatWarnings = get("general", "warnings", "default")
 if formatWarnings not in ["default", "short", "shortest"]:
     raise RuntimeError("invalid config value for option 'warnings' in section 'general'")
