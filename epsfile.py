@@ -345,6 +345,7 @@ class epsfile(canvasitem.canvasitem):
         f.close()
         c.pipeGS(fname, device="pngalpha", resolution=600)
         i = Image.open(fname)
+        i.load()
         os.unlink(fname)
         b = bitmap.bitmap_pt(self.bbox().llx_pt, self.bbox().lly_pt, i)
         # we slightly shift the bitmap to re-center it, as the bitmap might contain some additional border
