@@ -17,13 +17,17 @@ warnings = shortest
 [text]
 # runtime configuration of the text module
 #
-# 'fontmaps' is a string, namely a whitespace separated list of font
+# 'psfontmaps' is a whitespace separated list of options listing font
 # mapping files. Those files contain information about the available
 # type1 fonts. Depending on your TeX-installation you may need to add
-# further font mapping files like psfonts.cmz if your TeX installation
-# is not configured to use type1 fonts by default. For further
+# further font mapping files like psfonts.cmz (if your TeX installation
+# is not configured to use type1 fonts by default). For further
 # information browse the FAQ for the term 'font mapping file'.
-fontmaps = psfonts.map
+psfontmaps = psfonts.map
+
+# 'pdffontmaps' is similar to psfontmaps, but it used when pdf output
+# is generated. (Note that pdf has a different set of builtin fonts.)
+pdffontmaps = pdftex.map
 
 # 'waitfortex' is an positive integer, namely the number of seconds
 # to be waited for an appropriate response from TeX/LaTeX.
@@ -43,3 +47,5 @@ showwaitfortex = 5
 # operations (e.g. the usage of PyX markers).
 texipc = 0
 
+[locator]
+methods = local internal pykpathsea kpathsea locate
