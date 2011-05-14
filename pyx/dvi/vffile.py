@@ -33,8 +33,7 @@ class VFError(Exception): pass
 
 class vffile:
 
-    def __init__(self, filename, scale, tfmconv, pyxconv, debug=0):
-        self.filename = filename
+    def __init__(self, file, scale, tfmconv, pyxconv, debug=0):
         self.scale = scale
         self.tfmconv = tfmconv
         self.pyxconv = pyxconv
@@ -43,7 +42,7 @@ class vffile:
         self.widths = {}           # widths of defined chars
         self.chardefs = {}         # dvi chunks for defined chars
 
-        afile = reader.reader(self.filename)
+        afile = reader.stringreader(file.read())
 
         cmd = afile.readuchar()
         if cmd == _VF_PRE:

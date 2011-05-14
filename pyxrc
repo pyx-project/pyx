@@ -48,4 +48,4 @@ showwaitfortex = 5
 texipc = 0
 
 [locator]
-methods = local internal pykpathsea kpsewhich locate
+methods = local internal pykpathsea kpsewhich

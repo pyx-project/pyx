@@ -1,8 +1,8 @@
 # -*- coding: ISO-8859-1 -*-
 #
 #
-# Copyright (C) 2002-2006 Jörg Lehmann <joergl@users.sourceforge.net>
-# Copyright (C) 2002-2006 André Wobst <wobsta@users.sourceforge.net>
+# Copyright (C) 2002-2011 Jörg Lehmann <joergl@users.sourceforge.net>
+# Copyright (C) 2002-2011 André Wobst <wobsta@users.sourceforge.net>
 #
 # This file is part of PyX (http://pyx.sourceforge.net/).
 #
@@ -21,7 +21,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 import os, string, tempfile, warnings
-import canvasitem, bbox, pykpathsea, unit, trafo, pswriter
+import canvasitem, bbox, filelocator, unit, trafo, pswriter
 
 # PostScript-procedure definitions (cf. 5002.EPSF_Spec_v3.0.pdf)
 # with important correction in EndEPSF:
@@ -246,10 +246,8 @@ class epsfile(canvasitem.canvasitem):
 
         self.x_pt = unit.topt(x)
         self.y_pt = unit.topt(y)
-        if kpsearch:
-            self.filename = pykpathsea.find_file(filename, pykpathsea.kpse_pict_format)
-        else:
-            self.filename = filename
+        self.filename = filename
+        self.kpsearch = kpsearch
         self.mybbox = bbox or _readbbox(self.filename)
 
         # determine scaling in x and y direction
@@ -316,10 +314,11 @@ class epsfile(canvasitem.canvasitem):
         registry.add(_BeginEPSF)
         registry.add(_EndEPSF)
         bbox += self.bbox()
-        try:
-            epsfile=open(self.filename,"rb")
-        except:
-            raise IOError, "cannot open EPS file '%s'" % self.filename 
+
+        if self.kpsearch:
+            epsfile = filelocator.open(self.filename, [filelocator.format.pict], "rb")
+        else:
+            epsfile = open(self.filename, "rb")
 
         file.write("BeginEPSF\n")
 
@@ -330,9 +329,10 @@ class epsfile(canvasitem.canvasitem):
         self.trafo.processPS(file, writer, context, registry, bbox)
 
         file.write("%%%%BeginDocument: %s\n" % self.filename)
-        file.write(epsfile.read()) 
+        file.write(epsfile.read())
         file.write("%%EndDocument\n")
         file.write("EndEPSF\n")
+        epsfile.close()
 
     def processPDF(self, file, writer, context, registry, bbox):
         warnings.warn("EPS file is included as a bitmap created using pipeGS")

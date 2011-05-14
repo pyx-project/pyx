@@ -1,5 +1,27 @@
-import re, warnings
-from pyx import font, pykpathsea
+# -*- coding: ISO-8859-1 -*-
+#
+#
+# Copyright (C) 2007-2011 Jörg Lehmann <joergl@users.sourceforge.net>
+# Copyright (C) 2007-2011 André Wobst <wobsta@users.sourceforge.net>
+#
+# This file is part of PyX (http://pyx.sourceforge.net/).
+#
+# PyX is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# PyX is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with PyX; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USAimport re, warnings
+
+import re
+from pyx import font, filelocator
 from pyx.font import t1file, afmfile
 from pyx.dvi import encfile
 
@@ -94,34 +116,30 @@ class MAPline:
     def getfont(self):
         if self._font is None:
             if self.fontfilename is not None:
-                fontpath = pykpathsea.find_file(self.fontfilename, pykpathsea.kpse_type1_format)
-                if not fontpath:
-                    raise RuntimeError("cannot find type 1 font %s" % self.fontfilename)
-                if fontpath.endswith(".pfb"):
-                    t1font = t1file.PFBfile(fontpath)
-                else:
-                    t1font = t1file.PFAfile(fontpath)
+                fontfile = filelocator.open(self.fontfilename, [filelocator.format.type1], "rb")
+                t1font = t1file.from_PF_bytes(fontfile.read())
+                fontfile.close()
                 assert self.basepsname == t1font.name, "corrupt MAP file"
-                metricpath = pykpathsea.find_file(self.fontfilename.replace(".pfb", ".afm"), pykpathsea.kpse_afm_format)
-                if metricpath:
-                    self._font = font.T1font(t1font, afmfile.AFMfile(metricpath))
-                else:
+                try:
+                     metricfile = filelocator.open(self.fontfilename.replace(".pfb", ".afm"), [filelocator.format.afm])
+                except IOError:
                     self._font = font.T1font(t1font, None)
+                else:
+                    self._font = font.T1font(t1font, afmfile.AFMfile(metricfile))
+                    metricfile.close()
             else:
                 afmfilename = "%s.afm" % self.basepsname
-                metricpath = pykpathsea.find_file(afmfilename, pykpathsea.kpse_afm_format)
-                if not metricpath:
-                    raise RuntimeError("cannot find type 1 font metric %s" % afmfilename)
-                self._font = font.T1builtinfont(self.basepsname, afmfile.AFMfile(metricpath))
+                metricfile = filelocator.open(afmfilename, [filelocator.format.afm])
+                self._font = font.T1builtinfont(self.basepsname, afmfile.AFMfile(metricfile))
+                metricfile.close()
         return self._font
 
     def getencoding(self):
         if self._encoding is _marker:
             if self.encodingfilename is not None:
-                encodingpath = pykpathsea.find_file(self.encodingfilename, pykpathsea.kpse_tex_ps_header_format)
-                if not encodingpath:
-                    raise RuntimeError("cannot find font encoding file %s" % self.encodingfilename)
-                ef = encfile.ENCfile(encodingpath)
+                encodingfile = filelocator.open(self.encodingfilename, [filelocator.format.tex_ps_header], "rb")
+                ef = encfile.ENCfile(encodingfile.read())
+                encodingfile.close()
                 assert ef.name == "/%s" % self.reencodefont
                 self._encoding = ef.vector
 
@@ -139,13 +157,7 @@ def readfontmap(filenames):
     """ read font map from filename (without path) """
     fontmap = {}
     for filename in filenames:
-        mappath = pykpathsea.find_file(filename, pykpathsea.kpse_fontmap_format)
-        # try also the oft-used registration as dvips config file
-        if not mappath:
-            mappath = pykpathsea.find_file(filename, pykpathsea.kpse_dvips_config_format)
-        if not mappath:
-            raise RuntimeError("cannot find font mapping file '%s'" % filename)
-        mapfile = open(mappath, "rU")
+        mapfile = filelocator.open(filename, [filelocator.format.fontmap, filelocator.format.dvips_config], mode="rU")
         lineno = 0
         for line in mapfile.readlines():
             lineno += 1

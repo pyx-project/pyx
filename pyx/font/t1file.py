@@ -1,8 +1,8 @@
 # -*- coding: ISO-8859-1 -*-
 #
 #
-# Copyright (C) 2005-2006 André Wobst <wobsta@users.sourceforge.net>
-# Copyright (C) 2006 Jörg Lehmann <joergl@users.sourceforge.net>
+# Copyright (C) 2005-2011 André Wobst <wobsta@users.sourceforge.net>
+# Copyright (C) 2006-2011 Jörg Lehmann <joergl@users.sourceforge.net>
 #
 # This file is part of PyX (http://pyx.sourceforge.net/).
 #
@@ -1118,45 +1118,89 @@ class T1file:
         file.write("\n"
                    "endstream\n")
 
+# factory functions
 
-class PFAfile(T1file):
+class FontFormatError(Exception):
+    pass
 
-    """create a T1file instance from a pfa font file"""
+def from_PFA_bytes(bytes):
+    """create a T1file instance from a string of bytes corresponding to a PFA file"""
+    try:
+        m1 = bytes.index("eexec") + 6
+        m2 = bytes.index("0"*40)
+    except ValueError:
+       raise FontFormatError
 
-    def __init__(self, filename):
-        d = open(filename, "rb").read()
-        # hey, that's quick'n'dirty
-        m1 = d.index("eexec") + 6
-        m2 = d.index("0"*40)
-        data1 = d[:m1]
-        data2 = binascii.a2b_hex(d[m1: m2].replace(" ", "").replace("\r", "").replace("\n", ""))
-        data3 = d[m2:]
-        T1file.__init__(self, data1, data2, data3)
+    data1 = bytes[:m1]
+    data2 = binascii.a2b_hex(bytes[m1: m2].replace(" ", "").replace("\r", "").replace("\n", ""))
+    data3 = bytes[m2:]
+    return T1file(data1, data2, data3)
 
+def from_PFA_filename(filename):
+    """create a T1file instance from PFA font file of given name"""
+    file = open(filename, "rb")
+    t1file = from_PFA_bytes(file.read())
+    file.close()
+    return t1file
 
-class PFBfile(T1file):
+def from_PFB_bytes(bytes):
+    """create a T1file instance from a string of bytes corresponding to a PFB file"""
 
-    """create a T1file instance from a pfb font file"""
+    def pfblength(s):
+        if len(s) != 4:
+            raise ValueError("invalid string length")
+        return (ord(s[0]) +
+                ord(s[1])*256 +
+                ord(s[2])*256*256 +
+                ord(s[3])*256*256*256)
+    class consumer:
+        def __init__(self, bytes):
+            self.bytes = bytes
+            self.pos = 0
+        def __call__(self, n):
+            result = self.bytes[self.pos:self.pos+n]
+            self.pos += n
+            return result
 
-    def __init__(self, filename):
-        def pfblength(s):
-            if len(s) != 4:
-                raise ValueError("invalid string length")
-            return (ord(s[0]) +
-                    ord(s[1])*256 +
-                    ord(s[2])*256*256 +
-                    ord(s[3])*256*256*256)
-        f = open(filename, "rb")
-        mark = f.read(2); assert mark == "\200\1"
-        data1 = f.read(pfblength(f.read(4)))
-        mark = f.read(2); assert mark == "\200\2"
-        data2 = ""
-        while mark == "\200\2":
-            data2 = data2 + f.read(pfblength(f.read(4)))
-            mark = f.read(2)
-        assert mark == "\200\1"
-        data3 = f.read(pfblength(f.read(4)))
-        mark = f.read(2); assert mark == "\200\3"
-        assert not f.read(1)
-        T1file.__init__(self, data1, data2, data3)
+    consume = consumer(bytes)
+    mark = consume(2)
+    if mark != "\200\1":
+        raise FontFormatError
+    data1= consume(pfblength(consume(4)))
+    mark = consume(2)
+    if mark != "\200\2":
+        raise FontFormatError
+    data2 = ""
+    while mark == "\200\2":
+        data2 = data2 + consume(pfblength(consume(4)))
+        mark = consume(2)
+    if mark != "\200\1":
+        raise FontFormatError
+    data3 = consume(pfblength(consume(4)))
+    mark = consume(2)
+    if mark != "\200\3":
+        raise FontFormatError
+    if consume(1):
+        raise FontFormatError
 
+    return T1file(data1, data2, data3)
+
+def from_PFB_filename(filename):
+    """create a T1file instance from PFB font file of given name"""
+    file = open(filename, "rb")
+    t1file = from_PFB_bytes(file.read())
+    file.close()
+    return t1file
+
+def from_PF_bytes(bytes):
+    try:
+         return from_PFB_bytes(bytes)
+    except FontFormatError:
+         return from_PFA_bytes(bytes)
+
+def from_PF_filename(filename):
+    """create a T1file instance from PFA or PFB font file of given name"""
+    file = open(filename, "rb")
+    t1file = from_PF_bytes(file.read())
+    file.close()
+    return t1file

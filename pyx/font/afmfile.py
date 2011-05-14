@@ -1,7 +1,8 @@
 # -*- coding: ISO-8859-1 -*-
 #
 #
-# Copyright (C) 2006 Jörg Lehmann <joergl@users.sourceforge.net>
+# Copyright (C) 2006-2011 Jörg Lehmann <joergl@users.sourceforge.net>
+# Copyright (C) 2007-2011 André Wobst <wobsta@users.sourceforge.net>
 #
 # This file is part of PyX (http://pyx.sourceforge.net/).
 #
@@ -965,8 +966,7 @@ class AFMcomposite:
 
 class AFMfile(metric.metric):
 
-    def __init__(self, filename):
-       self.filename = filename
+    def __init__(self, file):
        self.metricssets = 0                     # int, optional
        self.fontname = None                     # str, required
        self.fullname = None                     # str, optional
@@ -1001,7 +1001,7 @@ class AFMfile(metric.metric):
        self.kernpairsdict = {}                  # helper dictionary mapping glyph names to kerning pairs, first direction
        self.kernpairsdict1 = {}                 # helper dictionary mapping glyph names to kerning pairs, second direction
        self.composites = None                   # list of composite character data sets, optional
-       self.parse()
+       self.parse(file)
        if self.isfixedv is None:
            self.isfixedv = self.vvector is not None
        # XXX we should check the constraints on some parameters
@@ -1312,44 +1312,40 @@ class AFMfile(metric.metric):
             raise AFMError("Wrong number of composite characters")
         return _READ_COMPOSITES, i+1
 
-    def parse(self):
-        f = open(self.filename, "r")
-        try:
-             # state of the reader, consisting of 
-             #  - the main state, i.e. the type of the section
-             #  - a parameter sstate
-             state = _READ_START, None
-             # Note that we do a line by line processing here, since one
-             # of the states (_READ_DIRECTION) can be entered implicitly, i.e.
-             # without a corresponding StartDirection section and we thus
-             # may need to reprocess a line in the context of the new state
-             for line in f:
-                line = line[:-1]
-                mstate, sstate = state
-                if mstate == _READ_START:
-                    state = self._processline_start(line)
-                else: 
-                    # except for the first line, any empty will be ignored
-                    if not line.strip():
-                       continue
-                    if mstate == _READ_MAIN:
-                        state = self._processline_main(line)
-                    elif mstate == _READ_DIRECTION:
-                        state = self._processline_direction(line, sstate)
-                    elif mstate == _READ_CHARMETRICS:
-                        state = self._processline_charmetrics(line, sstate)
-                    elif mstate == _READ_KERNDATA:
-                        state = self._processline_kerndata(line)
-                    elif mstate == _READ_TRACKKERN:
-                        state = self._processline_trackkern(line, sstate)
-                    elif mstate == _READ_KERNPAIRS:
-                        state = self._processline_kernpairs(line, sstate)
-                    elif mstate == _READ_COMPOSITES:
-                        state = self._processline_composites(line, sstate)
-                    else:
-                        raise AFMError("Undefined state in AFM reader")
-        finally:
-            f.close()
+    def parse(self, f):
+         # state of the reader, consisting of 
+         #  - the main state, i.e. the type of the section
+         #  - a parameter sstate
+         state = _READ_START, None
+         # Note that we do a line by line processing here, since one
+         # of the states (_READ_DIRECTION) can be entered implicitly, i.e.
+         # without a corresponding StartDirection section and we thus
+         # may need to reprocess a line in the context of the new state
+         for line in f:
+            line = line[:-1]
+            mstate, sstate = state
+            if mstate == _READ_START:
+                state = self._processline_start(line)
+            else: 
+                # except for the first line, any empty will be ignored
+                if not line.strip():
+                   continue
+                if mstate == _READ_MAIN:
+                    state = self._processline_main(line)
+                elif mstate == _READ_DIRECTION:
+                    state = self._processline_direction(line, sstate)
+                elif mstate == _READ_CHARMETRICS:
+                    state = self._processline_charmetrics(line, sstate)
+                elif mstate == _READ_KERNDATA:
+                    state = self._processline_kerndata(line)
+                elif mstate == _READ_TRACKKERN:
+                    state = self._processline_trackkern(line, sstate)
+                elif mstate == _READ_KERNPAIRS:
+                    state = self._processline_kernpairs(line, sstate)
+                elif mstate == _READ_COMPOSITES:
+                    state = self._processline_composites(line, sstate)
+                else:
+                    raise AFMError("Undefined state in AFM reader")
 
     def fucking_scale(self):
         # XXX XXX XXX
