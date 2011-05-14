@@ -121,7 +121,7 @@ class MAPline:
                 fontfile.close()
                 assert self.basepsname == t1font.name, "corrupt MAP file"
                 try:
-                     metricfile = filelocator.open(os.path.splitext(self.fontfilename)[1], [filelocator.format.afm])
+                    metricfile = filelocator.open(os.path.splitext(self.fontfilename)[0], [filelocator.format.afm])
                 except IOError:
                     self._font = font.T1font(t1font, None)
                 else:
