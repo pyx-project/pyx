@@ -38,7 +38,7 @@ for line in lines: # we yet don't use a file iterator
         else:
             g = graph.graphxy(ypos=y, width=10, height=0.5, x2=graph.axis.linkedaxis(firstgraph.axes["x2"]), y=graph.axis.lin(parter=None))
         g.plot(pf, [graph.style.rect(getattr(pyx.color.gradient, m.group("name")))])
-        g.dodata()
+        g.doplot()
         g.finish()
         c.insert(g)
         c.text(10.2, y + 0.15, m.group("id"), [text.size.footnotesize])
