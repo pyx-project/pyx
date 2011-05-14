@@ -22,7 +22,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 import errno, glob, os, threading, Queue, re, tempfile, atexit, time, warnings
-import config, siteconfig, unit, box, canvas, trafo, version, attr, style
+import config, siteconfig, unit, box, canvas, trafo, version, attr, style, filelocator
 from pyx.dvi import dvifile
 import bbox as bboxmodule
 
@@ -953,41 +953,14 @@ class texrunner:
             os.remove("%s.tex" % self.texfilename)
             if self.mode == "tex":
                 if self.lfs:
-                    lfserror = None
-                    if len(self.lfs) > 4 and self.lfs[-4:] == ".lfs":
-                        lfsname = self.lfs
-                    else:
-                        lfsname = "%s.lfs" % self.lfs
-                    for fulllfsname in [lfsname,
-                                        os.path.join(siteconfig.lfsdir, lfsname)]:
-                        try:
-                            lfsfile = open(fulllfsname, "r")
-                            lfsdef = lfsfile.read()
-                            lfsfile.close()
-                            break
-                        except IOError:
-                            pass
-                    else:
-                        lfserror = "File '%s' is not available or not readable. " % lfsname
-                else:
-                    lfserror = ""
-                if lfserror is not None:
-                    allfiles = (glob.glob("*.lfs") +
-                                glob.glob(os.path.join(siteconfig.lfsdir, "*.lfs")))
-                    lfsnames = []
-                    for f in allfiles:
-                        try:
-                            open(f, "r").close()
-                            lfsnames.append(os.path.basename(f)[:-4])
-                        except IOError:
-                            pass
-                    lfsnames.sort()
-                    if len(lfsnames):
-                        raise IOError("%sAvailable LaTeX font size files (*.lfs): %s" % (lfserror, lfsnames))
-                    else:
-                        raise IOError("%sNo LaTeX font size files (*.lfs) available. Check your installation." % lfserror)
-                self.execute(lfsdef, [])
-                self.execute("\\normalsize%\n", [])
+                    if not self.lfs.endswith(".lfs"):
+                        self.lfs = "%s.lfs" % self.lfs
+                    print self.lfs
+                    lfsfile = filelocator.open(self.lfs, "lfs", "r")
+                    lfsdef = lfsfile.read()
+                    lfsfile.close()
+                    self.execute(lfsdef, [])
+                    self.execute("\\normalsize%\n", [])
                 self.execute("\\newdimen\\linewidth\\newdimen\\textwidth%\n", [])
             elif self.mode == "latex":
                 if self.pyxgraphics:
