@@ -109,6 +109,10 @@ class pykpathsea:
         import pykpathsea
         for format in formats:
             full_filename = pykpathsea.find_file(filename, format)
+            if full_filename:
+                break
+        else:
+            return
         return lambda: builtinopen(full_filename, mode)
 
 locator_classes["pykpathsea"] = pykpathsea
