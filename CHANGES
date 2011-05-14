@@ -144,6 +144,7 @@ TODO:
     - implement style.fillrule
   - deco module:
     - added an explicit hatch pattern as an alternative for real postscript patterns
+    - arrow decorator: take into account constriction length when arrow pos < 1
   - bitmap module:
     - add support for transparent bitmaps (in postscript stencil masking only)
   - path and normpath modules:
