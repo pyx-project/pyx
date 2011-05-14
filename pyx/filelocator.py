@@ -192,7 +192,7 @@ def open(filename, formats, mode="r"):
     raise IOError("Could not locate the file '%s'." % filename)
 
 
-class formats:
+class format:
     gf = "gf"
     pk = "pk"
     any_glyph = "bitmap font"
