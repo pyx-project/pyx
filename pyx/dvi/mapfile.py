@@ -20,7 +20,7 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USAimport re, warnings
 
-import re
+import os.path, re
 from pyx import font, filelocator
 from pyx.font import t1file, afmfile
 from pyx.dvi import encfile
@@ -121,15 +121,14 @@ class MAPline:
                 fontfile.close()
                 assert self.basepsname == t1font.name, "corrupt MAP file"
                 try:
-                     metricfile = filelocator.open(self.fontfilename.replace(".pfb", ".afm"), [filelocator.format.afm])
+                     metricfile = filelocator.open(os.path.splitext(self.fontfilename)[1], [filelocator.format.afm])
                 except IOError:
                     self._font = font.T1font(t1font, None)
                 else:
                     self._font = font.T1font(t1font, afmfile.AFMfile(metricfile))
                     metricfile.close()
             else:
-                afmfilename = "%s.afm" % self.basepsname
-                metricfile = filelocator.open(afmfilename, [filelocator.format.afm])
+                metricfile = filelocator.open(self.basepsname, [filelocator.format.afm])
                 self._font = font.T1builtinfont(self.basepsname, afmfile.AFMfile(metricfile))
                 metricfile.close()
         return self._font

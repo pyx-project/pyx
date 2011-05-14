@@ -5,8 +5,8 @@ Installation
 Prerequisites
 -------------
 
-PyX needs Python 2.1 or newer and a TeX installation (including Type1 fonts).
-Try to start 'python', 'tex' and 'kpsewhich cmr10.pfb' (the later should issue
+PyX requires Python 2.3 or newer and a TeX installation (including Type1 fonts).
+Try to start 'python', 'tex' and 'kpsewhich cmr10.pfb' (the latter should issue
 a full path of the requested Type1 font).
 
 
