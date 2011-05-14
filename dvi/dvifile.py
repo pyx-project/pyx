@@ -155,8 +155,8 @@ class DVIfile:
         self.flushtext(fontmap)
         x1 =  self.pos[_POS_H] * self.pyxconv
         y1 = -self.pos[_POS_V] * self.pyxconv
-        w = width * self.pyxconv * self.scale
-        h = height * self.pyxconv * self.scale
+        w = width * self.pyxconv
+        h = height * self.pyxconv
 
         if height > 0 and width > 0:
             if self.debug:
@@ -342,9 +342,8 @@ class DVIfile:
     def _push_dvistring(self, dvi, fonts, afterpos, fontsize, fontmap):
         """ push dvi string with defined fonts on top of reader
         stack. Every positions gets scaled relatively by the factor
-        scale. After the interpreting of the dvi chunk has been finished,
-        continue with self.pos=afterpos. The designsize of the virtual
-        font is passed as a fix_word
+        scale. After interpretating the dvi chunk, continue with self.pos=afterpos.
+        The designsize of the virtual font is passed as a fix_word
 
         """
 
@@ -469,11 +468,11 @@ class DVIfile:
             elif cmd >= _DVI_SET1234 and cmd < _DVI_SET1234 + 4:
                 self.putchar(afile.readint(cmd - _DVI_SET1234 + 1), True, cmd-_DVI_SET1234+1, fontmap)
             elif cmd == _DVI_SETRULE:
-                self.putrule(afile.readint32(), afile.readint32(), True, fontmap)
+                self.putrule(afile.readint32()*self.scale, afile.readint32()*self.scale, True, fontmap)
             elif cmd >= _DVI_PUT1234 and cmd < _DVI_PUT1234 + 4:
                 self.putchar(afile.readint(cmd - _DVI_PUT1234 + 1), False, cmd-_DVI_SET1234+1, fontmap)
             elif cmd == _DVI_PUTRULE:
-                self.putrule(afile.readint32(), afile.readint32(), False, fontmap)
+                self.putrule(afile.readint32()*self.scale, afile.readint32()*self.scale, False, fontmap)
             elif cmd == _DVI_EOP:
                 self.flushtext(fontmap)
                 if self.debug:
@@ -494,7 +493,7 @@ class DVIfile:
                                          ((self.filepos, len(self.stack)) + tuple(self.pos)))
             elif cmd >= _DVI_RIGHT1234 and cmd < _DVI_RIGHT1234 + 4:
                 self.flushtext(fontmap)
-                dh = afile.readint(cmd - _DVI_RIGHT1234 + 1, 1)
+                dh = afile.readint(cmd - _DVI_RIGHT1234 + 1, 1) * self.scale
                 if self.debug:
                     self.debugfile.write("%d: right%d %d h:=%d%+d=%d, hh:=???\n" %
                                          (self.filepos,
@@ -516,7 +515,7 @@ class DVIfile:
                 self.pos[_POS_H] += self.pos[_POS_W]
             elif cmd >= _DVI_W1234 and cmd < _DVI_W1234 + 4:
                 self.flushtext(fontmap)
-                self.pos[_POS_W] = afile.readint(cmd - _DVI_W1234 + 1, 1)
+                self.pos[_POS_W] = afile.readint(cmd - _DVI_W1234 + 1, 1) * self.scale
                 if self.debug:
                     self.debugfile.write("%d: w%d %d h:=%d%+d=%d, hh:=???\n" %
                                          (self.filepos,
@@ -538,7 +537,7 @@ class DVIfile:
                 self.pos[_POS_H] += self.pos[_POS_X]
             elif cmd >= _DVI_X1234 and cmd < _DVI_X1234 + 4:
                 self.flushtext(fontmap)
-                self.pos[_POS_X] = afile.readint(cmd - _DVI_X1234 + 1, 1)
+                self.pos[_POS_X] = afile.readint(cmd - _DVI_X1234 + 1, 1) * self.scale
                 if self.debug:
                     self.debugfile.write("%d: x%d %d h:=%d%+d=%d, hh:=???\n" %
                                          (self.filepos,
@@ -550,7 +549,7 @@ class DVIfile:
                 self.pos[_POS_H] += self.pos[_POS_X]
             elif cmd >= _DVI_DOWN1234 and cmd < _DVI_DOWN1234 + 4:
                 self.flushtext(fontmap)
-                dv = afile.readint(cmd - _DVI_DOWN1234 + 1, 1)
+                dv = afile.readint(cmd - _DVI_DOWN1234 + 1, 1) * self.scale
                 if self.debug:
                     self.debugfile.write("%d: down%d %d v:=%d%+d=%d, vv:=???\n" %
                                          (self.filepos,
@@ -572,7 +571,7 @@ class DVIfile:
                 self.pos[_POS_V] += self.pos[_POS_Y]
             elif cmd >= _DVI_Y1234 and cmd < _DVI_Y1234 + 4:
                 self.flushtext(fontmap)
-                self.pos[_POS_Y] = afile.readint(cmd - _DVI_Y1234 + 1, 1)
+                self.pos[_POS_Y] = afile.readint(cmd - _DVI_Y1234 + 1, 1) * self.scale
                 if self.debug:
                     self.debugfile.write("%d: y%d %d v:=%d%+d=%d, vv:=???\n" %
                                          (self.filepos,
@@ -594,7 +593,7 @@ class DVIfile:
                 self.pos[_POS_V] += self.pos[_POS_Z]
             elif cmd >= _DVI_Z1234 and cmd < _DVI_Z1234 + 4:
                 self.flushtext(fontmap)
-                self.pos[_POS_Z] = afile.readint(cmd - _DVI_Z1234 + 1, 1)
+                self.pos[_POS_Z] = afile.readint(cmd - _DVI_Z1234 + 1, 1) * self.scale
                 if self.debug:
                     self.debugfile.write("%d: z%d %d v:=%d%+d=%d, vv:=???\n" %
                                          (self.filepos,
