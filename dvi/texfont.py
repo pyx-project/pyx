@@ -1,4 +1,4 @@
-from pyx import bbox, canvasitem, font, pykpathsea
+from pyx import bbox, canvasitem, font, filelocator
 import tfmfile, vffile
 
 
@@ -10,10 +10,9 @@ class TeXfont:
         self.d = d                  # design size of font (fix_word) in TeX points
         self.tfmconv = tfmconv      # conversion factor from tfm units to dvi units
         self.pyxconv = pyxconv      # conversion factor from dvi units to PostScript points
-        tfmpath = pykpathsea.find_file("%s.tfm" % self.name, pykpathsea.kpse_tfm_format)
-        if not tfmpath:
-            raise TFMError("cannot find %s.tfm" % self.name)
-        self.TFMfile = tfmfile.TFMfile(tfmpath, debug)
+        file = filelocator.open(self.name, [filelocator.format.tfm], "rb")
+        self.TFMfile = tfmfile.TFMfile(file, debug)
+        file.close()
 
         # We only check for equality of font checksums if none of them
         # is zero. The case c == 0 happend in some VF files and
@@ -117,9 +116,9 @@ class TeXfont:
 
 class virtualfont(TeXfont):
 
-    def __init__(self, name, path, c, q, d, tfmconv, pyxconv, debug=0):
+    def __init__(self, name, file, c, q, d, tfmconv, pyxconv, debug=0):
         TeXfont.__init__(self, name, c, q, d, tfmconv, pyxconv, debug)
-        self.vffile = vffile.vffile(path, self.scale, tfmconv, pyxconv, debug > 1)
+        self.vffile = vffile.vffile(file, self.scale, tfmconv, pyxconv, debug > 1)
 
     def getfonts(self):
         """ return fonts used in virtual font itself """

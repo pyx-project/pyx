@@ -5,10 +5,8 @@ class ENFfileError(Exception):
 
 class ENCfile:
 
-    def __init__(self, filename):
-        encfile = open(filename, "rb")
-        c = reader.PStokenizer(encfile.read(), "")
-        encfile.close()
+    def __init__(self, bytes):
+        c = reader.PStokenizer(bytes, "")
 
         # name of encoding
         self.name = c.gettoken()

@@ -1,9 +1,9 @@
 # -*- coding: ISO-8859-1 -*-
 #
 #
-# Copyright (C) 2002-2006 Jörg Lehmann <joergl@users.sourceforge.net>
+# Copyright (C) 2002-2011 Jörg Lehmann <joergl@users.sourceforge.net>
 # Copyright (C) 2003-2004,2006,2007 Michael Schindler <m-schindler@users.sourceforge.net>
-# Copyright (C) 2002-2006 André Wobst <wobsta@users.sourceforge.net>
+# Copyright (C) 2002-2011 André Wobst <wobsta@users.sourceforge.net>
 #
 # This file is part of PyX (http://pyx.sourceforge.net/).
 #
@@ -22,7 +22,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 import cStringIO, math, re, string, struct, sys, warnings
-from pyx import  bbox, canvas, canvasitem, color, epsfile, path, pykpathsea, reader, trafo, unit
+from pyx import  bbox, canvas, canvasitem, color, epsfile, filelocator, path, reader, trafo, unit
 import texfont, tfmfile
 
 
@@ -218,12 +218,13 @@ class DVIfile:
         #        Note that q is actually s in large parts of the documentation.
         # d:     design size (fix_word)
 
-        # check whether it's a virtual font
-        vffontpath = pykpathsea.find_file(fontname, pykpathsea.kpse_vf_format)
-        if vffontpath:
-            afont = texfont.virtualfont(fontname, vffontpath, c, q/self.tfmconv, d/self.tfmconv, self.tfmconv, self.pyxconv, self.debug > 1)
+        # check whether it's a virtual font by trying to open it. if this fails, it is an ordinary TeX font
+        try:
+             fontfile = filelocator.open(fontname, [filelocator.format.vf])
+        except IOError:
+            afont = texfont.TeXfont(fontname, c, q/self.tfmconv, d/self.tfmconv, self.tfmconv, self.pyxconv, self.debug>1)
         else:
-            afont = texfont.TeXfont(fontname, c, q/self.tfmconv, d/self.tfmconv, self.tfmconv, self.pyxconv, self.debug > 1)
+            afont = texfont.virtualfont(fontname, fontfile, c, q/self.tfmconv, d/self.tfmconv, self.tfmconv, self.pyxconv, self.debug>1)
 
         self.fonts[num] = afont
 

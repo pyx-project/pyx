@@ -13,8 +13,8 @@ class char_info_word:
 
 class TFMfile:
 
-    def __init__(self, name, debug=0):
-        self.file = reader.reader(name)
+    def __init__(self, file, debug=0):
+        self.file = reader.stringreader(file.read())
 
         #
         # read pre header

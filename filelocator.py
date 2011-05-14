@@ -175,7 +175,7 @@ locator_classes["locate"] = locate
 
 
 methods = [locator_classes[method]()
-           for method in config.getlist("locator", "methods", "local internal pykpathsea kpsewhich locate")]
+           for method in config.getlist("locator", "methods", "local internal pykpathsea kpsewhich")]
 
 openers = {}
 
