@@ -6,3 +6,12 @@ def popen(cmd, mode="r"):
         import os
         return os.popen(command, mode)
 
+try:
+    any([])
+except NameError:
+    def any(iterable):
+        for element in iterable:
+            if element:
+                return True
+        return False
+
