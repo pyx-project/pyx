@@ -26,10 +26,14 @@ class internal_pkgutil:
         for extension in extensions:
             full_filename = filename+extension
             dir = os.path.splitext(full_filename)[1][1:]
-            data = pkgutil.get_data("pyx", "data/%s/%s" % (dir, full_filename))
-            if data:
-                # ignoring mode?!
-                return [lambda: cStringIO.StringIO(data)]
+            try:
+                data = pkgutil.get_data("pyx", "data/%s/%s" % (dir, full_filename))
+            except IOError:
+                pass
+            else:
+                if data:
+                    # ignoring mode?!
+                    return [lambda: cStringIO.StringIO(data)]
 
 class internal_open:
     # locates files within the pyx data tree
