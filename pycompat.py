@@ -7,7 +7,7 @@ def popen(cmd, mode="r"):
         return os.popen(command, mode)
 
 try:
-    any([])
+    any = any
 except NameError:
     def any(iterable):
         for element in iterable:
@@ -15,3 +15,8 @@ except NameError:
                 return True
         return False
 
+try:
+    set = set
+except NameError:
+    # Python 2.3
+    from sets import Set as set
