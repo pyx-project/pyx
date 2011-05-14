@@ -108,6 +108,7 @@ TODO:
     - new PS and PDF writer options: strip_fonts, text_as_path, mesh_as_bitmap,
       mesh_as_bitmap_resolution (TODO: documentation)
     - fix for commented out UniqueID
+    - fix rounding of font sizes
   - new filelocator module
   - graph modules:
     - bar style on graphxyz (single datasets only)

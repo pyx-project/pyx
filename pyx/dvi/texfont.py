@@ -31,8 +31,6 @@ class TeXfont:
         if d < 0 or d > 134217728:
             raise DVIError("font '%s' not loaded: bad design size" % self.name)
 
-        self.scale = 1.0*q/d
-
     def __str__(self):
         return "font %s designed at %g TeX pts used at %g TeX pts" % (self.name, 
                                                                       16.0*self.d/16777216L,
@@ -43,7 +41,7 @@ class TeXfont:
         # The factor 16L/16777216L=2**(-20) converts a fix_word (here self.q)
         # to the corresponding float. Furthermore, we have to convert from TeX
         # points to points, hence the factor 72/72.27.
-        return 16L*self.q/16777216L*72/72.27
+        return 72/72.27 * 16*self.q/16777216
 
     def _convert_tfm_to_dvi(self, length):
         # doing the integer math with long integers will lead to different roundings
@@ -118,7 +116,7 @@ class virtualfont(TeXfont):
 
     def __init__(self, name, file, c, q, d, tfmconv, pyxconv, debug=0):
         TeXfont.__init__(self, name, c, q, d, tfmconv, pyxconv, debug)
-        self.vffile = vffile.vffile(file, self.scale, tfmconv, pyxconv, debug > 1)
+        self.vffile = vffile.vffile(file, 1.0*q/d, tfmconv, pyxconv, debug > 1)
 
     def getfonts(self):
         """ return fonts used in virtual font itself """
