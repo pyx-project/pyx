@@ -21,14 +21,8 @@
 
 
 import math
-from math import pi, sin, cos, atan2, tan, hypot, acos, sqrt
+from math import degrees, radians, pi, sin, cos, atan2, tan, hypot, acos, sqrt
 import path, unit, mathutils, normpath
-try:
-    from math import radians, degrees
-except ImportError:
-    # fallback implementation for Python 2.1 and below
-    def radians(x): return x*pi/180
-    def degrees(x): return x*180/pi
 
 
 #########################

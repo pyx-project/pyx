@@ -20,19 +20,8 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-from __future__ import nested_scopes
-
 import math, warnings
 import attr, mathutils, path, normpath, unit, color
-from path import degrees, radians
-
-try:
-    enumerate([])
-except NameError:
-    # fallback implementation for Python 2.2 and below
-    def enumerate(list):
-        return zip(xrange(len(list)), list)
-
 
 # specific exception for an invalid parameterization point
 # used in parallel
@@ -378,7 +367,7 @@ class cycloid(deformer): # <<<
         skipfirst = abs(unit.topt(self.skipfirst))
         skiplast = abs(unit.topt(self.skiplast))
         radius = abs(unit.topt(self.radius))
-        turnangle = radians(self.turnangle)
+        turnangle = math.radians(self.turnangle)
         sign = mathutils.sign(self.sign)
 
         cosTurn = math.cos(turnangle)
@@ -811,7 +800,7 @@ class parallel(deformer): # <<<
                         arcclass = path.arc_pt
                     arc_normpath = path.path(arcclass(
                       arccenter[0], arccenter[1], abs(dist),
-                      degrees(angle1), degrees(angle2))).normpath(epsilon=epsilon)
+                      math.degrees(angle1), math.degrees(angle2))).normpath(epsilon=epsilon)
 
                 # append the arc to the parallel path
                 result.join(arc_normpath)
@@ -865,7 +854,7 @@ class parallel(deformer): # <<<
                         arcclass = path.arc_pt
                     arc_normpath = path.path(arcclass(
                         arccenter[0], arccenter[1], abs(dist),
-                        degrees(angle1), degrees(angle2))).normpath(epsilon=epsilon)
+                        math.degrees(angle1), math.degrees(angle2))).normpath(epsilon=epsilon)
 
                 # append the arc to the parallel path
                 if (result.normsubpaths and result[-1].normsubpathitems and

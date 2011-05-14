@@ -21,29 +21,10 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-from __future__ import nested_scopes
-
 import math, re, ConfigParser, struct, warnings
 from pyx import text
 from pyx.style import linestyle
 from pyx.graph import style
-
-try:
-    enumerate([])
-except NameError:
-    # fallback implementation for Python 2.2 and below
-    def enumerate(list):
-        return zip(xrange(len(list)), list)
-
-try:
-    dict()
-except NameError:
-    # fallback implementation for Python 2.1
-    def dict(items):
-        result = {}
-        for key, value in items:
-            result[key] = value
-        return result
 
 
 def splitatvalue(value, *splitpoints):

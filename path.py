@@ -21,17 +21,8 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-from __future__ import nested_scopes
-
 import math
-from math import cos, sin, tan, acos, pi
-try:
-    from math import radians, degrees
-except ImportError:
-    # fallback implementation for Python 2.1
-    def radians(x): return x*pi/180
-    def degrees(x): return x*180/pi
-
+from math import cos, sin, tan, acos, pi, radians, degrees
 import trafo, unit
 from normpath import NormpathException, normpath, normsubpath, normline_pt, normcurve_pt
 import bbox as bboxmodule
@@ -40,20 +31,6 @@ import bbox as bboxmodule
 from normpath import set
 # normpath's invalid is available as an external interface
 from normpath import invalid
-
-try:
-    sum([])
-except NameError:
-    # fallback implementation for Python 2.2 and below
-    def sum(list):
-        return reduce(lambda x, y: x+y, list, 0)
-
-try:
-    enumerate([])
-except NameError:
-    # fallback implementation for Python 2.2 and below
-    def enumerate(list):
-        return zip(xrange(len(list)), list)
 
 # use new style classes when possible
 __metaclass__ = type

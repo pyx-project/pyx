@@ -21,32 +21,10 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-from __future__ import nested_scopes
-
 import math
-try:
-    from math import radians, degrees
-except ImportError:
-    # fallback implementation for Python 2.1
-    def radians(x): return x*math.pi/180
-    def degrees(x): return x*180/math.pi
-
 import mathutils, path, trafo, unit
 import bbox as bboxmodule
 
-try:
-    sum([])
-except NameError:
-    # fallback implementation for Python 2.2 and below
-    def sum(list):
-        return reduce(lambda x, y: x+y, list, 0)
-
-try:
-    enumerate([])
-except NameError:
-    # fallback implementation for Python 2.2 and below
-    def enumerate(list):
-        return zip(xrange(len(list)), list)
 
 # use new style classes when possible
 __metaclass__ = type
@@ -317,7 +295,7 @@ class normline_pt(normsubpathitem):
         return normline_pt(self.x1_pt, self.y1_pt, self.x0_pt, self.y0_pt)
 
     def rotation(self, params):
-        return [trafo.rotate(degrees(math.atan2(self.y1_pt-self.y0_pt, self.x1_pt-self.x0_pt)))]*len(params)
+        return [trafo.rotate(math.degrees(math.atan2(self.y1_pt-self.y0_pt, self.x1_pt-self.x0_pt)))]*len(params)
 
     def segments(self, params):
         if len(params) < 2:
@@ -334,7 +312,7 @@ class normline_pt(normsubpathitem):
         return result
 
     def trafo(self, params):
-        rotate = trafo.rotate(degrees(math.atan2(self.y1_pt-self.y0_pt, self.x1_pt-self.x0_pt)))
+        rotate = trafo.rotate(math.degrees(math.atan2(self.y1_pt-self.y0_pt, self.x1_pt-self.x0_pt)))
         return [trafo.translate_pt(*at_pt) * rotate
                 for param, at_pt in zip(params, self.at_pt(params))]
 
@@ -589,7 +567,7 @@ class normcurve_pt(normsubpathitem):
             # the length of the line. For curves we want this "relative speed" to be higher than
             # _minrelspeed:
             if math.hypot(tdx_pt, tdy_pt)/approxarclen > _minrelspeed:
-                result.append(trafo.rotate(degrees(math.atan2(tdy_pt, tdx_pt))))
+                result.append(trafo.rotate(math.degrees(math.atan2(tdy_pt, tdx_pt))))
             else:
                 # Note that we can't use the rule of l'Hopital here, since it would
                 # not provide us with a sign for the tangent. Hence we wouldn't

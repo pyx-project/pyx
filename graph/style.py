@@ -22,27 +22,12 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 
-from __future__ import nested_scopes
-
 import math, warnings
 from pyx import attr, deco, style, color, unit, canvas, path, mesh
 from pyx import text as textmodule
 
 builtinrange = range
 
-try:
-    sum([])
-except NameError:
-    # fallback implementation for Python 2.2 and below
-    def sum(list):
-        return reduce(lambda x, y: x+y, list, 0)
-
-try:
-    enumerate([])
-except NameError:
-    # fallback implementation for Python 2.2. and below
-    def enumerate(list):
-        return zip(xrange(len(list)), list)
 
 class _style:
     """Interface class for graph styles
