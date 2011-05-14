@@ -956,7 +956,7 @@ class texrunner:
                     if not self.lfs.endswith(".lfs"):
                         self.lfs = "%s.lfs" % self.lfs
                     print self.lfs
-                    lfsfile = filelocator.open(self.lfs, "lfs", "r")
+                    lfsfile = filelocator.open(self.lfs, None, "r")
                     lfsdef = lfsfile.read()
                     lfsfile.close()
                     self.execute(lfsdef, [])
