@@ -94,8 +94,8 @@ static PyMethodDef pykpathsea_methods[] = {
 
 #define AddFormat(key, value) PyDict_SetItemString(format, PyString_FromString(key), PyInt_FromLong(value))
 
-void init_pykpathsea(void)
+void initpykpathsea(void)
 {
-  Py_InitModule("_pykpathsea", pykpathsea_methods);
+  Py_InitModule("pykpathsea", pykpathsea_methods);
   kpse_set_program_name("dvips", "dvips");
 }
