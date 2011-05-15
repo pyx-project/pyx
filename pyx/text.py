@@ -22,7 +22,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 import errno, glob, os, threading, Queue, re, tempfile, atexit, time, warnings
-import config, siteconfig, unit, box, canvas, trafo, version, attr, style, filelocator
+import config, unit, box, canvas, trafo, version, attr, style, filelocator
 from pyx.dvi import dvifile
 import bbox as bboxmodule
 
@@ -963,16 +963,17 @@ class texrunner:
                 self.execute("\\newdimen\\linewidth\\newdimen\\textwidth%\n", [])
             elif self.mode == "latex":
                 if self.pyxgraphics:
-                    pyxdef = os.path.join(siteconfig.sharedir, "pyx.def")
-                    try:
-                        open(pyxdef, "r").close()
-                    except IOError:
-                        IOError("file 'pyx.def' is not available or not readable. Check your installation or turn off the pyxgraphics option.")
-                    pyxdef = os.path.abspath(pyxdef).replace(os.sep, "/")
+                    pyxdef = filelocator.open("pyx.def", [], "rb")
+                    pyxdef_filename = self.texfilename + ".pyxdef"
+                    pyxdef_file = open(pyxdef_filename, "wb")
+                    pyxdef_file.write(pyxdef.read())
+                    pyxdef.close()
+                    pyxdef_file.close()
+                    pyxdef_filename_tex = os.path.abspath(pyxdef_filename).replace(os.sep, "/")
                     self.execute("\\makeatletter%\n"
                                  "\\let\\saveProcessOptions=\\ProcessOptions%\n"
                                  "\\def\\ProcessOptions{%\n"
-                                 "\\def\\Gin@driver{" + pyxdef + "}%\n"
+                                 "\\def\\Gin@driver{" + pyxdef_filename_tex + "}%\n"
                                  "\\def\\c@lor@namefile{dvipsnam.def}%\n"
                                  "\\saveProcessOptions}%\n"
                                  "\\makeatother",
