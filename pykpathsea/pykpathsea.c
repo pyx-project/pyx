@@ -1,4 +1,4 @@
-/*  pykpathsea.c: Copyright 2003 Jörg Lehmann, André Wobst
+/*  pykpathsea.c: Copyright 2003-2011 JÃ¶rg Lehmann, AndrÃ© Wobst
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
