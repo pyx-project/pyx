@@ -18,7 +18,7 @@ in PyX. The other alternative allows to use PyX colors directly.
 !! Note that no graphics driver has been used for the color.sty LaTeX package.
 PyX performs a hack to enforce the use of its own LaTeX driver file pyx.def. In
 case that you have installed the three files `pyx.def`, `color.cfg`, and
-`graphics.cfg` from <PYX>/contrib somewhere in the LaTeX search path, it is
+`graphics.cfg` from the PyX distribution somewhere in the LaTeX search path, it is
 possible to use
 
     text.set(mode="latex", pyxgraphics=0)
