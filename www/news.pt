@@ -9,6 +9,13 @@
     <h1>PyX - News</h1>
 
     <dl>
+      <dt>2011-05-15: PyX 0.11 released</dt>
+      <dd>
+        This release contains a major reorganization of the text output code.
+        Transparency in bitmaps is now supported and limited functionality of the bar
+        style is available in 3d graphs. Various bugs have been fixed and there are
+        small improvements all over the place.
+      </dd>
       <dt>2007-10-03: PyX 0.10 released</dt>
       <dd>
         This release adds 3d plotting facilities to PyX using parallel or central
