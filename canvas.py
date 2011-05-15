@@ -26,7 +26,7 @@ A canvas holds a collection of all elements and corresponding attributes to be
 displayed. """
 
 import os, tempfile
-import attr, canvasitem, deco, deformer, document, font, style, trafo
+import attr, canvasitem, deco, deformer, document, font, pycompat, style, trafo
 import bbox as bboxmodule
 
 
@@ -319,7 +319,7 @@ class canvas(_canvas):
             gscommand += " -dUseCIEColor"
         if input == "eps":
             gscommand += " -"
-            pipe = os.popen(gscommand, "wb")
+            pipe = pycompat.popen(gscommand, "wb")
             self.writeEPSfile(pipe, **kwargs)
         elif input == "pdf":
             fd, fname = tempfile.mkstemp()
