@@ -104,7 +104,7 @@ class mesh(canvasitem.canvasitem):
     def data(self, bbox):
         return "".join(["\000%s%s%s" % (coords24bit_pt(node.coords_pt[0], bbox.llx_pt, bbox.urx_pt),
                                         coords24bit_pt(node.coords_pt[1], bbox.lly_pt, bbox.ury_pt),
-                                        node.value.tostring8bit())
+                                        node.value.to8bitstring())
                         for element in self.elements for node in element.nodes])
 
     def processPS(self, file, writer, context, registry, bbox):
@@ -137,7 +137,7 @@ class mesh(canvasitem.canvasitem):
 /DataSource currentfile /ASCIIHexDecode filter /FlateDecode filter
 >> shfill\n""" % (self.elements[0].nodes[0].value.colorspacestring(),
                   thisbbox.llx_pt, thisbbox.urx_pt, thisbbox.lly_pt, thisbbox.ury_pt,
-                  " ".join(["0 1" for value in self.elements[0].nodes[0].value.tostring8bit()])))
+                  " ".join(["0 1" for value in self.elements[0].nodes[0].value.to8bitstring()])))
             file.write(binascii.b2a_hex(zlib.compress(self.data(thisbbox))))
             file.write("\n")
 
@@ -182,7 +182,7 @@ stream
 %s
 endstream\n""" % (self.elements[0].nodes[0].value.colorspacestring(),
                   thisbbox.llx_pt, thisbbox.urx_pt, thisbbox.lly_pt, thisbbox.ury_pt,
-                  " ".join(["0 1" for value in self.elements[0].nodes[0].value.tostring8bit()]),
+                  " ".join(["0 1" for value in self.elements[0].nodes[0].value.to8bitstring()]),
                   len(d), filter, d))
             registry.add(shading)
             registry.addresource("Shading", name, shading)

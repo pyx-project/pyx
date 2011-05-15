@@ -94,7 +94,7 @@ class grey(color):
     def colorspacestring(self):
         return "/DeviceGray"
 
-    def tostring8bit(self):
+    def to8bitstring(self):
         return chr(int(self.color["gray"]*255))
 
 grey.black = grey(0.0)
@@ -164,7 +164,7 @@ class rgb(color):
     def colorspacestring(self):
         return "/DeviceRGB"
 
-    def tostring8bit(self):
+    def to8bitstring(self):
         return struct.pack("BBB", int(self.color["r"]*255), int(self.color["g"]*255), int(self.color["b"]*255))
 
     def tohexstring(self, cssstrip=1, addhash=1):
@@ -279,7 +279,7 @@ class cmyk(color):
     def colorspacestring(self):
         return "/DeviceCMYK"
 
-    def tostring8bit(self):
+    def to8bitstring(self):
         return struct.pack("BBBB", int(self.color["c"]*255), int(self.color["m"]*255), int(self.color["y"]*255), int(self.color["k"]*255))
 
 cmyk.GreenYellow    = cmyk(0.15, 0, 0.69, 0)

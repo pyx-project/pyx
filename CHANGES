@@ -188,6 +188,7 @@ TODO:
     - support transparency for filling/stroking in pdf separately
     - transparency support for postscript as available by means of a proprietary
       ghostscript extension (for ps2pdf)
+    - renamed method: tostring8bit -> to8bitstring (bug #2932888)
   - attr module:
     - add multichangeattr to perform a select on different changeable attributes
       depending on the selects total number
