@@ -3,7 +3,7 @@ PYTHON ?= python
 
 default: build
 
-publicserver = shell.sourceforge.net
+publicserver = web.sourceforge.net
 publicpath = /home/groups/p/py/pyx/htdocs
 
 all:
@@ -15,10 +15,6 @@ clean:
 
 public:
 	scp -oCompression=yes -r build/* $(publicserver):$(publicpath)
-	make chmod
-
-chmod:
-	-ssh $(publicserver) "cd $(publicpath); chmod -fR g+w *"
 
 build: copy html
 
