@@ -20,14 +20,21 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
+class _marker: pass
 
-def popen(cmd, mode="r"):
+def popen(cmd, mode="r", bufsize=_marker):
     try:
         import subprocess
-        return subprocess.Popen(cmd, shell=True, bufsize=bufsize, stdout=PIPE).stdout
+        if bufsize is _marker:
+            return subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout
+        else:
+            return subprocess.Popen(cmd, shell=True, bufsize=bufsize, stdout=PIPE).stdout
     except ImportError:
         import os
-        return os.popen(command, mode)
+        if bufsize is _marker:
+            return os.popen(command, mode)
+        else:
+            return os.popen(command, mode, bufsize)
 
 try:
     any = any
