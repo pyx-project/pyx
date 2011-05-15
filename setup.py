@@ -27,8 +27,8 @@ import pyx
 #
 
 ext_modules = []
-pykpathsea_ext_module = Extension("pyx.pykpathsea._pykpathsea",
-                                  sources=["pyx/pykpathsea/pykpathsea.c"],
+pykpathsea_ext_module = Extension("pyx.pykpathsea",
+                                  sources=["pyx/pykpathsea.c"],
                                   libraries=["kpathsea"])
 t1code_ext_module = Extension("pyx.font._t1code",
                               sources=["pyx/font/_t1code.c"])
