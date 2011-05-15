@@ -94,7 +94,7 @@ TODO:
       graph data
 
 
-0.11 (2008/xx/xx):
+0.11 (2011/05/15):
   - font and dvi modules:
     - major reorganization
     - TeX mapping files are a property of the writer now (TODO: documentation)
@@ -134,9 +134,10 @@ TODO:
   - canvas and document modules:
     - auto-guess output filename from the script filename
     - add ciecolor flag and input type to the pipeGS method of canvas
-  - config module:
-    - psfontmaps and pdffontmaps config options (TODO: documentation)
-    - config option for format warnings
+  - pyxrc:
+    - new config options for psfontmaps and pdffontmaps
+    - new config option for formatting of Python warnings
+    - new config section for new filelocator module
   - text module:
     - fix two bugs in the read pipe of the texrunner (thanks to
       Laurence Tratt and Eric Faurot)
