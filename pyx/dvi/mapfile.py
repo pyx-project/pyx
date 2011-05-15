@@ -20,7 +20,7 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import os.path, re, warning
+import os.path, re, warnings
 from pyx import font, filelocator
 from pyx.font import t1file, afmfile
 from pyx.dvi import encfile
@@ -86,6 +86,8 @@ class MAPline:
                     self.encodingfilename = token[1:]
                 elif token.endswith(".ttf"):
                     raise UnsupportedFontFormat("TrueType font")
+                elif token.endswith(".t42"):
+                    raise UnsupportedFontFormat("Type 42 font")
                 else:
                     raise ParseError("Unknown token '%s'" % token)
             elif token.startswith('"'):
