@@ -69,25 +69,18 @@ class page:
         self.pagebbox = bbox
 
     def _process(self, processMethod, contentfile, writer, context, registry, bbox):
-
-        # check whether we expect a page trafo and use a temporary canvas to insert the
-        # page canvas
-        expectpagetrafo = self.paperformat and (self.rotated or self.centered or self.fittosize)
-
         # usually, it is the bbox of the canvas enlarged by self.bboxenlarge, but
         # it might be a different bbox as specified in the page constructor
         assert not bbox
         if self.pagebbox:
             bbox.set(self.pagebbox)
-        elif bbox:
-            bbox.enlarge(self.bboxenlarge)
         else:
             bbox.set(self.canvas.bbox()) # this bbox is not accurate
             bbox.enlarge(self.bboxenlarge)
 
-        cc = self.canvas
-        if expectpagetrafo:
-
+        # check whether we expect a page trafo and use a temporary canvas to insert the
+        # page canvas
+        if self.paperformat and (self.rotated or self.centered or self.fittosize) and bbox:
             # calculate the pagetrafo
             paperwidth, paperheight = self.paperformat.width, self.paperformat.height
 
@@ -124,6 +117,8 @@ class page:
             bbox.transform(pagetrafo)
             cc = canvasmodule.canvas()
             cc.insert(self.canvas, [pagetrafo])
+        else:
+            cc = self.canvas
 
         getattr(style.linewidth.normal, processMethod)(contentfile, writer, context, registry, bbox)
         if self.pagebbox:
