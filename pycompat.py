@@ -32,9 +32,9 @@ def popen(cmd, mode="r", bufsize=_marker):
     except ImportError:
         import os
         if bufsize is _marker:
-            return os.popen(command, mode)
+            return os.popen(cmd, mode)
         else:
-            return os.popen(command, mode, bufsize)
+            return os.popen(cmd, mode, bufsize)
 
 try:
     any = any
