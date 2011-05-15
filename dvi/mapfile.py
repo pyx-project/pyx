@@ -18,9 +18,9 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with PyX; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USAimport re, warnings
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import os.path, re
+import os.path, re, warning
 from pyx import font, filelocator
 from pyx.font import t1file, afmfile
 from pyx.dvi import encfile
@@ -29,6 +29,9 @@ class UnsupportedFontFormat(Exception):
     pass
 
 class UnsupportedPSFragment(Exception):
+    pass
+
+class ParseError(Exception):
     pass
 
 _marker = object()
@@ -62,7 +65,7 @@ class MAPline:
                     tokens.append(match.groups()[2])
                 s = s[match.end():]
             else:
-                raise RuntimeError("Cannot tokenize string '%s'" % s)
+                raise ParseError("Cannot tokenize string '%s'" % s)
 
         next_token_is_encfile = False
         for token in tokens:
@@ -84,7 +87,7 @@ class MAPline:
                 elif token.endswith(".ttf"):
                     raise UnsupportedFontFormat("TrueType font")
                 else:
-                    raise RuntimeError("Unknown token '%s'" % token)
+                    raise ParseError("Unknown token '%s'" % token)
             elif token.startswith('"'):
                 pscode = token[1:-1].split()
                 # parse standard postscript code fragments
@@ -164,8 +167,8 @@ def readfontmap(filenames):
             if not (line=="" or line[0] in (" ", "%", "*", ";" , "#")):
                 try:
                     fm = MAPline(line)
-                except (RuntimeError, UnsupportedPSFragment), e:
-                    warnings.warn("Ignoring line %i in mapping file '%s': %s" % (lineno, mappath, e))
+                except (ParseError, UnsupportedPSFragment), e:
+                    warnings.warn("Ignoring line %i in mapping file '%s': %s" % (lineno, filename, e))
                 except UnsupportedFontFormat, e:
                     pass
                 else:
