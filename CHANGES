@@ -122,6 +122,7 @@ TODO:
     - dokeyitem method (to be called with a plotitem) to alter the key order
     - doplot() was renamed to doplotitem(), dodata() was renamed to doplot()
       to have similar naming conventions like for the graph key
+    - axis module: do not divide by None for data.min and/or data.max being None (see patch #2833369)
     - axis painter:
       - properly rotate axis titles when ticks are not othorgonal
         to the axis (reported by Christian Delfosse)

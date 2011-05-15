@@ -155,7 +155,15 @@ class _regularaxis(_axis):
         # build a list of variants
         bestrate = None
         if self.divisor is not None:
-            partfunctions = parter.partfunctions(data.min/self.divisor, data.max/self.divisor,
+            if data.min is not None:
+                data_min_divided = data.min/self.divisor
+            else:
+                data_min_divided = None
+            if data.max is not None:
+                data_max_divided = data.max/self.divisor
+            else:
+                data_max_divided = None
+            partfunctions = parter.partfunctions(data_min_divided, data_max_divided,
                                                  self.min is None, self.max is None)
         else:
             partfunctions = parter.partfunctions(data.min, data.max,
