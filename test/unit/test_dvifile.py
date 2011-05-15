@@ -4,7 +4,7 @@ if sys.path[0] != "../..":
 
 import cStringIO, os, re, unittest
 
-from pyx import dvifile
+from pyx.dvi import dvifile
 
 
 class DvifileTestCase(unittest.TestCase):
@@ -15,8 +15,7 @@ class DvifileTestCase(unittest.TestCase):
         dvitypelineno = dvitypelines.index(" \n") + 1
 
         pyxdvifile = cStringIO.StringIO()
-        df = dvifile.dvifile(advifile, dvifile.readfontmap(["psfonts.map"]),
-                             debug=1, debugfile=pyxdvifile)
+        df = dvifile.DVIfile(advifile, debug=1, debugfile=pyxdvifile)
         while df.readpage():
             pass
         pyxdvifilelines = list(pyxdvifile.getvalue().split("\n"))
