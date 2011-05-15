@@ -232,15 +232,15 @@ methods = [locator_classes[method]()
 opener_cache = {}
 
 def open(filename, formats, mode="r"):
-    """returns an open file searched according the list of formats
+    """returns an open file searched according the list of formats"""
 
-    When using an empty list of formats, the names list is empty
-    and the extensions list contains an empty string only. For that
-    case some locators (notably local and internal) return an open
-    function for the requested file whereas other locators might not
-    return anything (like pykpathsea and kpsewhich) as the names list
-    is empty. This is useful for files not to be searched in the latex
-    installation at all (like lfs files)."""
+    # When using an empty list of formats, the names list is empty
+    # and the extensions list contains an empty string only. For that
+    # case some locators (notably local and internal) return an open
+    # function for the requested file whereas other locators might not
+    # return anything (like pykpathsea and kpsewhich).
+    # This is useful for files not to be searched in the latex
+    # installation at all (like lfs files).
     extensions = pycompat.set([""])
     for format in formats:
         for extension in format.extensions:
