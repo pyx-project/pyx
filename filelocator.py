@@ -1,3 +1,25 @@
+# -*- coding: ISO-8859-1 -*-
+#
+#
+# Copyright (C) 2011 Jörg Lehmann <joergl@users.sourceforge.net>
+# Copyright (C) 2009-2011 André Wobst <wobsta@users.sourceforge.net>
+#
+# This file is part of PyX (http://pyx.sourceforge.net/).
+#
+# PyX is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# PyX is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with PyX; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+
 builtinopen = open
 
 import os, cStringIO, warnings, pkgutil
@@ -5,13 +27,20 @@ import os, cStringIO, warnings, pkgutil
 import config, pycompat
 
 
-# Locator methods implement a open method similar to the builtin open
-# function by searching for a file according to a specific rule.
+# Locators implement an open method which returns a list of functions
+# by searching for a file according to a specific rule. Each of the functions
+# returned can be called (multiple times) and return an open file. The
+# opening of the file might fail with a IOError which indicates, that the
+# file could not be found at the given location.
+# names is a list of kpsewhich format names to be used for searching where as
+# extensions is a list of file extensions to be tried (including the dot). Note
+# that the list of file extenions should include an empty string to not add
+# an extension at all.
 
 locator_classes = {}
 
 class local:
-    # locates files in the current directory
+    """locates files in the current directory"""
 
     def openers(self, filename, names, extensions, mode):
         return [lambda: builtinopen(filename+extension, mode) for extension in extensions]
@@ -20,7 +49,7 @@ locator_classes["local"] = local
 
 
 class internal_pkgutil:
-    # locates files within the pyx data tree
+    """locates files within the pyx data tree (via pkgutil)"""
 
     def openers(self, filename, names, extensions, mode):
         for extension in extensions:
@@ -36,7 +65,7 @@ class internal_pkgutil:
                     return [lambda: cStringIO.StringIO(data)]
 
 class internal_open:
-    # locates files within the pyx data tree
+    """locates files within the pyx data tree (via an open relative to the path of this file)"""
 
     def openers(self, filename, names, extensions, mode):
         result = []
@@ -49,13 +78,13 @@ class internal_open:
 try:
     pkgutil.get_data
 except AttributeError:
-    locator_classes["internal"] = internal_open
+    locator_classes["internal"] = internal_open # fallback for python < 2.6
 else:
     locator_classes["internal"] = internal_pkgutil
 
 
 class recursivedir:
-    # locates files by searching recursively in a list of directories
+    """locates files by searching recursively in a list of directories"""
 
     def __init__(self):
         self.dirs = config.getlist("locator", "recursivedir")
@@ -81,7 +110,7 @@ locator_classes["recursivedir"] = recursivedir
 
 
 class ls_R:
-    # locates files by searching a list of ls-R files
+    """locates files by searching a list of ls-R files"""
 
     def __init__(self):
         self.ls_Rs = config.getlist("locator", "ls-R")
@@ -106,17 +135,18 @@ class ls_R:
             if filename+extension in self.full_filenames:
                 def _opener():
                     try:
-                        return lambda: builtinopen(self.full_filenames[filename], mode)
+                        return builtinopen(self.full_filenames[filename+extension], mode)
                     except IOError:
                         warnings.warn("'%s' should be available at '%s' according to the ls-R file, "
                                       "but the file is not available at this location; "
                                       "update your ls-R file" % (filename, self.full_filenames[filename]))
-            return [_opener]
+                return [_opener]
 
 locator_classes["ls-R"] = ls_R
 
 
 class pykpathsea:
+    """locate files by pykpathsea (a C extension module wrapping libkpathsea)"""
 
     def openers(self, filename, names, extensions, mode):
         import pykpathsea
@@ -126,21 +156,29 @@ class pykpathsea:
                 break
         else:
             return
-        return [lambda: builtinopen(full_filename, mode)]
+        def _opener():
+            try:
+                return builtinopen(full_filename, mode)
+            except IOError:
+                warnings.warn("'%s' should be available at '%s' according to libkpathsea, "
+                              "but the file is not available at this location; "
+                              "update your kpsewhich database" % (filename, full_filename))
+        return [_opener]
 
 locator_classes["pykpathsea"] = pykpathsea
 
 
 # class libkpathsea:
-#     # locate files by libkpathsea using ctypes
+#     """locate files by libkpathsea using ctypes"""
 # 
 #     def openers(self, filename, names, extensions, mode):
-#         pass
+#         raise NotImplemented
 # 
 # locator_classes["libpathsea"] = libkpathsea
 
 
 class kpsewhich:
+    """locate files using the kpsewhich executable"""
 
     def openers(self, filename, names, extensions, mode):
         for name in names:
@@ -166,6 +204,7 @@ locator_classes["kpsewhich"] = kpsewhich
 
 
 class locate:
+    """locate files using a locate executable"""
 
     def openers(self, filename, names, extensions, mode):
         for extension in extensions:
@@ -179,7 +218,7 @@ class locate:
             try:
                 return builtinopen(full_filenames, mode)
             except IOError:
-                warnings.warn("'%s' should be available at '%s' according to the locate database, "
+                warnings.warn("'%s' should be available at '%s' according to the locate, "
                               "but the file is not available at this location; "
                               "update your locate database" % (filename, self.full_filenames[filename]))
         return [_opener]
@@ -193,6 +232,15 @@ methods = [locator_classes[method]()
 opener_cache = {}
 
 def open(filename, formats, mode="r"):
+    """returns an open file searched according the list of formats
+
+    When using an empty list of formats, the names list is empty
+    and the extensions list contains an empty string only. For that
+    case some locators (notably local and internal) return an open
+    function for the requested file whereas other locators might not
+    return anything (like pykpathsea and kpsewhich) as the names list
+    is empty. This is useful for files not to be searched in the latex
+    installation at all (like lfs files)."""
     extensions = pycompat.set([""])
     for format in formats:
         for extension in format.extensions:
