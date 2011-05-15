@@ -1,4 +1,4 @@
-# -*- coding: ISO-8859-1 -*-
+# -*- encoding: utf-8 -*-
 #
 #
 # Copyright (C) 2003-2006 Michael Schindler <m-schindler@users.sourceforge.net>
