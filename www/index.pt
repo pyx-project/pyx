@@ -38,7 +38,7 @@
       The current release,
       PyX&nbsp;<span tal:content="options/version" tal:omit-tag="">version</span>,
       is available at the
-      <a href="http://sourceforge.net/project/showfiles.php?group_id=45430">download section</a>
+      <a href="https://sourceforge.net/projects/pyx/files/pyx/">download section</a>
       of the SourceForge
       <a href="http://sourceforge.net/projects/pyx">project page</a>.
     </p>
