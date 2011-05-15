@@ -21,14 +21,14 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 import ConfigParser, os.path, warnings
-import siteconfig
+import filelocator
 
 class _marker: pass
 
-cflist = [os.path.join(siteconfig.pyxrcdir, "pyxrc"),  os.path.expanduser("~/.pyxrc")]
-
 config = ConfigParser.ConfigParser()
-config.read(cflist)
+print filelocator.locator_classes["internal"]().openers("pyxrc", [], [""], "r")[0]()
+config.readfp(filelocator.locator_classes["internal"]().openers("pyxrc", [], [""], "r")[0]())
+config.read(os.path.expanduser("~/.pyxrc"))
 
 def get(section, option, default=_marker):
     if default is _marker:
@@ -90,3 +90,5 @@ if formatWarnings != "default":
         else:
             return "%s\n" % message
     warnings.formatwarning = formatwarning
+
+filelocator.init()

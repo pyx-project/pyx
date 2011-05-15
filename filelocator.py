@@ -226,10 +226,14 @@ class locate:
 locator_classes["locate"] = locate
 
 
-methods = [locator_classes[method]()
-           for method in config.getlist("locator", "methods", "local internal pykpathsea kpsewhich")]
+def init():
+    global methods, opener_cache
+    print "a"*100
+    print config.getlist("locator", "methods", "local internal pykpathsea kpsewhich")
+    methods = [locator_classes[method]()
+               for method in config.getlist("locator", "methods", "local internal pykpathsea kpsewhich")]
+    opener_cache = {}
 
-opener_cache = {}
 
 def open(filename, formats, mode="r"):
     """returns an open file searched according the list of formats"""
