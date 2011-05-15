@@ -26,6 +26,12 @@ import os, cStringIO, warnings, pkgutil
 
 import config, pycompat
 
+try:
+    import pykpathsea
+    has_pykpathsea = True
+except ImportError:
+    has_pykpathsea = False
+
 
 # Locators implement an open method which returns a list of functions
 # by searching for a file according to a specific rule. Each of the functions
@@ -149,7 +155,8 @@ class pykpathsea:
     """locate files by pykpathsea (a C extension module wrapping libkpathsea)"""
 
     def openers(self, filename, names, extensions, mode):
-        import pykpathsea
+        if not has_pykpathsea:
+            return []
         for name in names:
             full_filename = pykpathsea.find_file(filename, name)
             if full_filename:
