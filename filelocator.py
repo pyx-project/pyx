@@ -27,7 +27,7 @@ import os, cStringIO, warnings, pkgutil
 import config, pycompat
 
 try:
-    import pykpathsea
+    import pykpathsea as pykpathsea_module
     has_pykpathsea = True
 except ImportError:
     has_pykpathsea = False
@@ -161,7 +161,7 @@ class pykpathsea:
         if not has_pykpathsea:
             return []
         for name in names:
-            full_filename = pykpathsea.find_file(filename, name)
+            full_filename = pykpathsea_module.find_file(filename, name)
             if full_filename:
                 break
         else:
@@ -239,7 +239,7 @@ locator_classes["locate"] = locate
 def init():
     global methods, opener_cache
     methods = [locator_classes[method]()
-               for method in config.getlist("locator", "methods", "local internal pykpathsea kpsewhich")]
+               for method in config.getlist("filelocator", "methods", "local internal pykpathsea kpsewhich")]
     opener_cache = {}
 
 
