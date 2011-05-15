@@ -1,4 +1,4 @@
-ZOPEDIR ?= $(HOME)/bin/python/Zope3/src
+ZOPEDIR ?= /usr/src/Zope3/src
 PYTHON ?= python
 
 default: build

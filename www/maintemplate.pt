@@ -48,7 +48,7 @@
         <div class="link"><a href="http://sourceforge.net/projects/pyx/">Project page</a></div>
         <div class="link"><a href="http://sourceforge.net/project/showfiles.php?group_id=45430">Downloads</a></div>
         <div class="link"><a href="http://sourceforge.net/mail/?group_id=45430">Mailing lists</a></div>
-        <div class="link"><a href="http://pyx.svn.sourceforge.net/viewcvs.cgi/pyx/trunk/pyx/CHANGES?view=markup">ChangeLog</a></div>
+        <div class="link"><a href="http://pyx.svn.sourceforge.net/viewvc/pyx/trunk/pyx/CHANGES">ChangeLog</a></div>
       </div>
 
       <div class="box">
