@@ -48,10 +48,10 @@ showwaitfortex = 5
 texipc = 0
 
 [locator]
-# runtime configution of file search mechanism
+# runtime configuration of file search mechanism
 #
 # 'methods' defines a list of methods to be tried one after each other
-# to find files like fonts (and associated metrics information).
+# to find files like, e.g., fonts and corresponding metrics information.
 #
 # Available methods are:
 # - 'local': locates files in the current directory.
