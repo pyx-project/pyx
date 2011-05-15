@@ -239,7 +239,7 @@ locator_classes["locate"] = locate
 def init():
     global methods, opener_cache
     methods = [locator_classes[method]()
-               for method in config.getlist("filelocator", "methods", "local internal pykpathsea kpsewhich")]
+               for method in config.getlist("filelocator", "methods", ["local", "internal", "pykpathsea", "kpsewhich"])]
     opener_cache = {}
 
 

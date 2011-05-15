@@ -94,7 +94,7 @@ class PSdefinition(PSresource):
 
 class _PSwriter:
 
-    def __init__(self, title=None, strip_fonts=1, text_as_path=0, mesh_as_bitmap=0, mesh_as_bitmap_resolution=300):
+    def __init__(self, title=None, strip_fonts=True, text_as_path=False, mesh_as_bitmap=False, mesh_as_bitmap_resolution=300):
         self._fontmap = None
         self.title = title
         self.strip_fonts = strip_fonts
@@ -160,7 +160,7 @@ class EPSwriter(_PSwriter):
 
 class PSwriter(_PSwriter):
 
-    def __init__(self, document, file, writebbox=0, **kwargs):
+    def __init__(self, document, file, writebbox=False, **kwargs):
         _PSwriter.__init__(self, **kwargs)
 
         # We first have to process the content of the pages, writing them into the stream pagesfile
