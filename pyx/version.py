@@ -1,8 +1,8 @@
 # -*- coding: ISO-8859-1 -*-
 #
 #
-# Copyright (C) 2002-2007 Jörg Lehmann <joergl@users.sourceforge.net>
-# Copyright (C) 2002-2007 André Wobst <wobsta@users.sourceforge.net>
+# Copyright (C) 2002-2011 Jörg Lehmann <joergl@users.sourceforge.net>
+# Copyright (C) 2002-2011 André Wobst <wobsta@users.sourceforge.net>
 #
 # This file is part of PyX (http://pyx.sourceforge.net/).
 #
