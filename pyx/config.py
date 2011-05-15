@@ -26,7 +26,6 @@ import filelocator
 class _marker: pass
 
 config = ConfigParser.ConfigParser()
-print filelocator.locator_classes["internal"]().openers("pyxrc", [], [""], "r")[0]()
 config.readfp(filelocator.locator_classes["internal"]().openers("pyxrc", [], [""], "r")[0]())
 config.read(os.path.expanduser("~/.pyxrc"))
 
