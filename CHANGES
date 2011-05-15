@@ -122,8 +122,10 @@ TODO:
     - dokeyitem method (to be called with a plotitem) to alter the key order
     - doplot() was renamed to doplotitem(), dodata() was renamed to doplot()
       to have similar naming conventions like for the graph key
-    - axis painter: properly rotate axis titles when ticks are not othorgonal
-      to the axis (reported by Christian Delfosse)
+    - axis painter:
+      - properly rotate axis titles when ticks are not othorgonal
+        to the axis (reported by Christian Delfosse)
+      - correct namedirection in bar axis painter (reported by rhunger, bug #2028032)
     - graph.style.arrow: decorator is an parameter of the constructor now
       (thanks to Axel Freyn)
     - remove ticks with unset ticklevel and labellevel to prevent rating failures

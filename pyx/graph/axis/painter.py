@@ -312,7 +312,7 @@ class bar(_title):
             for (v, x, y, dx, dy), name in zip(namepos, data.names):
                 nameattrs = self.defaultnameattrs + self.nameattrs
                 if self.namedirection is not None:
-                    nameattrs.append(self.namedirection.trafo(tick.temp_dx, tick.temp_dy))
+                    nameattrs.append(self.namedirection.trafo(dx, dy))
                 nameboxes.append(canvas.texrunner.text_pt(x, y, str(name), nameattrs))
         labeldist_pt = canvas.extent_pt + unit.topt(self.namedist)
         if len(namepos) > 1:
