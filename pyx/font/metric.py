@@ -1,4 +1,4 @@
-# -*- coding: ISO-8859-1 -*-
+# -*- encoding: utf-8 -*-
 #
 #
 # Copyright (C) 2007-2011 Jörg Lehmann <joergl@users.sourceforge.net>
