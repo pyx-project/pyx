@@ -1,4 +1,4 @@
-/*  t1code.c: Copyright 2005 Jörg Lehmann
+/*  t1code.c: Copyright 2005 JÃ¶rg Lehmann
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
