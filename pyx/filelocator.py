@@ -55,7 +55,7 @@ locator_classes["local"] = local
 
 
 class internal_pkgutil:
-    """locates files within the pyx data tree (via pkgutil)"""
+    """locates files within the PyX data tree (via pkgutil)"""
 
     def openers(self, filename, names, extensions, mode):
         for extension in extensions:
@@ -72,7 +72,7 @@ class internal_pkgutil:
         return []
 
 class internal_open:
-    """locates files within the pyx data tree (via an open relative to the path of this file)"""
+    """locates files within the PyX data tree (via an open relative to the path of this file)"""
 
     def openers(self, filename, names, extensions, mode):
         result = []
