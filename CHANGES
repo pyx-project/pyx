@@ -97,7 +97,7 @@ TODO:
 0.11 (2011/05/15):
   - font and dvi modules:
     - major reorganization
-    - TeX mapping files are a property of the writer now (TODO: documentation)
+    - TeX mapping files are a property of the writer now
       By that the pdfwriter now uses pdftex.map instead of psfonts.map
       (It's also possible to pass a fontmap to a texrunners text method to use
       different mappings within a single output file)
@@ -106,7 +106,7 @@ TODO:
       a warning now)
     - interface for basic TeX-less text output
     - new PS and PDF writer options: strip_fonts, text_as_path, mesh_as_bitmap,
-      mesh_as_bitmap_resolution (TODO: documentation)
+      mesh_as_bitmap_resolution
     - fix for commented out UniqueID
     - fix rounding of font sizes
     - fix scaling of VF position increments

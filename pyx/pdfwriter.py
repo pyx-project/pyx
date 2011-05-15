@@ -287,8 +287,8 @@ class PDFwriter:
 
     def __init__(self, document, file,
                        title=None, author=None, subject=None, keywords=None,
-                       fullscreen=0, writebbox=0, compress=1, compresslevel=6,
-                       strip_fonts=1, text_as_path=0, mesh_as_bitmap=0, mesh_as_bitmap_resolution=300):
+                       fullscreen=False, writebbox=False, compress=True, compresslevel=6,
+                       strip_fonts=True, text_as_path=False, mesh_as_bitmap=False, mesh_as_bitmap_resolution=300):
         self._fontmap = None
 
         self.title = title
