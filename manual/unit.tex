@@ -1,0 +1,134 @@
+\chapter{Module unit}
+\label{unit}
+
+\sectionauthor{J\"org Lehmann}{joergl@users.sourceforge.net}
+
+\declaremodule{}{unit}
+
+With the \verb|unit| module \PyX{} makes available classes and
+functions for the specification and manipulation of lengths. As usual,
+lengths consist of a number together with a measurement unit, e.g.,
+\unit[1]{cm}, \unit[50]{points}, \unit[0.42]{inch}.  In addition,
+lengths in \PyX{} are composed of the five types ``true'', ``user'',
+``visual'', ``width'', and ``\TeX'', e.g., \unit[1]{user cm},
+\unit[50]{true points}, $(0.42\ \mathrm{visual} + 0.2\ 
+\mathrm{width})$ inch.  As their names indicate, they serve different
+purposes. True lengths are not scalable and are mainly used for return
+values of \PyX{} functions.  The other length types can be rescaled by
+the user and differ with respect to the type of object they are
+applied to:
+
+\begin{description}
+\item[user length:] used for lengths of graphical objects like
+  positions etc.
+\item[visual length:] used for sizes of visual elements, like arrows,
+  graph symbols, axis ticks, etc.
+\item[width length:] used for line widths
+\item[\TeX{} length:] used for all \TeX{} and \LaTeX{} output
+\end{description}
+
+    When not specified otherwise, all types of lengths are interpreted
+in terms of a default unit, which, by default, is \unit[1]{cm}.
+You may change this default unit by using the module level function
+\begin{funcdesc}{set}{uscale=None, vscale=None, wscale=None,
+xscale=None, defaultunit=None}
+When \var{uscale}, \var{vscale}, \var{wscale}, or \var{xscale} is not
+\keyword{None}, the corresponding scaling factor(s) is redefined to
+the given number. When \var{defaultunit} is not \keyword{None}, 
+the default unit is set to the given value, which has to be
+one of \code{"cm"}, \code{"mm"}, \code{"inch"}, or \code{"pt"}.
+\end{funcdesc}
+
+For instance, if you only want thicker lines for a publication
+version of your figure, you can just rescale all width lengths using
+\begin{verbatim}
+unit.set(wscale=2)
+\end{verbatim}
+Or suppose, you are used to specify length in imperial units. In this,
+admittedly rather unfortunate case, just use
+\begin{verbatim}
+unit.set(defaultunit="inch")
+\end{verbatim}
+at the beginning of your program.
+
+\section{Class length}
+
+\begin{classdesc}{length}{f, type="u", unit=None}
+The constructor of the \class{length} class expects as its first
+argument a number \var{f}, which represents the prefactor of the given length.
+By default this length is interpreted as a user length (\code{type="u"}) in units
+of the current default unit (see \function{set()} function of the \module{unit}
+module). Optionally, a different \var{type} may be specified, namely
+\code{"u"} for user lengths, \code{"v"} for visual lengths, \code{"w"}
+for width lengths, \code{"x"} for \TeX{} length, and \code{"t"} for true
+lengths. Furthermore, a different unit may be specified using the \var{unit}
+argument. Allowed values are \code{"cm"}, \code{"mm"}, \code{"inch"},
+and \code{"pt"}.
+\end{classdesc}
+
+Instances of the \class{length} class support addition and substraction either by another \class{length}
+or by a number which is then interpeted as being a user length in 
+default units, multiplication by a number and division either by another
+\class{length} in which case a float is returned or by a number in which
+case a \class{length} instance is returned. When two lengths are
+compared, they are first converted to meters (using the currently set
+scaling), and then the resulting values are compared.
+
+\section{Predefined length instances}
+
+A number of \verb|length| instances are already predefined, which
+only differ in there values for \verb|type| and \verb|unit|. They are
+summarized in the following table
+
+\medskip
+\begin{center}
+\begin{tabular}{lll|lll}
+name & type & unit & name & type & unit\\
+\hline
+\constant{m} & user & m & \constant{v\_m} & visual & m\\
+\constant{cm} & user & cm & \constant{v\_cm} & visual & cm\\
+\constant{mm} & user & mm & \constant{v\_mm} & visual & mm\\
+\constant{inch} & user & inch & \constant{v\_inch} & visual & inch\\
+\constant{pt} & user & points & \constant{v\_pt} & visual & points\\
+\constant{t\_m} & true & m & \constant{w\_m} & width & m\\
+\constant{t\_cm} & true & cm & \constant{w\_cm} & width & cm\\
+\constant{t\_mm} & true & mm & \constant{w\_mm} & width & mm\\
+\constant{t\_inch} & true & inch & \constant{w\_inch} & width & inch\\
+\constant{t\_pt} & true & points & \constant{w\_pt} & width & points\\
+\constant{u\_m} & user & m & \constant{x\_m} & \TeX & m \\
+\constant{u\_cm} & user & cm & \constant{x\_cm} & \TeX & cm \\
+\constant{u\_mm} & user & mm & \constant{x\_mm} & \TeX & mm \\
+\constant{u\_inch} & user & inch & \constant{x\_inch} & \TeX & inch \\
+\constant{u\_pt} & user & points & \constant{x\_pt} & \TeX & points\\
+
+\end{tabular}
+\end{center}
+\medskip
+
+Thus, in order to specify, e.g., a length of 5 width points, just use
+\code{5*unit.w_pt}.
+
+\section{Conversion functions}
+If you want to know the value of a \PyX{} length in certain units, you
+may use the predefined conversion functions which are given in the
+following table
+\begin{center}
+\begin{tabular}{ll}
+function & result \\
+\hline
+\texttt{tom(l)} & \texttt{l} in units of m\\
+\texttt{tocm(l)} & \texttt{l} in units of cm\\
+\texttt{tomm(l)} & \texttt{l} in units of mm\\
+\texttt{toinch(l)} & \texttt{l} in units of inch\\
+\texttt{topt(l)} & \texttt{l} in units of points\\
+\end{tabular}
+\end{center}
+If \verb|l| is not yet a \verb|length| instance but a number, it first
+is interpreted as a user length in the default units. 
+
+
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "manual.tex"
+%%% End:

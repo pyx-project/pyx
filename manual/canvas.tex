@@ -1,0 +1,156 @@
+\section{Module \module{canvas}}
+\label{canvas}
+
+\sectionauthor{J\"org Lehmann}{joergl@users.sourceforge.net} 
+
+One of the central modules for the PostScript access in \PyX{} is
+named \verb|canvas|. Besides providing the class \verb|canvas|, which
+presents a collection of visual elements like paths, other canvases,
+\TeX{} or \LaTeX{} elements, it contains the class
+\texttt{canvas.clip} which allows clipping of the output.
+
+A canvas may also be embedded in another one using its \texttt{insert}
+method. This may be useful when you want to apply a transformation on
+a whole set of operations..
+
+\declaremodule{}{canvas}
+
+\subsection{Class \class{canvas}}
+
+This is the basic class of the canvas module, which serves to collect
+various graphical and text elements you want to write eventually to an
+(E)PS file.
+
+\begin{classdesc}{canvas}{attrs=[], texrunner=None}
+  Construct a new canvas, applying the given \var{attrs}, which can be
+  instances of \class{trafo.trafo}, \class{canvas.clip},
+  \class{style.strokestyle} or \class{style.fillstyle}.  The
+  \var{texrunner} argument can be used to specify the texrunner
+  instance used for the \method{text()} method of the canvas.  If not
+  specified, it defaults to \var{text.defaulttexrunner}.
+\end{classdesc}
+
+
+Paths can be drawn on the canvas using one of the following methods:
+
+\begin{methoddesc}{draw}{path, attrs}
+  Draws \var{path} on the canvas applying the given \var{attrs}.
+\end{methoddesc}
+
+\begin{methoddesc}{fill}{path, attrs=[]}
+  Fills the given \var{path} on the canvas applying the given
+  \var{attrs}. 
+\end{methoddesc}
+
+\begin{methoddesc}{stroke}{path, attrs=[]}
+  Strokes the given \var{path} on the canvas applying the given
+  \var{attrs}.
+\end{methoddesc}
+
+Arbitrary allowed elements like other \class{canvas} instances can
+be inserted in the canvas using
+
+\begin{methoddesc}{insert}{item, attrs=[]}
+  Inserts an instance of \class{base.canvasitem} into the canvas.  If
+  \var{attrs} are present, \var{item} is inserted into a new
+  \class{canvas}instance with \var{attrs} as arguments passed to its
+  constructor is created. Then this \class{canvas} instance is
+  inserted itself into the canvas.
+\end{methoddesc}
+
+Text output on the canvas is possible using
+
+\begin{methoddesc}{text}{x, y, text, attrs=[]}
+  Inserts \var{text} at position (\var{x}, \var{y}) into the
+  canvas applying \var{attrs}. This is a shortcut for
+  \texttt{insert(texrunner.text(x, y, text, attrs))}).
+\end{methoddesc}
+
+The \class{canvas} class provides access to the total geometrical size
+of its element:
+
+\begin{methoddesc}{bbox}{}
+  Returns the bounding box enclosing all elements of the canvas.
+\end{methoddesc}
+
+A canvas also allows one to set its TeX runner:
+
+\begin{methoddesc}{settexrunner}{texrunner}
+  Sets a new \var{texrunner} for the canvas.
+\end{methoddesc}
+
+The contents of the canvas can be written using the following two
+convenience methods, which wrap the canvas into a single page
+document.
+
+\begin{methoddesc}{writeEPSfile}{file, *args, **kwargs}
+  Writes the canvas to \var{file} using the EPS format. \var{file}
+  either has to provide a write method or it is used as a string
+  containing the filename (the extension \texttt{.eps} is appended
+  automatically, if it is not present). This method constructs a
+  single page document, passing \var{args} and \var{kwargs} to the
+  \class{document.page} constructor and the calls the
+  \method{writeEPSfile} method of this \class{document.document}
+  instance passing the \var{file}.
+\end{methoddesc}
+
+\begin{methoddesc}{writePSfile}{file, *args, **kwargs}
+  Similar to \method{writeEPSfile} but using the PS format.
+\end{methoddesc}
+
+\begin{methoddesc}{writePDFfile}{file, *args, **kwargs}
+  Similar to \method{writeEPSfile} but using the PDF format.
+\end{methoddesc}
+
+\begin{methoddesc}{writetofile}{filename, *args, **kwargs}
+  Determine the file type (EPS, PS, or PDF) from the file extension
+  of \var{filename} and call the corresponding write method with
+  the given arguments \var{arg} and \var{kwargs}.
+\end{methoddesc}
+
+\begin{methoddesc}{pipeGS}{filename="-", device=None, resolution=100,
+                           gscommand="gs", gsoptions="",
+                           textalphabits=4, graphicsalphabits=4,
+                           ciecolor=False, input="eps", **kwargs}
+  This method pipes the content of a canvas to the ghostscript
+  interpreter directly to generate other output formats. At least
+  \var{filename} or \var{device} must be set. \var{filename} specifies
+  the name of the output file. No file extension will be added to that
+  name in any case. When no \var{filename} is specified, the output is
+  written to stdout. \var{device} specifies a ghostscript output
+  device by a string. Depending on your ghostscript configuration
+  \code{"png16"}, \code{"png16m"}, \code{"png256"}, \code{"png48"},
+  \code{"pngalpha"}, \code{"pnggray"}, \code{"pngmono"},
+  \code{"jpeg"}, and \code{"jpeggray"} might be available among
+  others. See the output of \texttt{gs --help} and the ghostscript
+  documentation for more information. When \var{filename} is specified
+  but the device is not set, \code{"png16m"} is used when the filename
+  ends in \texttt{.png} and \code{"jpeg"} is used when the filename
+  ends in \texttt{.jpg}.
+
+  \var{resolution} specifies the resolution in dpi (dots per inch).
+  \var{gscmd} is the command to be used to invoke ghostscript.
+  \var{gsoptions} are an option string passed to the ghostscript
+  interpreter. \var{textalphabits} are \var{graphicsalphabits} are
+  conventient parameters to set the \texttt{TextAlphaBits} and
+  \texttt{GraphicsAlphaBits} options of ghostscript. You can skip
+  the addition of those option by set their value to \code{None}.
+  \var{ciecolor} adds the \texttt{-dUseCIEColor} flag to improve
+  the CMYK to RGB color conversion. \var{input} can be either
+  \code{"eps"} or \code{"pdf"} to select the input type to be passed
+  to ghostscript (note slightly different features available in the
+  different input types).
+
+  \var{kwargs} are passed to the \method{writeEPSfile} method (not
+  counting the \var{file} parameter), which is used to generate the
+  input for ghostscript. By that you gain access to the
+  \class{document.page} constructor arguments.
+\end{methoddesc}
+
+For more information about the possible arguments of the
+\class{document.page} constructor, we refer to Sect.~\ref{document}.
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "manual.tex"
+%%% End:

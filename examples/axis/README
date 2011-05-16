@@ -1,0 +1,17 @@
+Graph axes
+
+This section demonstrates the axis subsystem of the graph module. The axes
+delegate a lot of tasks to different components like ''painters'' (which
+control how the baseline of the axis, the ticks and the axis title are drawn),
+''texters'' (which create the label strings written on the ticks), ''parters''
+(short for partionioners, which take care of determining appropriate tick
+positions along the axis, and ''raters'' (which adjust the number of ticks to
+match the available size).
+
+In the present section, we will explain various basic aspects of these
+components. Most of the time, the examples will not show a complete graph but
+just a single axis. In that case, we will take an axis created along an
+arbitrary path, partially in order to demonstrate the flexibility of PyX's axis
+system but also too increase the coolness factor. Of course, in a real-world
+example, you will use the shown features mostly for simple, boring, straight
+axes.

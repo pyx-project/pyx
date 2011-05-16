@@ -1,0 +1,10 @@
+Add functionality to existing graph styles
+
+! In this example demonstrate how graph styles can be modified to add further
+functionality to them. ... Here we create changesymbol styles based on PyX's
+symbol style. For that two additional column names are introduced that way,
+that they can be modified in the constructor of the style. The column names are
+then registered by the adjusted version of the `columnnames` method. After that
+we only need to replace the drawpoint method by a modified version, which
+implements the additional functionality. This new created style can than be
+used like any other graph style.

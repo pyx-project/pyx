@@ -1,0 +1,7 @@
+3d graphs
+
+3d graphs are created by graphxyz instances. They behave quite similar to
+regular graphs. Various styles can be used on 3d graphs without further
+adjustment like the symbol, line, and errorbar styles. Beside that the
+surface and grid styles are available to handle 3d data defined on a
+rectangular grid.

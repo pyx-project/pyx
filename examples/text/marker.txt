@@ -1,0 +1,8 @@
+Using markers
+
+The example shows how to obtain specific coordinates in a (La)TeX text. This
+allows to mark specific portions of text, setting arrows, braces and many
+more. A marker can be set with the command `\PyXMarker`... which takes the
+name of the marker as an argument (`id` in the example code). The position of
+the marker can then be obtained from the textbox, which is returned by the
+`canvas.text` method.

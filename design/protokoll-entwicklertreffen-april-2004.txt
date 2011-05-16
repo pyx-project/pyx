@@ -1,0 +1,80 @@
+Pfade (epsilon):
+----------------
+
+Als Argumente von findsubpath werden auch tupel zugelassen, die ein
+integer + den Parameter (die Länge) für den entsprechenden subnormpath
+enthalten.[DONE]
+
+Normpfad hat kein epsilon mehr, die findsubpath methode macht keine
+Annahmen über ein epsilon mehr (Achtung: nicht vor den ersten und nach
+den letzten laufen). [DONE]
+
+Auch der Subnormpfad schleift zunächst ungültige Parameter und
+Längenwerte durch. [DONE]
+
+Was die Normpfadelemente machen, wenn sie ausserhalb ihres
+Parameterbereichs aufgerufen werden, ist strittig: es gibt zwei
+Möglichkeiten:
+
+m-schindler) cut der Parameter auf den gültigen Bereich, ohne sonstige
+             Fehlermeldungen etc.
+wobsta) ignorieren, d.h. es kommen Positionen raus, die ausserhalb des
+        Parameterbereichs liegen
+
+Wir haben vor, das auf pyx-devel zur Diskussion zu stellen. Wer
+schreibt eine erste Version des Postings?
+
+wobsta rules [DONE]
+
+Es gibt keine leeren Subpfade. [Nein. Bessere Lösung gefunden, DONE]
+
+Append kann nur einen Subnormpfad anfügen, man könnte auch ein Extent
+haben. [beides DONE]
+
+Append und Extend sollte es auch innerhalb des subnormpfads geben.
+Diese Methoden sollten blöd sein. Es sollte eine close-methode geben,
+die auch die schliessende Linie sicherstellt. [Methoden sind jetzt nicht blöd,
+aber ansonsten DONE]
+
+module deform:
+--------------
+
+enthält smooth, cycloid, ..., basisklasse deformer
+class deformer:
+    def deform(self, path):
+        return xxx(path)
+
+deformer ändern einen Pfad, sind auch als Parameter innerhalb einer
+attr-Liste (in draw etc.) möglich, werden dann zu Beginn ausgeführt.
+
+module deco:
+------------
+
+Path wird zum füllen verwendet, Segemente dieses Pfades werden zum
+stroken verwendet. Es gibt fillstyles und strokestyles (können jeweils
+None sein). Der Pfad (zum Stroken) kann verkürzt oder Lücken haben.
+Dazu muss eine "lasse aus" methode skipstroke geben, die eine Liste
+von tupeln kriegt, die die Intervalle angibt, die auszulassen sind. Es
+gibt zusätzlich eine subcanvas "ornaments", der ganz am Ende eingefügt
+wird. (für Pfeile, Beschriftungen, etc.)
+
+[DONE]
+
+Umbenennungen:
+--------------
+
+pathel -> pathitem [DONE]
+PSCmd, PSOp -> canvasitem [DONE]
+
+module deform:
+--------------
+
+bekommt eine Funktion bezierfromendpoints, die das bisherige
+onebezierfrompathels ersetzt. Hier keine Vorzeichenbehandlung.
+Vorzeichen der Krümmung ist durch Skalarprodukt von Krümmungsradius
+und Verbindungsvektor beeinflusst.
+
+Casp: Gleichungssystem für (x,y)(t) der Punkte mit Abstand r von der
+bisherigen Bezier. Dann kleinester Krümmungsradius t_krit und
+(x,y)(t1)=(x,y)(t2) mit t1<t_krit<t2 bestimmen. Globales bereinigen
+durch Schnittpunkte zwischen Pfadelementen ...

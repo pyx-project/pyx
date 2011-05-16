@@ -1,0 +1,7 @@
+Stack bars on top of each other
+
+To stack bars on top of each other, you can add stackedbarpos styles and
+further bars to the list of styles. ... The stackbarpos need to get different
+column names each time to access the new stack data. This example also adds
+text styles to the bars, which just repeat the value column data here, but they
+could refer to other columns as well.

@@ -1,0 +1,8 @@
+Stroking the grid
+
+The grid as its created by PyX internally can also be stroked by means of the
+grid style. In this example the minimal value of the z axis was changed too. As
+lines are cut at graph boundaries properly, this results in a cutted grid. ...
+
+! The surface style does not support cuts at the graph boundary. It'll always
+skip rectangles partially (or fully) outside of the graph.

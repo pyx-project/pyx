@@ -1,0 +1,12 @@
+Changing the attributes of the bars
+
+This example is equal to the [minimal bar-graph example minimal.html] except for
+the used style to draw the bars. ...
+
+! It is not possible to use the changebar style to change itself on a list of
+data as it is shown for the bar style in the [comparing bars example
+compare.html].
+
+! We are sorry that a graph key implementation for the changebar style is
+currently missing. The implementation of such a graph key needs a major rework
+on the whole graph key system. This rework is planned for the near future.

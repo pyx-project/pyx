@@ -1,0 +1,69 @@
+\documentclass{manual}
+
+% to shorten edit-compile-view cycles use
+% \includeonly{graph}
+
+\usepackage{pyx}
+\ifhtml
+\def\PyX{PyX} % redefine the PyX macro for html (the other makes trouble)
+\def\textquotedbl{"} % make double quotes available in html
+\fi
+\usepackage{graphicx}
+\usepackage[T1]{fontenc}
+\usepackage{tabularx} % TODO: get rid of that
+\usepackage{units}    % TODO: get rid of that
+
+\title{\PyX{} Reference Manual}
+\author{J\"org Lehmann, Andr\'e Wobst}
+\authoraddress{http://pyx.sourceforge.net/}
+\date{\input{pyxdate.tex}}
+\release{\input{pyxversion.tex}}
+
+\makeindex
+
+\begin{document}
+
+\maketitle
+\cleardoublepage
+
+\ifhtml % make abstract better available (as in the Python docs)
+\chapter*{Front Matter\label{front}}
+\fi
+\begin{abstract}
+\noindent
+\PyX{} is a Python package for the creation of PostScript and PDF files. It
+combines an abstraction of the PostScript drawing model with a TeX/LaTeX
+interface. Complex tasks like 2d and 3d plots in publication-ready quality are
+built out of these primitives.
+\end{abstract}
+
+\tableofcontents
+
+\include{intro}
+\include{graphics}
+\include{path}
+%\include{deco}
+\include{deformer}
+\include{canvas}
+\include{document}
+\include{text}
+\include{graph}
+\include{axis}
+\include{box}
+\include{connector}
+\include{epsfile}
+\include{bitmap}
+\include{bbox}
+\include{color}
+\include{pattern}
+\include{unit}
+\include{trafo}
+\appendix
+\include{colorname}
+\include{palettename}
+\include{pathstyles}
+\include{arrows}
+
+\input{manual.ind}
+
+\end{document}

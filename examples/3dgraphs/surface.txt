@@ -1,0 +1,26 @@
+Simple 3d surface
+
+This first simple example provides data for the x, y and z coordinates. PyX
+creates a rectangular grid from the data from the first two coordinates without
+relying on a special ordering of the data. ...
+
+! In this example we turn off the other two axes x2 and y2, which would be
+plotted on the opposite side of the bottom horizontal plane. The data are
+plotted prior to the axes by the dodata call.
+
+! A missing point will create a hole in the surface.
+
+! The surface is plotted using a mesh. In case of a huge number of data points,
+you may want to replace the mesh by a bitmap rasterized on a different (i.e.
+lower) resolution. This can reduce the file size and may also resolve various
+printing problems (unfortunately those are quite common with mesh data). To
+enable the mesh by bitmap replacement feature use the option `meshasbitmap`
+(together with its `meshasbitmap_resolution` option)::
+
+    d = document.document([document.page(g)])
+    d.writeEPSfile("color", mesh_as_bitmap=1)
+    d.writePDFfile("color", mesh_as_bitmap=1)
+
+!! The underlying rectangular grid is created by the gridpos style. By changing
+its parameters you can also create the base rectangular grid from others than
+the first two coordinates.

@@ -1,0 +1,6 @@
+More drawing
+
+In this section we demonstrate more drawing features of PyX. The goal is to
+present the various attributes that can be used for stroking and filling paths
+in a canvas. Or, they are useful when one canvas is inserted into another one.
+In many cases, there are several ways to achieve the same result.

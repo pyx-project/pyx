@@ -1,0 +1,74 @@
+\chapter{Module bbox}
+
+\label{bbox}
+
+The \texttt{bbox} module contains the definition of the \texttt{bbox}
+class representing bounding boxes of graphical elements like paths,
+canvases, etc.\ used in \PyX. Usually, you obtain \texttt{bbox}
+instances as return values of the corresponding \texttt{bbox())}
+method, but you may also construct a bounding box by yourself.
+
+\section{bbox constructor}
+
+The \texttt{bbox} constructor accepts the following keyword arguments
+
+\medskip
+\begin{tabularx}{\linewidth}{l>{\raggedright\arraybackslash}X}
+keyword & description\\
+\hline
+\texttt{llx}&\texttt{None} (default) for $-\infty$ or $x$-position of
+the lower left corner of the bbox (in user units)\\
+\texttt{lly}&\texttt{None} (default) for $-\infty$ or $y$-position of
+the lower left corner of the bbox (in user units)\\
+\texttt{urx}&\texttt{None} (default) for $\infty$ or $x$-position of
+the upper right corner of the bbox (in user units)\\
+\texttt{ury}&\texttt{None} (default) for $\infty$ or $y$-position of
+the upper right corner of the bbox (in user units)
+\end{tabularx}
+
+\section{bbox methods}
+
+%Instances of the \texttt{bbox} class offer the following methods:
+%\medskip
+
+\begin{tabularx}
+  {\linewidth}
+  {>{\hsize=.85\hsize}X>{\raggedright\arraybackslash\hsize=1.15\hsize}X}
+  \texttt{bbox} method & function \\
+  \hline
+  \texttt{intersects(other)} & returns \texttt{1} if the \texttt{bbox} instance
+  and \texttt{other} intersect with each other.\\
+  \texttt{transformed(self, trafo)}& returns \texttt{self} transformed
+  by transformation \texttt{trafo}.\\
+  \texttt{enlarged(all=0, bottom=None,
+    \newline\phantom{enlarged(}left=None, top=None,
+    \newline\phantom{enlarged(}right=None)} &
+  return the bounding box enlarged by the given amount (in visual
+  units). \texttt{all} is the default for all other directions, which
+  is used whenever \texttt{None} is given for the corresponding
+  direction.\\
+  \texttt{path()} or \texttt{rect()} & return the \texttt{path} corresponding to the
+  bounding box rectangle.\\
+  \texttt{height()} & returns the height of the bounding box (in \PyX{}
+  lengths).\\
+  \texttt{width()} & returns the width of the bounding box (in \PyX{}
+  lengths).\\
+  \texttt{top()} & returns the $y$-position of the top of the bounding
+  box (in \PyX{} lengths).\\
+  \texttt{bottom()} & returns the $y$-position of the bottom of the
+  bounding box (in \PyX{} lengths).\\
+  \texttt{left()} & returns the $x$-position of the left side of the
+  bounding box (in \PyX{} lengths).\\
+  \texttt{right()} & returns the $x$-position of the right side of the
+  bounding box (in \PyX{} lengths).\\
+  \end{tabularx}
+\medskip
+
+Furthermore, two bounding boxes can be added (giving the bounding box
+enclosing both) and multiplied (giving the intersection of both
+bounding boxes).
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "manual.tex"
+%%% End:

@@ -1,0 +1,56 @@
+# some thoughts: 
+# totally out of date
+
+PSOp +--- PSCmd ----+--- canvas
+     |              +--- epsfile
+     |              +--- tex
+     |              +--- _path ---+--- line
+     |              |             +--- rect
+     |              +--- _bpath --+--- bline
+     |              |             +--- bcurve
+     |              |             +--- barc
+     |              +--- graph --- graphxy
+     |        
+     +--- pathstyle +--- linewidth
+     |              +--- linestyle
+     |              +--- linecap
+     +--- _trafo
+     +--- _bpathel
+     +--- _pathel
+
+pathdeco-----+---arrow---+---barrow
+             |           +---earrow
+	     +---filled
+	     +---stroked
+bbox
+                            
+_texattr ---+--- fontsize
+            +--- halign
+            +--- valign ---+--- vtop
+            |              +--- vbox
+	    +--- direction
+            +--- style
+
+graphattr ---+--- axis ---+--- linaxis
+             |            +--- logaxis
+             +--- part ---+--- linpart --- autolinpart
+             |            +--- logpart --- autologpart
+             +--- rate --- momrate
+             +--- style ---+--- marker
+             |             +--- line
+             |             +--- bar
+             +--- data ---+--- datafile
+             |            +--- function --- paramfunction
+             +--- key
+
+(Exception) --- PyXExcept ---+--- TeXExcept ---+--- TeXCmdError ---+--- TexLeftParenthesisError
+                             |                 |                   +--- TexRightParenthesisError
+			     ?                 +--- TeXRunError
+
+psattr ----+
+texattr ---+--- color ---+--- colorgrey
+                         +--- colorrgb
+                         +--- colorhsb
+
+mathtree
+

@@ -1,0 +1,17 @@
+Store bitmap data using PyX
+
+While the main purpose of PyX is to create vector graphics, it is also possible
+to store bitmap data in the PyX output. In this example, we show how to
+create a simple data structure containing the bitmap data ... and how such data
+can then be transformed into an object which can be inserted into a PyX canvas.
+
+The first step of providing the bitmap data is creating an `image` instance.
+You need to specify the size of your data (in pixels) followed by strings
+describing the type of the bitmap and the bitmap data itself.
+
+! The bitmap functionality currently uses a fixed color depth of 8 bits per
+color. The pixels are listed row by row, one after the other starting at the
+upper left corner of the image.
+
+Once the image data has been prepared, a `bitmap` instance can be created and
+inserted into a PyX canvas for later output.

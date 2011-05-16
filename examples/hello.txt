@@ -1,0 +1,13 @@
+Hello, world!
+
+As it is good practice to say "Hello, world!" in the first example, let's
+discuss how to do that in PyX.
+
+At first we import the PyX modules. Most PyX programs will start with a line
+like that. In order to produce some output we create a canvas instance `c`.
+Such an instance provides some useful methods to output some text at a certain
+position and for directly stroking a path, for which we use a `line` instance
+from the `path` module here. Once this is done, we write an EPS file and a PDF
+file containing all items inserted into the canvas instance. Since we did not
+pass a filename as argument to the write methods, the resulting files will just
+be named as the Python script - minus the extension, of course.

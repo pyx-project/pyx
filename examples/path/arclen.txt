@@ -1,0 +1,13 @@
+Arc length of a path
+
+In this example we use the `arclen` method of the path instance `p1` to get the
+arc length and create a straight line `p2` with the same arc length. ...
+
+! While here we use the return value of the arc length as a parameter to a path
+constructor, you might be interested in what kind of object the return value of
+the `arclen` method call really is: It is a PyX length in true coordinates,
+since the path already analyses the PyX units and the return value thus needs
+to be fixed and can not be scaled anymore. Printing the result of the `arclen`
+method call of path `p1` would show you:
+
+  (0.023110 t + 0.000000 u + 0.000000 v + 0.000000 w + 0.000000 x) m

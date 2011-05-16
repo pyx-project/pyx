@@ -1,0 +1,102 @@
+\chapter{Module color}
+\label{color}
+\section{Color models}
+PostScript provides different color models. They are available to
+\PyX{} by different color classes, which just pass the colors down to
+the PostScript level. This implies, that there are no conversion
+routines between different color models available. However, some color
+model conversion routines are included in Python's standard library in
+the module \texttt{colorsym}. Furthermore also the comparison of
+colors within a color model is not supported, but might be added in
+future versions at least for checking color identity and for ordering
+gray colors.
+
+There is a class for each of the supported color models, namely
+\verb|gray|, \verb|rgb|, \verb|cmyk|, and \verb|hsb|. The constructors
+take variables appropriate for the color model. Additionally, a list of
+named colors is given in appendix~\ref{colorname}.
+
+\section{Example}
+\begin{quote}
+\begin{verbatim}
+from pyx import *
+
+c = canvas.canvas()
+
+c.fill(path.rect(0, 0, 7, 3), [color.gray(0.8)])
+c.fill(path.rect(1, 1, 1, 1), [color.rgb.red])
+c.fill(path.rect(3, 1, 1, 1), [color.rgb.green])
+c.fill(path.rect(5, 1, 1, 1), [color.rgb.blue])
+
+c.writeEPSfile("color")
+\end{verbatim}
+\end{quote}
+
+The file \verb|color.eps| is created and looks like:
+\begin{quote}
+\includegraphics{color}
+\end{quote}
+
+\section{Color gradients}
+
+The color module provides a class \verb|gradient| for continous transitions between
+colors. A list of named gradients is available in appendix~\ref{gradientname}.
+
+\begin{classdesc}{gradient}{min=0, max=1}
+  This class provides the methods for the \verb|gradient|. Different
+  initializations can be found in \verb|lineargradient| and
+  \verb|functiongradient|.
+
+  \var{min} and \var{max} provide the valid range of the arguments for
+  \verb|getcolor|.
+
+  \begin{funcdesc}{getcolor}{parameter}
+    Returns the color that corresponds to \var{parameter} (must be between
+    \var{min} and \var{max}).
+  \end{funcdesc}
+
+  \begin{funcdesc}{select}{index, n\_indices}
+    When a total number of \var{n\_indices} different colors is needed from the
+    gradient, this method returns the \var{index}-th color.
+  \end{funcdesc}
+
+\end{classdesc}
+
+
+\begin{classdesc}{lineargradient}{startcolor, endcolor, min=0, max=1}
+  This class provides a linear transition between two given colors. The linear
+  interpolation is performed on the color components of the specific color
+  model.
+
+  \var{startcolor} and \var{endcolor} must be colors of the same color model.
+\end{classdesc}
+
+\begin{classdesc}{functiongradient}{functions, type, min=0, max=1}
+  This class provides an arbitray transition between colors of the same
+  color model.
+
+  \var{type} is a string indicating the color model (one of \code{"cmyk"},
+  \code{"rgb"}, \code{"hsb"}, \code{"grey"})
+
+  \var{functions} is a dictionary that maps the color components onto given
+  functions. E.g. for \code{type="rgb"} this dictionary must have the keys
+  \code{"r"}, \code{"g"}, and \code{"b"}.
+
+\end{classdesc}
+
+\section{Transparency}
+
+\begin{classdesc}{transparency}{value}
+  Instances of this class will make drawing operations (stroking,
+  filling) to become partially transparent. \var{value} defines the
+  transparency factor in the range \code{0} (opaque) to \code{1}
+  (transparent).
+
+  Transparency is available in PDF output only since it is not
+  supported by PostScript. However, for certain ghostscript devices
+  (for example the pdf backend as used by ps2pdf) proprietary
+  PostScript extension allows for transparency in PostScript code too.
+  \PyX{} creates such PostScript proprietary code, but issues a
+  warning when doing so.
+\end{classdesc}
+

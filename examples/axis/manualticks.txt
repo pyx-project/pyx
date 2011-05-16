@@ -1,0 +1,11 @@
+Manually place ticks at certain positions
+
+Ticks can be set manually by passing tick instances to the `manualticks`
+argument of the axis instance as shown at the right axis in this example. ...
+
+As you can see, the manual ticks are combined with the automatically created
+ticks. You could disable any automatic tick creation by setting the `parter`
+argument to None. But what's much more interesting is, that the manually and
+automatically created ticks are not just merged, but their combination is used
+for rating the resulting partition. Therefore, the additional manual ticks lead
+to a different set of automatically created ticks in this example.

@@ -1,0 +1,20 @@
+Running and controlling TeX
+
+! Usually, all you will ever need is a single `texrunner` instance which
+controls a single running TeX or LaTeX instance at a time. To make life easy to
+our users..., such an instance is created automatically upon startup and its
+called the `defaulttexrunner`. Whenever you use the function shortcuts like
+`text.text()` and in particular `text.set()`, you are accessing this
+`defaulttexrunner` instance. Also, the shortcut method `text` of any canvas
+instance uses this `defaulttexrunner` by default.
+
+!! However, it is possible to create several texrunner instances. In this
+example, we are using two of them. To make it a little more interesting, we
+instruct the `defaulttexrunner` to use LaTeX, while keeping TeX for the
+`plaintexrunner` instance. It is you turn to try expressions valid in TeX or
+LaTeX only at the different `texrunner` instances.
+
+!! Note that you do not have to worry about mixing the results of different
+texrunners into a single output. Even the embedded fonts in the output are
+shared. You can, by the way, also restart a `texrunner` instance including the
+`defaulttexrunner` and change its configuration on that occasion.
