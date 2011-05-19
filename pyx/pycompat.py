@@ -25,10 +25,19 @@ class _marker: pass
 def popen(cmd, mode="r", bufsize=_marker):
     try:
         import subprocess
-        if bufsize is _marker:
-            return subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout
+        if mode[0] not in "rw" or "r" in mode[1:] or "w" in mode[1:]:
+            raise ValueError("read or write mode expected")
+        if mode[0] == "r":
+            kwargs = {"stdout": subprocess.PIPE}
         else:
-            return subprocess.Popen(cmd, shell=True, bufsize=bufsize, stdout=PIPE).stdout
+            kwargs = {"stdin": subprocess.PIPE}
+        if bufsize is not _marker:
+            kwargs["bufsize"] = bufsize
+        pipes = subprocess.Popen(cmd, shell=True, **kwargs)
+        if mode[0] == "r":
+            return pipes.stdout
+        else:
+            return pipes.stdin
     except ImportError:
         import os
         if bufsize is _marker:

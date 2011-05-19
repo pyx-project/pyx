@@ -94,6 +94,13 @@ TODO:
       graph data
 
 
+0.11.1 (2011/??/??):
+  - dvi/texfont:
+    - fix exception type
+  - canvas:
+    - fix pipeGS (adding support for writing using pycompat.popen)
+
+
 0.11 (2011/05/15):
   - font and dvi modules:
     - major reorganization
