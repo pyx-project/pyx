@@ -24,6 +24,7 @@
 from pyx import bbox, canvasitem, font, filelocator
 import tfmfile, vffile
 
+class TeXFontError(Exception): pass
 
 class TeXfont:
 
@@ -43,16 +44,16 @@ class TeXfont:
         # is only performed if TFMfile.checksum > 0. Anyhow, being
         # more generous here seems to be reasonable
         if self.TFMfile.checksum != c and self.TFMfile.checksum != 0 and c != 0:
-            raise DVIError("check sums do not agree: %d vs. %d" %
-                           (self.TFMfile.checksum, c))
+            raise TeXFontError("check sums do not agree: %d vs. %d" %
+                               (self.TFMfile.checksum, c))
 
         # Check whether the given design size matches the one defined in the tfm file
         if abs(self.TFMfile.designsize - d) > 2:
-            raise DVIError("design sizes do not agree: %d vs. %d" % (self.TFMfile.designsize, d))
+            raise TeXFontError("design sizes do not agree: %d vs. %d" % (self.TFMfile.designsize, d))
         #if q < 0 or q > 134217728:
-        #    raise DVIError("font '%s' not loaded: bad scale" % self.name)
+        #    raise TeXFontError("font '%s' not loaded: bad scale" % self.name)
         if d < 0 or d > 134217728:
-            raise DVIError("font '%s' not loaded: bad design size" % self.name)
+            raise TeXFontError("font '%s' not loaded: bad design size" % self.name)
 
     def __str__(self):
         return "font %s designed at %g TeX pts used at %g TeX pts" % (self.name, 
