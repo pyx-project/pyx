@@ -101,6 +101,8 @@ TODO:
     - fix pipeGS (adding support for writing using pycompat.popen)
   - contrib files:
     - fixes due to the dvi and font restructuring
+  - setup.py:
+    - fix build process for extension modules
 
 
 0.11 (2011/05/15):

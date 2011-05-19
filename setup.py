@@ -11,27 +11,22 @@ built out of these primitives."""
 import ConfigParser
 import pyx.version
 
-setuptools_args={}
+cfg = ConfigParser.ConfigParser()
+cfg.read("setup.cfg")
 
 # obtain information on which modules have to be built and whether to use setuptools
 # instead of distutils from setup.cfg file
-cfg = ConfigParser.ConfigParser()
-cfg.read("setup.cfg")
+
 if cfg.has_section("PyX"):
-    if cfg.has_option("PyX", "build_pykpathsea") and cfg.getboolean("PyX", "build_pykpathsea"):
-        ext_modules.append(pykpathsea_ext_module)
-    if cfg.has_option("PyX", "build_t1code") and cfg.getboolean("PyX", "build_t1code"):
-        ext_modules.append(t1code_ext_module)
     if cfg.has_option("PyX", "use_setuptools") and cfg.getboolean("PyX", "use_setuptools"):
         from setuptools import setup, Extension
         setuptools_args={"zip_safe": True}
     else:
         from distutils.core import setup, Extension
+	setuptools_args={}
 
 
-#
 # build list of extension modules
-#
 
 ext_modules = []
 pykpathsea_ext_module = Extension("pyx.pykpathsea",
@@ -39,6 +34,10 @@ pykpathsea_ext_module = Extension("pyx.pykpathsea",
                                   libraries=["kpathsea"])
 t1code_ext_module = Extension("pyx.font._t1code",
                               sources=["pyx/font/_t1code.c"])
+if cfg.has_option("PyX", "build_pykpathsea") and cfg.getboolean("PyX", "build_pykpathsea"):
+    ext_modules.append(pykpathsea_ext_module)
+if cfg.has_option("PyX", "build_t1code") and cfg.getboolean("PyX", "build_t1code"):
+    ext_modules.append(t1code_ext_module)
 
 
 description, long_description = __doc__.split("\n\n", 1)
