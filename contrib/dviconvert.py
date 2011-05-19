@@ -1,10 +1,10 @@
 #!/usr/bin/env python
-# -*- coding: ISO-8859-1 -*-
+# -*- encoding: utf-8 -*-
 #
 #
-# Copyright (C) 2005 André Wobst <wobsta@users.sourceforge.net>
+# Copyright (C) 2005-2011 AndrÃ© Wobst <wobsta@users.sourceforge.net>
 #
-# epstopng is free software; you can redistribute it and/or modify
+# dviconvert is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
@@ -20,7 +20,8 @@
 
 from optparse import OptionParser
 from pyx import *
-from pyx import bbox, dvifile, version
+from pyx import bbox, version
+from pyx.dvi import dvifile
 
 parser = OptionParser(usage="usage: %prog [-b] [-p paperformat] -o output-file dvi-file",
                       version="%prog " + version.version)
@@ -39,7 +40,7 @@ if len(args) != 1:
 
 if options.paperformat:
     options.paperformat = getattr(document.paperformat, options.paperformat)
-df = dvifile.dvifile(args[0], dvifile.readfontmap(["psfonts.map"]))
+df = dvifile.DVIfile(args[0])
 d = document.document()
 while 1:
     dvipage = df.readpage()

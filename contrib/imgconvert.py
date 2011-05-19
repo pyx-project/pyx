@@ -1,8 +1,8 @@
 #!/usr/bin/env python
-# -*- coding: ISO-8859-1 -*-
+# -*- encoding: utf-8 -*-
 #
 #
-# Copyright (C) 2005 André Wobst <wobsta@users.sourceforge.net>
+# Copyright (C) 2005 AndrÃ© Wobst <wobsta@users.sourceforge.net>
 #
 # epstopng is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by

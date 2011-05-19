@@ -1,8 +1,8 @@
 #!/usr/bin/env python
-# -*- coding: ISO-8859-1 -*-
+# -*- encoding: utf-8 -*-
 #
 #
-# Copyright (C) 2003 André Wobst <wobsta@users.sourceforge.net>
+# Copyright (C) 2003 AndrÃ© Wobst <wobsta@users.sourceforge.net>
 #
 # epstopng is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -66,7 +66,7 @@ def epstopng(epsname, pngname, resolution, scale, transparent, gsname, quiet):
 
 def usage():
     print progname
-    print "Copyright (C) 2003 André Wobst <wobsta@users.sourceforge.net>"
+    print "Copyright (C) 2003 AndrÃ© Wobst <wobsta@users.sourceforge.net>"
     print "usage: epstopng [options] <eps-file>"
     print "-h, --help: show this help"
     print "-q, --quiet: be quiet"
