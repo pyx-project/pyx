@@ -97,6 +97,7 @@ TODO:
 0.11.1 (2011/??/??):
   - dvi/texfont:
     - fix exception type
+    - increase designsize deviation to 4 (needs some further investigation)
   - canvas:
     - fix pipeGS (adding support for writing using pycompat.popen)
   - contrib files:

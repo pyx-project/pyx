@@ -48,7 +48,7 @@ class TeXfont:
                                (self.TFMfile.checksum, c))
 
         # Check whether the given design size matches the one defined in the tfm file
-        if abs(self.TFMfile.designsize - d) > 2:
+        if abs(self.TFMfile.designsize - d) > 4: # XXX: why the deviation?
             raise TeXFontError("design sizes do not agree: %d vs. %d" % (self.TFMfile.designsize, d))
         #if q < 0 or q > 134217728:
         #    raise TeXFontError("font '%s' not loaded: bad scale" % self.name)
