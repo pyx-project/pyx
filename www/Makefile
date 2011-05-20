@@ -22,8 +22,9 @@ copy:
 	mkdir -p build
 	cp main.css build
 	cp *.png *.ico build
-	cp png/*.png ../manual/manual.pdf ../faq/pyxfaq.pdf build
-	cp -r ../manual/manual build
+	cp png/*.png ../manual/_build/latex/manual.pdf ../faq/pyxfaq.pdf build
+	cp -r ../manual/_build/html build/manual
+	cp -r ../manual/_build/html/manual.html build/manual/index.html
 	for s in examples gallery; \
 	do \
 	  for d in "" $$(grep / ../$$s/INDEX); \

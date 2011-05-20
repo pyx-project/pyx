@@ -172,7 +172,7 @@ htmlhelp_basename = 'PyXdoc'
 # -- Options for LaTeX output --------------------------------------------------
 
 # The paper size ('letter' or 'a4').
-#latex_paper_size = 'letter'
+latex_paper_size = 'a4'
 
 # The font size ('10pt', '11pt' or '12pt').
 #latex_font_size = '10pt'
@@ -180,7 +180,7 @@ htmlhelp_basename = 'PyXdoc'
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('manual', 'PyX.tex', u'PyX Documentation',
+  ('manual', 'manual.tex', u'PyX Documentation',
    u'Jörg Lehmann, Michael Schindler, André Wobst', 'manual'),
 ]
 

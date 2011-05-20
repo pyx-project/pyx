@@ -9,6 +9,11 @@
     <h1>PyX - News</h1>
 
     <dl>
+      <dt>2011-05-20: PyX 0.11.1 released</dt>
+      <dd>
+        This release fixes a few bugs, most importantly the extension build process.
+        The manual has been been ported to <a href="http://sphinx.pocoo.org/">Sphinx</a>.
+      </dd>
       <dt>2011-05-15: PyX 0.11 released</dt>
       <dd>
         This release contains a major reorganization of the text output code.
