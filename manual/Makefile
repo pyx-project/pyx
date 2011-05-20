@@ -1,54 +1,39 @@
-# You need mkhowto from the python distribution for creating this manual.
-# Get a copy of a current python source archive and make a symbolic link
-# from <whatever>/Python-x.x.x/Doc/tools/mkhowto into this directory.
-# Furthermore you need tex, latex2html and a few other things to build
-# the manual (see the python documentation about creating documentations
-# for details).
+# Makefile for Sphinx documentation
+#
 
 PYTHON ?= python
 
-default: dvi
+# You can set these variables from the command line.
+SPHINXOPTS    =
+SPHINXBUILD   = sphinx-build
+PAPER         =
+BUILDDIR      = _build
+
+# Internal variables.
+PAPEROPT_a4     = -D latex_paper_size=a4
+PAPEROPT_letter = -D latex_paper_size=letter
+ALLSPHINXOPTS   = -d $(BUILDDIR)/doctrees $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) .
+
+.PHONY: help clean all html latexpdf figs
+
+all: html latexpdf
+	@echo "Done."
 
 clean:
-	-rm -fr manual.dvi *.eps *.pdf *.aux *.out *.toc *.log manual
+	-rm -rf $(BUILDDIR)/* *.eps *.pdf *.png
 
-all:
-	make clean
-	make html
-	make pdf
-	make dvi
+html: figs
+	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
+	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
 
-src=$(wildcard *.tex) pyxversion.tex pyxdate.tex
+latexpdf: figs
+	$(SPHINXBUILD) -b latex $(ALLSPHINXOPTS) $(BUILDDIR)/latex
+	@echo "Running LaTeX files through pdflatex..."
+	make -C $(BUILDDIR)/latex all-pdf
+	@echo "pdflatex finished; the PDF files are in $(BUILDDIR)/latex."
 
-dvi: manual.dvi
-pdf: manual.pdf
-html: manual/manual.html
+figs: $(patsubst %.py, %.png, $(filter-out conf.py,$(wildcard *.py)))
 
-manual.pdf: $(src) pdf_figs
-	#for index-with-own-hyperrefs debugging, anybody interested?
-	#./mkhowto --a4 --pdf --keep manual.tex
-	./mkhowto --a4 --pdf manual.tex
-
-manual.dvi: $(src) eps_figs
-	./mkhowto --a4 --dvi manual.tex
-
-manual/manual.html: $(src) eps_figs
-	./mkhowto --image-type png --favicon "/pyx.ico" \
-	          --up-link "/" --up-title "PyX homepage" \
-	          --html manual.tex
-
-pyxversion.tex: ../pyx/version.py
-	$(PYTHON) -c "import sys;sys.path[:0]=[\"..\"];import pyx.version;print pyx.version.version+'%'" > pyxversion.tex
-
-pyxdate.tex: ../pyx/version.py
-	$(PYTHON) -c "import sys;sys.path[:0]=[\"..\"];import pyx.version;print pyx.version.date+'%'" > pyxdate.tex
-
-eps_figs: $(patsubst %.py, %.eps, $(wildcard *.py))
-
-pdf_figs: $(patsubst %.py, %.pdf, $(wildcard *.py))
-
-%.eps: %.py
+%.png: %.py
 	export PYTHONPATH=$(CURDIR)/.. ; $(PYTHON) $^
-
-%.pdf: %.py
-	export PYTHONPATH=$(CURDIR)/.. ; $(PYTHON) $^
+	$(PYTHON) ../contrib/epstopng.py -o $@ $*.eps
