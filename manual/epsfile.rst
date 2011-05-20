@@ -61,8 +61,3 @@ are summarized in the following table:
 
 .. _epsfile:
 
-.. % %% Local Variables:
-.. % %% mode: latex
-.. % %% TeX-master: "manual.tex"
-.. % %% End:
-

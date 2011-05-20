@@ -14,8 +14,6 @@ x-y-z-graphs are supported only. However, the component architecture of the
 graph system described in section :ref:`graph_components` allows for additional
 graph geometries while reusing most of the existing components.
 
-.. % {{{
-
 Creating a graph splits into two basic steps. First you have to create a graph
 instance. The most simple form would look like::
 
@@ -100,8 +98,6 @@ The result is shown in figure :ref:`fig_graph3`.
 Component architecture
 ======================
 
-.. % {{{
-
 Creating a graph involves a variety of tasks, which thus can be separated into
 components without significant additional costs. This structure manifests itself
 also in the PyX source, where there are different modules for the different
@@ -130,8 +126,6 @@ axis
    labels, showing up in the graph themselves and other things, this task is
    splitted into several independent subtasks. Axes are discussed separately in
    chapter :mod:`axis`.
-
-.. % }}}
 
 .. module:: graph.graph
 
@@ -311,8 +305,6 @@ The graph provides some methods to access its geometry:
    single: ytickdirection()@ytickdirection() (graphxy method)
    single: yvtickdirection()@yvtickdirection() (graphxy method)
 
-.. % dirty hack to add a whole list of methods to the index:
-
 Further geometry information is available by the :attr:`axes` instance variable,
 with is a dictionary mapping axis names to :class:`anchoredaxis` instances.
 Shortcuts to the anchoredaxis positioner methods for the ``x``\ - and ``y``\
@@ -435,8 +427,6 @@ There are two projector classes :class:`central` and :class:`parallel`:
    central projection). All other parameters are identical to the :class:`central`
    class.
 
-.. % }}}
-
 
 .. module:: graph.data
 
@@ -544,8 +534,6 @@ For the sake of completeness we list the default patterns:
 
    ``re.compile(r"(.*?)(\s+|$)")``
 
-.. % }}}
-
 
 .. class:: function(expression, title=notitle, min=None, max=None, points=100, context={})
 
@@ -566,8 +554,6 @@ For the sake of completeness we list the default patterns:
    the identifiers in *context*, the variable name and the functions shown in the
    table "builtins in math expressions" at the end of the section are available.
 
-.. % }}}
-
 
 .. class:: paramfunction(varname, min, max, expression, title=notitle, points=100, context={})
 
@@ -587,8 +573,6 @@ For the sake of completeness we list the default patterns:
    the identifiers in *context*, *varname* and the functions shown in the table
    "builtins in math expressions" at the end of the section are available.
 
-.. % }}}
-
 
 .. class:: values(title="user provided values", **columns)
 
@@ -596,8 +580,6 @@ For the sake of completeness we list the default patterns:
    list of values to be used for that column.
 
    *title* is the title of the data to be used in the graph key.
-
-.. % }}}
 
 
 .. class:: points(data, title="user provided points", addlinenumbers=1, **columns)
@@ -612,8 +594,6 @@ For the sake of completeness we list the default patterns:
    column is added to contain a line number in that case), while the column numbers
    starts from zero, when *addlinenumbers* is switched off.
 
-.. % }}}
-
 
 .. class:: data(data, title=notitle, context=, copy=1, replacedollar=1, columncallback="__column__", **columns)
 
@@ -622,8 +602,6 @@ For the sake of completeness we list the default patterns:
    :class:`graph.data.file`. Indeed, the latter is built on top of this class by
    reading the file and caching its contents in a :class:`graph.data.list`
    instance.
-
-.. % }}}
 
 
 .. class:: conffile(filename, title=notitle, context=, copy=1, replacedollar=1, columncallback="__column__", **columns)
@@ -637,8 +615,6 @@ For the sake of completeness we list the default patterns:
    other parameters work as in *graph.data.file* and *graph.data.data* since they
    all use the same code.
 
-.. % }}}
-
 
 .. class:: cbdfile(filename, minrank=None, maxrank=None, title=notitle, context=, copy=1, replacedollar=1, columncallback="__column__", **columns)
 
@@ -646,8 +622,6 @@ For the sake of completeness we list the default patterns:
    `<http://sepwww.stanford.edu/ftp/World_Map/>`_ for some world-map data.
 
 The builtins in math expressions are listed in the following table:
-
-.. % }}}
 
 +------------------+--------------------------------------------+
 | name             | value                                      |
@@ -712,8 +686,6 @@ defined as:
    equal the third item. It continues to alter between ``None`` and ``2``, ``3``,
    etc.
 
-.. % }}}
-
 
 .. module:: graph.style
 
@@ -744,18 +716,12 @@ providing certain internal data.
    an axis name. Data points are considered to be out of graph when their position
    in graph coordinates exceeds the range [0:1] by more than *epsilon*.
 
-   .. % {{{
-
-.. % }}}
-
 
 .. class:: range(usenames=, epsilon=1e-10)
 
    This class is a hidden style providing an errorbar range. It needs data column
    names constructed out of a axis name ``X`` for each dimension errorbar data
    should be provided as follows:
-
-   .. % {{{
 
    +-----------+---------------------------+
    | data name | description               |
@@ -776,8 +742,6 @@ providing certain internal data.
    axis names to the identifiers ``X``.
 
    *epsilon* is a comparison precision when checking for invalid errorbar ranges.
-
-.. % }}}
 
 
 .. class:: symbol(symbol=changecross, size=0.2*unit.v_cm, symbolattrs=[])
@@ -897,8 +861,6 @@ filling and stroking. Those are especially useful in combination with the
 
    attr.changelist([deco.filled, deco.stroked])
 
-.. % }}}
-
 
 .. class:: line(lineattrs=[])
 
@@ -908,8 +870,6 @@ filling and stroking. Those are especially useful in combination with the
    default style of the graph data classes :class:`function` and
    :class:`paramfunction` described in section :mod:`graph.data`.
 
-   .. % {{{
-
 The class :class:`line` provides a changeable line style. Its definition is:
 
 
@@ -917,8 +877,6 @@ The class :class:`line` provides a changeable line style. Its definition is:
 
    attr.changelist([style.linestyle.solid, style.linestyle.dashed,
    style.linestyle.dotted, style.linestyle.dashdotted])
-
-.. % }}}
 
 
 .. class:: impulses(lineattrs=[], fromvalue=0, frompathattrs=[], valueaxisindex=1)
@@ -930,8 +888,6 @@ The class :class:`line` provides a changeable line style. Its definition is:
    baseline. When fromvalue is set, *frompathattrs* are the stroke attributes used
    to show the impulses baseline path.
 
-.. % }}}
-
 
 .. class:: errorbar(size=0.1*unit.v_cm, errorbarattrs=[], epsilon=1e-10)
 
@@ -940,8 +896,6 @@ The class :class:`line` provides a changeable line style. Its definition is:
    and error caps are considered to be out of the graph when their position in
    graph coordinates exceeds the range [0:1] by more that *epsilon*. Out of graph
    caps are omitted and the errorbars are cut to the valid graph range.
-
-.. % }}}
 
 
 .. class:: text(textname="text", dxname=None, dyname=None, dxunit=0.3*unit.v_cm, dyunit=0.3*unit.v_cm, textdx=0*unit.v_cm, textdy=0.3*unit.v_cm, textattrs=[])
@@ -954,8 +908,6 @@ The class :class:`line` provides a changeable line style. Its definition is:
    position of the text for each point separately. *textattrs* are text attributes
    for the output of the text. Those attributes are merged with the default
    attributes ``textmodule.halign.center`` and ``textmodule.vshift.mathaxis``.
-
-.. % }}}
 
 
 .. class:: arrow(linelength=0.25*unit.v_cm, arrowsize=0.15*unit.v_cm, lineattrs=[], arrowattrs=[], arrowpos=0.5, epsilon=1e-10, decorator=deco.earrow)
@@ -975,8 +927,6 @@ The class :class:`line` provides a changeable line style. Its definition is:
    order to prevent numerical instabilities. *decorator* defines the decorator to
    be added to the line.
 
-.. % }}}
-
 
 .. class:: rect(gradient=color.gradient.Grey)
 
@@ -984,10 +934,6 @@ The class :class:`line` provides a changeable line style. Its definition is:
    The size of the rectangles is taken from the data provided by the :class:`range`
    style. The additional data column named ``color`` specifies the color of the
    rectangle defined by *gradient*. The valid color range is [0:1].
-
-   .. % {{{
-
-.. % }}}
 
 
 .. class:: histogram(lineattrs=[], steps=0, fromvalue=0, frompathattrs=[], fillable=0, rectkey=0, autohistogramaxisindex=0, autohistogrampointpos=0.5, epsilon=1e-10)
@@ -1022,8 +968,6 @@ The class :class:`line` provides a changeable line style. Its definition is:
    Positions of the histograms are considered to be out of graph when they exceed
    the graph coordinate range [0:1] by more than *epsilon*.
 
-.. % }}}
-
 
 .. class:: barpos(fromvalue=None, frompathattrs=[], epsilon=1e-10)
 
@@ -1034,15 +978,11 @@ The class :class:`line` provides a changeable line style. Its definition is:
    plot several bars in a single graph side by side, you need to have a nested bar
    axis and provide a tuple as data for nested bar axis.
 
-   .. % {{{
-
    The bars start at *fromvalue* when provided. The *fromvalue* is marked by a
    gridline stroked using *frompathattrs*. Thus this hidden style might actually
    create some output. The value of a bar axis is considered to be out of graph
    when its position in graph coordinates exceeds the range [0:1] by more than
    *epsilon*.
-
-.. % }}}
 
 
 .. class:: stackedbarpos(stackname, addontop=0, epsilon=1e-10)
@@ -1052,10 +992,6 @@ The class :class:`line` provides a changeable line style. Its definition is:
    the data column named *stackname*. When *addontop* is set, the values is taken
    relative to the previous top of the bar.
 
-   .. % {{{
-
-.. % }}}
-
 
 .. class:: bar(barattrs=[], epsilon=1e-10, gradient=color.gradient.RedBlack)
 
@@ -1063,16 +999,12 @@ The class :class:`line` provides a changeable line style. Its definition is:
    *barattrs* is merged with ``defaultbarattrs`` which is a list containing
    ``[color.gradient.Rainbow, deco.stroked([color.grey.black])]``.
 
-   .. % {{{
-
    The bar style has limited support for 3d graphs: Occlusion does not work
    properly on stacked bars or multiple dataset. *epsilon* is used in 3d to prevent
    numerical instabilities on bars without hight. When *gradient* is not ``None``
    it is used to calculate a lighting coloring taking into account the angle
    between the view ray and the bar and the distance between viewer and bar. The
    precise conversion is defined in the :meth:`lighting` method.
-
-.. % }}}
 
 
 .. class:: changebar(barattrs=[])
@@ -1083,10 +1015,6 @@ The class :class:`line` provides a changeable line style. Its definition is:
    several data instances and does not support 3d. The style raises an error
    instead.
 
-   .. % {{{
-
-.. % }}}
-
 
 .. class:: gridpos(index1=0, index2=1, gridlines1=1, gridlines2=1, gridattrs=[], epsilon=1e-10)
 
@@ -1096,8 +1024,6 @@ The class :class:`line` provides a changeable line style. Its definition is:
    [0:1] by more than *epsilon*. Data points are merged to a single graph
    coordinate value when their difference in graph coordinates is below *epsilon*.
 
-.. % }}}
-
 
 .. class:: grid(gridlines1=1, gridlines2=1, gridattrs=[])
 
@@ -1105,10 +1031,6 @@ The class :class:`line` provides a changeable line style. Its definition is:
    and in the second grid direction, when *gridlines2* is set. *gridattrs* is
    merged with ``defaultgridattrs`` which is a list containing the member variable
    ``changelinestyle`` of the :class:`line` class.
-
-   .. % {{{
-
-.. % }}}
 
 
 .. class:: surface(colorname="color", gradient=color.gradient.Grey, mincolor=None, maxcolor=None, gridlines1=0.05, gridlines2=0.05, gridcolor=None, backcolor=color.gray.black)
@@ -1150,8 +1072,6 @@ The class :class:`line` provides a changeable line style. Its definition is:
 
 * Color changes are continuous (in the selected color space) for each triangle.
 
-.. % }}}
-.. % }}}
 
 
 .. module:: graph.key
@@ -1189,6 +1109,4 @@ constructor keyword argument ``key`` of a graph. The class is implemented in
    When *keyattrs* is set to contain some draw attributes, the graph key is
    enlarged by *border* and the key area is drawn using *keyattrs*.
 
-.. % }}} % }}}
-.. % vim:fdm=marker
 

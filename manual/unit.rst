@@ -180,8 +180,3 @@ predefined conversion functions which are given in the following table
 If ``l`` is not yet a ``length`` instance but a number, it first is interpreted
 as a user length in the default units.
 
-.. % %% Local Variables:
-.. % %% mode: latex
-.. % %% TeX-master: "manual.tex"
-.. % %% End:
-

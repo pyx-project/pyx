@@ -102,10 +102,3 @@ following table:
 | ``slant(a, angle=0, x=None, y=None)``  | XXX                                          |
 +----------------------------------------+----------------------------------------------+
 
-.. % \section{Examples}
-
-.. % %% Local Variables:
-.. % %% mode: latex
-.. % %% TeX-master: "manual.tex"
-.. % %% End:
-

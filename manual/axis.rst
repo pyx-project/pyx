@@ -1,5 +1,5 @@
 
-.. module:: axis
+.. module:: graph.axis
 
 ****
 Axes
@@ -12,8 +12,6 @@ Component architecture
 Axes are a fundamental component of graphs although there might be applications
 outside of the graph system. Internally axes are constructed out of components,
 which handle different tasks axes need to fulfill:
-
-.. % {{{
 
 axis
    Implements the conversion of a data value to a graph coordinate of range [0:1].
@@ -61,15 +59,11 @@ distributed with PyX, where you can see some of the features of the axis with a
 few lines of code each. Hence we can here directly come to the reference of the
 available components.
 
-.. % }}}
-
 
 .. module:: graph.axis.axis
 
 Module :mod:`graph.axis.axis`: Axes
 ===================================
-
-.. % {{{
 
 The following classes are part of the module :mod:`graph.axis.axis`. However,
 there is a shortcut to access those classes via ``graph.axis`` directly.
@@ -286,15 +280,11 @@ The function :func:`pathaxis` has the same signature like the
 :class:`anchoredpathaxis` class, but immediately creates the axis and returns
 the painted axis.
 
-.. % }}}
-
 
 .. module:: graph.axis.tick
 
 Module :mod:`graph.axis.tick`: Axes ticks
 =========================================
-
-.. % {{{
 
 The following classes are part of the module :mod:`graph.axis.tick`.
 
@@ -342,15 +332,11 @@ The following classes are part of the module :mod:`graph.axis.tick`.
    label. When not set, it can be created automatically by a texter. *labelattrs*
    are the attributes for the labels.
 
-.. % }}}
-
 
 .. module:: graph.axis.parter
 
 Module :mod:`graph.axis.parter`: Axes partitioners
 ==================================================
-
-.. % {{{
 
 The following classes are part of the module :mod:`graph.axis.parter`. Instances
 of the classes can be passed to the parter keyword argument of regular axes.
@@ -500,15 +486,11 @@ as instance variables (should be used read-only):
 
    This class is an abbreviation of :class:`autologarithmic` described above.
 
-.. % }}}
-
 
 .. module:: graph.axis.texter
 
 Module :mod:`graph.axis.texter`: Axes texter
 ============================================
-
-.. % {{{
 
 The following classes are part of the module :mod:`graph.axis.texter`. Instances
 of the classes can be passed to the texter keyword argument of regular axes.
@@ -620,15 +602,11 @@ ticks created by partitioners described above.
 
    *labelattrs* has the same meaning as for *decimal*.
 
-.. % }}}
-
 
 .. module:: graph.axis.painter
 
 Module :mod:`graph.axis.painter`: Axes painter
 ==============================================
-
-.. % {{{
 
 The following classes are part of the module :mod:`graph.axis.painter`.
 Instances of the painter classes can be passed to the painter keyword argument
@@ -753,15 +731,11 @@ appropriate multiples of  :math:`\sqrt{2}`.
    *titleattrs*. By turning off this feature, this painter is suitable for linked
    split axes.
 
-.. % }}}
-
 
 .. module:: graph.axis.rater
 
 Module :mod:`graph.axis.rater`: Axes rater
 ==========================================
-
-.. % {{{
 
 The rating of axes is implemented in :mod:`graph.axis.rater`. When an axis
 partitioning scheme returns several partitioning possibilities, the partitions
@@ -836,15 +810,11 @@ bad rating as well.
 
    This class is an abbreviation of :class:`logarithmic` described above.
 
-.. % }}}
-
 
 .. module:: graph.axis.positioners
 
 Module :mod:`graph.axis.positioner`: Axes positioners
 =====================================================
-
-.. % {{{
 
 The position of an axis is defined by an instance of a class providing the
 following methods:
@@ -879,7 +849,4 @@ following methods:
 The module contains several implementations of those positioners, but since the
 positioner instances are created by graphs etc. as needed, the details are not
 interesting for the average PyX user.
-
-.. % }}} % }}}
-.. % vim:fdm=marker
 

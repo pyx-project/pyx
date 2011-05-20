@@ -1,4 +1,5 @@
 
+.. module:: style
 .. _pathstyles:
 
 *********************

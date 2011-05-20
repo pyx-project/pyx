@@ -109,8 +109,3 @@ Predefined paperformats are listed in the following table
 | :const:`document.paperformat.Legal`  | Legal  | 8.5 inch | 14 inch |
 +--------------------------------------+--------+----------+---------+
 
-.. % %% Local Variables:
-.. % %% mode: latex
-.. % %% TeX-master: "manual.tex"
-.. % %% End:
-

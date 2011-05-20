@@ -433,9 +433,3 @@ subclasses of the :class:`path` class.
 
    A closed circle with center (*x*, *y*) and radius *r*.
 
-.. % %% Local Variables:
-.. % %% mode: latex
-.. % %% TeX-master: "manual.tex"
-.. % %% ispell-dictionary: "british"
-.. % %% End:
-

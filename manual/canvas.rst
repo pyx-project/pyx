@@ -147,8 +147,3 @@ methods, which wrap the canvas into a single page document.
 For more information about the possible arguments of the :class:`document.page`
 constructor, we refer to Sect. :mod:`document`.
 
-.. % %% Local Variables:
-.. % %% mode: latex
-.. % %% TeX-master: "manual.tex"
-.. % %% End:
-

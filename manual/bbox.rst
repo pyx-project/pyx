@@ -79,8 +79,3 @@ bbox methods
 Furthermore, two bounding boxes can be added (giving the bounding box enclosing
 both) and multiplied (giving the intersection of both bounding boxes).
 
-.. % %% Local Variables:
-.. % %% mode: latex
-.. % %% TeX-master: "manual.tex"
-.. % %% End:
-

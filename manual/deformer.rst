@@ -92,15 +92,13 @@ The deformer classes are the following:
    by sharp edges) around the corners of the original path. Later, everything that
    is nearer to the original path than distance is cut away.
 
-   .. % 
-
    There are some caveats:
 
-* When the original path is too curved then the parallel path would contain
+   * When the original path is too curved then the parallel path would contain
      points with infinte curvature. The resulting path stops at such points and
      leaves the too strongly curved piece out.
 
-* When the original path contains self-intersection, then the resulting parallel
+   * When the original path contains self-intersection, then the resulting parallel
      path is not continuous in the parameterisation of the original path. It may
      first take a piece that corresponds to "later" parameter values and then
      continue with an "earlier" one. Please don't get confused.

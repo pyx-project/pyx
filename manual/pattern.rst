@@ -63,8 +63,3 @@ drawing in it like in an ordinary canvas. To use the pattern, you simply pass
 the pattern instance to a :meth:`stroke`, :meth:`fill`, :meth:`draw` or
 :meth:`set` method of the canvas, just like you would do with a colour, etc.
 
-.. % %% Local Variables:
-.. % %% mode: latex
-.. % %% TeX-master: "manual.tex"
-.. % %% End:
-

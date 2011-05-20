@@ -50,9 +50,3 @@ at the beginning of the Python program.  However, in order to prevent namespace
 pollution, you may also simply use ``import pyx``. Throughout this manual, we
 shall always assume the presence of the above given import line.a
 
-.. % %% Local Variables:
-.. % %% mode: latex
-.. % %% TeX-master: "manual.tex"
-.. % %% ispell-dictionary: "british"
-.. % %% End:
-
