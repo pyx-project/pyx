@@ -104,6 +104,9 @@ TODO:
     - fixes due to the dvi and font restructuring
   - setup.py:
     - fix build process for extension modules
+  - deco module:
+    - arrow decorator: proper sign of constriction length for positioning
+      reversed arrows
 
 
 0.11 (2011/05/15):
