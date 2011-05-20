@@ -1,9 +1,9 @@
+.. module:: trafo
 
-************************************
-Module trafo: linear transformations
-************************************
+*******************************************
+Module :mod:`trafo`: Linear transformations
+*******************************************
 
-.. _trafo:
 
 With the  ``trafo`` module PyX supports linear transformations, which can  then
 be applied to canvases,  Bézier paths and other objects. It consists of the main

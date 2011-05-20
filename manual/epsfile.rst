@@ -1,7 +1,8 @@
+.. module:: epsfile
 
-**********************************
-Module epsfile: EPS file inclusion
-**********************************
+*****************************************
+Module :mod:`epsfile`: EPS file inclusion
+*****************************************
 
 With the help of the ``epsfile.epsfile`` class, you can easily embed another EPS
 file in your canvas, thereby scaling, aligning the content at discretion. The

@@ -1,14 +1,13 @@
 
-.. _unit:
+.. module:: unit
 
-***********
-Module unit
-***********
+******************
+Module :mod:`unit`
+******************
 
 .. sectionauthor:: Jörg Lehmann <joergl@users.sourceforge.net>
 
 
-.. module:: unit
 
 
 With the ``unit`` module PyX makes available classes and functions for the
@@ -40,9 +39,9 @@ using the module level function
 
 .. function:: set(uscale=None, vscale=None, wscale=None, xscale=None, defaultunit=None)
 
-   When *uscale*, *vscale*, *wscale*, or *xscale* is not :keyword:`None`, the
+   When *uscale*, *vscale*, *wscale*, or *xscale* is not `None`, the
    corresponding scaling factor(s) is redefined to the given number. When
-   *defaultunit* is not :keyword:`None`,  the default unit is set to the given
+   *defaultunit* is not `None`,  the default unit is set to the given
    value, which has to be one of ``"cm"``, ``"mm"``, ``"inch"``, or ``"pt"``.
 
 For instance, if you only want thicker lines for a publication version of your

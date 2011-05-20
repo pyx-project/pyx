@@ -2,13 +2,6 @@
   PyX Reference Manual  
 ************************
 
-:Author: Jörg Lehmann, André Wobst
-
-:Date: DUMMY
-
-.. |release| replace:: DUMMY
-
-
 .. topic:: Abstract
 
    PyX is a Python package for the creation of PostScript and PDF files. It

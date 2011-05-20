@@ -1,9 +1,9 @@
 
-.. _module:box:
+.. module:: box
 
-*******************************
-Module box: convex box handling
-*******************************
+**************************************
+Module :mod:`box`: Convex box handling
+**************************************
 
 This module has a quite internal character, but might still be useful from the
 users point of view. It might also get further enhanced to cover a broader range
@@ -43,17 +43,15 @@ the following list some methods of this ``polygon`` class are explained:
 ``reltransform(*trafos)``:
    performs a list of transformations to the box relative to the box center
 
-   .. % DUMMY
-.. _fig_label:
+.. _fig_boxalign:
 .. figure:: boxalign.*
    :align:  center
 
-
-   .. centered:: circle and line alignment examples (equal direction and distance)
+   circle and line alignment examples (equal direction and distance)
 
 ``circlealignvector(a, dx, dy)``:
    returns a vector (a tuple (x, y)) to align the box at a circle with radius ``a``
-   in the direction (``dx``, ``dy``); see figure :ref:`fig:boxalign`
+   in the direction (``dx``, ``dy``); see figure :ref:`fig_boxalign`
 
 ``linealignvector(a, dx, dy)``:
    as above, but align at a line with distance ``a``

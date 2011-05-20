@@ -1,12 +1,13 @@
 
 .. _colorname:
 
-************
-Named colors
-************
+**********************
+Appendix: Named colors
+**********************
 
-.. % DUMMY
-.. _fig_label:
+.. _fig_colorname:
 .. figure:: colorname.*
    :align:  center
+
+   Names colors
 

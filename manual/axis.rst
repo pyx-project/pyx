@@ -1,5 +1,5 @@
 
-.. _axis:
+.. module:: axis
 
 ****
 Axes
@@ -64,12 +64,10 @@ available components.
 .. % }}}
 
 
+.. module:: graph.axis.axis
+
 Module :mod:`graph.axis.axis`: Axes
 ===================================
-
-.. module:: graph.axis.axis
-   :synopsis: Axes
-
 
 .. % {{{
 
@@ -204,9 +202,6 @@ axis position methods:
 
 .. class:: anchoredaxis()
 
-   DUMMY
-
-
 .. method:: anchoredaxis.basepath(x1=None, x2=None)
 
    Returns a path instance for the base path. *x1* and *x2* define the axis range,
@@ -294,12 +289,10 @@ the painted axis.
 .. % }}}
 
 
-Module :mod:`graph.axis.tick`: Ticks
-====================================
-
 .. module:: graph.axis.tick
-   :synopsis: Axes ticks
 
+Module :mod:`graph.axis.tick`: Axes ticks
+=========================================
 
 .. % {{{
 
@@ -352,12 +345,10 @@ The following classes are part of the module :mod:`graph.axis.tick`.
 .. % }}}
 
 
-Module :mod:`graph.axis.parter`: Partitioners
-=============================================
-
 .. module:: graph.axis.parter
-   :synopsis: Axes partitioners
 
+Module :mod:`graph.axis.parter`: Axes partitioners
+==================================================
 
 .. % {{{
 
@@ -512,12 +503,10 @@ as instance variables (should be used read-only):
 .. % }}}
 
 
-Module :mod:`graph.axis.texter`: Texter
-=======================================
-
 .. module:: graph.axis.texter
-   :synopsis: Axes texters
 
+Module :mod:`graph.axis.texter`: Axes texter
+============================================
 
 .. % {{{
 
@@ -634,12 +623,10 @@ ticks created by partitioners described above.
 .. % }}}
 
 
-Module :mod:`graph.axis.painter`: Painter
-=========================================
-
 .. module:: graph.axis.painter
-   :synopsis: Axes painters
 
+Module :mod:`graph.axis.painter`: Axes painter
+==============================================
 
 .. % {{{
 
@@ -769,12 +756,10 @@ appropriate multiples of  :math:`\sqrt{2}`.
 .. % }}}
 
 
-Module :mod:`graph.axis.rater`: Rater
-=====================================
-
 .. module:: graph.axis.rater
-   :synopsis: Axes raters
 
+Module :mod:`graph.axis.rater`: Axes rater
+==========================================
 
 .. % {{{
 
@@ -854,12 +839,10 @@ bad rating as well.
 .. % }}}
 
 
-Module :mod:`graph.axis.positioner`: Positioners
-================================================
-
 .. module:: graph.axis.positioners
-   :synopsis: Axes positioners
 
+Module :mod:`graph.axis.positioner`: Axes positioners
+=====================================================
 
 .. % {{{
 
@@ -868,9 +851,6 @@ following methods:
 
 
 .. class:: positioner()
-
-   DUMMY
-
 
 .. method:: positioner.vbasepath(v1=None, v2=None)
 

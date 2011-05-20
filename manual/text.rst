@@ -1,5 +1,5 @@
 
-.. _module:text:
+.. module:: text
 
 ***************************************
 Module :mod:`text`: TeX/LaTeX interface
@@ -41,9 +41,6 @@ within a single outout file.
 
 TeX/LaTeX instances: the :class:`texrunner` class
 =================================================
-
-.. module:: text
-   :synopsis: TeX/LaTeXinterface
 
 
 Instances of the class :class:`texrunner` are responsible for executing and
@@ -169,9 +166,6 @@ called again.
 TeX/LaTeX attributes
 ====================
 
-.. module:: text
-   :synopsis: TeX/LaTeXinterface
-
 
 TeX/LaTeX attributes are instances to be passed to a :class:`texrunner`\ s
 :meth:`text` method. They stand for TeX/LaTeX expression fragments and handle
@@ -256,13 +250,11 @@ other. Some handy instances available as class members:
 
    Combines :attr:`boxright` and :attr:`flushright`, *i.e.* ``halign(1, 1)``.
 
-.. % DUMMY
-.. _fig_label:
+.. _fig_textvalign:
 .. figure:: textvalign.*
    :align:  center
 
-
-.. centered:: valign example
+   valign example
 
 
 .. class:: valign(valign)
@@ -270,7 +262,7 @@ other. Some handy instances available as class members:
    Instances of this class set the vertical alignment of a text box to be top,
    center and bottom for *valign* being ``0``, ``0.5``, and ``1``. Other values are
    allowed as well, although such an alignment seems quite unusual. See the left
-   side of figure :ref:`fig:textvalign` for an example.
+   side of figure :ref:`fig_textvalign` for an example.
 
 Some handy instances available as class members:
 
@@ -307,7 +299,7 @@ Some handy instances available as class members:
    baseline to be used by the optional *baseline* argument. You can set it to the
    symbolic names :attr:`top`, :attr:`parbox.middle`, and :attr:`parbox.bottom`
    only, which are members of :class:`valign`. See the right side of figure
-   :ref:`fig:textvalign` for an example.
+   :ref:`fig_textvalign` for an example.
 
 Since you need to specify a box width no predefined instances are available as
 class members.
@@ -495,9 +487,6 @@ moment:
 TeX message parsers
 ===================
 
-.. module:: text
-   :synopsis: TeX/LaTeXinterface
-
 
 Message parsers are used to scan the output of TeX/LaTeX. The output is analysed
 by a sequence of TeX message parsers. Each message parser analyses the output
@@ -581,10 +570,6 @@ The following TeX message parser instances are available:
 
 The :attr:`defaulttexrunner` instance
 =====================================
-
-.. module:: text
-   :synopsis: TeX/LaTeXinterface
-
 
 
 .. data:: defaulttexrunner

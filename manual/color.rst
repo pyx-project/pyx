@@ -1,9 +1,9 @@
 
-.. _color:
+.. module:: color
 
-************
-Module color
-************
+*******************
+Module :mod:`color`
+*******************
 
 
 Color models
@@ -43,11 +43,11 @@ Example
 
 The file ``color.eps`` is created and looks like:
 
-   .. % DUMMY
-.. _fig_label:
+.. _fig_color:
 .. figure:: color.*
    :align:  center
 
+   Color example
 
 
 Color gradients

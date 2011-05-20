@@ -1,12 +1,13 @@
 
 .. _arrows:
 
-*********************
-Arrows in deco module
-*********************
+*******************************
+Appendix: Arrows in deco module
+*******************************
 
-.. % DUMMY
-.. _fig_label:
+.. _fig_arrows:
 .. figure:: arrows.*
    :align:  center
+
+   Arrows in deco module
 

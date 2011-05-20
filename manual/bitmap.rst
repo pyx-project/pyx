@@ -46,23 +46,19 @@ The bitmaps are now to be inserted into a canvas::
    c.insert(bitmap_rgb)
    c.writeEPSfile("bitmap")
 
-Figure :ref:`fig:bitmap` shows the resulting output.
+Figure :ref:`fig_bitmap` shows the resulting output.
 
-.. % DUMMY
-.. _fig_label:
+.. _fig_bitmap:
 .. figure:: bitmap.*
    :align:  center
 
+   An introductory bitmap example.
 
-.. centered:: An introductory bitmap example.
-
-
-Bitmap module
-=============
 
 .. module:: bitmap
-   :synopsis: Bitmap support
 
+Bitmap :mod:`module`: Bitmap support
+====================================
 
 
 .. class:: image(width, height, mode, data, compressed=None)

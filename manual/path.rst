@@ -1,11 +1,11 @@
+.. module:: path
 
+==================
 Module :mod:`path`
 ==================
 
 .. sectionauthor:: Jörg Lehmann <joergl@users.sourceforge.net>
 
-
-.. _path:
 
 The :mod:`path` module defines several important classes which are documented in
 the present section.
@@ -14,18 +14,12 @@ the present section.
 Class :class:`path` --- PostScript-like paths
 ---------------------------------------------
 
-.. _path:path:
-
-.. module:: path
-
-
-
 .. class:: path(*pathitems)
 
    This class represents a PostScript like path consisting of the path elements
    *pathitems*.
 
-   All possible path items are described in Sect. :ref:`path:pathitem`. Note that
+   All possible path items are described in Sect. :ref:`path_pathitem`. Note that
    there are restrictions on the first path element and likewise on each path
    element after a :class:`closepath` directive. In both cases, no current point is
    defined and the path element has to be an instance of one of the following
@@ -193,10 +187,10 @@ Some notes on the above:
   length along the path.
 
 
+.. _path_pathitem:
+
 Path elements
 -------------
-
-.. _path:pathitem:
 
 The class :class:`pathitem` is the superclass of all PostScript path
 construction primitives. It is never used directly, but only by instantiating
@@ -279,7 +273,7 @@ Bézier curves can be constructed using: \
    control point and the other control points defined relative to the current point
    by the coordinates (*dx1*, *dy1*), (*dx2*, *dy2*), and (*dx3*, *dy3*).
 
-Note that when calculating the bounding box (see Sect. :ref:`bbox`) of Bézier
+Note that when calculating the bounding box (see Sect. :mod:`bbox`) of Bézier
 curves, PyX uses for performance reasons the so-called control box, i.e., the
 smallest rectangle enclosing the four control points of the Bézier curve. In
 general, this is not the smallest rectangle enclosing the Bézier curve.
@@ -309,10 +303,10 @@ perform multiple identical operations:
    argument. Thus, *points_pt* must be a sequence of 6-tuples.
 
 
+.. _path_normpath:
+
 Class :class:`normpath`
 -----------------------
-
-.. _path:normpath:
 
 The :class:`normpath` class is used internally for all non-trivial path
 operations, i.e. the ones marked by a :math:`\dagger` in the description of the
@@ -410,10 +404,11 @@ Exceptions are:
    segment from the first to the last point, if it is not already present.
 
 
+.. _path_predefined:
+
 Predefined paths
 ----------------
 
-.. _path:predefined:
 
 For convenience, some oft-used paths are already predefined. All of them are
 subclasses of the :class:`path` class.

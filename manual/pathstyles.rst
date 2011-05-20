@@ -1,12 +1,13 @@
 
 .. _pathstyles:
 
-*******************
-Module :mod:`style`
-*******************
+*********************
+Appendix: path styles
+*********************
 
-.. % DUMMY
-.. _fig_label:
+.. _fig_pathstyles:
 .. figure:: pathstyles.*
    :align:  center
+
+   path styles
 

@@ -1,11 +1,10 @@
+.. module:: bbox
 
-***********
-Module bbox
-***********
+******************
+Module :mod:`bbox`
+******************
 
-.. _bbox:
-
-The ``bbox`` module contains the definition of the ``bbox`` class representing
+The :mod:`bbox`` module contains the definition of the :class:`bbox` class representing
 bounding boxes of graphical elements like paths, canvases, etc. used in PyX.
 Usually, you obtain ``bbox`` instances as return values of the corresponding
 ``bbox())`` method, but you may also construct a bounding box by yourself.

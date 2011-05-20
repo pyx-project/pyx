@@ -1,12 +1,9 @@
 
-.. _deformer:
-
-Module :mod:`deformer`
-======================
-
 .. module:: deformer
-   :synopsis: Path deformers
 
+======================================
+Module :mod:`deformer`: Path deformers
+======================================
 
 The :mod:`deformer` module provides techniques to generate modulated paths. All
 classes in the :mod:`deformer` module can be used as attributes when
@@ -18,9 +15,6 @@ All classes of the :mod:`deformer` module provide the following methods:
 
 
 .. class:: deformer()
-
-   DUMMY
-
 
 .. method:: deformer.__call__((specific parameters for the class))
 
@@ -61,12 +55,12 @@ The deformer classes are the following:
    This deformer creates a smoothed variant of the original path. The smoothing is
    done on the basis of the corners of the original path, not on a global skope!
    Therefore, the result might not be what one would draw by hand. At each corner
-   (or wherever two path elements meet) a piece of length :math:`2\times`*radius*
+   (or wherever two path elements meet) a piece of length :math:`2\times` *radius*
    is taken out of the original path and replaced by a curve. This curve is
    determined by the tangent directions and the curvatures at its endpoints. Both
    are given from the original path, and therefore, the new curve fits into the gap
    in a *geometrically smooth* way. Path elements that are shorter than
-   *radius*:math:`\times`*relskipthres* are ignored.
+   *radius* :math:`\times` *relskipthres* are ignored.
 
    The new curve smoothing the corner consists either of one or of two Bezier
    curves, depending on the surrounding path elements. If there are straight lines
@@ -131,10 +125,3 @@ The deformer classes are the following:
 
    *lookforcurvatures* is the number of points per normpathitem where its curvature
    is checked for critical values
-
-.. % %% Local Variables:
-.. % %% mode: latex
-.. % %% TeX-master: "manual.tex"
-.. % %% ispell-dictionary: "british"
-.. % %% End:
-

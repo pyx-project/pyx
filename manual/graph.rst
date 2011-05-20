@@ -1,5 +1,5 @@
 
-.. _graph:
+.. module:: graph
 
 ******
 Graphs
@@ -11,7 +11,7 @@ Introduction
 
 PyX can be used for data and function plotting. At present x-y-graphs and
 x-y-z-graphs are supported only. However, the component architecture of the
-graph system described in section :ref:`graph:components` allows for additional
+graph system described in section :ref:`graph_components` allows for additional
 graph geometries while reusing most of the existing components.
 
 .. % {{{
@@ -27,7 +27,7 @@ plot something into the graph. Suppose you have some data in a file
 :file:`graph.dat` you want to plot. The content of the file could look like:
 
 
-.. include:: ../includes/graph.dat
+.. include:: graph.dat
    :literal:
 
 To plot these data into the graph ``g`` you must perform::
@@ -48,15 +48,13 @@ its :meth:`writeEPSfile` method.  ::
 
    g.writeEPSfile("graph")
 
-The result :file:`graph.eps` is shown in figure :ref:`fig:graph`.
+The result :file:`graph.eps` is shown in figure :ref:`fig_graph`.
 
-.. % DUMMY
-.. _fig_label:
+.. _fig_graph:
 .. figure:: graph.*
    :align:  center
 
-
-.. centered:: A minimalistic plot for the data from file :file:`graph.dat`.
+   A minimalistic plot for the data from file :file:`graph.dat`.
 
 Instead of plotting data from a file, other data source are available as well.
 For example function data is created and placed into :meth:`plot` by the
@@ -70,16 +68,14 @@ times before :meth:`writeEPSfile` or :meth:`writePDFfile`. Note that a calling
 automatically, when the graph is written to a file. Thus it is not an option to
 call :meth:`plot` after :meth:`writeEPSfile` or :meth:`writePDFfile`. The topic
 of the finalization of a graph is addressed in more detail in section
-:ref:`graph:graph`. As you can see in figure :ref:`fig:graph2`, a function is
+:mod:`graph.graph`. As you can see in figure :ref:`fig_graph2`, a function is
 plotted as a line by default.
 
-.. % DUMMY
-.. _fig_label:
+.. _fig_graph2:
 .. figure:: graph2.*
    :align:  center
 
-
-.. centered:: Plotting data from a file together with a function.
+   Plotting data from a file together with a function.
 
 While the axes ranges got adjusted automatically in the previous example, they
 might be fixed by keyword options in axes constructors. Plotting only a function
@@ -87,26 +83,24 @@ will need such a setting at least in the variable coordinate. The following code
 also shows how to set a logathmic axis in y-direction:
 
 
-.. include:: ../includes/graph3.py
+.. include:: graph3.py
    :literal:
 
-The result is shown in figure :ref:`fig:graph3`.
+The result is shown in figure :ref:`fig_graph3`.
 
-.. % DUMMY
-.. _fig_label:
+.. _fig_graph3:
 .. figure:: graph3.*
    :align:  center
 
+   Plotting a function for a given axis range and use a logarithmic y-axis.
 
-.. centered:: Plotting a function for a given axis range and use a logarithmic y-axis.
 
+.. _graph_components:
 
 Component architecture
 ======================
 
 .. % {{{
-
-.. _graph:components:
 
 Creating a graph involves a variety of tasks, which thus can be separated into
 components without significant additional costs. This structure manifests itself
@@ -135,20 +129,14 @@ axis
    graph coordinates. Because axes are also responsible for creating ticks and
    labels, showing up in the graph themselves and other things, this task is
    splitted into several independent subtasks. Axes are discussed separately in
-   chapter :ref:`axis`.
+   chapter :mod:`axis`.
 
 .. % }}}
 
-
-Module :mod:`graph.graph`: Graphs
-=================================
-
-.. % {{{
-
-.. _graph:graph:
-
 .. module:: graph.graph
-   :synopsis: Graph geometry
+
+Module :mod:`graph.graph`: Graph geometry
+=========================================
 
 
 The classes :class:`graphxy` and :class:`graphxyz` are part of the module
@@ -212,7 +200,7 @@ To actually plot something into the graph, the following instance method
    provided by *data* is used.
 
    *data* should be an instance of any of the data described in section
-   :ref:`graph:data`.
+   :mod:`graph.data`.
 
    When the same combination of styles (*i.e.* the same references) are used
    several times within the same graph instance, the styles are kindly asked by the
@@ -450,15 +438,10 @@ There are two projector classes :class:`central` and :class:`parallel`:
 .. % }}}
 
 
-Module :mod:`graph.data`: Data
-==============================
-
-.. % {{{
-
-.. _graph:data:
-
 .. module:: graph.data
-   :synopsis: Graph data
+
+Module :mod:`graph.data`: Graph data
+====================================
 
 
 The following classes provide data for the :meth:`plot` method of a graph. The
@@ -732,16 +715,10 @@ defined as:
 .. % }}}
 
 
-Module :mod:`graph.style`: Styles
-=================================
-
-.. % {{{
-
-.. _graph:style:
-
 .. module:: graph.style
-   :synopsis: Graph style
 
+Module :mod:`graph.style`: Graph styles
+=======================================
 
 Please note that we are talking about graph styles here. Those are responsible
 for plotting symbols, lines, bars and whatever else into a graph. Do not mix it
@@ -813,7 +790,7 @@ providing certain internal data.
    *size* using *symbolattrs*. *symbolattrs* is merged with ``defaultsymbolattrs``
    which is a list containing the decorator :class:`deco.stroked`. An instance of
    :class:`symbol` is the default style for all graph data classes described in
-   section :ref:`graph:data` except for :class:`function` and
+   section :mod:`graph.data` except for :class:`function` and
    :class:`paramfunction`.
 
 The class :class:`symbol` provides some symbol functions as member variables,
@@ -929,7 +906,7 @@ filling and stroking. Those are especially useful in combination with the
    ``defaultlineattrs`` which is a list containing the member variable
    ``changelinestyle`` as described below. An instance of :class:`line` is the
    default style of the graph data classes :class:`function` and
-   :class:`paramfunction` described in section :ref:`graph:data`.
+   :class:`paramfunction` described in section :mod:`graph.data`.
 
    .. % {{{
 
@@ -1177,16 +1154,10 @@ The class :class:`line` provides a changeable line style. Its definition is:
 .. % }}}
 
 
-Module :mod:`graph.key`: Keys
-=============================
-
-.. % {{{
-
-.. _graph:key:
-
 .. module:: graph.key
-   :synopsis: Graph keys
 
+Module :mod:`graph.key`: Graph keys
+===================================
 
 The following class provides a key, whose instances can be passed to the
 constructor keyword argument ``key`` of a graph. The class is implemented in

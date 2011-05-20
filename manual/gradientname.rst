@@ -1,12 +1,11 @@
-
 .. _gradientname:
 
-***************
-Named gradients
-***************
+*************************
+Appendix: Named gradients
+*************************
 
-.. % DUMMY
-.. _fig_label:
+.. _fig_gradientname:
 .. figure:: gradientname.*
    :align:  center
 
+   Names gradients

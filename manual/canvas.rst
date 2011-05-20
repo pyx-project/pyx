@@ -1,6 +1,7 @@
 
-.. _canvas:
+.. module:: canvas
 
+====================
 Module :mod:`canvas`
 ====================
 
@@ -16,12 +17,9 @@ A canvas may also be embedded in another one using its ``insert`` method. This
 may be useful when you want to apply a transformation on a whole set of
 operations..
 
-.. module:: canvas
 
-
-
-Class :class:`canvas`
----------------------
+Class canvas
+------------
 
 This is the basic class of the canvas module, which serves to collect various
 graphical and text elements you want to write eventually to an (E)PS file.
@@ -147,7 +145,7 @@ methods, which wrap the canvas into a single page document.
    gain access to the :class:`document.page` constructor arguments.
 
 For more information about the possible arguments of the :class:`document.page`
-constructor, we refer to Sect. :ref:`document`.
+constructor, we refer to Sect. :mod:`document`.
 
 .. % %% Local Variables:
 .. % %% mode: latex

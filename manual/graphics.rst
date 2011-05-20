@@ -1,12 +1,10 @@
+.. _graphics:
 
 **************
 Basic graphics
 **************
 
 .. sectionauthor:: Jörg Lehmann <joergl@users.sourceforge.net>
-
-
-.. _graphics:
 
 
 Introduction
@@ -75,19 +73,16 @@ means that if one wants to draw a rectangle, one should not use  ::
                      path.moveto(1, 0), path.lineto(0, 0))
 
 which would construct a rectangle out of four disconnected subpaths (see Fig.
-:ref:`fig:rects`\ a). In a better solution (see Fig. :ref:`fig:rects`\ b), the
+:ref:`fig_rects`\ a). In a better solution (see Fig. :ref:`fig_rects`\ b), the
 pen is not lifted between the first and the last point:
 
-.. % 
-.. % DUMMY
-.. _fig_label:
+.. _fig_rects:
 .. figure:: rects.*
    :align:  center
 
+   Rectangle example
 
-.. centered:: Rectangle consisting of (a) four separate lines, (b) one open path, and (c) one closed path. (d) Filling a path always closes it automatically.
-
-.. % 
+   Rectangle consisting of (a) four separate lines, (b) one open path, and (c) one closed path. (d) Filling a path always closes it automatically.
 
 ::
 
@@ -95,7 +90,7 @@ pen is not lifted between the first and the last point:
                      path.lineto(1, 1), path.lineto(1, 0),
                      path.lineto(0, 0))
 
-However, as one can see in the lower left corner of Fig. :ref:`fig:rects`\ b,
+However, as one can see in the lower left corner of Fig. :ref:`fig_rects`\ b,
 the rectangle is still incomplete.  It needs to be closed, which can  be done
 explicitly by using for the last straight line of the rectangle (from the point
 :math:`(0, 1)` back to the origin at :math:`(0, 0)`) the :class:`closepath`
@@ -108,9 +103,9 @@ directive::
 The :class:`closepath` directive adds a straight line from the current point to
 the first point of the current subpath and furthermore *closes* the sub path,
 i.e., it joins the beginning and the end of the line segment. This results in
-the intended rectangle shown in Fig. :ref:`fig:rects`\ c. Note that filling the
+the intended rectangle shown in Fig. :ref:`fig_rects`\ c. Note that filling the
 path implicitly closes every open subpath, as is shown for a single subpath in
-Fig. :ref:`fig:rects`\ d), which results from  ::
+Fig. :ref:`fig_rects`\ d), which results from  ::
 
    c.stroke(rect2, [deco.filled([color.grey(0.95)])])
 
@@ -119,9 +114,9 @@ the present case only consists of a single element, namely the so called
 decorator :class:`deco.filled`. As it name says, this decorator specifies that
 the path is not only being stroked but also filled with the given color. More
 information about decorators, styles and other attributes which can be passed as
-elements of the list can be found in Sect. :ref:`graphics:attributes`.  More
+elements of the list can be found in Sect. :ref:`graphics_attributes`.  More
 details on the available path elements can be found in Sect.
-:ref:`path:pathitem`.
+:ref:`path_pathitem`.
 
 To conclude this section, we should not forget to mention that rectangles are,
 of course, predefined in PyX, so above we could have as well written  ::
@@ -130,7 +125,7 @@ of course, predefined in PyX, so above we could have as well written  ::
 
 Here, the first two arguments specify the origin of the rectangle while the
 second two arguments define its width and height, respectively. For more details
-on the predefined paths, we refer the reader to Sect. :ref:`path:predefined`.
+on the predefined paths, we refer the reader to Sect. :ref:`path_predefined`.
 
 
 Path operations
@@ -144,19 +139,17 @@ means of a number of path methods, which we will introduce in the following.
 
 Suppose you want to draw the radii to the intersection points of a circle with a
 straight line. This task can be done using the following code which results in
-Fig. :ref:`fig:radii`
+Fig. :ref:`fig_radii`
 
 
-.. include:: ../includes/radii.py
+.. include:: radii.py
    :literal:
 
-.. % DUMMY
-.. _fig_label:
+.. _fig_radii:
 .. figure:: radii.*
    :align:  center
 
-
-.. centered:: Example: Intersection of circle with line yielding two radii.
+   Example: Intersection of circle with line yielding two radii.
 
 Here, the basic elements, a circle around the point :math:`(0, 0)` with radius
 :math:`2` and a straight line, are defined. Then, passing the *line*, to the
@@ -171,7 +164,7 @@ intersection points.
 
 Another powerful feature of PyX is its ability to split paths at a given set of
 parameters. For instance, in order to fill in the previous example the segment
-of the circle delimited by the straight line (cf. Fig. :ref:`fig:radii2`), one
+of the circle delimited by the straight line (cf. Fig. :ref:`fig_radii2`), one
 first has to construct a path corresponding to the outline of this segment. The
 following code snippet yields this *segment*  ::
 
@@ -186,13 +179,11 @@ following code snippet yields this *segment*  ::
 
    segment = line2 << arc
 
-.. % DUMMY
-.. _fig_label:
+.. _fig_radii2:
 .. figure:: radii2.*
    :align:  center
 
-
-.. centered:: Example: Intersection of circle with line yielding radii and circle segment.
+   Example: Intersection of circle with line yielding radii and circle segment.
 
 Here, we first split the circle using the :meth:`split` method passing the list
 of parameters obtained above. Since the circle is closed, this yields two arc
@@ -220,7 +211,7 @@ element. However, this is not the case: the actual range is much larger. The
 reason for this behaviour lies in the internal path handling of PyX: Before
 performing any non-trivial geometrical operation with a path, it will
 automatically be converted into an instance of the :class:`normpath` class (see
-also Sect. :ref:`path:normpath`). These so generated paths are already separated
+also Sect. :class:`path.normpath`). These so generated paths are already separated
 in their subpaths and only contain straight lines and Bézier curve segments.
 Thus, as is easily imaginable, they are much simpler to deal with.
 
@@ -247,13 +238,13 @@ and the end of a subpath, and thus PyX does not guarantee any particular result
 for this boundary case.
 
 More information on the available path methods can be found  in Sect.
-:ref:`path:path`.
+:class:`path.path`.
 
+
+.. _graphics_attributes:
 
 Attributes: Styles and Decorations
 ==================================
-
-.. _graphics:attributes:
 
 Attributes define properties of a given object when it is being used. Typically,
 there are different kind of attributes which are usually orthogonal to each
@@ -273,7 +264,7 @@ Here, we also encounter another feature of PyX's attribute system. For many
 attributes useful default values are stored as member variables of the actual
 attribute. For instance, ``style.linewidth.Thick`` is equivalent to
 ``style.linewidth(0.04, type="w", unit="cm")``, that is :math:`0.04` width cm
-(see Sect. :ref:`unit` for more information about PyX's unit system).
+(see Sect. :mod:`unit` for more information about PyX's unit system).
 
 Another important feature of PyX attributes is what is call attributed merging.
 A trivial example is the following::
