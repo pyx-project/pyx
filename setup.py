@@ -20,10 +20,16 @@ cfg.read("setup.cfg")
 if cfg.has_section("PyX"):
     if cfg.has_option("PyX", "use_setuptools") and cfg.getboolean("PyX", "use_setuptools"):
         from setuptools import setup, Extension
-        setuptools_args={"zip_safe": True}
+        import pkgutil
+        try:
+            pkgutil.get_data
+        except AttributeError:
+            setuptools_args={"zip_safe": False}
+        else:
+            setuptools_args={"zip_safe": True}
     else:
         from distutils.core import setup, Extension
-	setuptools_args={}
+        setuptools_args={}
 
 
 # build list of extension modules
