@@ -40,11 +40,8 @@ g.writeEPSfile("graph")
 \end{verbatim}
 The result \file{graph.eps} is shown in figure~\ref{fig:graph}.
 
-\begin{figure}[ht]
-\centerline{\includegraphics{graph}}
-\caption[A minimalistic plot for the data from a file.]{A minimalistic plot for the data from file \file{graph.dat}.}
-\label{fig:graph}
-\end{figure}
+\includegraphics{graph}
+\centerline{A minimalistic plot for the data from file \file{graph.dat}.}
 
 Instead of plotting data from a file, other data source are available
 as well. For example function data is created and placed into
@@ -63,11 +60,8 @@ addressed in more detail in section~\ref{graph:graph}. As you can see
 in figure~\ref{fig:graph2}, a function is plotted as a line by
 default.
 
-\begin{figure}[ht]
-\centerline{\includegraphics{graph2}}
-\caption{Plotting data from a file together with a function.}
-\label{fig:graph2}
-\end{figure}
+\includegraphics{graph2}
+\centerline{Plotting data from a file together with a function.}
 
 While the axes ranges got adjusted automatically in the previous
 example, they might be fixed by keyword options in axes constructors.
@@ -79,12 +73,8 @@ logathmic axis in y-direction:
 
 The result is shown in figure~\ref{fig:graph3}.
 
-\begin{figure}[ht]
-\centerline{\includegraphics{graph3}}
-\caption{Plotting a function for a given axis range and use a
-logarithmic y-axis.}
-\label{fig:graph3}
-\end{figure} % }}}
+\includegraphics{graph3}
+\centerline{Plotting a function for a given axis range and use a logarithmic y-axis.}
 
 \section{Component architecture} % {{{
 \label{graph:components}
@@ -657,28 +647,28 @@ For the sake of completeness we list the default patterns:
 
 The builtins in math expressions are listed in the following table:
 \begin{tableii}{l|l}{textrm}{name}{value}
-\code{neg}&\code{lambda x: -x}\\
-\code{abs}&\code{lambda x: x < 0 and -x or x}\\
-\code{sgn}&\code{lambda x: x < 0 and -1 or 1}\\
-\code{sqrt}&\code{math.sqrt}\\
-\code{exp}&\code{math.exp}\\
-\code{log}&\code{math.log}\\
-\code{sin}&\code{math.sin}\\
-\code{cos}&\code{math.cos}\\
-\code{tan}&\code{math.tan}\\
-\code{asin}&\code{math.asin}\\
-\code{acos}&\code{math.acos}\\
-\code{atan}&\code{math.atan}\\
-\code{sind}&\code{lambda x: math.sin(math.pi/180*x)}\\
-\code{cosd}&\code{lambda x: math.cos(math.pi/180*x)}\\
-\code{tand}&\code{lambda x: math.tan(math.pi/180*x)}\\
-\code{asind}&\code{lambda x: 180/math.pi*math.asin(x)}\\
-\code{acosd}&\code{lambda x: 180/math.pi*math.acos(x)}\\
-\code{atand}&\code{lambda x: 180/math.pi*math.atan(x)}\\
-\code{norm}&\code{lambda x, y: math.hypot(x, y)}\\
-\code{splitatvalue}&see the \code{splitatvalue} description below\\
-\code{pi}&\code{math.pi}\\
-\code{e}&\code{math.e}
+\lineii{\code{neg}}{\code{lambda x: -x}}
+\lineii{\code{abs}}{\code{lambda x: x < 0 and -x or x}}
+\lineii{\code{sgn}}{\code{lambda x: x < 0 and -1 or 1}}
+\lineii{\code{sqrt}}{\code{math.sqrt}}
+\lineii{\code{exp}}{\code{math.exp}}
+\lineii{\code{log}}{\code{math.log}}
+\lineii{\code{sin}}{\code{math.sin}}
+\lineii{\code{cos}}{\code{math.cos}}
+\lineii{\code{tan}}{\code{math.tan}}
+\lineii{\code{asin}}{\code{math.asin}}
+\lineii{\code{acos}}{\code{math.acos}}
+\lineii{\code{atan}}{\code{math.atan}}
+\lineii{\code{sind}}{\code{lambda x: math.sin(math.pi/180*x)}}
+\lineii{\code{cosd}}{\code{lambda x: math.cos(math.pi/180*x)}}
+\lineii{\code{tand}}{\code{lambda x: math.tan(math.pi/180*x)}}
+\lineii{\code{asind}}{\code{lambda x: 180/math.pi*math.asin(x)}}
+\lineii{\code{acosd}}{\code{lambda x: 180/math.pi*math.acos(x)}}
+\lineii{\code{atand}}{\code{lambda x: 180/math.pi*math.atan(x)}}
+\lineii{\code{norm}}{\code{lambda x, y: math.hypot(x, y)}}
+\lineii{\code{splitatvalue}}{see the \code{splitatvalue} description below}
+\lineii{\code{pi}}{\code{math.pi}}
+\lineii{\code{e}}{\code{math.e}}
 \end{tableii}
 \code{math} refers to Pythons \module{math} module. The
 \code{splitatvalue} function is defined as:
@@ -929,13 +919,6 @@ definition is:
   the data provided by the \class{range} style. The additional
   data column named \code{color} specifies the color of the rectangle
   defined by \var{gradient}. The valid color range is [0:1].
-
-  \begin{note}
-    Although this style can be used for plotting colored surfaces, it
-    will lead to a huge memory footprint of \PyX{} together with a
-    long running time and large outputs. Improved support for colored
-    surfaces is planned for the future.
-  \end{note}
 \end{classdesc} % }}}
 
 \begin{classdesc}{histogram}{lineattrs=[], steps=0, fromvalue=0, % {{{

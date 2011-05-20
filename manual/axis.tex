@@ -225,7 +225,11 @@ place for axis related data. Since these features are not interesting
 for the average \PyX{} user, we'll not go into all the details of
 their parameters and except for some handy axis position methods:
 
-\begin{methoddesc}[anchoredaxis]{basepath}{x1=None, x2=None}
+\begin{classdesc}{anchoredaxis}{}
+  DUMMY
+\end{classdesc}
+
+\begin{methoddesc}{basepath}{x1=None, x2=None}
   Returns a path instance for the base path. \var{x1} and \var{x2}
   define the axis range, the base path should cover. For \code{None}
   the beginning and end of the path is taken, which might cover a
@@ -235,37 +239,37 @@ their parameters and except for some handy axis position methods:
   the subaxis is the first or last of the subaxes.
 \end{methoddesc}
 
-\begin{methoddesc}[anchoredaxis]{vbasepath}{v1=None, v2=None}
+\begin{methoddesc}{vbasepath}{v1=None, v2=None}
   Like \method{basepath} but in graph coordinates.
 \end{methoddesc}
 
-\begin{methoddesc}[anchoredaxis]{gridpath}{x}
+\begin{methoddesc}{gridpath}{x}
   Returns a path instance for the grid path at position \var{x}.
   Might return \code{None} when no grid path is available.
 \end{methoddesc}
 
-\begin{methoddesc}[anchoredaxis]{vgridpath}{v}
+\begin{methoddesc}{vgridpath}{v}
   Like \method{gridpath} but in graph coordinates.
 \end{methoddesc}
 
-\begin{methoddesc}[anchoredaxis]{tickpoint}{x}
+\begin{methoddesc}{tickpoint}{x}
   Returns the position of \var{x} as a tuple \samp{(x, y)}.
 \end{methoddesc}
 
-\begin{methoddesc}[anchoredaxis]{vtickpoint}{v}
+\begin{methoddesc}{vtickpoint}{v}
   Like \method{tickpoint} but in graph coordinates.
 \end{methoddesc}
 
-\begin{methoddesc}[anchoredaxis]{tickdirection}{x}
+\begin{methoddesc}{tickdirection}{x}
   Returns the direction of a tick at \var{x} as a tuple \samp{(dx, dy)}.
   The tick direction points inside of the graph.
 \end{methoddesc}
 
-\begin{methoddesc}[anchoredaxis]{vtickdirection}{v}
+\begin{methoddesc}{vtickdirection}{v}
   Like \method{tickdirection} but in graph coordinates.
 \end{methoddesc}
 
-\begin{methoddesc}[anchoredaxis]{vtickdirection}{v}
+\begin{methoddesc}{vtickdirection}{v}
   Like \method{tickdirection} but in graph coordinates.
 \end{methoddesc}
 
@@ -948,6 +952,10 @@ receive a bad rating as well.
 
 The position of an axis is defined by an instance of a class providing
 the following methods:
+
+\begin{classdesc}{positioner}{}
+  DUMMY
+\end{classdesc}
 
 \begin{methoddesc}{vbasepath}{v1=None, v2=None}
   Returns a path instance for the base path. \var{v1} and \var{v2}

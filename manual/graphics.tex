@@ -80,13 +80,10 @@ subpaths (see Fig.~\ref{fig:rects}a). In a better solution (see
 Fig.~\ref{fig:rects}b), the pen is not lifted between the first and
 the last point:
 %
-\begin{figure}
-\centerline{\includegraphics{rects}}
-\caption{Rectangle consisting of (a) four separate lines, (b) one open
+\includegraphics{rects}
+\centerline{Rectangle consisting of (a) four separate lines, (b) one open
   path, and (c) one closed path. (d) Filling a
   path always closes it automatically.}
-\label{fig:rects}
-\end{figure}
 %
 \begin{verbatim}
 rect2 = path.path(path.moveto(0, 0), path.lineto(0, 1), 
@@ -146,11 +143,8 @@ Suppose you want to draw the radii to the intersection points of a
 circle with a straight line. This task can be done using the following
 code which results in Fig.~\ref{fig:radii}
 \verbatiminput{radii.py}
-\begin{figure}
-\centerline{\includegraphics{radii}}
-\caption{Example: Intersection of circle with line yielding two radii.}
-\label{fig:radii}
-\end{figure}
+\includegraphics{radii}
+\centerline{Example: Intersection of circle with line yielding two radii.}
 Here, the basic elements, a circle around the point $(0, 0)$ with
 radius $2$ and a straight line, are defined. Then, passing the \var{line}, to
 the \method{intersect()} method of \var{circle}, we obtain a tuple of
@@ -181,12 +175,9 @@ line1, line2, line3 = line.split(isects_line)
 
 segment = line2 << arc
 \end{verbatim}
-\begin{figure}
-\centerline{\includegraphics{radii2}}
-\caption{Example: Intersection of circle with line yielding radii and
+\includegraphics{radii2}
+\centerline{Example: Intersection of circle with line yielding radii and
   circle segment.}
-\label{fig:radii2}
-\end{figure}
 Here, we first split the circle using the \method{split()} method passing
 the list of parameters obtained above. Since the circle is closed,
 this yields two arc segments. We then use the \method{arclen()}, which
@@ -304,54 +295,15 @@ clears all strokestyle subclasses and thus \class{style.linewidth} and
 \code{attr.clear}. An overview over the most important attribute typesprovided 
 by PyX is given in the following table.
 \medskip
-\begin{center}
-\begin{tabular}{l|l|p{0.3\linewidth}}
-Attribute category & description & examples\\
-\hline
-\class{deco.deco} & decorator specifying the way the path is drawn & 
-\class{deco.stroked}\newline
-\class{deco.filled}\newline
-\class{deco.arrow}
-\\
-\class{style.strokestyle} & style used for path stroking &
-\class{style.linecap}\newline
-\class{style.linejoin}\newline
-\class{style.miterlimit}\newline 
-\class{style.dash}\newline 
-\class{style.linestyle}\newline
-\class{style.linewidth}\newline
-\class{color.color}
-\\
-\class{style.fillstyle} & style used for path filling &
-\class{color.color}\newline\class{pattern.pattern}
-\\
-\class{style.filltype} & type of path filling &
-\code{style.filltype.nonzero_winding} (default)\newline\code{style.filltype.even_odd}
-\\
-\class{deformer.deformer} &
-operations changing the shape of the path
-&
-\class{deformer.cycloid}\newline
-\class{deformer.smoothed}
-\\
-\class{text.textattr} & attributes used for typesetting &
-\class{text.halign}\newline
-\class{text.valign}\newline
-\class{text.mathmode}\newline
-\class{text.phantom}\newline
-\class{text.size}\newline
-\class{text.parbox}
-\\
-\class{trafo.trafo}
-& transformations applied when drawing object
-&
-\class{trafo.mirror}\newline
-\class{trafo.rotate}\newline
-\class{trafo.scale}\newline
-\class{trafo.slant}\newline
-\class{trafo.translate}
-\end{tabular}
-\end{center}
+\begin{tableiii}{l|l|l}{textrm}{Attribute category}{description}{examples}
+\lineiii{\class{deco.deco}}{decorator specifying the way the path is drawn}{\class{deco.stroked}, \class{deco.filled}, \class{deco.arrow}}
+\lineiii{\class{style.strokestyle}}{style used for path stroking}{\class{style.linecap}, \class{style.linejoin}, \class{style.miterlimit}, \class{style.dash}, \class{style.linestyle}, \class{style.linewidth}, \class{color.color}}
+\lineiii{\class{style.fillstyle}}{style used for path filling}{\class{color.color}, \class{pattern.pattern}}
+\lineiii{\class{style.filltype}}{type of path filling}{\code{style.filltype.nonzero_winding} (default), \code{style.filltype.even_odd}}
+\lineiii{\class{deformer.deformer}}{operations changing the shape of the path}{\class{deformer.cycloid}, \class{deformer.smoothed}}
+\lineiii{\class{text.textattr}}{attributes used for typesetting}{\class{text.halign}, \class{text.valign}, \class{text.mathmode}, \class{text.phantom}, \class{text.size}, \class{text.parbox}}
+\lineiii{\class{trafo.trafo}}{ransformations applied when drawing object}{\class{trafo.mirror}, \class{trafo.rotate}, \class{trafo.scale}, \class{trafo.slant}, \class{trafo.translate}}
+\end{tableiii}
 \medskip
 
 XXX specify which classes in the table are in fact instances

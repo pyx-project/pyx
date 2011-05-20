@@ -8,15 +8,14 @@
 With the \verb|unit| module \PyX{} makes available classes and
 functions for the specification and manipulation of lengths. As usual,
 lengths consist of a number together with a measurement unit, e.g.,
-\unit[1]{cm}, \unit[50]{points}, \unit[0.42]{inch}.  In addition,
+1 cm, 50 points, 0.42 inch.  In addition,
 lengths in \PyX{} are composed of the five types ``true'', ``user'',
-``visual'', ``width'', and ``\TeX'', e.g., \unit[1]{user cm},
-\unit[50]{true points}, $(0.42\ \mathrm{visual} + 0.2\ 
-\mathrm{width})$ inch.  As their names indicate, they serve different
-purposes. True lengths are not scalable and are mainly used for return
-values of \PyX{} functions.  The other length types can be rescaled by
-the user and differ with respect to the type of object they are
-applied to:
+``visual'', ``width'', and ``\TeX'', e.g., 1 user cm,
+50 true points, 0.42 visual + 0.2 width inch.  As their names
+indicate, they serve different purposes. True lengths are not scalable
+and are mainly used for return values of \PyX{} functions.  The other
+length types can be rescaled by the user and differ with respect to
+the type of object they are applied to:
 
 \begin{description}
 \item[user length:] used for lengths of graphical objects like
@@ -28,7 +27,7 @@ applied to:
 \end{description}
 
     When not specified otherwise, all types of lengths are interpreted
-in terms of a default unit, which, by default, is \unit[1]{cm}.
+in terms of a default unit, which, by default, is 1 cm.
 You may change this default unit by using the module level function
 \begin{funcdesc}{set}{uscale=None, vscale=None, wscale=None,
 xscale=None, defaultunit=None}
@@ -81,28 +80,38 @@ only differ in there values for \verb|type| and \verb|unit|. They are
 summarized in the following table
 
 \medskip
-\begin{center}
-\begin{tabular}{lll|lll}
-name & type & unit & name & type & unit\\
-\hline
-\constant{m} & user & m & \constant{v\_m} & visual & m\\
-\constant{cm} & user & cm & \constant{v\_cm} & visual & cm\\
-\constant{mm} & user & mm & \constant{v\_mm} & visual & mm\\
-\constant{inch} & user & inch & \constant{v\_inch} & visual & inch\\
-\constant{pt} & user & points & \constant{v\_pt} & visual & points\\
-\constant{t\_m} & true & m & \constant{w\_m} & width & m\\
-\constant{t\_cm} & true & cm & \constant{w\_cm} & width & cm\\
-\constant{t\_mm} & true & mm & \constant{w\_mm} & width & mm\\
-\constant{t\_inch} & true & inch & \constant{w\_inch} & width & inch\\
-\constant{t\_pt} & true & points & \constant{w\_pt} & width & points\\
-\constant{u\_m} & user & m & \constant{x\_m} & \TeX & m \\
-\constant{u\_cm} & user & cm & \constant{x\_cm} & \TeX & cm \\
-\constant{u\_mm} & user & mm & \constant{x\_mm} & \TeX & mm \\
-\constant{u\_inch} & user & inch & \constant{x\_inch} & \TeX & inch \\
-\constant{u\_pt} & user & points & \constant{x\_pt} & \TeX & points\\
-
-\end{tabular}
-\end{center}
+\begin{tableiii}{lll}{textrm}{name}{type}{unit}
+\lineiii{\constant{m}}{user}{m}
+\lineiii{\constant{cm}}{user}{cm}
+\lineiii{\constant{mm}}{user}{mm}
+\lineiii{\constant{inch}}{user}{inch}
+\lineiii{\constant{pt}}{user}{points}
+\lineiii{\constant{t\_m}}{true}{m}
+\lineiii{\constant{t\_cm}}{true}{cm}
+\lineiii{\constant{t\_mm}}{true}{mm}
+\lineiii{\constant{t\_inch}}{true}{inch}
+\lineiii{\constant{t\_pt}}{true}{points}
+\lineiii{\constant{u\_m}}{user}{m}
+\lineiii{\constant{u\_cm}}{user}{cm}
+\lineiii{\constant{u\_mm}}{user}{mm}
+\lineiii{\constant{u\_inch}}{user}{inch}
+\lineiii{\constant{u\_pt}}{user}{points}
+\lineiii{\constant{v\_m}}{visual}{m}
+\lineiii{\constant{v\_cm}}{visual}{cm}
+\lineiii{\constant{v\_mm}}{visual}{mm}
+\lineiii{\constant{v\_inch}}{visual}{inch}
+\lineiii{\constant{v\_pt}}{visual}{points}
+\lineiii{\constant{w\_m}}{width}{m}
+\lineiii{\constant{w\_cm}}{width}{cm}
+\lineiii{\constant{w\_mm}}{width}{mm}
+\lineiii{\constant{w\_inch}}{width}{inch}
+\lineiii{\constant{w\_pt}}{width}{points}
+\lineiii{\constant{x\_m}}{\TeX}{m }
+\lineiii{\constant{x\_cm}}{\TeX}{cm }
+\lineiii{\constant{x\_mm}}{\TeX}{mm }
+\lineiii{\constant{x\_inch}}{\TeX}{inch }
+\lineiii{\constant{x\_pt}}{\TeX}{points}
+\end{tableiii}
 \medskip
 
 Thus, in order to specify, e.g., a length of 5 width points, just use
@@ -112,17 +121,13 @@ Thus, in order to specify, e.g., a length of 5 width points, just use
 If you want to know the value of a \PyX{} length in certain units, you
 may use the predefined conversion functions which are given in the
 following table
-\begin{center}
-\begin{tabular}{ll}
-function & result \\
-\hline
-\texttt{tom(l)} & \texttt{l} in units of m\\
-\texttt{tocm(l)} & \texttt{l} in units of cm\\
-\texttt{tomm(l)} & \texttt{l} in units of mm\\
-\texttt{toinch(l)} & \texttt{l} in units of inch\\
-\texttt{topt(l)} & \texttt{l} in units of points\\
-\end{tabular}
-\end{center}
+\begin{tableii}{l|l}{textrm}{function}{result}
+\lineii{\texttt{tom(l)}}{\texttt{l} in units of m}
+\lineii{\texttt{tocm(l)}}{\texttt{l} in units of cm}
+\lineii{\texttt{tomm(l)}}{\texttt{l} in units of mm}
+\lineii{\texttt{toinch(l)}}{\texttt{l} in units of inch}
+\lineii{\texttt{topt(l)}}{\texttt{l} in units of points}
+\end{tableii}
 If \verb|l| is not yet a \verb|length| instance but a number, it first
 is interpreted as a user length in the default units. 
 
