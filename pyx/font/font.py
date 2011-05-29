@@ -465,7 +465,6 @@ class T1text_pt(text_pt):
                 registry.add(PSreencodefont(fontname, newfontname, encoding))
                 fontname = newfontname
 
-            print self.font
             if self.slant:
                 newfontmatrix = trafo.trafo_pt(matrix=((1, self.slant), (0, 1)))
                 if self.font.t1file is not None:
