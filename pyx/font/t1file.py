@@ -994,7 +994,7 @@ class T1file:
             for char, glyph in enumerate(self.encoding):
                 if glyph in glyphs:
                     encodingstrings.append("dup %i /%s put\n" % (char, glyph))
-            data1 = self.data1[:self.encodingstart] + "".join(encodingstrings) + self.data1[self.encodingend:]
+            data1 = self.data1[:self.encodingstart] + "\n" + "".join(encodingstrings) + self.data1[self.encodingend:]
         data1 = self.newlinepattern.subn("\n", data1)[0]
         data1 = self.uniqueidpattern.subn("", data1)[0]
 
