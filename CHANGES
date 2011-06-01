@@ -93,6 +93,11 @@ TODO:
     - describe creation and modification (inplace and ``modify by new'') of
       graph data
 
+0.12 (2011/../..):
+  - type 1 font modules:
+    - allow font slanting for T1builtinfont instances
+    - improve stripped font compatibility
+
 
 0.11.1 (2011/05/20):
   - canvas:
