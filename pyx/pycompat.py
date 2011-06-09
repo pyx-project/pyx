@@ -22,6 +22,21 @@
 
 class _marker: pass
 
+
+class wait_pipe:
+
+    def __init__(self, pipe, wait):
+        self.pipe = pipe
+        self.wait = wait
+
+    def write(self, str):
+        self.pipe.write(str)
+
+    def close(self):
+        self.pipe.close()
+        self.wait()
+
+
 def popen(cmd, mode="r", bufsize=_marker):
     try:
         import subprocess
@@ -37,7 +52,7 @@ def popen(cmd, mode="r", bufsize=_marker):
         if mode[0] == "r":
             return pipes.stdout
         else:
-            return pipes.stdin
+            return wait_pipe(pipes.stdin, pipes.wait)
     except ImportError:
         import os
         if bufsize is _marker:

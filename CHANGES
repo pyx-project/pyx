@@ -97,6 +97,8 @@ TODO:
   - type 1 font modules:
     - allow font slanting for T1builtinfont instances
     - improve stripped font compatibility
+  - epsfile module:
+    - fix raise condition while generating bitmap for PDF inclusion
 
 
 0.11.1 (2011/05/20):

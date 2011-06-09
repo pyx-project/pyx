@@ -321,6 +321,7 @@ class canvas(_canvas):
             gscommand += " -"
             pipe = pycompat.popen(gscommand, "wb")
             self.writeEPSfile(pipe, **kwargs)
+            pipe.close()
         elif input == "pdf":
             fd, fname = tempfile.mkstemp()
             f = os.fdopen(fd, "wb")
