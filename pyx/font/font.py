@@ -325,7 +325,7 @@ class font:
 
 class T1font(font):
 
-    def __init__(self, t1file, metric):
+    def __init__(self, t1file, metric=None):
         self.t1file = t1file
         self.name = t1file.name
         self.metric = metric

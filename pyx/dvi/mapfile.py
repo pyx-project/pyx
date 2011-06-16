@@ -128,7 +128,7 @@ class MAPline:
                 try:
                     metricfile = filelocator.open(os.path.splitext(self.fontfilename)[0], [filelocator.format.afm])
                 except IOError:
-                    self._font = font.T1font(t1font, None)
+                    self._font = font.T1font(t1font)
                 else:
                     self._font = font.T1font(t1font, afmfile.AFMfile(metricfile))
                     metricfile.close()
