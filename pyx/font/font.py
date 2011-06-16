@@ -22,14 +22,8 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 import warnings
-from pyx import bbox, canvasitem, deco, path, pswriter, pdfwriter, trafo, unit
+from pyx import bbox, canvasitem, deco, path, pswriter, pdfwriter, trafo, unit, pycompat
 import t1file
-
-try:
-    set()
-except NameError:
-    # Python 2.3
-    from sets import Set as set
 
 
 ##############################################################################
@@ -45,8 +39,8 @@ class PST1file(pswriter.PSresource):
         self.type = "t1file"
         self.t1file = t1file
         self.id = t1file.name
-        self.glyphnames = set(glyphnames)
-        self.charcodes = set(charcodes)
+        self.glyphnames = pycompat.set(glyphnames)
+        self.charcodes = pycompat.set(charcodes)
 
     def merge(self, other):
         self.glyphnames.update(other.glyphnames)
@@ -168,7 +162,7 @@ class PDFfont(pdfwriter.PDFobject):
 
         self.fontname = fontname
         self.basefontname = basefontname
-        self.charcodes = set(charcodes)
+        self.charcodes = pycompat.set(charcodes)
         self.fontdescriptor = fontdescriptor
         self.encoding = encoding
         self.metric = metric
@@ -269,8 +263,8 @@ class PDFfontfile(pdfwriter.PDFobject):
     def __init__(self, t1file, glyphnames, charcodes):
         pdfwriter.PDFobject.__init__(self, "fontfile", t1file.name)
         self.t1file = t1file
-        self.glyphnames = set(glyphnames)
-        self.charcodes = set(charcodes)
+        self.glyphnames = pycompat.set(glyphnames)
+        self.charcodes = pycompat.set(charcodes)
 
     def merge(self, other):
         self.glyphnames.update(other.glyphnames)
@@ -404,7 +398,7 @@ class T1text_pt(text_pt):
         """returns the name of the encoding (in encodings) mapping self.glyphnames to codepoints
         If no such encoding can be found or extended, a new encoding is added to encodings
         """
-        glyphnames = set(self.glyphnames)
+        glyphnames = pycompat.set(self.glyphnames)
         if len(glyphnames) > 256:
             raise ValueError("glyphs do not fit into one single encoding")
         for encodingname, encoding in encodings.items():
