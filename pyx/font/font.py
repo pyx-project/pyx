@@ -439,10 +439,10 @@ class T1text_pt(text_pt):
             else:
                 if i:
                     x_pt += self.spaced_pt
-                glyphpath, wx_pt, wy_pt = self.font.t1file.getglyphpathwxwy_pt(value, self.size_pt, convertcharcode=not self.decode)
-                textpath += glyphpath.transformed(trafo.translate_pt(x_pt, y_pt))
-                x_pt += wx_pt
-                y_pt += wy_pt
+                glyphpath = self.font.t1file.getglyphpath_pt(x_pt, y_pt, value, self.size_pt, convertcharcode=not self.decode)
+                textpath += glyphpath.path
+                x_pt += glyphpath.wx_pt
+                y_pt += glyphpath.wy_pt
         return textpath
 
     def processPS(self, file, writer, context, registry, bbox):

@@ -876,24 +876,23 @@ class T1file:
     def gatherglyphcalls(self, glyph, seacglyphs, subrs, othersubrs, context):
         self.gathercalls(self.getglyphcmds(glyph), seacglyphs, subrs, othersubrs, context)
 
-    def getglyphpathwxwy_pt(self, glyph, size, convertcharcode=False):
+    def getglyphpath_pt(self, x_pt, y_pt, glyph, size_pt, convertcharcode=False):
+        """return an object containing the PyX path, wx_pt and wy_pt for glyph named glyph"""
         if convertcharcode:
             if not self.encoding:
                 self._encoding()
             glyph = self.encoding[glyph]
-        t = self.fontmatrix.scaled(size)
+        t = self.fontmatrix.scaled(size_pt)
+        tpath = t.translated_pt(x_pt, y_pt)
         context = T1context(self)
         p = path()
-        self.updateglyphpath(glyph, p, t, context)
-        wx, wy = t.apply_pt(context.wx, context.wy)
-        return p, wx, wy
-
-    def getglyphpath(self, glyph, size, convertcharcode=False):
-        """return a PyX path for glyph named glyph"""
-        return self.getglyphpathwxwy_pt(glyph, size)[0]
-
-    def getglyphwxwy_pt(self, glyph, size, convertcharcode=False):
-        return self.getglyphpathwxwy_pt(glyph, size)[1:]
+        self.updateglyphpath(glyph, p, tpath, context)
+        class glyphpath:
+            def __init__(self, p, wx_pt, wy_pt):
+                self.path = p
+                self.wx_pt = wx_pt
+                self.wy_pt = wy_pt
+        return glyphpath(p, *t.apply_pt(context.wx, context.wy))
 
     def getdata2(self, subrs=None, glyphs=None):
         """makes a data2 string
