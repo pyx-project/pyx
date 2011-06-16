@@ -21,6 +21,7 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
+import warnings
 from pyx import bbox, canvasitem, deco, path, pswriter, pdfwriter, trafo, unit
 import t1file
 
@@ -390,7 +391,8 @@ class T1text_pt(text_pt):
 
     def bbox(self):
         if self.font.metric is None:
-            raise ValueError("metric missing")
+            warnings.warn("We are about to extract the text bounding box information by calculating the path of the text. This is slow. You should provide an afm file whenever possible.")
+            return self.textpath().bbox()
         if not self.decode:
             raise ValueError("decoding required for font metric access (bbox)")
         return bbox.bbox_pt(self.x_pt,
