@@ -421,33 +421,36 @@ class T1text_pt(text_pt):
         encodings[encodingname] = dict([(glyphname, i) for i, glyphname in enumerate(glyphnames)])
         return encodingname
 
+    def textpath(self):
+        if self.decode:
+            if self.kerning:
+                data = self.font.metric.resolvekernings(self.glyphnames, self.size_pt)
+            else:
+                data = self.glyphnames
+        else:
+            data = self.charcodes
+        textpath = path.path()
+        x_pt = self.x_pt
+        y_pt = self.y_pt
+        for i, value in enumerate(data):
+            if self.kerning and i % 2:
+                if value is not None:
+                    x_pt += value
+            else:
+                if i:
+                    x_pt += self.spaced_pt
+                glyphpath, wx_pt, wy_pt = self.font.t1file.getglyphpathwxwy_pt(value, self.size_pt, convertcharcode=not self.decode)
+                textpath += glyphpath.transformed(trafo.translate_pt(x_pt, y_pt))
+                x_pt += wx_pt
+                y_pt += wy_pt
+        return textpath
+
     def processPS(self, file, writer, context, registry, bbox):
         if not self.ignorebbox:
             bbox += self.bbox()
 
         if writer.text_as_path:
-            if self.decode:
-                if self.kerning:
-                    data = self.font.metric.resolvekernings(self.glyphnames, self.size_pt)
-                else:
-                    data = self.glyphnames
-            else:
-                data = self.charcodes
-            textpath = path.path()
-            x_pt = self.x_pt
-            y_pt = self.y_pt
-            for i, value in enumerate(data):
-                if self.kerning and i % 2:
-                    if value is not None:
-                        x_pt += value
-                else:
-                    if i:
-                        x_pt += self.spaced_pt
-                    glyphpath, wx_pt, wy_pt = self.font.t1file.getglyphpathwxwy_pt(value, self.size_pt, convertcharcode=not self.decode)
-                    textpath += glyphpath.transformed(trafo.translate_pt(x_pt, y_pt))
-                    x_pt += wx_pt
-                    y_pt += wy_pt
-            deco.decoratedpath(textpath, fillstyles=[]).processPS(file, writer, context, registry, bbox)
+            deco.decoratedpath(self.textpath(), fillstyles=[]).processPS(file, writer, context, registry, bbox)
         else:
             # register resources
             if self.font.t1file is not None:
@@ -510,28 +513,7 @@ class T1text_pt(text_pt):
             bbox += self.bbox()
 
         if writer.text_as_path:
-            if self.decode:
-                if self.kerning:
-                    data = self.font.metric.resolvekernings(self.glyphnames, self.size_pt)
-                else:
-                    data = self.glyphnames
-            else:
-                data = self.charcodes
-            textpath = path.path()
-            x_pt = self.x_pt
-            y_pt = self.y_pt
-            for i, value in enumerate(data):
-                if self.kerning and i % 2:
-                    if value is not None:
-                        x_pt += value
-                else:
-                    if i:
-                        x_pt += self.spaced_pt
-                    glyphpath, wx_pt, wy_pt = self.font.t1file.getglyphpathwxwy_pt(value, self.size_pt, convertcharcode=not self.decode)
-                    textpath += glyphpath.transformed(trafo.translate_pt(x_pt, y_pt))
-                    x_pt += wx_pt
-                    y_pt += wy_pt
-            deco.decoratedpath(textpath, fillstyles=[]).processPDF(file, writer, context, registry, bbox)
+            deco.decoratedpath(self.textpath(), fillstyles=[]).processPDF(file, writer, context, registry, bbox)
         else:
             if self.decode:
                 encodingname = self.getencodingname(writer.encodings.setdefault(self.font.name, {}))
