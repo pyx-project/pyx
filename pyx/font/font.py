@@ -375,6 +375,7 @@ class T1text_pt(text_pt):
         self.kerning = kerning
         self.ligatures = ligatures
         self.spaced_pt = spaced_pt
+        self._textpath = None
 
         if self.kerning and not self.decode:
             raise ValueError("decoding required for font metric access (kerning)")
@@ -418,28 +419,29 @@ class T1text_pt(text_pt):
         return encodingname
 
     def textpath(self):
-        if self.decode:
-            if self.kerning:
-                data = self.font.metric.resolvekernings(self.glyphnames, self.size_pt)
+        if self._textpath is None:
+            if self.decode:
+                if self.kerning:
+                    data = self.font.metric.resolvekernings(self.glyphnames, self.size_pt)
+                else:
+                    data = self.glyphnames
             else:
-                data = self.glyphnames
-        else:
-            data = self.charcodes
-        textpath = path.path()
-        x_pt = self.x_pt
-        y_pt = self.y_pt
-        for i, value in enumerate(data):
-            if self.kerning and i % 2:
-                if value is not None:
-                    x_pt += value
-            else:
-                if i:
-                    x_pt += self.spaced_pt
-                glyphpath = self.font.t1file.getglyphpath_pt(x_pt, y_pt, value, self.size_pt, convertcharcode=not self.decode)
-                textpath += glyphpath.path
-                x_pt += glyphpath.wx_pt
-                y_pt += glyphpath.wy_pt
-        return textpath
+                data = self.charcodes
+            self._textpath = path.path()
+            x_pt = self.x_pt
+            y_pt = self.y_pt
+            for i, value in enumerate(data):
+                if self.kerning and i % 2:
+                    if value is not None:
+                        x_pt += value
+                else:
+                    if i:
+                        x_pt += self.spaced_pt
+                    glyphpath = self.font.t1file.getglyphpath_pt(x_pt, y_pt, value, self.size_pt, convertcharcode=not self.decode)
+                    self._textpath += glyphpath.path
+                    x_pt += glyphpath.wx_pt
+                    y_pt += glyphpath.wy_pt
+        return self._textpath
 
     def processPS(self, file, writer, context, registry, bbox):
         if not self.ignorebbox:
