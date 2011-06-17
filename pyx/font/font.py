@@ -385,7 +385,7 @@ class T1text_pt(text_pt):
 
     def bbox(self):
         if self.font.metric is None:
-            warnings.warn("We are about to extract the text bounding box information by calculating the path of the text. This is slow. You should provide an afm file whenever possible.")
+            warnings.warn("We are about to extract the bounding box from the path of the text. This is slow and differs from the font metric information. You should provide an afm file whenever possible.")
             return self.textpath().bbox()
         if not self.decode:
             raise ValueError("decoding required for font metric access (bbox)")
