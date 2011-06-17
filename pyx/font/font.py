@@ -23,7 +23,7 @@
 
 import warnings
 from pyx import bbox, canvasitem, deco, path, pswriter, pdfwriter, trafo, unit, pycompat
-import t1file
+import t1file, afmfile
 
 
 ##############################################################################
@@ -359,7 +359,7 @@ class text_pt(canvasitem.canvasitem):
 
 class T1text_pt(text_pt):
 
-    def __init__(self, font, x_pt, y_pt, charcodes, size_pt, decoding=None, slant=None, ignorebbox=False, kerning=False, ligatures=False, spaced_pt=0):
+    def __init__(self, font, x_pt, y_pt, charcodes, size_pt, decoding=afmfile.unicodestring, slant=None, ignorebbox=False, kerning=False, ligatures=False, spaced_pt=0):
         if decoding is not None:
             self.glyphnames = [decoding[character] for character in charcodes]
             self.decode = True
