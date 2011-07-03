@@ -3,6 +3,7 @@
 #
 # Copyright (C) 2002-2011 Jörg Lehmann <joergl@users.sourceforge.net>
 # Copyright (C) 2002-2011 André Wobst <wobsta@users.sourceforge.net>
+# Copyright (C) 2011 Michael Schindler <m-schindler@users.sourceforge.net>
 #
 # This file is part of PyX (http://pyx.sourceforge.net/).
 #
@@ -21,5 +22,5 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 
-version = "0.11.1"
-date = "2011/05/20"
+version = "0.11.1+"
+date = "2011/07/01"
