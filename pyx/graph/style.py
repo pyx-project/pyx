@@ -38,7 +38,7 @@ class _style:
     all methods of this base class (e.g. this class is not an abstract
     class in any respect).
 
-    A style should never store private data by istance variables
+    A style should never store private data by instance variables
     (i.e. accessing self), but it should use the sharedata and privatedata
     instances instead. A style instance can be used multiple times with
     different sharedata and privatedata instances at the very same time.
@@ -49,9 +49,9 @@ class _style:
     modified:
      - providesdata is a list of variable names a style offers via
        the sharedata instance. This list is used to determine whether
-       all needs of subsequent styles are fullfilled. Otherwise
+       all needs of subsequent styles are fulfilled. Otherwise
        getdefaultprovider should return a proper style to be used.
-     - needsdata is a list of variable names the style needs to access in the 
+     - needsdata is a list of variable names the style needs to access in the
        sharedata instance.
     """
 
@@ -138,6 +138,7 @@ class pos(_style):
         sharedata.poscolumnnames = []
         sharedata.vposmissing = []
         for count, axisnames in enumerate(graph.axesnames):
+            # all used axisnames are also data columns
             for axisname in axisnames:
                 for columnname in columnnames:
                     if axisname == columnname:

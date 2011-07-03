@@ -66,13 +66,13 @@ _mathglobals = {"neg": lambda x: -x,
 class _data:
     """graph data interface
 
-    Graph data consists in columns, where each column might be identified by a
+    Graph data consists of columns, where each column might be identified by a
     string or an integer. Each row in the resulting table refers to a data
     point.
 
     All methods except for the constructor should consider self and its
     attributes to be readonly, since the data instance might be shared between
-    several graphs simultaniously.
+    several graphs simultaneously.
 
     The instance variable columns is a dictionary mapping column names to the
     data of the column (i.e. to a list). Only static columns (known at

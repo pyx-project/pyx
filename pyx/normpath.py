@@ -510,8 +510,8 @@ class normcurve_pt(normsubpathitem):
         return result
 
     def intersect(self, other, epsilon):
-        # There can be no intersection point, when the control boxes are not
-        # overlapping. Note that we use the control box instead of the bounding
+        # There can be no intersection point if the control boxes do not
+        # overlap. Note that we use the control box instead of the bounding
         # box here, because the former can be calculated more efficiently for
         # Bezier curves.
         if not self.cbox().intersects(other.cbox()):
