@@ -2,7 +2,7 @@ Customize fonts
 
 In LaTeX, there are nice packages allowing to switch fonts. Hence, for a simple
 example we change the mode of the default texrunner instance to LaTeX and use
-the `preamble` method to load the `palatino` package. ...
+the `preamble` method to load the `times` package. ...
 
 !! In general, it is also favourable to employ LaTeX when using your own Type1
 fonts. Still you can also use different fonts in plain TeX if you are familiar
@@ -21,9 +21,10 @@ are part of any valid Acrobat Reader and Ghostscript installation. These fonts
 are therefore not explicitly included in the output of PyX. This behaviour is
 <> from LaTeX, where these standard 35 fonts usually are not contained in the
 standard font-map file `psfonts.map`.
-If you say
+If you say in the PyX configuration file
 
-    text.set(fontmaps="download35.map")
+    psfontmaps = psfonts.map download35.map
+    pdffontmaps = pdftex.map download35.map
 
 then PyX finds the corresponding fonts in the map-file and includes the fonts
 in the output EPS and PDF files.
