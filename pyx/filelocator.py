@@ -200,7 +200,7 @@ class kpsewhich:
                 break
         else:
             return []
-        full_filename = full_filenames.split("\n")[0]
+        full_filename = full_filenames.split("\n")[0].rstrip("\r")
         def _opener():
             try:
                 return builtinopen(full_filename, mode)
@@ -223,7 +223,7 @@ class locate:
                 break
         else:
             return []
-        full_filename = full_filenames.split("\n")[0]
+        full_filename = full_filenames.split("\n")[0].rstrip("\r")
         def _opener():
             try:
                 return builtinopen(full_filenames, mode)

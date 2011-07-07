@@ -102,6 +102,8 @@ TODO:
     - allow Type1 font usage without TeX and without AFM font metric
   - epsfile module:
     - fix raise condition while generating bitmap for PDF inclusion
+  - filelocator module:
+    - fix text mode line ending issue for MS Windows
   - added the mpost (MetaPost) module:
     - create smooth paths from a series of points (TODO: documentation)
 
