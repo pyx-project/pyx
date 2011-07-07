@@ -104,6 +104,9 @@ TODO:
     - fix raise condition while generating bitmap for PDF inclusion
   - filelocator module:
     - fix text mode line ending issue for MS Windows
+  - text module:
+    - fix subprocess call on MS Windows (closefds not functional not also
+      not required at all)
   - added the mpost (MetaPost) module:
     - create smooth paths from a series of points (TODO: documentation)
 

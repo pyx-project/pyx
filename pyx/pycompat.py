@@ -60,6 +60,23 @@ def popen(cmd, mode="r", bufsize=_marker):
         else:
             return os.popen(cmd, mode, bufsize)
 
+def popen4(cmd, mode="t", bufsize=_marker):
+    try:
+        import subprocess
+        kwargs = {"stdin": subprocess.PIPE,
+                  "stdout": subprocess.PIPE,
+                  "stderr": subprocess.STDOUT}
+        if bufsize is not _marker:
+            kwargs["bufsize"] = bufsize
+        pipes = subprocess.Popen(cmd, shell=True, **kwargs)
+        return pipes.stdin, pipes.stdout
+    except ImportError:
+        import os
+        if bufsize is _marker:
+            return os.popen4(cmd, mode)
+        else:
+            return os.popen4(cmd, mode, bufsize)
+
 try:
     any = any
 except NameError:

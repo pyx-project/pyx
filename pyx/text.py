@@ -22,16 +22,9 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 import errno, glob, os, threading, Queue, re, tempfile, atexit, time, warnings
-import config, unit, box, canvas, trafo, version, attr, style, filelocator
+import config, unit, box, canvas, trafo, version, attr, style, filelocator, pycompat
 from pyx.dvi import dvifile
 import bbox as bboxmodule
-
-try:
-    import subprocess
-except ImportError:
-    have_subprocess = False
-else:
-    have_subprocess = True
 
 class PyXTeXWarning(UserWarning): pass
 warnings.filterwarnings('always', category=PyXTeXWarning)
@@ -905,16 +898,11 @@ class texrunner:
                 ipcflag = " --ipc"
             else:
                 ipcflag = ""
-            if have_subprocess:
-                p = subprocess.Popen("%s%s %s" % (self.mode, ipcflag, self.texfilename), shell=True, bufsize=0,
-                                     stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, close_fds=True)
-                self.texinput, self.texoutput = p.stdin, p.stdout
-            else:
-                try:
-                    self.texinput, self.texoutput = os.popen4("%s%s %s" % (self.mode, ipcflag, self.texfilename), "t", 0)
-                except ValueError:
-                    # XXX: workaround for MS Windows (bufsize = 0 makes trouble!?)
-                    self.texinput, self.texoutput = os.popen4("%s%s %s" % (self.mode, ipcflag, self.texfilename), "t")
+            try:
+                self.texinput, self.texoutput = pycompat.popen4("%s%s %s" % (self.mode, ipcflag, self.texfilename), "t", 0)
+            except ValueError:
+                # workaround: bufsize = 0 is not supported on MS windows for os.open4 (Python 2.4 and below, i.e. where subprocess is not available)
+                self.texinput, self.texoutput = pycompat.popen4("%s%s %s" % (self.mode, ipcflag, self.texfilename), "t")
             atexit.register(_cleantmp, self)
             self.expectqueue = Queue.Queue(1)  # allow for a single entry only -> keeps the next InputMarker to be wait for
             self.gotevent = threading.Event()  # keeps the got inputmarker event
