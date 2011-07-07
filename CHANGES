@@ -107,6 +107,8 @@ TODO:
   - text module:
     - fix subprocess call on MS Windows (closefds not functional not also
       not required at all)
+  - dvifile module:
+    - fix for MS Windows: open virtual font files in binary mode
   - added the mpost (MetaPost) module:
     - create smooth paths from a series of points (TODO: documentation)
 

@@ -220,7 +220,7 @@ class DVIfile:
 
         # check whether it's a virtual font by trying to open it. if this fails, it is an ordinary TeX font
         try:
-             fontfile = filelocator.open(fontname, [filelocator.format.vf])
+             fontfile = filelocator.open(fontname, [filelocator.format.vf], mode="rb")
         except IOError:
             afont = texfont.TeXfont(fontname, c, q/self.tfmconv, d/self.tfmconv, self.tfmconv, self.pyxconv, self.debug>1)
         else:
