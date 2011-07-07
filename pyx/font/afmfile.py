@@ -1371,7 +1371,7 @@ class AFMfile(metric.metric):
                 i += 1
         return glyphnames
 
-    def resolvekernings(self, glyphnames, size=None):
+    def resolvekernings(self, glyphnames, size_pt=None):
         result = [None]*(2*len(glyphnames)-1)
         for i, glyphname in enumerate(glyphnames):
             result[2*i] = glyphname
@@ -1379,7 +1379,7 @@ class AFMfile(metric.metric):
                 kernpair = self.kernpairsdict.get((glyphnames[i-1], glyphname))
                 if kernpair:
                     if size is not None:
-                        result[2*i-1] = kernpair.x*size/1000.0
+                        result[2*i-1] = kernpair.x*size_pt/1000.0
                     else:
                         result[2*i-1] = kernpair.x
         return result
