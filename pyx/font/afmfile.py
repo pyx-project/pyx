@@ -1347,21 +1347,17 @@ class AFMfile(metric.metric):
                 else:
                     raise AFMError("Undefined state in AFM reader")
 
-    def fucking_scale(self):
-        # XXX XXX XXX
-        return 1000.0
-
     def width_ds(self, glyphname):
         return self.charmetricsdict[glyphname].widths[0][0]
 
-    def width_pt(self, glyphnames, size):
-        return sum([self.charmetricsdict[glyphname].widths[0][0] for glyphname in glyphnames])*size/self.fucking_scale()
+    def width_pt(self, glyphnames, size_pt):
+        return sum([self.charmetricsdict[glyphname].widths[0][0] for glyphname in glyphnames])*size_pt/1000.0
 
-    def height_pt(self, glyphnames, size):
-        return max([self.charmetricsdict[glyphname].bbox[3] for glyphname in glyphnames])*size/self.fucking_scale()
+    def height_pt(self, glyphnames, size_pt):
+        return max([self.charmetricsdict[glyphname].bbox[3] for glyphname in glyphnames])*size_pt/1000.0
 
-    def depth_pt(self, glyphnames, size):
-        return min([self.charmetricsdict[glyphname].bbox[1] for glyphname in glyphnames])*size/self.fucking_scale()
+    def depth_pt(self, glyphnames, size_pt):
+        return min([self.charmetricsdict[glyphname].bbox[1] for glyphname in glyphnames])*size_pt/1000.0
 
     def resolveligatures(self, glyphnames):
         i = 1
@@ -1383,7 +1379,7 @@ class AFMfile(metric.metric):
                 kernpair = self.kernpairsdict.get((glyphnames[i-1], glyphname))
                 if kernpair:
                     if size is not None:
-                        result[2*i-1] = kernpair.x*size/self.fucking_scale()
+                        result[2*i-1] = kernpair.x*size/1000.0
                     else:
                         result[2*i-1] = kernpair.x
         return result
