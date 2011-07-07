@@ -103,7 +103,7 @@ TODO:
   - epsfile module:
     - fix raise condition while generating bitmap for PDF inclusion
   - added the mpost (MetaPost) module:
-    - create smooth paths from a series of points
+    - create smooth paths from a series of points (TODO: documentation)
 
 
 0.11.1 (2011/05/20):
