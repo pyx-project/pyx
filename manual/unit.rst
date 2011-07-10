@@ -1,6 +1,8 @@
 
 .. module:: unit
 
+.. _module_unit:
+
 ******************
 Module :mod:`unit`
 ******************
@@ -57,8 +59,8 @@ admittedly rather unfortunate case, just use  ::
 at the beginning of your program.
 
 
-Class length
-============
+Class :class:`length`
+=====================
 
 
 .. class:: length(f, type="u", unit=None)

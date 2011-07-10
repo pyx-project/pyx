@@ -1,3 +1,4 @@
+
 .. module:: trafo
 
 *******************************************
@@ -12,14 +13,15 @@ thereof, which provide special operations like translation, rotation, scaling,
 and mirroring.
 
 
-Class trafo
-===========
+Class :class:`trafo`
+===================
 
 The ``trafo`` class represents a general linear transformation, which is defined
-for a vector :math:`\vec{x}` as  ::
+for a vector :math:`\vec{x}` as
 
-   XXX: translate this math
-     \vec{x}' = \mathsf{A}\, \vec{x} + \vec{b}\ ,
+.. math::
+
+   \vec{x}' = \mathsf{A}\, \vec{x} + \vec{b}\ ,
 
 where :math:`\mathsf{A}` is the transformation matrix and :math:`\vec{b}` the
 translation vector. The transformation matrix must not be singular, *i.e.* we
@@ -35,70 +37,71 @@ be obtained via the ``trafo`` method ``inverse()``, defined by the inverse
 :math:`\mathsf{A}^{-1}` of the transformation matrix and the translation vector
 :math:`-\mathsf{A}^{-1}\vec{b}`.
 
-The methods of the ``trafo`` class are summarized in the following table.
+.. class:: trafo(matrix=((1,0),(0,1)), vector=(0,0))
 
-+-----------------------------------------+----------------------------------------------+
-| ``trafo`` method                        | function                                     |
-+=========================================+==============================================+
-| ``__init__(matrix=((1,0),(0,1)),        | create new ``trafo`` instance with           |
-| vector=(0,0)):``                        | transformation ``matrix`` and ``vector``.    |
-+-----------------------------------------+----------------------------------------------+
-| ``apply(x, y)``                         | apply ``trafo`` to point vector              |
-|                                         | :math:`(\mathtt{x}, \mathtt{y})`.            |
-+-----------------------------------------+----------------------------------------------+
-| ``inverse()``                           | returns inverse transformation of ``trafo``. |
-+-----------------------------------------+----------------------------------------------+
-| ``mirrored(angle)``                     | returns ``trafo`` followed by mirroring at   |
-|                                         | line through :math:`(0,0)` with  direction   |
-|                                         | ``angle`` in degrees.                        |
-+-----------------------------------------+----------------------------------------------+
-| ``rotated(angle, x=None, y=None)``      | returns ``trafo`` followed by rotation by    |
-|                                         | ``angle`` degrees around point               |
-|                                         | :math:`(\mathtt{x}, \mathtt{y})`, or         |
-|                                         | :math:`(0,0)`, if not given.                 |
-+-----------------------------------------+----------------------------------------------+
-| ``scaled(sx, sy=None, x=None, y=None)`` | returns ``trafo`` followed by scaling with   |
-|                                         | scaling factor ``sx`` in :math:`x`\          |
-|                                         | -direction, ``sy`` in :math:`y`\ -direction  |
-|                                         | (:math:`\mathtt{sy}=\mathtt{sx}`, if not     |
-|                                         | given) with scaling center                   |
-|                                         | :math:`(\mathtt{x}, \mathtt{y})`, or         |
-|                                         | :math:`(0,0)`, if not given.                 |
-+-----------------------------------------+----------------------------------------------+
-| ``translated(x, y)``                    | returns ``trafo`` followed by translation by |
-|                                         | vector :math:`(\mathtt{x}, \mathtt{y})`.     |
-+-----------------------------------------+----------------------------------------------+
-| ``slanted(a, angle=0, x=None, y=None)`` | returns ``trafo`` followed by XXX            |
-+-----------------------------------------+----------------------------------------------+
+   create new ``trafo`` instance with transformation ``matrix`` and ``vector``
+
+.. method:: apply(x, y)
+
+   apply ``trafo`` to point vector :math:`(\mathtt{x}, \mathtt{y})`.
+
+.. method:: inverse()
+
+   returns inverse transformation of ``trafo``.
+
+.. method:: mirrored(angle)
+
+   returns ``trafo`` followed by mirroring at line through :math:`(0,0)` with
+   direction ``angle`` in degrees.
+
+.. method:: rotated(angle, x=None, y=None)
+
+   returns ``trafo`` followed by rotation by ``angle`` degrees around point
+   :math:`(\mathtt{x}, \mathtt{y})`, or :math:`(0,0)`, if not given.
+
+.. method:: scaled(sx, sy=None, x=None, y=None)
+
+   returns ``trafo`` followed by scaling with scaling factor ``sx`` in
+   :math:`x`\ -direction, ``sy`` in :math:`y`\ -direction
+   (:math:`\mathtt{sy}=\mathtt{sx}`, if not given) with scaling center
+   :math:`(\mathtt{x}, \mathtt{y})`, or :math:`(0,0)`, if not given.
+
+.. method:: slanted(a, angle=0, x=None, y=None)
+
+   returns ``trafo`` followed by slant by ``angle`` around point
+   :math:`(\mathtt{x}, \mathtt{y})`, or :math:`(0,0)`, if not given.
+
+.. method:: translated(x, y)
+
+   returns ``trafo`` followed by translation by vector :math:`(\mathtt{x}, \mathtt{y})`.
 
 
-Subclasses of trafo
-===================
+Subclasses of :class:`trafo`
+============================
 
 The ``trafo`` module provides a number of subclasses of the ``trafo`` class,
-each of which corresponds to one ``trafo`` method. They are listed in the
-following table:
+each of which corresponds to one ``trafo`` method.
 
-+----------------------------------------+----------------------------------------------+
-| ``trafo`` subclass                     | function                                     |
-+========================================+==============================================+
-| ``mirror(angle)``                      | mirroring at line through :math:`(0,0)` with |
-|                                        | direction  ``angle`` in degrees.             |
-+----------------------------------------+----------------------------------------------+
-| ``rotate(angle, x=None, y=None)``      | rotation by ``angle`` degrees around point   |
-|                                        | :math:`(\mathtt{x}, \mathtt{y})`, or         |
-|                                        | :math:`(0,0)`, if not given.                 |
-+----------------------------------------+----------------------------------------------+
-| ``scale(sx, sy=None, x=None, y=None)`` | scaling with scaling factor ``sx`` in        |
-|                                        | :math:`x`\ -direction, ``sy`` in :math:`y`\  |
-|                                        | -direction (:math:`\mathtt{sy}=\mathtt{sx}`, |
-|                                        | if not given) with scaling center            |
-|                                        | :math:`(\mathtt{x}, \mathtt{y})`, or         |
-|                                        | :math:`(0,0)`, if not given.                 |
-+----------------------------------------+----------------------------------------------+
-| ``translate(x, y)``                    | translation by vector :math:`(\mathtt{x},    |
-|                                        | \mathtt{y})`.                                |
-+----------------------------------------+----------------------------------------------+
-| ``slant(a, angle=0, x=None, y=None)``  | XXX                                          |
-+----------------------------------------+----------------------------------------------+
+.. class:: mirror(angle)
+
+   mirroring at line through :math:`(0,0)` with direction ``angle`` in degrees.
+
+.. class:: rotate(angle, x=None, y=None)
+
+   rotation by ``angle`` degrees around point :math:`(\mathtt{x}, \mathtt{y})`, or :math:`(0,0)`, if not given.
+
+.. class:: scale(sx, sy=None, x=None, y=None)
+
+   scaling with scaling factor ``sx`` in :math:`x`\ -direction, ``sy`` in
+   :math:`y`\ -direction (:math:`\mathtt{sy}=\mathtt{sx}`, if not given) with
+   scaling center :math:`(\mathtt{x}, \mathtt{y})`, or :math:`(0,0)`, if not
+   given.
+
+.. class:: slant(a, angle=0, x=None, y=None)
+
+   slant by ``angle`` around point :math:`(\mathtt{x}, \mathtt{y})`, or :math:`(0,0)`, if not given.
+
+.. class:: translate(x, y)
+
+   translation by vector :math:`(\mathtt{x}, \mathtt{y})`.
 

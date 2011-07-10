@@ -1,3 +1,6 @@
+
+.. _bbox_module:
+
 .. module:: bbox
 
 ******************
@@ -10,8 +13,8 @@ Usually, you obtain ``bbox`` instances as return values of the corresponding
 ``bbox())`` method, but you may also construct a bounding box by yourself.
 
 
-bbox constructor
-================
+:class:`bbox` constructor
+=========================
 
 The ``bbox`` constructor accepts the following keyword arguments
 
@@ -36,8 +39,8 @@ The ``bbox`` constructor accepts the following keyword arguments
 +---------+-----------------------------------------------+
 
 
-bbox methods
-============
+:class:`bbox` methods
+=====================
 
 +-------------------------------------------+-----------------------------------------------+
 | ``bbox`` method                           | function                                      |

@@ -599,8 +599,8 @@ The :attr:`defaulttexrunner` instance
    ``defaulttexrunner.reset``
 
 
-Some internals on temporary files etc.
-======================================
+Some internals on temporary files
+=================================
 
 It is not totally obvious how TeX processes are supervised by PyX and why it's
 done that way. However there are good reasons for it and the following

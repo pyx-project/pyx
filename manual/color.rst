@@ -53,7 +53,7 @@ The file ``color.eps`` is created and looks like:
 Color gradients
 ===============
 
-The color module provides a class ``gradient`` for continous transitions between
+The color module provides a class :class:`gradient` for continous transitions between
 colors. A list of named gradients is available in appendix :ref:`gradientname`.
 
 

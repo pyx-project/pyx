@@ -7,9 +7,8 @@ Module :mod:`deformer`: Path deformers
 
 The :mod:`deformer` module provides techniques to generate modulated paths. All
 classes in the :mod:`deformer` module can be used as attributes when
-drawing/stroking paths onto a canvas, but also independently for manipulating
-previously created paths. The difference to the classes in the :mod:`deco`
-module is that here, a totally new path is constructed.
+drawing/stroking paths onto a canvas. Alternatively new paths can be created by
+deforming an existing path by means of the :meth:`deform` method.
 
 All classes of the :mod:`deformer` module provide the following methods:
 
@@ -43,22 +42,23 @@ The deformer classes are the following:
 
    *curvesperhloop*: the number of Bezier curves to approximate a half-loop
 
-   *sign*: with ``sign>=0`` starts the cycloid to the left of the path, ``sign<0``
-   to the right.
+   *sign*: for ``sign>=0`` the cycloid starts to the left of the path, whereas
+   for ``sign<0`` it starts to the right.
 
-   *turnangle*: the angle of perspective on the 3D spring. At ``turnangle=0`` one
-   sees a sinusoidal curve, at ``turnangle=90`` one essentially sees a circle.
+   *turnangle*: the angle of perspective on the 3D spring. At ``turnangle=0``
+   results in a sinusoidal curve, whereas for ``turnangle=90`` one essentially
+   obtains a circle.
 
 
 .. class:: smoothed(radius, softness=1, obeycurv=0, relskipthres=0.01)
 
    This deformer creates a smoothed variant of the original path. The smoothing is
-   done on the basis of the corners of the original path, not on a global skope!
+   done on the basis of the corners of the original path, not on a global scope!
    Therefore, the result might not be what one would draw by hand. At each corner
-   (or wherever two path elements meet) a piece of length :math:`2\times` *radius*
+   (or wherever two path elements meet) a piece of twice the *radius*
    is taken out of the original path and replaced by a curve. This curve is
    determined by the tangent directions and the curvatures at its endpoints. Both
-   are given from the original path, and therefore, the new curve fits into the gap
+   are taken from the original path, and therefore, the new curve fits into the gap
    in a *geometrically smooth* way. Path elements that are shorter than
    *radius* :math:`\times` *relskipthres* are ignored.
 
@@ -98,28 +98,29 @@ The deformer classes are the following:
      points with infinte curvature. The resulting path stops at such points and
      leaves the too strongly curved piece out.
 
-   * When the original path contains self-intersection, then the resulting parallel
-     path is not continuous in the parameterisation of the original path. It may
-     first take a piece that corresponds to "later" parameter values and then
-     continue with an "earlier" one. Please don't get confused.
+   * When the original path contains on or more self-intersections, then the
+     resulting parallel path is not continuous in the parameterisation of the
+     original path. This may result in the surprising behaviour that a piece
+     that corresponding to a "later" parameter value is followed by an
+     "earlier" one.
 
    The parameters are the following:
 
    *distance* is the minimal (signed) distance between the original and the
    parallel paths.
 
-   *relerr* is the allowed error in the distance is given by ``distance*relerr``.
+   *relerr* is the allowed relative error in the distance.
 
-   *sharpoutercorners* connects the parallel pathitems by wegde build of straight
-   lines, instead of taking circular arcs. This preserves the angle of the original
-   corners.
+   *sharpoutercorners* connects the parallel pathitems by a wegde made of
+   straight lines, instead of taking circular arcs. This preserves the angle of
+   the original corners.
 
    *dointersection* is a boolean for performing the last step, the intersection
    step, in the path construction. Setting this to 0 gives the full parallel path,
    which can be favourable for self-intersecting paths.
 
    *checkdistanceparams* is a list of parameter values in the interval (0,1) where
-   the distance is checked on each parallel pathitem
+   the distance is checked on each parallel pathitem.
 
    *lookforcurvatures* is the number of points per normpathitem where its curvature
-   is checked for critical values
+   is checked for critical values.
