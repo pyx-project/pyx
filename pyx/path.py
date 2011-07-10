@@ -900,11 +900,11 @@ class multicurveto_pt(pathitem):
 
     def updatebbox(self, bbox, context):
         for point_pt in self.points_pt:
-            bbox.includepoint_pt(*point_pt[0: 2])
-            bbox.includepoint_pt(*point_pt[2: 4])
-            bbox.includepoint_pt(*point_pt[4: 6])
-        if self.points_pt:
-            context.x_pt, context.y_pt = self.points_pt[-1][4:]
+            xmin_pt, xmax_pt = _bezierpolyrange(context.x_pt, point_pt[0], point_pt[2], point_pt[4])
+            ymin_pt, ymax_pt = _bezierpolyrange(context.y_pt, point_pt[1], point_pt[3], point_pt[5])
+            bbox.includepoint_pt(xmin_pt, ymin_pt)
+            bbox.includepoint_pt(xmax_pt, ymax_pt)
+            context.x_pt, context.y_pt = point_pt[4:]
 
     def updatenormpath(self, normpath, context):
         x0_pt, y0_pt = context.x_pt, context.y_pt
