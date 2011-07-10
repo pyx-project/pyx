@@ -21,7 +21,7 @@ quality.
 Organisation of the PyX package
 ===============================
 
-The PyX package is split in several modules, which can be categorised in the
+The PyX package is split into several modules, which can be categorised in the
 following groups
 
 +----------------------------------+------------------------------------------+
@@ -48,5 +48,5 @@ namespace by using   ::
 
 at the beginning of the Python program.  However, in order to prevent namespace
 pollution, you may also simply use ``import pyx``. Throughout this manual, we
-shall always assume the presence of the above given import line.a
+shall always assume the presence of the above given import line.
 
