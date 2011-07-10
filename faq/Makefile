@@ -1,51 +1,33 @@
+# Makefile for Sphinx documentation
+#
+
 PYTHON ?= python
-PDFLATEX ?= pdflatex
-LATEX ?= latex
 
-default: pyxfaq.pdf
+# You can set these variables from the command line.
+SPHINXOPTS    =
+SPHINXBUILD   = sphinx-build
+PAPER         =
+BUILDDIR      = _build
 
-clean: partclean
-	-rm pyxfaq.pdf glifaq.pdf glifaq.sty
+# Internal variables.
+PAPEROPT_a4     = -D latex_paper_size=a4
+PAPEROPT_letter = -D latex_paper_size=letter
+ALLSPHINXOPTS   = -d $(BUILDDIR)/doctrees $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) .
 
-partclean:
-	-rm *.aux *.out *.toc *.log *.glo *.idx
-	-rm pyxversion.tex pyxdate.tex
+.PHONY: help clean all html latexpdf
 
-all: pdf
+all: html latexpdf
+	@echo "Done."
 
-pdf: pyxfaq.pdf glifaq.pdf
+clean:
+	-rm -rf $(BUILDDIR)/* *.eps *.pdf *.png
 
-pyxfaq.pdf: pyxfaq.tex pyxversion.tex pyxdate.tex glifaq.sty
-	$(PDFLATEX) pyxfaq
-	$(PDFLATEX) pyxfaq
-	$(PDFLATEX) pyxfaq
+html:
+	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
+	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
 
-glifaq.sty: glifaq.dtx glifaq.ins
-	$(LATEX) glifaq.ins
-
-glifaq.pdf: glifaq.dtx
-	$(PDFLATEX) glifaq.dtx
-	$(PDFLATEX) glifaq.dtx
-
-pyxversion.tex: ../pyx/version.py
-	$(PYTHON) -c "import sys;sys.path[:0]=[\"..\"];import pyx.version;print pyx.version.version+'%'" > pyxversion.tex
-
-pyxdate.tex: ../pyx/version.py
-	$(PYTHON) -c "import sys;sys.path[:0]=[\"..\"];import pyx.version;print pyx.version.date+'%'" > pyxdate.tex
-
-publicserver = shell.sourceforge.net
-publicpath = /home/groups/p/py/pyx/htdocs
-
-public:
-	@bash -c 'yn=""; while [ "x"$$yn != "xy" ]; do echo -n "upload pyxfaq.pdf? [y/n] "; read yn; if [ "x"$$yn == "xn" ]; then exit 1; fi; done'
-	scp pyxfaq.pdf $(publicserver):$(publicpath)
-	-ssh $(publicserver) "cd $(publicpath); chmod -fR g+w pyxfaq.pdf"
-
-tipapyks.pdf: tipa.py
-	$(PYTHON) tipa.py "pYks" "pyks"
-
-tipapyx.pdf: tipa.py
-	$(PYTHON) tipa.py "pYx" "pyx"
-
-tipapych.pdf: tipa.py
-	$(PYTHON) tipa.py "pY\\c c" "pych"
+latexpdf:
+	$(SPHINXBUILD) -b latex $(ALLSPHINXOPTS) $(BUILDDIR)/latex
+	@echo "Running LaTeX files through pdflatex..."
+	make -C $(BUILDDIR)/latex all-pdf
+	@echo "pdflatex finished; the PDF files are in $(BUILDDIR)/latex."
