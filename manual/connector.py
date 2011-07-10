@@ -119,7 +119,6 @@ c2.text(pos[0], pos[1], r"~(rel)bulge", [text.halign.left, text.vshift(1)])
 
 # write everything
 c1.insert(c2, [trafo.translate(6.5, 0)])
-c1.writeEPSfile("connector", paperformat=document.paperformat.A4)
-c1.writePDFfile("connector")
+c1.writePDFfile()
 
 # vim:foldmethod=marker:foldmarker=<<<,>>>

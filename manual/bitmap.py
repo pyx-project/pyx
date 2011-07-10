@@ -10,6 +10,5 @@ bitmap_rgb = bitmap.bitmap(0, 0, image_rgb, height=0.8)
 c = canvas.canvas()
 c.insert(bitmap_bw)
 c.insert(bitmap_rgb)
-c.writeEPSfile("bitmap")
-c.writePDFfile("bitmap")
+c.writePDFfile()
 

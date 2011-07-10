@@ -23,5 +23,4 @@ c.stroke(line, [style.linewidth.Thick])
 for isect in isects_circle:
     c.stroke(path.line(0, 0, *circle.at(isect)))
 
-c.writeEPSfile("radii2")
-c.writePDFfile("radii2")
+c.writePDFfile()

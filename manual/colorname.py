@@ -42,5 +42,4 @@ for line in lines: # we yet don't use a file iterator
             y = 0
             x += dx
 
-c.writeEPSfile("colorname")
-c.writePDFfile("colorname")
+c.writePDFfile()

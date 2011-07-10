@@ -24,8 +24,7 @@ c.text(5, -0.7, "(b)", [text.halign.center])
 c.stroke(rect3, [trafo.scale(2).translated(8, 0), style.linewidth.THICK])
 c.text(9, -0.7, "(c)", [text.halign.center])
 
-c.stroke(rect3, [trafo.scale(2).translated(12, 0), style.linewidth.THICK, deco.filled([color.grey(0.95)])])
+c.stroke(rect3, [trafo.scale(2).translated(12, 0), style.linewidth.THICK, deco.filled([color.grey(0.5)])])
 c.text(13, -0.7, "(d)", [text.halign.center])
 
-c.writeEPSfile("rects")
-c.writePDFfile("rects")
+c.writePDFfile()

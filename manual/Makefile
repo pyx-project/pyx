@@ -20,7 +20,7 @@ all: html latexpdf
 	@echo "Done."
 
 clean:
-	-rm -rf $(BUILDDIR)/* *.eps *.pdf *.png
+	-rm -rf $(BUILDDIR)/* *.pdf *.png
 
 html: figs
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
@@ -36,4 +36,4 @@ figs: $(patsubst %.py, %.png, $(filter-out conf.py,$(wildcard *.py)))
 
 %.png: %.py
 	export PYTHONPATH=$(CURDIR)/.. ; $(PYTHON) $^
-	$(PYTHON) ../contrib/epstopng.py -o $@ $*.eps
+	$(PYTHON) ../contrib/epstopng.py -o $@ $*.pdf

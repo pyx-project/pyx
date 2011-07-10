@@ -45,5 +45,4 @@ for line in lines: # we yet don't use a file iterator
         y += dy
 
 
-c.writeEPSfile("gradientname")
-c.writePDFfile("gradientname")
+c.writePDFfile()

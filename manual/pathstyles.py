@@ -79,5 +79,4 @@ drawstyle("dash((1, 2, 3), 4)")
 drawstyle("dash((1, 2, 3), rellengths=1)")
 
 
-c.writeEPSfile("pathstyles")
-c.writePDFfile("pathstyles")
+c.writePDFfile()

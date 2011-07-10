@@ -47,5 +47,4 @@ drawdeco("earrow.normal(constriction=None)")
 drawdeco("earrow.Large([style.linejoin.round])")
 drawdeco("earrow.Large([deco.stroked.clear])")
 
-c.writeEPSfile("arrows")
-c.writePDFfile("arrows")
+c.writePDFfile()
