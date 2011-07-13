@@ -201,7 +201,12 @@ latex_documents = [
 #latex_show_urls = False
 
 # Additional stuff for the LaTeX preamble.
-#latex_preamble = ''
+latex_preamble = r'''
+  \hypersetup{pdftitle={%s},
+              pdfauthor={Gert-Ludwig Ingold <gert.ingold@physik.uni-augsburg.de>},
+              pdfsubject={FAQ for PyX},
+              pdfkeywords={PyX, graphics, tipps and tricks, FAQ}}
+''' % latex_documents[0][2]
 
 # Documents to append as an appendix to all manuals.
 #latex_appendices = []
