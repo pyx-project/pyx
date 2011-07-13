@@ -281,7 +281,7 @@ class format:
 format.tfm = format("tfm", [".tfm"])
 format.afm = format("afm", [".afm"])
 format.fontmap = format("map", [])
-format.pict = format("graphics/figure", [".eps", ".epsi"])
+format.pict = format("graphic/figure", [".eps", ".epsi"])
 format.tex_ps_header = format("PostScript header", [".pro"])                    # contains also: enc files
 format.type1 = format("type1 fonts", [".pfa", ".pfb"])
 format.vf = format("vf", [".vf"])

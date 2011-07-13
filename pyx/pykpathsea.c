@@ -56,7 +56,7 @@ static PyObject *py_kpse_find_file(PyObject *self, PyObject *args)
     /* if (!strcmp(format, "otp")) kpse_file_format = kpse_otp_format; else */
     /* if (!strcmp(format, "ovf")) kpse_file_format = kpse_ovf_format; else */
     /* if (!strcmp(format, "ovp")) kpse_file_format = kpse_ovp_format; else */
-    if (!strcmp(format, "graphics/figure")) kpse_file_format = kpse_pict_format; else
+    if (!strcmp(format, "graphic/figure")) kpse_file_format = kpse_pict_format; else
     /* if (!strcmp(format, "tex")) kpse_file_format = kpse_tex_format; else */
     /* if (!strcmp(format, "TeX system documentation")) kpse_file_format = kpse_texdoc_format; else */
     /* if (!strcmp(format, "texpool")) kpse_file_format = kpse_texpool_format; else */
