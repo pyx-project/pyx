@@ -1,0 +1,23 @@
+Creating paths with MetaPost-like parameters
+
+Some simple paths are created by prescribing five points on the path. The
+curves between them are automatically chosen such that the result looks smooth. ...
+
+Instead of constructing paths from their path elements, where all control
+points must be given explicitly, we here specify only five points which must
+lie on the path. The remaining control points are then internally determined by
+the constraint that the curve should look smooth.
+
+In the first curve, the geometrical constraints are the following. The three
+interior points have a continuous tangent and a continuous curvature. The two
+end points demand a curvature not too different from that at their neighbor
+(second/fourth point).
+
+For the closed curve, all points are of the continuous type.
+
+! The algorithm for calculating the curves comes from MetaPost. In the syntax
+of MetaPost, the above example corresponds to the commands
+
+  draw((0,0)..(2,1.33)..(1.3,3)..(0.33,2.33)..(1,1.67));
+  draw((0,0)..(2,1.33)..(1.3,3)..(0.33,2.33)..(1,1.67)..cycle);
+

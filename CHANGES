@@ -83,13 +83,11 @@ TODO:
       userfriendly and not to describe immediately the internals of the implementation:
       (see e.g. class.style.symbol)
     - document interface to access tick positions
-    - metapost module
 
   Examples:
     - add an epsfile example (suggested by Stathis Sideris)
     - add a small example line on y="f($1)" in one of the plot examples
     - add a grid example
-    - add a metapost example
 
   FAQ:
     - describe creation and modification (inplace and ``modify by new'') of
@@ -110,8 +108,8 @@ TODO:
       not required at all)
   - dvifile module:
     - fix for MS Windows: open virtual font files in binary mode
-  - added the mpost (MetaPost) module:
-    - create smooth paths from a series of points (TODO: documentation)
+  - added the metapost module:
+    - create smooth paths from a series of points
 
 
 0.11.1 (2011/05/20):

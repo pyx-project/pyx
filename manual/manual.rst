@@ -18,6 +18,8 @@
 
    path
 
+   metapost
+
    deformer
 
    canvas
