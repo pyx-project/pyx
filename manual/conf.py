@@ -105,7 +105,7 @@ html_theme = 'default'
 
 # The name for this set of Sphinx documents.  If None, it defaults to
 # "<project> v<release> documentation".
-#html_title = None
+html_title = 'PyX %s Manual' % release
 
 # A shorter title for the navigation bar.  Default is the same as html_title.
 #html_short_title = None
@@ -168,6 +168,8 @@ html_static_path = ['_static']
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'PyXdoc'
 
+todo_include_todos = True
+
 
 # -- Options for LaTeX output --------------------------------------------------
 
@@ -180,7 +182,7 @@ latex_paper_size = 'a4'
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('manual', 'manual.tex', u'PyX Documentation',
+  ('manual', 'manual.tex', u'PyX Manual',
    u'Jörg Lehmann, Michael Schindler, André Wobst', 'manual'),
 ]
 
@@ -199,7 +201,12 @@ latex_documents = [
 #latex_show_urls = False
 
 # Additional stuff for the LaTeX preamble.
-#latex_preamble = ''
+latex_preamble = r'''
+  \hypersetup{pdftitle={PyX Manual},
+              pdfauthor={Joerg Lehmann <joergl@users.sourceforge.net>, Michael Schindler <m-schindler@users.sourceforge.net>, Andre Wobst <wobsta@users.sourceforge.net>},
+              pdfsubject={PyX Manual},
+              pdfkeywords={PyX, graphics, manual}}
+'''
 
 # Documents to append as an appendix to all manuals.
 #latex_appendices = []
@@ -213,7 +220,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('manual', 'pyx', u'PyX Documentation',
+    ('manual', 'pyx', u'PyX Manual',
      [u'Jörg Lehmann, Michael Schindler, André Wobst'], 1)
 ]
 
