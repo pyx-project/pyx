@@ -65,7 +65,7 @@ class linefilereader:
     #       in the DSC spec #5001, while '\n\r' *is* a *single* linebreak
     #       according to the EPSF spec #5002
 
-    def __init__(self, filename, typicallinelen=257):
+    def __init__(self, file, typicallinelen=257):
         """Opens the file filename for reading.
 
         typicallinelen defines the default buffer increase
@@ -74,8 +74,7 @@ class linefilereader:
         # note: The maximal line size in an EPS is 255 plus the
         #       linebreak characters. However, we also handle
         #       lines longer than that.
-
-        self.file = open(filename, "rb")
+        self.file = file
         self.buffer = ""
         self.typicallinelen = typicallinelen
 
@@ -138,10 +137,10 @@ class linefilereader:
         self.file.close()
 
 
-def _readbbox(filename):
+def _readbbox(file, kpsearch=0):
     """returns bounding box of EPS file filename"""
 
-    file = linefilereader(filename)
+    file = linefilereader(file)
 
     # check the %! header comment
     if not file.readline().startswith("%!"):
@@ -248,7 +247,15 @@ class epsfile(canvasitem.canvasitem):
         self.y_pt = unit.topt(y)
         self.filename = filename
         self.kpsearch = kpsearch
-        self.mybbox = bbox or _readbbox(self.filename)
+        if kpsearch:
+            self.file = filelocator.open(filename, formats, "rb")
+        else:
+            self.file = open(filename, "rb")
+        if bbox:
+            self.mybbox = bbox
+        else:
+            self.mybbox = _readbbox(self.file, kpsearch)
+            self.file.seek(0)
 
         # determine scaling in x and y direction
         self.scalex = self.scaley = scale
