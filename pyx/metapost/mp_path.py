@@ -24,12 +24,14 @@ from math import atan2, sin, cos, sqrt, pi
 # Internal functions of MetaPost
 #
 # This file re-implements some of the functionality of MetaPost
-# (http://tug.org/metapost). MetaPost was developed by John D. Hobby
-# and others.
+# (http://tug.org/metapost). MetaPost was developed by John D. Hobby and
+# others. The code of Metapost is in the public domain, which we understand as
+# an implicit permission to reuse the code here (see the comment at
+# http://www.gnu.org/licenses/license-list.html)
 #
 # This file is based on the MetaPost version distributed by TeXLive:
-# svn://tug.org/texlive/trunk/Build/source/texk/web2c/mplibdir
-# revision 22737 (2011-05-31)
+# svn://tug.org/texlive/trunk/Build/source/texk/web2c/mplibdir revision 22737 #
+# (2011-05-31)
 ################################################################################
 
 # from mplib.h:
