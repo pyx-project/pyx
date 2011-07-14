@@ -952,7 +952,7 @@ class texrunner:
             elif self.mode == "latex":
                 if self.pyxgraphics:
                     pyxdef = filelocator.open("pyx.def", [], "rb")
-                    pyxdef_filename = self.texfilename + ".pyxdef"
+                    pyxdef_filename = self.texfilename + ".pyx.def"
                     pyxdef_file = open(pyxdef_filename, "wb")
                     pyxdef_file.write(pyxdef.read())
                     pyxdef.close()

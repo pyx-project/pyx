@@ -101,11 +101,16 @@ TODO:
     - add support for pfm font matrices
   - epsfile module:
     - fix raise condition while generating bitmap for PDF inclusion
+    - fix file opening for bbox reading when using filelocator (reported by
+      Michael J Gruber)
   - filelocator module:
     - fix text mode line ending issue for MS Windows
   - text module:
     - fix subprocess call on MS Windows (closefds not functional not also
       not required at all)
+    - fix pyxgraphics functionality because at least some versions of graphics
+      and friends seem to expect the file extension .def for the driver files
+      (thanks to Michael J Gruber)
   - dvifile module:
     - fix for MS Windows: open virtual font files in binary mode
   - added the metapost module:
