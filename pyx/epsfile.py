@@ -248,7 +248,7 @@ class epsfile(canvasitem.canvasitem):
         self.filename = filename
         self.kpsearch = kpsearch
         if kpsearch:
-            self.file = filelocator.open(filename, formats, "rb")
+            self.file = filelocator.open(filename, [filelocator.format.pict], "rb")
         else:
             self.file = open(filename, "rb")
         if bbox:
