@@ -125,7 +125,7 @@ class bbox_pt:
     def includepoint_pt(self, x_pt, y_pt):
         if self.llx_pt is None:
             self.llx_pt = self.urx_pt = x_pt
-            self.ury_pt = self.ury_pt = y_pt
+            self.lly_pt = self.ury_pt = y_pt
         else:
             self.llx_pt = min(self.llx_pt, x_pt)
             self.lly_pt = min(self.lly_pt, y_pt)
