@@ -278,40 +278,15 @@ class PDFimage(pdfwriter.PDFobject):
         file.write("\n"
                    "endstream\n")
 
+class bitmap_trafo(canvasitem.canvasitem):
 
-class bitmap_pt(canvasitem.canvasitem):
-
-    def __init__(self, xpos_pt, ypos_pt, image, width_pt=None, height_pt=None, ratio=None,
+    def __init__(self, trafo, image,
                        PSstoreimage=0, PSmaxstrlen=4093, PSbinexpand=1,
                        compressmode="Flate", flatecompresslevel=6,
                        dctquality=75, dctoptimize=0, dctprogression=0):
-        self.xpos_pt = xpos_pt
-        self.ypos_pt = ypos_pt
+        self.pdftrafo = trafo
         self.image = image
-
         self.imagewidth, self.imageheight = image.size
-
-        if width_pt is not None or height_pt is not None:
-            self.width_pt = width_pt
-            self.height_pt = height_pt
-            if self.width_pt is None:
-                if ratio is None:
-                    self.width_pt = self.height_pt * self.imagewidth / float(self.imageheight)
-                else:
-                    self.width_pt = ratio * self.height_pt
-            elif self.height_pt is None:
-                if ratio is None:
-                    self.height_pt = self.width_pt * self.imageheight / float(self.imagewidth)
-                else:
-                    self.height_pt = (1.0/ratio) * self.width_pt
-            elif ratio is not None:
-                raise ValueError("can't specify a ratio when setting width_pt and height_pt")
-        else:
-            if ratio is not None:
-                raise ValueError("must specify width_pt or height_pt to set a ratio")
-            widthdpi, heightdpi = image.info["dpi"] # fails when no dpi information available
-            self.width_pt = 72.0 * self.imagewidth / float(widthdpi)
-            self.height_pt = 72.0 * self.imageheight / float(heightdpi)
 
         self.PSstoreimage = PSstoreimage
         self.PSmaxstrlen = PSmaxstrlen
@@ -411,15 +386,16 @@ class bitmap_pt(canvasitem.canvasitem):
         return mode, data, alpha, palettemode, palettedata
 
     def bbox(self):
-        return bbox.bbox_pt(self.xpos_pt, self.ypos_pt,
-                            self.xpos_pt+self.width_pt, self.ypos_pt+self.height_pt)
+        bb = bbox.empty()
+        bb.includepoint_pt(*self.pdftrafo.apply_pt(0.0, 0.0))
+        bb.includepoint_pt(*self.pdftrafo.apply_pt(0.0, 1.0))
+        bb.includepoint_pt(*self.pdftrafo.apply_pt(1.0, 0.0))
+        bb.includepoint_pt(*self.pdftrafo.apply_pt(1.0, 1.0))
+        return bb
 
     def processPS(self, file, writer, context, registry, bbox):
         mode, data, alpha, palettemode, palettedata = self.imagedata(True)
-        imagematrixPS = (trafo.mirror(0)
-                         .translated_pt(-self.xpos_pt, self.ypos_pt+self.height_pt)
-                         .scaled_pt(self.imagewidth/self.width_pt, self.imageheight/self.height_pt))
-
+        pstrafo = trafo.translate_pt(0, -1.0).scaled(self.imagewidth, -self.imageheight)*self.pdftrafo.inverse()
 
         PSsinglestring = self.PSstoreimage and len(data) < self.PSmaxstrlen
         if PSsinglestring:
@@ -461,7 +437,7 @@ class bitmap_pt(canvasitem.canvasitem):
                    "/Width %i\n" % self.imagewidth)
         file.write("/Height %i\n" % self.imageheight)
         file.write("/BitsPerComponent 8\n"
-                   "/ImageMatrix %s\n" % imagematrixPS)
+                   "/ImageMatrix %s\n" % pstrafo)
         file.write("/Decode %s\n" % decodestrings[mode])
 
         file.write("/DataSource ")
@@ -488,7 +464,7 @@ class bitmap_pt(canvasitem.canvasitem):
                        "/Width %i\n" % self.imagewidth)
             file.write("/Height %i\n" % self.imageheight)
             file.write("/BitsPerComponent 8\n"
-                       "/ImageMatrix %s\n" % imagematrixPS)
+                       "/ImageMatrix %s\n" % pstrafo)
             file.write("/Decode [1 0]\n"
                        ">>\n"
                        "/InterleaveType 1\n"
@@ -525,13 +501,38 @@ class bitmap_pt(canvasitem.canvasitem):
                               self.compressmode or self.imagecompressed, data, alpha, registry))
 
         bbox += self.bbox()
-        imagematrixPDF = (trafo.scale_pt(self.width_pt, self.height_pt)
-                          .translated_pt(self.xpos_pt, self.ypos_pt))
 
         file.write("q\n")
-        imagematrixPDF.processPDF(file, writer, context, registry, bbox)
+        self.pdftrafo.processPDF(file, writer, context, registry, bbox)
         file.write("/%s Do\n" % name)
         file.write("Q\n")
+
+
+class bitmap_pt(bitmap_trafo):
+
+    def __init__(self, xpos_pt, ypos_pt, image, width_pt=None, height_pt=None, ratio=None, **kwargs):
+        imagewidth, imageheight = image.size
+        if width_pt is not None or height_pt is not None:
+            if width_pt is None:
+                if ratio is None:
+                    width_pt = height_pt * imagewidth / float(imageheight)
+                else:
+                    width_pt = ratio * height_pt
+            elif height_pt is None:
+                if ratio is None:
+                    height_pt = width_pt * imageheight / float(imagewidth)
+                else:
+                    height_pt = (1.0/ratio) * width_pt
+            elif ratio is not None:
+                raise ValueError("can't specify a ratio when setting width_pt and height_pt")
+        else:
+            if ratio is not None:
+                raise ValueError("must specify width_pt or height_pt to set a ratio")
+            widthdpi, heightdpi = image.info["dpi"] # fails when no dpi information available
+            width_pt = 72.0 * imagewidth / float(widthdpi)
+            height_pt = 72.0 * imageheight / float(heightdpi)
+
+        bitmap_trafo.__init__(self, trafo.trafo_pt(((float(width_pt), 0.0), (0.0, float(height_pt))), (float(xpos_pt), float(ypos_pt))), image, **kwargs)
 
 
 class bitmap(bitmap_pt):
