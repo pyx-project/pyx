@@ -22,9 +22,10 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 
-import math, warnings
-from pyx import attr, deco, style, color, unit, canvas, path, mesh
+import math, warnings, cStringIO
+from pyx import attr, deco, style, color, unit, canvas, path, mesh, pycompat, trafo
 from pyx import text as textmodule
+from pyx import bitmap as bitmapmodule
 
 builtinrange = range
 
@@ -1917,3 +1918,112 @@ class surface(_style):
                                                           mesh.node_pt(graph.vpos_pt(*v4f), self.gridcolor))))
         m = mesh.mesh(elements, check=0)
         graph.insert(m)
+
+
+class bitmap(_style):
+
+    needsdata = ["values1", "values2", "data12", "data21"]
+
+    def __init__(self, colorname="color", gradient=color.gradient.Grey, mincolor=None, maxcolor=None, epsilon=1e-10):
+        self.colorname = colorname
+        self.gradient = gradient
+        self.mincolor = mincolor
+        self.maxcolor = maxcolor
+        self.epsilon = epsilon
+
+    def columnnames(self, privatedata, sharedata, graph, columnnames):
+        return [self.colorname]
+
+    def initdrawpoints(self, privatedata, sharedata, graph):
+        privatedata.colors = {}
+        privatedata.mincolor = privatedata.maxcolor = None
+
+    def drawpoint(self, privatedata, sharedata, graph, point):
+        try:
+            color = point[self.colorname] + 0
+        except:
+            pass
+        else:
+            privatedata.colors.setdefault(sharedata.value1, {})[sharedata.value2] = color
+            if privatedata.mincolor is None or color < privatedata.mincolor:
+                privatedata.mincolor = color
+            if privatedata.mincolor is None or privatedata.maxcolor < color:
+                privatedata.maxcolor = color
+
+    def donedrawpoints(self, privatedata, sharedata, graph):
+        mincolor, maxcolor = privatedata.mincolor, privatedata.maxcolor
+        if self.mincolor is not None:
+            mincolor = self.mincolor
+        if self.maxcolor is not None:
+            maxcolor = self.maxcolor
+
+        values1 = pycompat.sorted(sharedata.values1.keys())
+        values2 = pycompat.sorted(sharedata.values2.keys())
+        def equidistant(values):
+            l = len(values) - 1
+            if l < 1:
+                raise ValueError("several data points required by the bitmap style in each dimension")
+            range = values[-1] - values[0]
+            for i, value in enumerate(values):
+                if abs(value - values[0] - i * range / l) > self.epsilon:
+                    raise ValueError("data must be equidistant for the bitmap style")
+        equidistant(values1)
+        equidistant(values2)
+        needalpha = False
+        for value2 in values2:
+            for value1 in values1:
+                try:
+                    available, valid, v = sharedata.data12[value1][value2]
+                except KeyError:
+                    needalpha = True
+                    break
+                if not available:
+                    needalpha = True
+                    continue
+            else:
+                continue
+            break
+        mode = {"/DeviceGray": "L",
+                "/DeviceRGB": "RGB",
+                "/DeviceCMYK": "CMYK"}[self.gradient.getcolor(0).colorspacestring()]
+        if needalpha:
+            mode = "A" + mode
+        empty = "\0"*len(mode)
+        data = cStringIO.StringIO()
+        for value2 in values2:
+            for value1 in values1:
+                try:
+                    available, valid, v = sharedata.data12[value1][value2]
+                except KeyError:
+                    data.write(empty)
+                    continue
+                if not available:
+                    data.write(empty)
+                    continue
+                c = privatedata.colors[value1][value2]
+                vc = (c - mincolor) / float(maxcolor - mincolor)
+                if vc < 0:
+                    warnings.warn("gradiend color range is exceeded due to mincolor setting")
+                    vc = 0
+                if vc > 1:
+                    warnings.warn("gradiend color range is exceeded due to maxcolor setting")
+                    vc = 1
+                c = self.gradient.getcolor(vc)
+                if needalpha:
+                    data.write(chr(255))
+                data.write(c.to8bitstring())
+        i = bitmapmodule.image(len(values1), len(values2), mode, data.getvalue())
+
+        # TODO: fix 3d
+
+        v1enlargement = (values1[-1]-values1[0])*0.5/len(values1)
+        v2enlargement = (values2[-1]-values2[0])*0.5/len(values2)
+        x1_pt, y1_pt = graph.vpos_pt(values1[0]-v1enlargement, values2[-1]+v2enlargement)
+        x2_pt, y2_pt = graph.vpos_pt(values1[-1]+v1enlargement, values2[-1]+v2enlargement)
+        x3_pt, y3_pt = graph.vpos_pt(values1[0]-v1enlargement, values2[0]-v2enlargement)
+        x4_pt, y4_pt = graph.vpos_pt(values1[-1]+v1enlargement, values2[0]-v2enlargement)
+        t = trafo.trafo_pt(((x2_pt-x1_pt, y2_pt-y1_pt), (x3_pt-x1_pt, y3_pt-y1_pt)), (x1_pt, y1_pt))
+        b = bitmapmodule.bitmap_trafo(t, i)
+        c = canvas.canvas([canvas.clip(path.rect_pt(graph.xpos_pt, graph.ypos_pt, graph.width_pt, graph.height_pt))])
+        c.insert(b)
+        graph.insert(c)

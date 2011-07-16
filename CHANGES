@@ -113,6 +113,9 @@ TODO:
       (thanks to Michael J Gruber)
   - dvifile module:
     - fix for MS Windows: open virtual font files in binary mode
+  - graph modules:
+    - graph styles:
+      - add bitmap style (TODO: documentation)
   - added the metapost module:
     - create smooth paths from a series of points
   - bitmap module:
