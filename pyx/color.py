@@ -422,6 +422,29 @@ class functiongradient(gradient):
         return self.cls(**colordict)
 
 
+class rgbgradient:
+
+    "a gradient, which takes another gradient and returns rgb colors"
+
+    def __init__(self, gradient):
+        self.gradient = gradient
+
+    def getcolor(self, param):
+        return self.gradient.getcolor(param).rgb()
+
+
+class cmykgradient:
+
+    "a gradient, which takes another gradient and returns cmyk colors"
+
+    def __init__(self, gradient):
+        self.gradient = gradient
+
+    def getcolor(self, param):
+        return self.gradient.getcolor(param).cmyk()
+
+
+
 gradient.Gray           = lineargradient(gray.white, gray.black)
 gradient.Grey           = gradient.Gray
 gradient.ReverseGray    = lineargradient(gray.black, gray.white)
@@ -453,6 +476,14 @@ gradient.Rainbow        = lineargradient(hsb(0, 1, 1), hsb(2.0/3.0, 1, 1))
 gradient.ReverseRainbow = lineargradient(hsb(2.0/3.0, 1, 1), hsb(0, 1, 1))
 gradient.Hue            = lineargradient(hsb(0, 1, 1), hsb(1, 1, 1))
 gradient.ReverseHue     = lineargradient(hsb(1, 1, 1), hsb(0, 1, 1))
+rgbgradient.Rainbow        = rgbgradient(gradient.Rainbow)
+rgbgradient.ReverseRainbow = rgbgradient(gradient.ReverseRainbow)
+rgbgradient.Hue            = rgbgradient(gradient.Hue)
+rgbgradient.ReverseHue     = rgbgradient(gradient.ReverseHue)
+cmykgradient.Rainbow        = cmykgradient(gradient.Rainbow)
+cmykgradient.ReverseRainbow = cmykgradient(gradient.ReverseRainbow)
+cmykgradient.Hue            = cmykgradient(gradient.Hue)
+cmykgradient.ReverseHue     = cmykgradient(gradient.ReverseHue)
 
 
 class PDFextgstate(pdfwriter.PDFobject):
