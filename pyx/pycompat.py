@@ -91,3 +91,12 @@ try:
 except NameError:
     # Python 2.3
     from sets import Set as set
+
+try:
+    sorted = sorted
+except NameError:
+    # Python 2.3
+    def sorted(l):
+        l = list(l)
+        l.sort()
+        return l
