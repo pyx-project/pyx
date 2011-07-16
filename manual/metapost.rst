@@ -9,11 +9,17 @@ Module :mod:`metapost`
 The :mod:`metapost` subpackage provides some of the path functionality of the
 MetaPost program.
 
+Similarly to the :mod:`normpath`, there is a short length *epsilon* (always in
+Postscript points pt) used as accuracy of numerical operations, such as
+calculating angles from short path elements, or for omitting such short path
+elements, etc. The default value is :math:`10^{-5}` and can be changed using
+the module function :func:`metapost.set`.
+
 
 Class :class:`path` --- MetaPost-like paths
 -------------------------------------------
 
-.. class:: path(pathitems)
+.. class:: path(pathitems, epsilon=None)
 
    This class represents a MetaPost-like path which is created from the given
    list of knots and curves/lines. It can find an optimal way through given
@@ -33,6 +39,10 @@ Class :class:`path` --- MetaPost-like paths
    path is open or closed depends on the type of knots used, begin endpoints or
    not. Note also that the number of knots and links must be equal for closed
    paths, and that you cannot create a path comprising closed subpaths.
+
+   The *epsilon* argument governs the accuracy of the calculations implied in
+   creating the path (see above). The value *None* means fallback to the
+   default epsilon of the module.
 
 Instances of the class :class:`path` inherit all properties of the Postscript
 paths in :mod:`path`.
@@ -90,9 +100,11 @@ Links
 
 .. class:: line(keepangles=False)
 
-   A straight line which corresponds to the MetaPost command "-". The option
+   A straight line which corresponds to the MetaPost command "--". The option
    *keepangles* will guarantee a continuous tangent. (The curvature may become
-   discontinuous, however.)
+   discontinuous, however.) This behavior is achieved by turning adjacent knots
+   into roughknots with specified angles. Note that a smoothknot and a
+   roughknot with given curlyness do behave differently near a line.
 
 .. class:: tensioncurve(ltension=1, latleast=False, rtension=None, ratleast=None)
 

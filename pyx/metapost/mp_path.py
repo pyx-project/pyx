@@ -51,14 +51,13 @@ fraction_three = 3.0
 one_eighty_deg = pi
 three_sixty_deg = 2*pi
 
-def mp_make_choices(knots): # <<<
+def mp_make_choices(knots, epsilon): # <<<
     """Implements mp_make_choices from metapost (mp.c)"""
     # 334: If consecutive knots are equal, join them explicitly
     p = knots
     while True:
         q = p.next
-        # XXX float comparison: use epsilon
-        if p.x_pt == q.x_pt and p.y_pt == q.y_pt and p.rtype > mp_explicit:
+        if p.rtype > mp_explicit and (p.x_pt-q.x_pt)**2 + (p.y_pt-q.y_pt)**2 < epsilon**2:
             p.rtype = mp_explicit
             if p.ltype == mp_open:
                 p.ltype = mp_curl
@@ -97,6 +96,7 @@ def mp_make_choices(knots): # <<<
         if p.rtype >= mp_given:
             while q.ltype == mp_open and q.rtype == mp_open:
                 q = q.next
+            # the breakpoints are now p and q
 
             # 346:
             # Calculate the turning angles psi_k and the distances d(k, k+1)
@@ -133,7 +133,8 @@ def mp_make_choices(knots): # <<<
             if q.ltype == mp_open:
                 delx_pt = q.rx_pt - q.x_pt
                 dely_pt = q.ry_pt - q.y_pt
-                if delx_pt == 0 and dely_pt == 0: # XXX float comparison
+                if delx_pt**2 + dely_pt**2 < epsilon**2:
+                    # use curl if the controls are not usable for giving an angle
                     q.ltype = mp_curl
                     q.set_left_curl(unity)
                 else:
@@ -143,7 +144,7 @@ def mp_make_choices(knots): # <<<
             if p.rtype == mp_open and p.ltype == mp_explicit:
                 delx_pt = p.x_pt - p.lx_pt
                 dely_pt = p.y_pt - p.ly_pt
-                if delx_pt == 0 and dely_pt == 0: # XXX float comparison
+                if delx_pt**2 + dely_pt**2 < epsilon**2:
                     p.rtype = mp_curl
                     p.set_right_curl(unity)
                 else:
@@ -166,11 +167,14 @@ def mp_make_choices(knots): # <<<
 # >>>
 def mp_solve_choices(p, q, n, delta_x, delta_y, delta, psi): # <<<
     """Implements mp_solve_choices form metapost (mp.c)"""
-    uu = [None]*(len(delta)+1)
-    vv = [None]*len(uu) # angles
-    ww = [None]*len(uu)
-    theta = [None]*len(uu)
-    # k current knot number
+    uu = [None]*(len(delta)+1) # relations between adjacent angles ("matrix" entries)
+    ww = [None]*len(uu) # additional matrix entries for the cyclic case
+    vv = [None]*len(uu) # angles ("rhs" entries)
+    theta = [None]*len(uu) # solution of the linear system of equations
+    # 348:
+    # the "matrix" is in tridiagonal form, the solution is obtained by Gaussian elimination.
+    # uu and ww are of type "fraction", vv and theta are of type "angle"
+    # k is the current knot number
     # r, s, t registers for list traversal
     k = 0
     s = p
@@ -204,33 +208,14 @@ def mp_solve_choices(p, q, n, delta_x, delta_y, delta, psi): # <<<
                     q.ltype = mp_explicit
                     lt = abs(q.left_tension())
                     rt = abs(p.right_tension())
-                    if rt == unity:
-                        if delta_x[0] >= 0:
-                            p.rx_pt = p.x_pt + delta_x[0]/3.0
-                        else:
-                            p.rx_pt = p.x_pt + delta_x[0]/3.0
-                        if delta_y[0] >= 0:
-                            p.ry_pt = p.y_pt + delta_y[0]/3.0
-                        else:
-                            p.ry_pt = p.y_pt + delta_y[0]/3.0
-                    else:
-                        ff = mp_make_fraction(unity, 3.0*rt)
-                        p.rx_pt = p.x_pt + mp_take_fraction(delta_x[0], ff)
-                        p.ry_pt = p.y_pt + mp_take_fraction(delta_y[0], ff)
 
-                    if lt == unity:
-                        if delta_x[0] >= 0:
-                            q.lx_pt = q.x_pt - delta_x[0]/3.0
-                        else:
-                            q.lx_pt = q.x_pt - delta_x[0]/3.0
-                        if delta_y[0] >= 0:
-                            q.ly_pt = q.y_pt - delta_y[0]/3.0
-                        else:
-                            q.ly_pt = q.y_pt - delta_y[0]/3.0
-                    else:
-                        ff = mp_make_fraction(unity, 3.0*lt)
-                        q.lx_pt = q.x_pt - mp_take_fraction(delta_x[0], ff)
-                        q.ly_pt = q.y_pt - mp_take_fraction(delta_y[0], ff)
+                    ff = mp_make_fraction(unity, 3.0*rt)
+                    p.rx_pt = p.x_pt + mp_take_fraction(delta_x[0], ff)
+                    p.ry_pt = p.y_pt + mp_take_fraction(delta_y[0], ff)
+
+                    ff = mp_make_fraction(unity, 3.0*lt)
+                    q.lx_pt = q.x_pt - mp_take_fraction(delta_x[0], ff)
+                    q.ly_pt = q.y_pt - mp_take_fraction(delta_y[0], ff)
                     return
 
                 else: # t.ltype != mp_curl
@@ -238,10 +223,7 @@ def mp_solve_choices(p, q, n, delta_x, delta_y, delta, psi): # <<<
                     cc = s.right_curl()
                     lt = abs(t.left_tension())
                     rt = abs(s.right_tension())
-                    if rt == unity and lt == unity: # XXX float comparison
-                        uu[0] = mp_make_fraction(cc + cc + unity, cc + two)
-                    else:
-                        uu[0] = mp_curl_ratio(cc, rt, lt)
+                    uu[0] = mp_curl_ratio(cc, rt, lt)
                     vv[0] = -mp_take_fraction(psi[1], uu[0])
                     ww[0] = 0
             # >>>
@@ -261,35 +243,22 @@ def mp_solve_choices(p, q, n, delta_x, delta_y, delta, psi): # <<<
                 # 357: Calculate the values
                 #      aa = Ak/Bk, bb = Dk/Ck, dd = (3-alpha_{k-1})d(k,k+1),
                 #      ee = (3-beta_{k+1})d(k-1,k), cc=(Bk-uk-Ak)/Bk
-                if abs(r.right_tension()) == unity: # XXX float comparison
-                    aa = fraction_half
-                    dd = 2*delta[k]
-                else:
-                    aa = mp_make_fraction(unity, 3*abs(r.right_tension()) - unity)
-                    dd = mp_take_fraction(delta[k],
-                                          fraction_three - mp_make_fraction(unity, abs(r.right_tension())))
-                if abs(t.left_tension()) == unity: # XXX float comparison
-                    bb = fraction_half
-                    ee = 2*delta[k-1]
-                else:
-                    bb = mp_make_fraction(unity, 3*abs(t.left_tension()) - unity)
-                    ee = mp_take_fraction(delta[k-1],
-                                          fraction_three - mp_make_fraction(unity, abs(t.left_tension())))
+                aa = mp_make_fraction(unity, 3.0*abs(r.right_tension()) - unity)
+                dd = mp_take_fraction(delta[k],
+                                      fraction_three - mp_make_fraction(unity, abs(r.right_tension())))
+                bb = mp_make_fraction(unity, 3*abs(t.left_tension()) - unity)
+                ee = mp_take_fraction(delta[k-1],
+                                      fraction_three - mp_make_fraction(unity, abs(t.left_tension())))
                 cc = fraction_one - mp_take_fraction(uu[k-1], aa)
 
                 # 358: Calculate the ratio ff = Ck/(Ck + Bk - uk-1Ak)
                 dd = mp_take_fraction(dd, cc)
                 lt = abs(s.left_tension())
                 rt = abs(s.right_tension())
-                if lt != rt:
-                    if lt < rt:
-                        ff = mp_make_fraction(lt, rt)
-                        ff = mp_take_fraction(ff, ff)
-                        dd = mp_take_fraction(dd, ff)
-                    else:
-                        ff = mp_make_fraction(rt, lt)
-                        ff = mp_take_fraction(ff, ff)
-                        ee = mp_take_fraction(ee, ff)
+                if lt < rt:
+                    dd *= (lt/rt)**2
+                elif lt > rt:
+                    ee *= (rt/lt)**2
                 ff = mp_make_fraction(ee, ee + dd)
 
                 uu[k] = mp_take_fraction(ff, bb)
@@ -304,10 +273,7 @@ def mp_solve_choices(p, q, n, delta_x, delta_y, delta, psi): # <<<
                     acc = acc - mp_take_fraction(psi[k], ff)
                     ff = mp_take_fraction(ff, aa)
                     vv[k] = acc - mp_take_fraction(vv[k-1], ff)
-                    if ww[k-1] == 0:
-                        ww[k] = 0
-                    else:
-                        ww[k] = -mp_take_fraction(ww[k-1], ff)
+                    ww[k] = -mp_take_fraction(ww[k-1], ff)
 
                 if s.ltype == mp_end_cycle:
                     # 360: Adjust theta_n to equal theta_0 and finish loop
@@ -334,10 +300,7 @@ def mp_solve_choices(p, q, n, delta_x, delta_y, delta, psi): # <<<
                 cc = s.left_curl()
                 lt = abs(s.left_tension())
                 rt = abs(r.right_tension())
-                if rt == unity and lt == unity:
-                    ff = mp_make_fraction(cc + cc + unity, cc + two)
-                else:
-                    ff = mp_curl_ratio(cc, lt, rt)
+                ff = mp_curl_ratio(cc, lt, rt)
                 theta[n] = -mp_make_fraction(mp_take_fraction(vv[n-1], ff),
                                              fraction_one - mp_take_fraction(ff, uu[n-1]))
                 break

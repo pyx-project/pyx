@@ -20,11 +20,15 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 from math import atan2, pi, radians
 import sys; sys.path[:0] = ["../.."]
-from pyx import canvas, unit, deco, trafo
 from pyx import path as pathmodule
+from pyx import canvas, unit, deco, trafo, metapost
+# TODO why must we change the epsilon before the import of _epsilon?
+# does the import make a copy or a reference?
+metapost.set(epsilon=2.0e-5)
+from pyx.metapost.path import knot_pt, _epsilon
 from pyx.metapost import *
-from pyx.metapost.path import knot_pt
 from pyx.metapost.mp_path import mp_endpoint, mp_explicit, mp_given, mp_curl, mp_open, mp_make_choices
+epsilon = _epsilon
 
 # internal tests: check that the reimplementation of mp_make_choices is correct:
 # tested with the output of a mpost binary (modified to output the knot parameters)
@@ -359,7 +363,7 @@ def mypath(knots): # <<<
         cx, cy = k.rx_pt, k.ry_pt
         prev = k
         k = k.next
-    if knots.ltype is mp_explicit:
+    if knots.ltype == mp_explicit:
         p.append(pathmodule.curveto_pt(prev.rx_pt, prev.ry_pt, knots.lx_pt, knots.ly_pt, knots.x_pt, knots.y_pt))
         p.append(pathmodule.closepath())
     return p
@@ -382,7 +386,7 @@ def check(knots, refpoints, eps=1.0e-3, rel=1.0e-5): # <<<
 # >>>
 def checkone(knots, refpoints): # <<<
     print myprint(knots)
-    mp_make_choices(knots)
+    mp_make_choices(knots, epsilon)
     print myprint(knots)
 
     c = canvas.canvas()
@@ -399,7 +403,7 @@ def checkall(): # <<<
                              curve6a(), curve6b(), curve6c(), curve7(),
                              curve8a(), curve8b(), curve9(), curve10()]:
         #print myprint(knots)
-        mp_make_choices(knots)
+        mp_make_choices(knots, epsilon)
         #print myprint(knots)
 
         cc = canvas.canvas()
@@ -422,22 +426,28 @@ def interface(): # <<<
 
     for p in [
       # ordinary open path:
-      path(beginknot(0,0), curve(), knot(6,4), curve(), knot(4,9), curve(), knot(1,7), curve(), endknot(3,5)),
+      path([beginknot(0,0), curve(), knot(6,4), curve(), knot(4,9), curve(), knot(1,7), curve(), endknot(3,5)], epsilon),
       # path containing two open subpaths:
-      path(beginknot(0,0), curve(), endknot(6,4), beginknot(4,9), curve(), knot(1,7), curve(), endknot(3,5)),
+      path([beginknot(0,0), curve(), endknot(6,4), beginknot(4,9), curve(), knot(1,7), curve(), endknot(3,5)], epsilon),
       # closed path:
-      path(knot(0,0), curve(), knot(6,4), curve(), knot(4,9), curve(), knot(1,7), curve(), knot(3,5), curve()),
+      path([knot(0,0), curve(), knot(6,4), curve(), knot(4,9), curve(), knot(1,7), curve(), knot(3,5), curve()], epsilon),
       # open path, but with endpoints in the middle:
-      path(knot(0,0), curve(), knot(6,4), curve(), endknot(4,9), beginknot(1,7), curve(), knot(3,5), curve()),
+      path([knot(0,0), curve(), knot(6,4), curve(), endknot(4,9), beginknot(1,7), curve(), knot(3,5), curve()], epsilon),
+      # the same path in the right order
+      path([beginknot(1,7), curve(), knot(3,5), curve(), knot(0,0), curve(), knot(6,4), curve(), endknot(4,9)], epsilon),
       # include a line
-      path(knot(0,0), curve(), knot(6,4), curve(), knot(4,9), line(), knot(1,7), curve(), knot(3,5), curve()),
+      path([knot(0,0), curve(), knot(6,4), curve(), roughknot(4,9), line(), roughknot(1,7), curve(), knot(3,5), curve()], epsilon),
+      # XXX the endpoints have "open" at their other sides, not "curl" as in the open example above
+      path([knot(0,0), curve(), knot(6,4), curve(), knot(4,9), line(), knot(1,7), curve(), knot(3,5), curve()], epsilon),
+      path([knot(0,0), curve(), knot(6,4), line(), knot(3,5), curve()], epsilon),
+      path([knot(0,0), curve(), knot(6,4), curve(), knot(3,5), curve()], epsilon),
       # TODO the internal mp_make_choices treats this as closed, but the last curve is not plotted:
-      path(knot(0,0), curve(), knot(6,4), curve(), knot(4,9), line(), knot(1,7), curve(), knot(3,5)),
+      path([knot(0,0), curve(), knot(6,4), curve(), knot(4,9), line(), knot(1,7), curve(), knot(3,5)], epsilon),
       # include a line with given angles
-      path(knot(0,0), curve(), knot(6,4), curve(), knot(4,9), line(keepangles=True), knot(1,7), curve(), knot(3,5), curve()),
+      path([knot(0,0), curve(), knot(6,4), curve(), knot(4,9), line(keepangles=True), knot(1,7), curve(), knot(3,5), curve()], epsilon),
       # include rough knots
-      path(beginknot(0,0), curve(), roughknot(6,4,langle=90), curve(), roughknot(4,9,langle=-90),
-           line(keepangles=True), roughknot(1,7,lcurl=3), curve(), endknot(3,5,angle=0)),
+      path([beginknot(0,0), curve(), roughknot(6,4,langle=90), curve(), roughknot(4,9,langle=-90),
+            line(keepangles=True), roughknot(1,7,lcurl=3), curve(), endknot(3,5,angle=0)], epsilon),
     ]:
         cc = canvas.canvas()
         cc.stroke(p, [deco.shownormpath(), deco.earrow.normal])

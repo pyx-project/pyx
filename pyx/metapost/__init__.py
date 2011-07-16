@@ -20,7 +20,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 import path
-__allpath__ = ["line", "curve", "controlcurve", "tensioncurve", "knot", "smoothknot", "roughknot", "beginknot", "startknot", "endknot", "path"]
+__allpath__ = ["set", "line", "curve", "controlcurve", "tensioncurve", "knot", "smoothknot", "roughknot", "beginknot", "startknot", "endknot", "path"]
 for importfrompath in __allpath__:
     locals()[importfrompath] = getattr(path, importfrompath)
 

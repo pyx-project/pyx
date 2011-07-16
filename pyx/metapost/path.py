@@ -24,6 +24,14 @@ from pyx import unit
 
 from mp_path import mp_endpoint, mp_explicit, mp_given, mp_curl, mp_open, mp_end_cycle, mp_make_choices
 
+# global epsilon (default precision length of metapost, in pt)
+_epsilon = 1e-5
+
+def set(epsilon=None):
+    global _epsilon
+    if epsilon is not None:
+        _epsilon = epsilon
+
 ################################################################################
 # Path knots
 ################################################################################
@@ -262,8 +270,10 @@ class path(pathmodule.path):
     The shape of the cubic Bezier curves between two points is controlled by
     its "tension", unless you choose to set the control points manually."""
 
-    def __init__(self, *elems):
+    def __init__(self, elems, epsilon=None):
         """elems should contain metapost knots or links"""
+        if epsilon is None:
+            epsilon = _epsilon
         knots = []
         is_closed = True
         for i, elem in enumerate(elems):
@@ -271,7 +281,7 @@ class path(pathmodule.path):
                 elem.set_knots(elems[i-1], elems[(i+1)%len(elems)])
             elif isinstance(elem, knot_pt):
                 knots.append(elem)
-                if elem.ltype is mp_endpoint or elem.rtype is mp_endpoint:
+                if elem.ltype == mp_endpoint or elem.rtype == mp_endpoint:
                     is_closed = False
 
         # link the knots among each other
@@ -279,7 +289,7 @@ class path(pathmodule.path):
             knots[i-1].next = knots[i]
 
         # determine the control points
-        mp_make_choices(knots[0])
+        mp_make_choices(knots[0], epsilon)
 
         pathmodule.path.__init__(self)
         # build up the path
@@ -307,7 +317,7 @@ class path(pathmodule.path):
                 prev = elem
 
         # close the path if necessary
-        if knots[0].ltype is mp_explicit:
+        if knots[0].ltype == mp_explicit:
             elem = knots[0]
             if do_lineto and is_closed:
                 self.append(pathmodule.closepath())
