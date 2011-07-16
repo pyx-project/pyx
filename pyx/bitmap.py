@@ -352,7 +352,7 @@ class bitmap_pt(canvasitem.canvasitem):
                 alpha = True
             else:
                 bands = data.split()
-                alpha = band[0]
+                alpha = bands[0]
                 data = image(self.imagewidth, self.imageheight, mode,
                              "".join(["".join(values)
                                       for values in zip(*[band.tostring()
