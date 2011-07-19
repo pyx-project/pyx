@@ -30,6 +30,9 @@ class InvalidParamException(Exception):
     def __init__(self, param):
         self.normsubpathitemparam = param
 
+# None has a meaning in linesmoothed
+class _marker: pass
+
 def curvescontrols_from_endlines_pt(B, tangent1, tangent2, r1, r2, softness): # <<<
     # calculates the parameters for two bezier curves connecting two lines (curvature=0)
     # starting at B - r1*tangent1
@@ -458,7 +461,7 @@ class cycloid(deformer): # <<<
 
 cycloid.clear = attr.clearclass(cycloid)
 
-class smoothed(deformer): # <<<
+class cornersmoothed(deformer): # <<<
 
     """Bends corners in a normpath.
 
@@ -492,7 +495,7 @@ class smoothed(deformer): # <<<
             obeycurv = self.obeycurv
         if relskipthres is None:
             relskipthres = self.relskipthres
-        return smoothed(radius=radius, softness=softness, obeycurv=obeycurv, relskipthres=relskipthres)
+        return cornersmoothed(radius=radius, softness=softness, obeycurv=obeycurv, relskipthres=relskipthres)
 
     def deform(self, basepath):
         return normpath.normpath([self.deformsubpath(normsubpath)
@@ -633,6 +636,8 @@ class smoothed(deformer): # <<<
 
 # >>>
 
+cornersmoothed.clear = attr.clearclass(cornersmoothed)
+smoothed = cornersmoothed
 smoothed.clear = attr.clearclass(smoothed)
 
 class parallel(deformer): # <<<
@@ -1356,5 +1361,77 @@ class parallel(deformer): # <<<
 # >>>
 
 parallel.clear = attr.clearclass(parallel)
+
+class linesmoothed(deformer): # <<<
+
+    def __init__(self, tension=1, atleast=False, lcurl=1, rcurl=1):
+        """Tension and atleast control the tension of the replacement curves.
+        l/rcurl control the curlynesses at (possible) endpoints. If a curl is
+        set to None, the angle is taken from the original path."""
+        if atleast:
+            self.tension = -abs(tension)
+        else:
+            self.tension = abs(tension)
+        self.lcurl = lcurl
+        self.rcurl = rcurl
+
+    def __call__(self, tension=_marker, atleast=_marker, lcurl=_marker, rcurl=_marker):
+        if tension is _marker:
+            tension = self.tension
+        if atleast is _marker:
+            atleast = (self.tension < 0)
+        if lcurl is _marker:
+            lcurl = self.lcurl
+        if rcurl is _marker:
+            rcurl = self.rcurl
+        return linesmoothed(tension, atleast, lcurl, rcurl)
+
+    def deform(self, basepath):
+        newnp = normpath.normpath()
+        for nsp in basepath.normpath().normsubpaths:
+            newnp += self.deformsubpath(nsp)
+        return newnp
+
+    def deformsubpath(self, nsp):
+        import metapost.path as mppath
+        """Returns a path/normpath from the points in the given normsubpath"""
+        # TODO: epsilon ?
+        knots = []
+
+        # first point
+        x_pt, y_pt = nsp.atbegin_pt()
+        if nsp.closed:
+            knots.append(mppath.smoothknot_pt(x_pt, y_pt))
+        elif self.lcurl is None:
+            rot = nsp.rotation([0])[0]
+            dx, dy = rot.apply_pt(1, 0)
+            angle = math.atan2(dy, dx)
+            knots.append(mppath.beginknot_pt(x_pt, y_pt, angle=angle))
+        else:
+            knots.append(mppath.beginknot_pt(x_pt, y_pt, curl=self.lcurl))
+
+        # intermediate points:
+        for npelem in nsp[:-1]:
+            knots.append(mppath.tensioncurve(self.tension))
+            knots.append(mppath.smoothknot_pt(*npelem.atend_pt()))
+
+        # last point
+        knots.append(mppath.tensioncurve(self.tension))
+        x_pt, y_pt = nsp.atend_pt()
+        if nsp.closed:
+            pass
+        elif self.rcurl is None:
+            rot = nsp.rotation([len(nsp)])[0]
+            dx, dy = rot.apply_pt(1, 0)
+            angle = math.atan2(dy, dx)
+            knots.append(mppath.endknot_pt(x_pt, y_pt, angle=angle))
+        else:
+            knots.append(mppath.endknot_pt(x_pt, y_pt, curl=self.rcurl))
+
+        return mppath.path(knots)
+# >>>
+
+linesmoothed.clear = attr.clearclass(linesmoothed)
+
 
 # vim:foldmethod=marker:foldmarker=<<<,>>>

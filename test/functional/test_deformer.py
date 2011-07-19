@@ -53,7 +53,7 @@ def testcycloid(c):
     c.stroke(p, [cyc(curvesperhloop=50), color.rgb.blue])
 
 
-def testsmoothed(c):
+def testcornersmoothed(c):
     p = path.path(
       path.moveto(0,0),
       path.lineto(3,0),
@@ -72,10 +72,10 @@ def testsmoothed(c):
 
     c.stroke(p, [color.gray(0.8), style.linewidth.THICk])
     c.stroke(p.normpath(), [color.gray(0.8), style.linewidth.THICk])
-    c.stroke(p, [smoothed(radius=0.85, softness=1, obeycurv=1), style.linewidth.Thin])
-    c.stroke(p, [smoothed(radius=0.85, softness=1, obeycurv=0), color.rgb.red])
-    c.stroke(p, [smoothed(radius=0.20, softness=1, obeycurv=0), color.rgb.green])
-    c.stroke(p, [smoothed(radius=1.20, softness=1, obeycurv=0), color.rgb.blue])
+    c.stroke(p, [cornersmoothed(radius=0.85, softness=1, obeycurv=1), style.linewidth.Thin])
+    c.stroke(p, [cornersmoothed(radius=0.85, softness=1, obeycurv=0), color.rgb.red])
+    c.stroke(p, [cornersmoothed(radius=0.20, softness=1, obeycurv=0), color.rgb.green])
+    c.stroke(p, [cornersmoothed(radius=1.20, softness=1, obeycurv=0), color.rgb.blue])
 
     p = path.path(
       path.moveto(0,10),
@@ -84,10 +84,10 @@ def testsmoothed(c):
     )
     c.stroke(p, [color.gray(0.8), style.linewidth.THICk])
     c.stroke(p.normpath(), [color.gray(0.8), style.linewidth.THICk])
-    c.stroke(p, [smoothed(radius=0.85, softness=1, obeycurv=1), style.linewidth.Thick])
-    c.stroke(p, [smoothed(radius=0.85, softness=1, obeycurv=0), color.rgb.red])
-    c.stroke(p, [smoothed(radius=0.20, softness=1, obeycurv=0), color.rgb.green])
-    c.stroke(p, [smoothed(radius=1.20, softness=1, obeycurv=0), color.rgb.blue])
+    c.stroke(p, [cornersmoothed(radius=0.85, softness=1, obeycurv=1), style.linewidth.Thick])
+    c.stroke(p, [cornersmoothed(radius=0.85, softness=1, obeycurv=0), color.rgb.red])
+    c.stroke(p, [cornersmoothed(radius=0.20, softness=1, obeycurv=0), color.rgb.green])
+    c.stroke(p, [cornersmoothed(radius=1.20, softness=1, obeycurv=0), color.rgb.blue])
 
 
 def hard_test(c, p, dist, pardef, move=(0, 0), label=""):
@@ -234,11 +234,29 @@ def testparallel_2(c):
     hard_test(c, p, 0.6, parallel(0.0), move, "Z")
 
 
+def testlinesmoothed(c):
+
+    # dependence on turnangle
+    p = path.path(path.moveto(0, 0), path.lineto(1, 0), path.lineto(2, 1), path.lineto(4, -1),
+                  path.lineto(5, 0), path.lineto(6, 0))
+    c.stroke(p)
+    d = linesmoothed()
+    c.stroke(p, [d])
+    c.stroke(p, [d(atleast=True), color.rgb.red])
+    c.stroke(p, [d(lcurl=None), color.rgb.green])
+    c.stroke(p, [d(rcurl=None), color.rgb.blue])
+
+    p.append(path.lineto(3, 3))
+    p.append(path.closepath())
+
+    c.stroke(p, [d, color.cmyk.Orange])
+
 c=canvas.canvas()
 dotest(c, 13, 15, "testcycloid")
-dotest(c, 20, 0, "testsmoothed")
+dotest(c, 20, 0, "testcornersmoothed")
 dotest(c, 0, 0, "testparallel_1")
 dotest(c, 6, 13, "testparallel_2")
+dotest(c, 0, 20, "testlinesmoothed")
 c.writeEPSfile("test_deformer", paperformat=document.paperformat.A4, rotated=1, fittosize=1)
 c.writePDFfile("test_deformer")
 
