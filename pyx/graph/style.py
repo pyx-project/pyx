@@ -1937,6 +1937,7 @@ class bitmap(_style):
     def initdrawpoints(self, privatedata, sharedata, graph):
         privatedata.colors = {}
         privatedata.mincolor = privatedata.maxcolor = None
+        privatedata.vfixed = [None]*len(graph.axesnames)
 
     def drawpoint(self, privatedata, sharedata, graph, point):
         try:
@@ -1949,6 +1950,13 @@ class bitmap(_style):
                 privatedata.mincolor = color
             if privatedata.mincolor is None or privatedata.maxcolor < color:
                 privatedata.maxcolor = color
+        if len(privatedata.vfixed) > 2 and sharedata.vposavailable:
+            for i, (v1, v2) in enumerate(zip(privatedata.vfixed, sharedata.vpos)):
+                if i != sharedata.index1 and i != sharedata.index2:
+                    if v1 is None:
+                        privatedata.vfixed[i] = v2
+                    elif abs(v1-v2) > self.epsilon:
+                        raise ValueError("data must be in a plane for the bitmap style")
 
     def donedrawpoints(self, privatedata, sharedata, graph):
         mincolor, maxcolor = privatedata.mincolor, privatedata.maxcolor
@@ -2014,16 +2022,54 @@ class bitmap(_style):
                 data.write(c.to8bitstring())
         i = bitmapmodule.image(len(values1), len(values2), mode, data.getvalue())
 
-        # TODO: fix 3d
-
         v1enlargement = (values1[-1]-values1[0])*0.5/len(values1)
         v2enlargement = (values2[-1]-values2[0])*0.5/len(values2)
-        x1_pt, y1_pt = graph.vpos_pt(values1[0]-v1enlargement, values2[-1]+v2enlargement)
-        x2_pt, y2_pt = graph.vpos_pt(values1[-1]+v1enlargement, values2[-1]+v2enlargement)
-        x3_pt, y3_pt = graph.vpos_pt(values1[0]-v1enlargement, values2[0]-v2enlargement)
-        x4_pt, y4_pt = graph.vpos_pt(values1[-1]+v1enlargement, values2[0]-v2enlargement)
-        t = trafo.trafo_pt(((x2_pt-x1_pt, y2_pt-y1_pt), (x3_pt-x1_pt, y3_pt-y1_pt)), (x1_pt, y1_pt))
+
+        privatedata.vfixed[sharedata.index1] = values1[0]-v1enlargement
+        privatedata.vfixed[sharedata.index2] = values2[-1]+v2enlargement
+        x1_pt, y1_pt = graph.vpos_pt(*privatedata.vfixed)
+        privatedata.vfixed[sharedata.index1] = values1[-1]+v1enlargement
+        privatedata.vfixed[sharedata.index2] = values2[-1]+v2enlargement
+        x2_pt, y2_pt = graph.vpos_pt(*privatedata.vfixed)
+        privatedata.vfixed[sharedata.index1] = values1[0]-v1enlargement
+        privatedata.vfixed[sharedata.index2] = values2[0]-v2enlargement
+        x3_pt, y3_pt = graph.vpos_pt(*privatedata.vfixed)
+        t = trafo.trafo_pt(((x2_pt-x1_pt, x3_pt-x1_pt), (y2_pt-y1_pt, y3_pt-y1_pt)), (x1_pt, y1_pt))
+
+        privatedata.vfixed[sharedata.index1] = values1[-1]+v1enlargement
+        privatedata.vfixed[sharedata.index2] = values2[0]-v2enlargement
+        vx4, vy4 = t.inverse().apply_pt(*graph.vpos_pt(*privatedata.vfixed))
+        if abs(vx4 - 1) > self.epsilon or abs(vy4 - 1) > self.epsilon:
+            raise ValueError("invalid graph layout for bitmap style (bitmap positioning by affine transformation failed)")
+
+        p = path.path()
+        privatedata.vfixed[sharedata.index1] = 0
+        privatedata.vfixed[sharedata.index2] = 0
+        p.append(path.moveto_pt(*graph.vpos_pt(*privatedata.vfixed)))
+        vfixed2 = privatedata.vfixed + privatedata.vfixed
+        vfixed2[sharedata.index1] = 0
+        vfixed2[sharedata.index2] = 0
+        vfixed2[sharedata.index1 + len(graph.axesnames)] = 1
+        vfixed2[sharedata.index2 + len(graph.axesnames)] = 0
+        p.append(graph.vgeodesic_el(*vfixed2))
+        vfixed2[sharedata.index1] = 1
+        vfixed2[sharedata.index2] = 0
+        vfixed2[sharedata.index1 + len(graph.axesnames)] = 1
+        vfixed2[sharedata.index2 + len(graph.axesnames)] = 1
+        p.append(graph.vgeodesic_el(*vfixed2))
+        vfixed2[sharedata.index1] = 1
+        vfixed2[sharedata.index2] = 1
+        vfixed2[sharedata.index1 + len(graph.axesnames)] = 0
+        vfixed2[sharedata.index2 + len(graph.axesnames)] = 1
+        p.append(graph.vgeodesic_el(*vfixed2))
+        vfixed2[sharedata.index1] = 0
+        vfixed2[sharedata.index2] = 1
+        vfixed2[sharedata.index1 + len(graph.axesnames)] = 0
+        vfixed2[sharedata.index2 + len(graph.axesnames)] = 0
+        p.append(graph.vgeodesic_el(*vfixed2))
+        p.append(path.closepath())
+
+        c = canvas.canvas([canvas.clip(p)])
         b = bitmapmodule.bitmap_trafo(t, i)
-        c = canvas.canvas([canvas.clip(path.rect_pt(graph.xpos_pt, graph.ypos_pt, graph.width_pt, graph.height_pt))])
         c.insert(b)
         graph.insert(c)
