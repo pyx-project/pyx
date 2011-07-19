@@ -1,13 +1,14 @@
-.. module:: metapost
+.. module:: metapost.path
 
-======================
-Module :mod:`metapost`
-======================
+===========================
+Module :mod:`metapost.path`
+===========================
 
 .. sectionauthor:: Michael Schindler <m-schindler@users.sourceforge.net>
 
 The :mod:`metapost` subpackage provides some of the path functionality of the
-MetaPost program.
+MetaPost program. The :mod:`metapost.path` presents the path construction
+facility of MetaPost.
 
 Similarly to the :mod:`normpath`, there is a short length *epsilon* (always in
 Postscript points pt) used as accuracy of numerical operations, such as

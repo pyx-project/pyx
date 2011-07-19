@@ -19,8 +19,8 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 from math import atan2, radians
+from pyx import unit, attr, normpath
 from pyx import path as pathmodule
-from pyx import unit
 
 from mp_path import mp_endpoint, mp_explicit, mp_given, mp_curl, mp_open, mp_end_cycle, mp_make_choices
 
@@ -36,7 +36,7 @@ def set(epsilon=None):
 # Path knots
 ################################################################################
 
-class knot_pt:
+class _knot:
 
     """Internal knot as used in MetaPost (mp.c)"""
 
@@ -114,72 +114,100 @@ class knot_pt:
             result += "{cycle tens %g}" % (self.ry_pt)
         return result
 
-class beginknot(knot_pt):
+class beginknot_pt(_knot):
 
     """A knot which interrupts a path, or which allows to continue it with a straight line"""
 
-    def __init__(self, x, y, curl=1, angle=None):
+    def __init__(self, x_pt, y_pt, curl=1, angle=None):
         if angle is None:
             type, value = mp_curl, curl
         else:
-            type, value = mp_given, radians(angle)
+            type, value = mp_given, angle
         # tensions are modified by the adjacent curve, but default is 1
-        knot_pt.__init__(self, unit.topt(x), unit.topt(y), mp_endpoint, None, None, type, value, 1)
+        _knot.__init__(self, x_pt, y_pt, mp_endpoint, None, None, type, value, 1)
+
+class beginknot(beginknot_pt):
+
+    def __init__(self, x, y, curl=1, angle=None):
+        if not (angle is None):
+            angle = radians(angle)
+        beginknot_pt.__init__(self, unit.topt(x), unit.topt(y), curl, angle)
 
 startknot = beginknot
 
-class endknot(knot_pt):
+class endknot_pt(_knot):
 
     """A knot which interrupts a path, or which allows to continue it with a straight line"""
 
-    def __init__(self, x, y, curl=1, angle=None):
+    def __init__(self, x_pt, y_pt, curl=1, angle=None):
         if angle is None:
             type, value = mp_curl, curl
         else:
-            type, value = mp_given, radians(angle)
+            type, value = mp_given, angle
         # tensions are modified by the adjacent curve, but default is 1
-        knot_pt.__init__(self, unit.topt(x), unit.topt(y), type, value, 1, mp_endpoint, None, None)
+        _knot.__init__(self, x_pt, y_pt, type, value, 1, mp_endpoint, None, None)
 
-class smoothknot(knot_pt):
+class endknot(endknot_pt):
+
+    def __init__(self, x, y, curl=1, angle=None):
+        if not (angle is None):
+            angle = radians(angle)
+        endknot_pt.__init__(self, unit.topt(x), unit.topt(y), curl, angle)
+
+class smoothknot_pt(_knot):
 
     """A knot with continous tangent and "mock" curvature."""
 
-    def __init__(self, x, y):
+    def __init__(self, x_pt, y_pt):
         # tensions are modified by the adjacent curve, but default is 1
-        knot_pt.__init__(self, unit.topt(x), unit.topt(y), mp_open, None, 1, mp_open, None, 1)
+        _knot.__init__(self, x_pt, y_pt, mp_open, None, 1, mp_open, None, 1)
+
+class smoothknot(smoothknot_pt):
+
+    def __init__(self, x, y):
+        smoothknot_pt.__init__(self, unit.topt(x), unit.topt(y))
 
 knot = smoothknot
 
-class roughknot(knot_pt):
+class roughknot_pt(_knot):
 
     """A knot with noncontinous tangent."""
 
-    def __init__(self, x, y, lcurl=1, rcurl=None, langle=None, rangle=None):
+    def __init__(self, x_pt, y_pt, lcurl=1, rcurl=None, langle=None, rangle=None):
         """Specify either the relative curvatures, or tangent angles left (l)
         or right (r) of the point."""
         if langle is None:
             ltype, lvalue = mp_curl, lcurl
         else:
-            ltype, lvalue = mp_given, radians(langle)
+            ltype, lvalue = mp_given, langle
         if rcurl is not None:
             rtype, rvalue = mp_curl, rcurl
         elif rangle is not None:
-            rtype, rvalue = mp_given, radians(rangle)
+            rtype, rvalue = mp_given, rangle
         else:
             rtype, rvalue = ltype, lvalue
         # tensions are modified by the adjacent curve, but default is 1
-        knot_pt.__init__(self, unit.topt(x), unit.topt(y), ltype, lvalue, 1, rtype, rvalue, 1)
+        _knot.__init__(self, x_pt, y_pt, ltype, lvalue, 1, rtype, rvalue, 1)
+
+class roughknot(roughknot_pt):
+
+    def __init__(self, x, y, lcurl=1, rcurl=None, langle=None, rangle=None):
+        if langle is not None:
+            langle = radians(langle)
+        if rangle is not None:
+            rangle = radians(rangle)
+        roughknot_pt.__init__(self, unit.topt(x), unit.topt(y), lcurl, rcurl, langle, rangle)
 
 ################################################################################
 # Path links
 ################################################################################
 
-class link:
+class _link:
     def set_knots(self, left_knot, right_knot):
         """Sets the internal properties of the metapost knots"""
         pass
 
-class line(link):
+class line(_link):
 
     """A straight line"""
 
@@ -201,7 +229,7 @@ class line(link):
             right_knot.set_right_given(angle)
 
 
-class controlcurve_pt(link):
+class controlcurve_pt(_link):
 
     """A cubic Bezier curve which has its control points explicity set"""
 
@@ -217,8 +245,14 @@ class controlcurve_pt(link):
         left_knot.rx_pt, left_knot.ry_pt = self.lcontrol_pt
         right_knot.lx_pt, right_knot.ly_pt = self.rcontrol_pt
 
+class controlcurve(controlcurve_pt):
 
-class tensioncurve(link):
+    def __init__(self, lcontrol, rcontrol):
+        controlcurve_pt.__init__(self, (unit.topt(lcontrol[0]), unit.topt(lcontrol[1])),
+                                       (unit.topt(rcontrol[0]), unit.topt(rcontrol[1])))
+
+
+class tensioncurve(_link):
 
     """A yet unspecified cubic Bezier curve"""
 
@@ -247,12 +281,6 @@ class tensioncurve(link):
 curve = tensioncurve
 
 
-class controlcurve(controlcurve_pt):
-
-    def __init__(self, lcontrol, rcontrol):
-        controlcurve_pt.__init__(self, (unit.topt(lcontrol[0]), unit.topt(lcontrol[1])),
-                                       (unit.topt(rcontrol[0]), unit.topt(rcontrol[1])))
-
 ################################################################################
 # Path creation class
 ################################################################################
@@ -277,9 +305,9 @@ class path(pathmodule.path):
         knots = []
         is_closed = True
         for i, elem in enumerate(elems):
-            if isinstance(elem, link):
+            if isinstance(elem, _link):
                 elem.set_knots(elems[i-1], elems[(i+1)%len(elems)])
-            elif isinstance(elem, knot_pt):
+            elif isinstance(elem, _knot):
                 knots.append(elem)
                 if elem.ltype == mp_endpoint or elem.rtype == mp_endpoint:
                     is_closed = False
@@ -298,13 +326,13 @@ class path(pathmodule.path):
         do_curveto = False
         prev = None
         for i, elem in enumerate(elems):
-            if isinstance(elem, link):
+            if isinstance(elem, _link):
                 do_moveto = False
                 if isinstance(elem, line):
                     do_lineto, do_curveto = True, False
                 else:
                     do_lineto, do_curveto = False, True
-            elif isinstance(elem, knot_pt):
+            elif isinstance(elem, _knot):
                 if do_moveto:
                     self.append(pathmodule.moveto_pt(elem.x_pt, elem.y_pt))
                 if do_lineto:
