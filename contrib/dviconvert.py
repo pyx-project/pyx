@@ -47,10 +47,10 @@ while 1:
     if not dvipage:
         break
     if options.paperformat:
-        aligntrafo = trafo.translate(-unit.t_inch, unit.t_inch + paperformat.height)
+        aligntrafo = trafo.translate(unit.t_inch, -unit.t_inch + options.paperformat.height)
         aligneddvipage = canvas.canvas([aligntrafo])
         aligneddvipage.insert(dvipage)
-        p = document.page(aligneddvipage, paperformat=paperformat)
+        p = document.page(aligneddvipage, paperformat=options.paperformat, centered=0)
     else:
         p = document.page(dvipage)
     d.append(p)
