@@ -15,7 +15,7 @@ the parameters `min` and `max`.
 parameter `points` of the `graph.data.function` class to increase the number of
 sampling points from its default value of `100`.
 
-Note that the default graph style for function data is `graph.style.line` synce
+Note that the default graph style for function data is `graph.style.line` since
 PyX assumes a continuous x-range. 
 
 ! You only need to pass the `min` and `max` parameters to the
