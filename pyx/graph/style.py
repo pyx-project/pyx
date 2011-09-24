@@ -263,10 +263,11 @@ class range(_style):
         return usecolumns
 
     def adjustaxis(self, privatedata, sharedata, graph, columnname, data):
-        if columnname in [c + "min" for a, c, m in privatedata.rangeposcolumns if m & self.mask_min]:
-            graph.axes[columnname[:-3]].adjustaxis(data)
-        if columnname in [c + "max" for a, c, m in privatedata.rangeposcolumns if m & self.mask_max]:
-            graph.axes[columnname[:-3]].adjustaxis(data)
+        for axisname, usename, mask in privatedata.rangeposcolumns:
+            if columnname == usename + "min" and mask & self.mask_min:
+                graph.axes[axisname].adjustaxis(data)
+            if columnname == usename + "max" and mask & self.mask_max:
+                graph.axes[axisname].adjustaxis(data)
 
         # delta handling: fill rangeposdeltacolumns
         for axisname, usename, mask in privatedata.rangeposcolumns:
