@@ -592,56 +592,64 @@ class shownormpath(deco, attr.attr):
                 dp.ornaments.draw(path.circle_pt(x_pt, y_pt, r_pt), [filled])
 
 
-class linehatched(deco, attr.exclusiveattr, attr.clearclass):
+class linehatched(deco, attr.clearclass):
     """draws a pattern with explicit lines
 
     This class acts as a drop-in replacement for postscript patterns
     from the pattern module which are not understood by some printers"""
 
-    def __init__(self, dist, angle, strokestyles=[], cross=0):
+    def __init__(self, dist, angle, shift=0, strokestyles=[], center=None):
         attr.clearclass.__init__(self, _filled)
-        attr.exclusiveattr.__init__(self, linehatched)
         self.dist = dist
         self.angle = angle
         self.strokestyles = attr.mergeattrs([style.linewidth.THIN] + strokestyles)
         attr.checkattrs(self.strokestyles, [style.strokestyle])
-        self.cross = cross
+        self.center = center
+        self.shift = shift
 
-    def __call__(self, dist=None, angle=None, strokestyles=None, cross=None):
+    def __call__(self, dist=None, angle=None, shift=None, strokestyles=None, center=_marker):
         if dist is None:
             dist = self.dist
         if angle is None:
             angle = self.angle
+        if shift is None:
+            shift = self.shift
         if strokestyles is None:
             strokestyles = self.strokestyles
-        if cross is None:
-            cross = self.cross
-        return linehatched(dist, angle, strokestyles, cross)
+        if center is _marker:
+            center = self.center
+        return linehatched(dist, angle, shift, strokestyles, center)
 
     def _decocanvas(self, angle, dp, texrunner):
         dp.ensurenormpath()
         dist_pt = unit.topt(self.dist)
+        shift_pt = unit.topt(self.shift)
 
         c = canvas.canvas([canvas.clip(dp.path)])
         llx_pt, lly_pt, urx_pt, ury_pt = dp.path.bbox().highrestuple_pt()
-        center_pt = 0.5*(llx_pt+urx_pt), 0.5*(lly_pt+ury_pt)
-        radius_pt = 0.5*math.hypot(urx_pt-llx_pt, ury_pt-lly_pt) + dist_pt
-        n = int(2*radius_pt / dist_pt) + 1
-        for i in range(n):
-            x_pt = center_pt[0] - radius_pt + i*dist_pt
-            c.stroke(path.line_pt(x_pt, center_pt[1]-radius_pt, x_pt, center_pt[1]+radius_pt),
+        if self.center is None:
+            center_pt = 0.5*(llx_pt+urx_pt), 0.5*(lly_pt+ury_pt)
+            radius_pt = 0.5*math.hypot(urx_pt-llx_pt, ury_pt-lly_pt) + dist_pt
+        else:
+            center_pt = (unit.topt(self.center[0]), unit.topt(self.center[1]))
+            radius_pt = dist_pt + max([math.hypot(urx_pt-center_pt[0], ury_pt-center_pt[1]),
+                                       math.hypot(llx_pt-center_pt[0], lly_pt-center_pt[1]),
+                                       math.hypot(urx_pt-center_pt[0], lly_pt-center_pt[1]),
+                                       math.hypot(llx_pt-center_pt[0], ury_pt-center_pt[1])])
+        n = int(radius_pt / dist_pt)
+        for i in range(-n-1, n+2):
+            x_pt = center_pt[0] + i*dist_pt
+            c.stroke(path.line_pt(x_pt+shift_pt, center_pt[1]-radius_pt, x_pt+shift_pt, center_pt[1]+radius_pt),
                      [trafo.rotate_pt(angle, center_pt[0], center_pt[1])] + self.strokestyles)
         return c
 
     def decorate(self, dp, texrunner):
         dp.ornaments.insert(self._decocanvas(self.angle, dp, texrunner))
-        if self.cross:
-            dp.ornaments.insert(self._decocanvas(self.angle+90, dp, texrunner))
 
     def merge(self, attrs):
-        # act as attr.clearclass and as attr.exclusiveattr at the same time
-        newattrs = attr.exclusiveattr.merge(self, attrs)
-        return attr.clearclass.merge(self, newattrs)
+        newattrs = attr.clearclass.merge(self, attrs)
+        newattrs.append(self)
+        return newattrs
 
 linehatched.clear = attr.clearclass(linehatched)
 
@@ -707,36 +715,6 @@ linehatched135.LArge = linehatched135(_hatch_base*math.sqrt(8))
 linehatched135.LARge = linehatched135(_hatch_base*math.sqrt(16))
 linehatched135.LARGe = linehatched135(_hatch_base*math.sqrt(32))
 linehatched135.LARGE = linehatched135(_hatch_base*math.sqrt(64))
-
-crosslinehatched0 = linehatched(_hatch_base, 0, cross=1)
-crosslinehatched0.SMALL = crosslinehatched0(_hatch_base/math.sqrt(64))
-crosslinehatched0.SMALl = crosslinehatched0(_hatch_base/math.sqrt(32))
-crosslinehatched0.SMAll = crosslinehatched0(_hatch_base/math.sqrt(16))
-crosslinehatched0.SMall = crosslinehatched0(_hatch_base/math.sqrt(8))
-crosslinehatched0.Small = crosslinehatched0(_hatch_base/math.sqrt(4))
-crosslinehatched0.small = crosslinehatched0(_hatch_base/math.sqrt(2))
-crosslinehatched0.normal = crosslinehatched0
-crosslinehatched0.large = crosslinehatched0(_hatch_base*math.sqrt(2))
-crosslinehatched0.Large = crosslinehatched0(_hatch_base*math.sqrt(4))
-crosslinehatched0.LArge = crosslinehatched0(_hatch_base*math.sqrt(8))
-crosslinehatched0.LARge = crosslinehatched0(_hatch_base*math.sqrt(16))
-crosslinehatched0.LARGe = crosslinehatched0(_hatch_base*math.sqrt(32))
-crosslinehatched0.LARGE = crosslinehatched0(_hatch_base*math.sqrt(64))
-
-crosslinehatched45 = linehatched(_hatch_base, 45, cross=1)
-crosslinehatched45.SMALL = crosslinehatched45(_hatch_base/math.sqrt(64))
-crosslinehatched45.SMALl = crosslinehatched45(_hatch_base/math.sqrt(32))
-crosslinehatched45.SMAll = crosslinehatched45(_hatch_base/math.sqrt(16))
-crosslinehatched45.SMall = crosslinehatched45(_hatch_base/math.sqrt(8))
-crosslinehatched45.Small = crosslinehatched45(_hatch_base/math.sqrt(4))
-crosslinehatched45.small = crosslinehatched45(_hatch_base/math.sqrt(2))
-crosslinehatched45.normal = crosslinehatched45
-crosslinehatched45.large = crosslinehatched45(_hatch_base*math.sqrt(2))
-crosslinehatched45.Large = crosslinehatched45(_hatch_base*math.sqrt(4))
-crosslinehatched45.LArge = crosslinehatched45(_hatch_base*math.sqrt(8))
-crosslinehatched45.LARge = crosslinehatched45(_hatch_base*math.sqrt(16))
-crosslinehatched45.LARGe = crosslinehatched45(_hatch_base*math.sqrt(32))
-crosslinehatched45.LARGE = crosslinehatched45(_hatch_base*math.sqrt(64))
 
 
 class colorgradient(deco, attr.attr):
