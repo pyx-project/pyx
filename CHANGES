@@ -111,6 +111,9 @@ TODO:
     - fix pyxgraphics functionality because at least some versions of graphics
       and friends seem to expect the file extension .def for the driver files
       (thanks to Michael J Gruber)
+  - deco module:
+    - decorator to put text along a path; based on a patch by Michael J Gruber
+      (TODO: documentation)
   - dvifile module:
     - fix for MS Windows: open virtual font files in binary mode
   - graph modules:

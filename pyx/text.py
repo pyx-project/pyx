@@ -1034,7 +1034,7 @@ class texrunner:
             self.dvifile = dvifile.DVIfile(dvifilename, debug=self.dvidebug)
             page = 1
             for box in self.needdvitextboxes:
-                box.setdvicanvas(self.dvifile.readpage([ord("P"), ord("y"), ord("X"), page, 0, 0, 0, 0, 0, 0], fontmap=box.fontmap))
+                box.setdvicanvas(self.dvifile.readpage([ord("P"), ord("y"), ord("X"), page, 0, 0, 0, 0, 0, 0], fontmap=box.fontmap, singlecharmode=box.singlecharmode))
                 page += 1
         if not ignoretail and self.dvifile.readpage(None) is not None:
             raise RuntimeError("end of dvifile expected")
@@ -1151,7 +1151,7 @@ class texrunner:
 
     PyXBoxPattern = re.compile(r"PyXBox:page=(?P<page>\d+),lt=(?P<lt>-?\d*((\d\.?)|(\.?\d))\d*)pt,rt=(?P<rt>-?\d*((\d\.?)|(\.?\d))\d*)pt,ht=(?P<ht>-?\d*((\d\.?)|(\.?\d))\d*)pt,dp=(?P<dp>-?\d*((\d\.?)|(\.?\d))\d*)pt:")
 
-    def text(self, x, y, expr, textattrs=[], texmessages=[], fontmap=None):
+    def text(self, x, y, expr, textattrs=[], texmessages=[], fontmap=None, singlecharmode=False):
         """create text by passing expr to TeX/LaTeX
         - returns a textbox containing the result from running expr thru TeX/LaTeX
         - the box center is set to x, y
@@ -1201,9 +1201,10 @@ class texrunner:
                                 #       this is quite different from what we do elsewhere!!!
                                 #       see https://sourceforge.net/mailarchive/forum.php?thread_id=9137692&forum_id=23700
         if self.texipc:
-            box.setdvicanvas(self.dvifile.readpage([ord("P"), ord("y"), ord("X"), self.page, 0, 0, 0, 0, 0, 0], fontmap=fontmap))
+            box.setdvicanvas(self.dvifile.readpage([ord("P"), ord("y"), ord("X"), self.page, 0, 0, 0, 0, 0, 0], fontmap=fontmap, singlecharmode=singlecharmode))
         else:
             box.fontmap = fontmap
+            box.singlecharmode = singlecharmode
             self.needdvitextboxes.append(box)
         return box
 

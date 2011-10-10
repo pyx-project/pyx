@@ -205,7 +205,7 @@ class DVIfile:
             self.activetext[2].append(char)
             self.pos[_POS_H] += dx
 
-        if not advancepos:
+        if (not advancepos) or self.singlecharmode:
             self.flushtext(fontmap)
 
     def usefont(self, fontnum, id1234, fontmap):
@@ -426,12 +426,14 @@ class DVIfile:
             else:
                 raise DVIError
 
-    def readpage(self, pageid=None, fontmap=None):
+    def readpage(self, pageid=None, fontmap=None, singlecharmode=False):
         """ reads a page from the dvi file
 
         This routine reads a page from the dvi file which is
         returned as a canvas. When there is no page left in the
         dvifile, None is returned and the file is closed properly."""
+
+        self.singlecharmode = singlecharmode
 
         while 1:
             self.filepos = self.file.tell()

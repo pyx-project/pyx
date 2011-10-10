@@ -1,0 +1,6 @@
+Text along path
+
+! In order to set text along a given path, you can use the `curvedtext()`
+decorator. The examples show how you can position the text relative to the
+path. There are further options available to the curvedtext decorator to
+place the text relative to the starting or end point of the path.

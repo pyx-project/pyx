@@ -564,6 +564,65 @@ class text(deco, attr.attr):
         t.linealign(self.textdist, math.cos(angle), math.sin(angle))
         dp.ornaments.insert(t)
 
+class curvedtext(deco, attr.attr):
+    """a text decorator for curved text
+
+    - text: is typeset along the path to which this decorator is applied
+    - relarclenpos: position for the base point of the text (default: 0)
+    - arlenfrombegin, arclenfromend: alternative ways of specifying the position of the base point;
+                                     use of relarclenpos, arclenfrombegin and arclenfromend is mutually exclusive
+    - textattrs, texrunner: standard text arguments (defaults: [] resp None)
+
+    """
+
+    # defaulttextattrs = [textmodule.halign.center] # TODO: not possible due to cyclic import issue
+
+    def __init__(self, text, textattrs=[],
+                       relarclenpos=0.5, arclenfrombegin=None, arclenfromend=None,
+                       texrunner=None, exclude=None):
+        if arclenfrombegin is not None and arclenfromend is not None:
+            raise ValueError("either set arclenfrombegin or arclenfromend")
+        self.text = text
+        self.textattrs = textattrs
+        self.relarclenpos = relarclenpos
+        self.arclenfrombegin = arclenfrombegin
+        self.arclenfromend = arclenfromend
+        self.texrunner = texrunner
+        self.exclude = exclude
+
+    def decorate(self, dp, texrunner):
+        if self.texrunner:
+            texrunner = self.texrunner
+        import text as textmodule
+        self.defaulttextattrs = [textmodule.halign.center]
+
+        dp.ensurenormpath()
+        if self.arclenfrombegin is not None:
+            textpos = dp.path.begin() + self.arclenfrombegin
+        elif self.arclenfromend is not None:
+            textpos = dp.path.end() - self.arclenfromend
+        else:
+            # relarcpos is used if neither arcfrombegin nor arcfromend is given
+            textpos = self.relarclenpos * dp.path.arclen()
+
+        textattrs = self.defaulttextattrs + self.textattrs
+        t = texrunner.text(0, 0, self.text, textattrs, singlecharmode=1)
+        t.ensuredvicanvas()
+
+        c = canvas.canvas()
+        for item in t.dvicanvas.items:
+            bbox = item.bbox()
+            if bbox:
+                x = item.bbox().center()[0]
+                atrafo = dp.path.trafo(textpos+x)
+                c.insert(item, [trafo.translate(-x, 0), atrafo])
+                if self.exclude is not None:
+                    dp.excluderange(textpos+bbox.left()-self.exclude, textpos+bbox.right()+self.exclude)
+            else:
+                c.insert(item)
+        dp.ornaments.insert(c)
+
+
 
 class shownormpath(deco, attr.attr):
 
