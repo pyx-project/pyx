@@ -31,10 +31,12 @@ import bbox as bboxmodule
 
 class strokestyle(canvasitem.canvasitem):
     def bbox(self):
+        # TODO: see TODO in bbox method of canvasitem
         return bboxmodule.empty()
 
 class fillstyle(canvasitem.canvasitem):
     def bbox(self):
+        # TODO: see TODO in bbox method of canvasitem
         return bboxmodule.empty()
 
 #

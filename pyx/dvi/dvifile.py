@@ -79,7 +79,14 @@ class DVIError(Exception): pass
 
 # save and restore colors
 
-class _savecolor(canvasitem.canvasitem):
+class _canvasitem(canvasitem.canvasitem):
+
+    def bbox(self):
+        # TODO: see TODO in bbox method of canvasitem
+        return bbox.empty()
+
+
+class _savecolor(_canvasitem):
     def processPS(self, file, writer, context, registry, bbox):
         file.write("currentcolor currentcolorspace\n")
 
@@ -87,14 +94,15 @@ class _savecolor(canvasitem.canvasitem):
         file.write("q\n")
 
 
-class _restorecolor(canvasitem.canvasitem):
+class _restorecolor(_canvasitem):
     def processPS(self, file, writer, context, registry, bbox):
         file.write("setcolorspace setcolor\n")
 
     def processPDF(self, file, writer, context, registry, bbox):
         file.write("Q\n")
 
-class _savetrafo(canvasitem.canvasitem):
+
+class _savetrafo(_canvasitem):
     def processPS(self, file, writer, context, registry, bbox):
         file.write("matrix currentmatrix\n")
 
@@ -102,7 +110,7 @@ class _savetrafo(canvasitem.canvasitem):
         file.write("q\n")
 
 
-class _restoretrafo(canvasitem.canvasitem):
+class _restoretrafo(_canvasitem):
     def processPS(self, file, writer, context, registry, bbox):
         file.write("setmatrix\n")
 

@@ -26,6 +26,11 @@ class canvasitem:
 
     def bbox(self):
         """return bounding box of canvasitem"""
+        # TODO: we either should raise a NotImplementedError here or return
+        # an empty bounding box instance, as adding empty to a bouding box is
+        # allowed. (We could also alter the merging behavior of bboxes to allow
+        # None. Currently, canvasitem instances not overwriting this bbox method
+        # lead to an error.)
         pass
 
     def processPS(self, file, writer, context, registry, bbox):
