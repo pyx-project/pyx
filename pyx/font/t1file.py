@@ -187,8 +187,8 @@ class _T1seac(T1cmd):
         context.t1font.updateglyphpath(aglyph, path, atrafo, context)
 
     def gathercalls(self, seacglyphs, subrs, context):
-        bchar = context.t1stack.pop()
         achar = context.t1stack.pop()
+        bchar = context.t1stack.pop()
         aglyph = adobestandardencoding[achar]
         bglyph = adobestandardencoding[bchar]
         seacglyphs.add(aglyph)
@@ -557,8 +557,7 @@ class _T1callothersubr(T1cmd):
     def gathercalls(self, seacglyphs, subrs, context):
         othersubrnumber = context.t1stack.pop()
         n = context.t1stack.pop()
-        for i in range(n):
-            context.psstack.append(context.t1stack.pop(0))
+        context.psstack.extend([context.t1stack.pop() for i in range(n)][::-1])
 
 T1callothersubr = _T1callothersubr()
 
