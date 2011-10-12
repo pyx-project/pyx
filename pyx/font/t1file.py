@@ -72,7 +72,7 @@ adobestandardencoding = [None, None, None, None, None, None, None, None,
 
 class T1context:
 
-    def __init__(self, t1font):
+    def __init__(self, t1font, flex=True):
         """context for T1cmd evaluation"""
         self.t1font = t1font
 
@@ -83,6 +83,7 @@ class T1context:
         self.wy = None
         self.t1stack = []
         self.psstack = []
+        self.flex = flex
 
 
 ######################################################################
@@ -112,14 +113,14 @@ class T1cmd:
         """update path instance applying trafo to the points"""
         raise NotImplementedError
 
-    def gathercalls(self, seacglyphs, subrs, othersubrs, context):
+    def gathercalls(self, seacglyphs, subrs, context):
         """gather dependancy information
 
         subrs is the "called-subrs" dictionary. gathercalls will insert the
         subr number as key having the value 1, i.e. subrs will become the
         numbers of used subrs. Similar seacglyphs will contain all glyphs in
-        composite characters (subrs and othersubrs for those glyphs will also
-        already be included) and othersubrs the othersubrs called.
+        composite characters (subrs for those glyphs will also
+        already be included).
 
         This method might will not properly update all information in the
         context (especially consuming values from the stack) and will also skip
@@ -185,15 +186,15 @@ class _T1seac(T1cmd):
         atrafo = atrafo * trafo.translate_pt(adx-sab, ady)
         context.t1font.updateglyphpath(aglyph, path, atrafo, context)
 
-    def gathercalls(self, seacglyphs, subrs, othersubrs, context):
+    def gathercalls(self, seacglyphs, subrs, context):
         bchar = context.t1stack.pop()
         achar = context.t1stack.pop()
         aglyph = adobestandardencoding[achar]
         bglyph = adobestandardencoding[bchar]
         seacglyphs.add(aglyph)
         seacglyphs.add(bglyph)
-        context.t1font.gatherglyphcalls(bglyph, seacglyphs, subrs, othersubrs, context)
-        context.t1font.gatherglyphcalls(aglyph, seacglyphs, subrs, othersubrs, context)
+        context.t1font.gatherglyphcalls(bglyph, seacglyphs, subrs, context)
+        context.t1font.gatherglyphcalls(aglyph, seacglyphs, subrs, context)
 
 T1seac = _T1seac()
 
@@ -507,7 +508,7 @@ class _T1div(T1cmd):
         num1 = context.t1stack.pop()
         context.t1stack.append(divmod(num1, num2)[0])
 
-    def gathercalls(self, seacglyphs, subrs, othersubrs, context):
+    def gathercalls(self, seacglyphs, subrs, context):
         num2 = context.t1stack.pop()
         num1 = context.t1stack.pop()
         context.t1stack.append(divmod(num1, num2)[0])
@@ -529,14 +530,35 @@ class _T1callothersubr(T1cmd):
         othersubrnumber = context.t1stack.pop()
         n = context.t1stack.pop()
         for i in range(n):
-            context.psstack.append(context.t1stack.pop())
+            context.psstack.append(context.t1stack.pop(0))
+        if othersubrnumber == 0:
+            flex_size, x, y = context.psstack[-3:]
+            if context.flex:
+                x1, y1, x2, y2, x3, y3 = context.psstack[2:8]
+                x1, y1 = trafo.apply_pt(x1, y1)
+                x2, y2 = trafo.apply_pt(x2, y2)
+                x3, y3 = trafo.apply_pt(x3, y3)
+                path.append(curveto_pt(x1, y1, x2, y2, x3, y3))
+                x1, y1, x2, y2, x3, y3 = context.psstack[8:14]
+                x1, y1 = trafo.apply_pt(x1, y1)
+                x2, y2 = trafo.apply_pt(x2, y2)
+                x3, y3 = trafo.apply_pt(x3, y3)
+                path.append(curveto_pt(x1, y1, x2, y2, x3, y3))
+            else:
+                path.append(lineto_pt(*trafo.apply_pt(x, y)))
+            context.psstack = [y, x]
+        elif othersubrnumber == 1:
+            pass
+        elif othersubrnumber == 2:
+            path.pathitems.pop()
+            context.psstack.append(context.x)
+            context.psstack.append(context.y)
 
-    def gathercalls(self, seacglyphs, subrs, othersubrs, context):
+    def gathercalls(self, seacglyphs, subrs, context):
         othersubrnumber = context.t1stack.pop()
-        othersubrs.add(othersubrnumber)
         n = context.t1stack.pop()
         for i in range(n):
-            context.psstack.append(context.t1stack.pop())
+            context.psstack.append(context.t1stack.pop(0))
 
 T1callothersubr = _T1callothersubr()
 
@@ -553,10 +575,10 @@ class _T1callsubr(T1cmd):
         subr = context.t1stack.pop()
         context.t1font.updatesubrpath(subr, path, trafo, context)
 
-    def gathercalls(self, seacglyphs, subrs, othersubrs, context):
+    def gathercalls(self, seacglyphs, subrs, context):
         subr = context.t1stack.pop()
         subrs.add(subr)
-        context.t1font.gathersubrcalls(subr, seacglyphs, subrs, othersubrs, context)
+        context.t1font.gathersubrcalls(subr, seacglyphs, subrs, context)
 
 T1callsubr = _T1callsubr()
 
@@ -572,7 +594,7 @@ class _T1pop(T1cmd):
     def updatepath(self, path, trafo, context):
         context.t1stack.append(context.psstack.pop())
 
-    def gathercalls(self, seacglyphs, subrs, othersubrs, context):
+    def gathercalls(self, seacglyphs, subrs, context):
         context.t1stack.append(context.psstack.pop())
 
 T1pop = _T1pop()
@@ -601,11 +623,8 @@ class _T1setcurrentpoint(T1cmd):
         return "setcurrentpoint"
 
     def updatepath(self, path, trafo, context):
-        x = context.t1stack.pop(0)
-        y = context.t1stack.pop(0)
-        path.append(moveto_pt(*trafo.apply_pt(x, y)))
-        context.x = x
-        context.y = y
+        context.x = context.t1stack.pop(0)
+        context.y = context.t1stack.pop(0)
 
 T1setcurrentpoint = _T1setcurrentpoint()
 
@@ -863,20 +882,20 @@ class T1file:
     def updateglyphpath(self, glyph, path, trafo, context):
         self.updatepath(self.getglyphcmds(glyph), path, trafo, context)
 
-    def gathercalls(self, cmds, seacglyphs, subrs, othersubrs, context):
+    def gathercalls(self, cmds, seacglyphs, subrs, context):
         for cmd in cmds:
             if isinstance(cmd, T1cmd):
-                cmd.gathercalls(seacglyphs, subrs, othersubrs, context)
+                cmd.gathercalls(seacglyphs, subrs, context)
             else:
                 context.t1stack.append(cmd)
 
-    def gathersubrcalls(self, subr, seacglyphs, subrs, othersubrs, context):
-        self.gathercalls(self.getsubrcmds(subr), seacglyphs, subrs, othersubrs, context)
+    def gathersubrcalls(self, subr, seacglyphs, subrs, context):
+        self.gathercalls(self.getsubrcmds(subr), seacglyphs, subrs, context)
 
-    def gatherglyphcalls(self, glyph, seacglyphs, subrs, othersubrs, context):
-        self.gathercalls(self.getglyphcmds(glyph), seacglyphs, subrs, othersubrs, context)
+    def gatherglyphcalls(self, glyph, seacglyphs, subrs, context):
+        self.gathercalls(self.getglyphcmds(glyph), seacglyphs, subrs, context)
 
-    def getglyphpath_pt(self, x_pt, y_pt, glyph, size_pt, convertcharcode=False):
+    def getglyphpath_pt(self, x_pt, y_pt, glyph, size_pt, convertcharcode=False, flex=True):
         """return an object containing the PyX path, wx_pt and wy_pt for glyph named glyph"""
         if convertcharcode:
             if not self.encoding:
@@ -884,7 +903,7 @@ class T1file:
             glyph = self.encoding[glyph]
         t = self.fontmatrix.scaled(size_pt)
         tpath = t.translated_pt(x_pt, y_pt)
-        context = T1context(self)
+        context = T1context(self, flex=flex)
         p = path()
         self.updateglyphpath(glyph, p, tpath, context)
         class glyphpath:
@@ -968,7 +987,6 @@ class T1file:
 
         glyphs is a set of the glyph names. It might be modified *in place*!
         """
-        # TODO: we could also strip othersubrs to those actually used
         if not self.encoding:
             self._encoding()
         for charcode in charcodes:
@@ -977,9 +995,8 @@ class T1file:
         # collect information about used glyphs and subrs
         seacglyphs = pycompat.set()
         subrs = pycompat.set()
-        othersubrs = pycompat.set()
         for glyph in glyphs:
-            self.gatherglyphcalls(glyph, seacglyphs, subrs, othersubrs, T1context(self))
+            self.gatherglyphcalls(glyph, seacglyphs, subrs, T1context(self))
         # while we have gathered all subrs for the seacglyphs alreadys, we
         # might have missed the glyphs themself (when they are not used stand-alone)
         glyphs.update(seacglyphs)
@@ -1042,9 +1059,9 @@ class T1file:
             file.write("/CapHeight %f\n" % glyphinfo_h[5])
             file.write("/StemV %f\n" % (glyphinfo_period[4]-glyphinfo_period[2]))
 
-    def getglyphinfo(self, glyph):
+    def getglyphinfo(self, glyph, flex=True):
         warnings.warn("We are about to extract font information for the Type 1 font '%s' from its pfb file. This is bad practice (and it's slow). You should use an afm file instead." % self.name)
-        context = T1context(self)
+        context = T1context(self, flex=flex)
         p = path()
         self.updateglyphpath(glyph, p, trafo.trafo(), context)
         bbox = p.bbox()
