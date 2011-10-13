@@ -173,21 +173,23 @@ class TeXtext_pt(font.text_pt):
     def bbox(self):
         return self._bbox
 
-    def processPS(self, file, writer, context, registry, bbox):
-        bbox += self.bbox()
+    def _text(self, writer):
         if self.fontmap is not None:
             mapline = self.font.getMAPline(self.fontmap)
         else:
             mapline = self.font.getMAPline(writer.getfontmap())
         font = mapline.getfont()
-        text = font.text_pt(self.x_pt, self.y_pt, self.charcodes, self.size_pt, decoding=mapline.getencoding(), slant=mapline.slant, ignorebbox=True)
-        text.processPS(file, writer, context, registry, bbox)
+        return font.text_pt(self.x_pt, self.y_pt, self.charcodes, self.size_pt, decoding=mapline.getencoding(), slant=mapline.slant, ignorebbox=True)
+
+    def textpath(self):
+        from pyx import pswriter
+        return self._text(pswriter._PSwriter()).textpath()
+
+    def processPS(self, file, writer, context, registry, bbox):
+        bbox += self.bbox()
+        self._text(writer).processPS(file, writer, context, registry, bbox)
 
     def processPDF(self, file, writer, context, registry, bbox):
         bbox += self.bbox()
-
-        mapline = self.font.getMAPline(writer.getfontmap())
-        font = mapline.getfont()
-        text = font.text_pt(self.x_pt, self.y_pt, self.charcodes, self.size_pt, decoding=mapline.getencoding(), slant=mapline.slant, ignorebbox=True)
-        text.processPDF(file, writer, context, registry, bbox)
+        self._text(writer).processPDF(file, writer, context, registry, bbox)
 

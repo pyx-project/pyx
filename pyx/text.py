@@ -22,7 +22,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 import errno, glob, os, threading, Queue, re, tempfile, atexit, time, warnings
-import config, unit, box, canvas, trafo, version, attr, style, filelocator, pycompat
+import config, unit, box, canvas, trafo, version, attr, style, filelocator, pycompat, path
 from pyx.dvi import dvifile
 import bbox as bboxmodule
 
@@ -711,6 +711,17 @@ class textbox(box.rect, canvas._canvas):
     def marker(self, marker):
         self.ensuredvicanvas()
         return self.texttrafo.apply(*self.dvicanvas.markers[marker])
+
+    def textpath(self):
+        self.ensuredvicanvas()
+        textpath = path.path()
+        for item in self.dvicanvas.items:
+            try:
+                textpath += item.textpath()
+            except AttributeError:
+                # ignore color settings etc.
+                pass
+        return textpath.transformed(self.texttrafo)
 
     def processPS(self, file, writer, context, registry, bbox):
         self.ensuredvicanvas()
