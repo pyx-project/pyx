@@ -505,8 +505,8 @@ def jet_b(x):
     elif x < 0.38: return 1
     elif x < 0.62: return 1-(x-0.38)/(0.62-0.38)
     else: return 0
-gradient.Jet = functiongradient({"r":jet_r, "g":jet_g, "b":jet_b}, color.rgb)
-gradient.ReverseJet = functiongradient({"r":lambda x: jet_r(1-x), "g":lambda x: jet_g(1-x), "b":lambda x: jet_b(1-x)}, color.rgb)
+gradient.Jet = functiongradient({"r":jet_r, "g":jet_g, "b":jet_b}, rgb)
+gradient.ReverseJet = functiongradient({"r":lambda x: jet_r(1-x), "g":lambda x: jet_g(1-x), "b":lambda x: jet_b(1-x)}, rgb)
 cmykgradient.Jet = cmykgradient(gradient.Jet)
 cmykgradient.ReverseJet = cmykgradient(gradient.ReverseJet)
 
