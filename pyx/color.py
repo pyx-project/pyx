@@ -454,6 +454,11 @@ gradient.BlackYellow    = functiongradient({ # compare this with reversegray abo
     "g":(lambda x: 1.5*x**2*(1-x)**3 - 0.8*x**3*(1-x)**2 + 2.0*x**4*(1-x) + x**4),
     "b":(lambda x: 5*x*(1-x)**5 - 0.5*x**2*(1-x)**3 + 0.3*x*x*(1-x)**2 + 5*x**3*(1-x)**2 + 0.5*x**6)},
     rgb)
+gradient.YellowBlack    = functiongradient({
+    "r":(lambda x: 2*(1-x)*x**5 + 3.5*(1-x)**2*x**3 + 2.1*(1-x)*(1-x)*x**2 + 3.0*(1-x)**3*x**2 + (1-x)**0.5*(1-x**2)),
+    "g":(lambda x: 1.5*(1-x)**2*x**3 - 0.8*(1-x)**3*x**2 + 2.0*(1-x)**4*x + (1-x)**4),
+    "b":(lambda x: 5*(1-x)*x**5 - 0.5*(1-x)**2*x**3 + 0.3*(1-x)*(1-x)*x**2 + 5*(1-x)**3*x**2 + 0.5*(1-x)**6)},
+    rgb)
 gradient.RedGreen       = lineargradient(rgb.red, rgb.green)
 gradient.RedBlue        = lineargradient(rgb.red, rgb.blue)
 gradient.GreenRed       = lineargradient(rgb.green, rgb.red)
@@ -484,6 +489,27 @@ cmykgradient.Rainbow        = cmykgradient(gradient.Rainbow)
 cmykgradient.ReverseRainbow = cmykgradient(gradient.ReverseRainbow)
 cmykgradient.Hue            = cmykgradient(gradient.Hue)
 cmykgradient.ReverseHue     = cmykgradient(gradient.ReverseHue)
+def jet_r(x):
+    if x < 0.38: return 0
+    elif x < 0.62: return (x-0.38)/(0.62-0.38)
+    elif x < 0.87: return 1
+    else: return 0.5 + 0.5*(1-x)/(1-0.87)
+def jet_g(x):
+    if x < 0.13: return 0
+    elif x < 0.38: return (x-0.13)/(0.38-0.13)
+    elif x < 0.62: return 1
+    elif x < 0.87: return (0.87-x)/(0.87-0.62)
+    else: return 0
+def jet_b(x):
+    if x < 0.13: return 0.5 + 0.5*x/0.13
+    elif x < 0.38: return 1
+    elif x < 0.62: return 1-(x-0.38)/(0.62-0.38)
+    else: return 0
+gradient.Jet = functiongradient({"r":jet_r, "g":jet_g, "b":jet_b}, color.rgb)
+gradient.ReverseJet = functiongradient({"r":lambda x: jet_r(1-x), "g":lambda x: jet_g(1-x), "b":lambda x: jet_b(1-x)}, color.rgb)
+cmykgradient.Jet = cmykgradient(gradient.Jet)
+cmykgradient.ReverseJet = cmykgradient(gradient.ReverseJet)
+
 
 
 class PDFextgstate(pdfwriter.PDFobject):
