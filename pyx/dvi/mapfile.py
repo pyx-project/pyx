@@ -22,7 +22,7 @@
 
 import os.path, re, warnings
 from pyx import font, filelocator
-from pyx.font import t1file, afmfile
+from pyx.font import t1file, afmfile, pfmfile
 from pyx.dvi import encfile
 
 class UnsupportedFontFormat(Exception):
@@ -128,7 +128,16 @@ class MAPline:
                 try:
                     metricfile = filelocator.open(os.path.splitext(self.fontfilename)[0], [filelocator.format.afm])
                 except IOError:
-                    self._font = font.T1font(t1font)
+                    try:
+                        # fallback by using the pfm instead of the afm font metric
+                        # (in all major TeX distributions there is no pfm file format defined by kpsewhich, but
+                        # we can use the type1 format and search for the file including the expected suffix)
+                        metricfile = filelocator.open("%s.pfm" % os.path.splitext(self.fontfilename)[0], [filelocator.format.type1])
+                    except IOError:
+                        self._font = font.T1font(t1font)
+                    else:
+                        self._font = font.T1font(t1font, pfmfile.PFMfile(metricfile, t1font))
+                        metricfile.close()
                 else:
                     self._font = font.T1font(t1font, afmfile.AFMfile(metricfile))
                     metricfile.close()

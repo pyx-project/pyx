@@ -19,7 +19,7 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import struct
+import struct, re
 import metric
 
 
@@ -248,6 +248,10 @@ ansiglyphs = {"space": 32,
               "thorn":254,
               "ydieresis":255}
 
+
+fontbboxpattern = re.compile("/FontBBox\s*\{\s*(?P<fontbbox>(-?[0-9.]+)\s+(-?[0-9.]+)\s+(-?[0-9.]+)\s+(-?[0-9.]+))\s*\}\s*(readonly\s+)?def")
+
+
 def _readNullString(file):
     s = []
     c = file.read(1)
@@ -259,7 +263,8 @@ def _readNullString(file):
 
 class PFMfile(metric.metric):
 
-    def __init__(self, file):
+    def __init__(self, file, t1file):
+        # pfm is rather incomplete, the t1file instance can be used to fill the gap
         (self.dfVersion, self.dfSize, self.dfCopyright, self.dfType,
          self.dfPoint, self.dfVertRes, self.dfHorizRes, self.dfAscent,
          self.dfInternalLeading, self.dfExternalLeading, self.dfItalic,
@@ -305,7 +310,6 @@ class PFMfile(metric.metric):
          self.etmDoubleLowerUnderlineOffset, self.etmDoubleUpperUnderlineWidth,
          self.etmDoubleLowerUnderlineWidth, self.etmStrikeOutOffset,
          self.etmStrikeOutWidth, self.etmKernPairs, self.etmKernTracks) = struct.unpack("<24h2H", file.read(52))
-        print self.etmMasterHeight, self.etmMasterUnits, self.etmPointSize, self.etmOrientation
         file.seek(self.dfFace)
         self.faceName = _readNullString(file)
         file.seek(self.dfDriverInfo)
@@ -334,13 +338,18 @@ class PFMfile(metric.metric):
                 # each item consists of the tuple ktDegree, ktMinSize, ktMinAmount, ktMaxSize, ktMaxAmount
                 self.trackkerns.append(struct.unpack("<hhhhh", file.read(10)))
         if self.dfCharSet:
-            raise ValueError("PFM font matrices are currently supported for ansi encoded fonts only.")
+            if not t1file.encoding:
+                t1file._encoding()
+            self.glyphs = dict([(glyph, i) for i, glyph in enumerate(t1file.encoding) if glyph != None])
+        else:
+            self.glyphs = ansiglyphs
+        self.t1file = t1file
 
     def width_ds(self, glyphname):
-        return self.widths[ansiglyphs[glyphname]-self.dfFirstChar]
+        return self.widths[self.glyphs[glyphname]-self.dfFirstChar]
 
     def width_pt(self, glyphnames, size_pt):
-        return sum([self.widths[ansiglyphs[glyphname]-self.dfFirstChar] for glyphname in glyphnames])*size_pt/1000.0
+        return sum([self.widths[self.glyphs[glyphname]-self.dfFirstChar] for glyphname in glyphnames])*size_pt/1000.0
 
     def height_pt(self, glyphnames, size_pt):
         return self.dfAscent*size_pt/1000.0
@@ -359,14 +368,13 @@ class PFMfile(metric.metric):
         for i, glyphname in enumerate(glyphnames):
             result[2*i] = glyphname
             if i:
-                amount = self.kernpairsdict.get((ansiglyphs[glyphnames[i-1]], ansiglyphs[glyphname]))
+                amount = self.kernpairsdict.get((self.glyphs[glyphnames[i-1]], self.glyphs[glyphname]))
                 if amount:
                     if size_pt is not None:
                         result[2*i-1] = amount*size_pt/1000.0
                     else:
                         result[2*i-1] = amount
         return result
-
 
     def writePDFfontinfo(self, file, seriffont=False, symbolfont=True):
         flags = 0
@@ -383,9 +391,9 @@ class PFMfile(metric.metric):
         file.write("/Flags %d\n" % flags)
         file.write("/ItalicAngles %d\n" % (self.etmSlant/10))
         file.write("/Ascent %d\n" % self.dfAscent)
-        file.write("/Descent %d\n" % self.etmLowerCaseDescent)
-        file.write("/FontBBox [0 %d 1000 %d]\n" % (self.etmLowerCaseDescent, self.dfAscent))
-        file.write("/CapHeight %d\n" % self.dfAscent)
+        file.write("/Descent %d\n" % -self.etmLowerCaseDescent)
+        file.write("/FontBBox [%s]\n" % fontbboxpattern.search(self.t1file.data1).groups('fontbbox')[0])
+        file.write("/CapHeight %d\n" % self.etmCapHeight)
         if self.dfWeight >= 600:
             stemv = 120
         else:
