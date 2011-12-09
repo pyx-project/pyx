@@ -337,7 +337,7 @@ class canvas(_canvas):
 class layered_canvas(canvas):
 
     def __init__(self, **kwargs):
-        canvas.canvas.__init__(self, **kwargs)
+        canvas.__init__(self, **kwargs)
         self._layers = {}
 
     def layer(self, name):
@@ -345,11 +345,11 @@ class layered_canvas(canvas):
             group, layer = name.split(".", 1)
         except ValueError:
             if not name in self._layers:
-                self._layers[name] = self.insert(Layer(texrunner=self.texrunner))
+                self._layers[name] = self.insert(layered_canvas(texrunner=self.texrunner))
             return self._layers[name]
         else:
             if not group in self._layers:
-                self._layers[group] = self.insert(Layer(texrunner=self.texrunner))
+                self._layers[group] = self.insert(layered_canvas(texrunner=self.texrunner))
             return self._layers[group].layer(layer)
 
 
