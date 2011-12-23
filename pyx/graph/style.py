@@ -56,7 +56,7 @@ class plotitem:
             for s in styles:
                 for n in s.needsdata:
                     if n not in provided:
-                        defaultprovider = style.getdefaultprovider(n)
+                        defaultprovider = getdefaultprovider(n)
                         addstyles.append(defaultprovider)
                         provided.extend(defaultprovider.providesdata)
                 provided.extend(s.providesdata)
