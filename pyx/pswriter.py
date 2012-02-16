@@ -23,6 +23,22 @@
 import cStringIO, copy, time, math
 import bbox, config, style, version, unit, trafo
 
+def _DSCsplitline(dsc, category, entries):
+    """Document Structure Comments (DSC) have a limit of 255 characters (incl. trailing newline)"""
+    # example:
+    # %%DocumentNeededResources: font Times-Roman Palatino-Bold
+    # %%+ font Helvetica Helvetica-Bold NewCenturySchoolbook-Italic
+    result = "%s %s %s" % (dsc, category, entries[0])
+    lastlen = len(result) + len(entries[0])
+    for entry in entries[1:]:
+        if lastlen + 1 + len(entry) < 254:
+            result = "%s %s" % (result, entry)
+            lastlen += 1 + len(entry)
+        else:
+            result = "%s\n%%%%+ %s %s" % (result, category, entry)
+            lastlen = 5 + len(category) + len(entry)
+    return "%s\n" % result
+
 
 class PSregistry:
 
@@ -143,6 +159,11 @@ class EPSwriter(_PSwriter):
         if pagebbox:
             file.write("%%%%BoundingBox: %d %d %d %d\n" % pagebbox.lowrestuple_pt())
             file.write("%%%%HiResBoundingBox: %g %g %g %g\n" % pagebbox.highrestuple_pt())
+        fontnames = [res.t1file.name for res in registry.resourceslist if res.type == "t1file"]
+        if fontnames:
+            file.write(_DSCsplitline("%%DocumentNeededFonts:", "", fontnames)) # TODO add needed fonts which are not included
+            file.write(_DSCsplitline("%%DocumentSuppliedFonts:", "", fontnames))
+            file.write(_DSCsplitline("%%DocumentFonts:", "", fontnames))
         self.writeinfo(file)
         file.write("%%EndComments\n")
 
@@ -203,6 +224,11 @@ class PSwriter(_PSwriter):
         if documentbbox and writebbox:
             file.write("%%%%BoundingBox: %d %d %d %d\n" % documentbbox.lowrestuple_pt())
             file.write("%%%%HiResBoundingBox: %g %g %g %g\n" % documentbbox.highrestuple_pt())
+        fontnames = [res.t1file.name for res in registry.resourceslist if res.type == "t1file"]
+        if fontnames:
+            file.write(_DSCsplitline("%%DocumentNeededFonts:", "", fontnames)) # TODO add needed fonts which are not included
+            file.write(_DSCsplitline("%%DocumentSuppliedFonts:", "", fontnames))
+            file.write(_DSCsplitline("%%DocumentFonts:", "", fontnames))
         self.writeinfo(file)
 
         # required paper formats
