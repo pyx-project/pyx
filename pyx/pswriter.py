@@ -67,6 +67,14 @@ class PSregistry:
         for resource in self.resourceslist:
             resource.output(file, writer, self)
 
+    def writefontnames(self, file):
+        fontnames = [res.t1file.name for res in self.resourceslist if res.type == "t1file"]
+        fontnames += [res.newfontname for res in self.resourceslist if res.type == "reencodefont"]
+        if fontnames:
+            file.write(_DSCsplitline("%%DocumentNeededFonts:", "", fontnames)) # TODO add needed fonts which are not included
+            file.write(_DSCsplitline("%%DocumentSuppliedFonts:", "", fontnames))
+            file.write(_DSCsplitline("%%DocumentFonts:", "", fontnames))
+
 #
 # Abstract base class
 #
@@ -159,12 +167,8 @@ class EPSwriter(_PSwriter):
         if pagebbox:
             file.write("%%%%BoundingBox: %d %d %d %d\n" % pagebbox.lowrestuple_pt())
             file.write("%%%%HiResBoundingBox: %g %g %g %g\n" % pagebbox.highrestuple_pt())
-        fontnames = [res.t1file.name for res in registry.resourceslist if res.type == "t1file"]
-        if fontnames:
-            file.write(_DSCsplitline("%%DocumentNeededFonts:", "", fontnames)) # TODO add needed fonts which are not included
-            file.write(_DSCsplitline("%%DocumentSuppliedFonts:", "", fontnames))
-            file.write(_DSCsplitline("%%DocumentFonts:", "", fontnames))
         self.writeinfo(file)
+        registry.writefontnames(file)
         file.write("%%EndComments\n")
 
         file.write("%%BeginProlog\n")
@@ -224,12 +228,8 @@ class PSwriter(_PSwriter):
         if documentbbox and writebbox:
             file.write("%%%%BoundingBox: %d %d %d %d\n" % documentbbox.lowrestuple_pt())
             file.write("%%%%HiResBoundingBox: %g %g %g %g\n" % documentbbox.highrestuple_pt())
-        fontnames = [res.t1file.name for res in registry.resourceslist if res.type == "t1file"]
-        if fontnames:
-            file.write(_DSCsplitline("%%DocumentNeededFonts:", "", fontnames)) # TODO add needed fonts which are not included
-            file.write(_DSCsplitline("%%DocumentSuppliedFonts:", "", fontnames))
-            file.write(_DSCsplitline("%%DocumentFonts:", "", fontnames))
         self.writeinfo(file)
+        registry.writefontnames(file)
 
         # required paper formats
         paperformats = {}
