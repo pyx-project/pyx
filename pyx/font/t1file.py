@@ -1066,15 +1066,26 @@ class T1file:
         bbox = p.bbox()
         return context.wx, context.wy, bbox.llx_pt, bbox.lly_pt, bbox.urx_pt, bbox.ury_pt
 
-    def outputPFA(self, file):
+    def outputPFA(self, file, remove_UniqueID_lookup=False):
         """output the T1file in PFA format"""
-        file.write(self.data1)
+        data1 = self.data1
+        data3 = self.data3
+        if remove_UniqueID_lookup:
+            m1 = re.search("""FontDirectory\s*/%(name)s\s+known{/%(name)s\s+findfont\s+dup\s*/UniqueID\s+known\s*{\s*dup\s*
+                              /UniqueID\s+get\s+\d+\s+eq\s+exch\s*/FontType\s+get\s+1\s+eq\s+and\s*}\s*{\s*pop\s+false\s*}\s*ifelse\s*
+                              {save\s+true\s*}\s*{\s*false\s*}\s*ifelse\s*}\s*{\s*false\s*}\s*ifelse""" % {"name": self.name},
+                           data1, re.VERBOSE)
+            m3 = re.search("cleartomark\s*{restore}\s*if", data3)
+            if m1 and m3:
+                data1 = data1[:m1.start()] + data1[m1.end():]
+                data3 = data3[:m3.start()] + data3[m3.end():]
+        file.write(data1)
         data2eexechex = binascii.b2a_hex(self.getdata2eexec())
         linelength = 64
         for i in range((len(data2eexechex)-1)/linelength + 1):
             file.write(data2eexechex[i*linelength: i*linelength+linelength])
             file.write("\n")
-        file.write(self.data3)
+        file.write(data3)
 
     def outputPFB(self, file):
         """output the T1file in PFB format"""
@@ -1098,7 +1109,7 @@ class T1file:
 
     def outputPS(self, file, writer):
         """output the PostScript code for the T1file to the file file"""
-        self.outputPFA(file)
+        self.outputPFA(file, remove_UniqueID_lookup=True)
 
     def outputPDF(self, file, writer):
         data2eexec = self.getdata2eexec()

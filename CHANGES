@@ -98,6 +98,8 @@ TODO:
   - type 1 font modules:
     - allow font slanting for T1builtinfont instances
     - improve stripped font compatibility
+    - remove UniqueID lookup from embedded fonts in PostScript output (fixes
+      missing glyph issue with dvips and certain fonts)
     - allow Type1 font usage without TeX and without AFM font metric
     - add support for pfm font matrices
   - epsfile module:
