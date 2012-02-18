@@ -23,22 +23,6 @@
 import cStringIO, copy, time, math
 import bbox, config, style, version, unit, trafo
 
-def _DSCsplitline(dsc, category, entries):
-    """Document Structure Comments (DSC) have a limit of 255 characters (incl. trailing newline)"""
-    # example:
-    # %%DocumentNeededResources: font Times-Roman Palatino-Bold
-    # %%+ font Helvetica Helvetica-Bold NewCenturySchoolbook-Italic
-    result = "%s %s %s" % (dsc, category, entries[0])
-    lastlen = len(result) + len(entries[0])
-    for entry in entries[1:]:
-        if lastlen + 1 + len(entry) < 254:
-            result = "%s %s" % (result, entry)
-            lastlen += 1 + len(entry)
-        else:
-            result = "%s\n%%%%+ %s %s" % (result, category, entry)
-            lastlen = 5 + len(category) + len(entry)
-    return "%s\n" % result
-
 
 class PSregistry:
 
@@ -66,18 +50,6 @@ class PSregistry:
         """ write all PostScript code of the prolog resources """
         for resource in self.resourceslist:
             resource.output(file, writer, self)
-
-    def writefontnames(self, file):
-        fontnames = [res.t1file.name for res in self.resourceslist if res.type == "t1file"]
-        fontnames += [res.newfontname for res in self.resourceslist if res.type == "reencodefont"]
-        if fontnames:
-            # TODO: replace this by DocumentXXXResources -- and do according changes in the t1file code
-            file.write(_DSCsplitline("%%DocumentSuppliedFonts:", "", fontnames))
-            file.write(_DSCsplitline("%%DocumentFonts:", "", fontnames))
-        # TODO: do we use non-included fonts?
-        # yes, if latex only provides reencoding of a std font
-        #file.write(_DSCsplitline("%%DocumentNeededFonts:", "", ))
-
 
 #
 # Abstract base class
@@ -172,7 +144,6 @@ class EPSwriter(_PSwriter):
             file.write("%%%%BoundingBox: %d %d %d %d\n" % pagebbox.lowrestuple_pt())
             file.write("%%%%HiResBoundingBox: %g %g %g %g\n" % pagebbox.highrestuple_pt())
         self.writeinfo(file)
-        registry.writefontnames(file)
         file.write("%%EndComments\n")
 
         file.write("%%BeginProlog\n")
@@ -233,7 +204,6 @@ class PSwriter(_PSwriter):
             file.write("%%%%BoundingBox: %d %d %d %d\n" % documentbbox.lowrestuple_pt())
             file.write("%%%%HiResBoundingBox: %g %g %g %g\n" % documentbbox.highrestuple_pt())
         self.writeinfo(file)
-        registry.writefontnames(file)
 
         # required paper formats
         paperformats = {}
