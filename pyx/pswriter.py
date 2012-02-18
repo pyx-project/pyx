@@ -71,9 +71,13 @@ class PSregistry:
         fontnames = [res.t1file.name for res in self.resourceslist if res.type == "t1file"]
         fontnames += [res.newfontname for res in self.resourceslist if res.type == "reencodefont"]
         if fontnames:
-            file.write(_DSCsplitline("%%DocumentNeededFonts:", "", fontnames)) # TODO add needed fonts which are not included
+            # TODO: replace this by DocumentXXXResources -- and do according changes in the t1file code
             file.write(_DSCsplitline("%%DocumentSuppliedFonts:", "", fontnames))
             file.write(_DSCsplitline("%%DocumentFonts:", "", fontnames))
+        # TODO: do we use non-included fonts?
+        # yes, if latex only provides reencoding of a std font
+        #file.write(_DSCsplitline("%%DocumentNeededFonts:", "", ))
+
 
 #
 # Abstract base class
