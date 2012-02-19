@@ -1075,7 +1075,7 @@ class T1file:
                               /UniqueID\s+get\s+\d+\s+eq\s+exch\s*/FontType\s+get\s+1\s+eq\s+and\s*}\s*{\s*pop\s+false\s*}\s*ifelse\s*
                               {save\s+true\s*}\s*{\s*false\s*}\s*ifelse\s*}\s*{\s*false\s*}\s*ifelse""" % {"name": self.name},
                            data1, re.VERBOSE)
-            m3 = re.search("cleartomark\s*{restore}\s*if", data3)
+            m3 = re.search("\s*{restore}\s*if", data3)
             if m1 and m3:
                 data1 = data1[:m1.start()] + data1[m1.end():]
                 data3 = data3[:m3.start()] + data3[m3.end():]
