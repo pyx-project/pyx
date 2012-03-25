@@ -18,6 +18,9 @@
 # along with epstopng; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
+import sys, os
+sys.path.insert(0, "%s/.." % (os.path.dirname(__file__) or "."))
+
 from optparse import OptionParser
 from pyx import *
 from pyx import bbox, version
