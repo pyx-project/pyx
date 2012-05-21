@@ -388,7 +388,7 @@ filled.clear = attr.clearclass(_filled)
 
 # helper function which constructs the arrowhead
 
-def _arrowhead(anormpath, arclenfrombegin, direction, size, angle, constrictionlen):
+def _arrowhead(anormpath, arclenfrombegin, direction, size, angle, constriction, constrictionlen):
 
     """helper routine, which returns an arrowhead from a given anormpath
 
@@ -397,7 +397,8 @@ def _arrowhead(anormpath, arclenfrombegin, direction, size, angle, constrictionl
                  -1 for an arrow pointing opposite to the direction of normpath
     - size: size of the arrow as arc length
     - angle. opening angle
-    - constrictionlen: None (no constriction) or arc length of constriction.
+    - constriction: boolean to indicate whether the constriction point is to be taken into account or not
+    - constrictionlen: arc length of constriction. (not used when constriction is false)
     """
 
     # arc length and coordinates of tip
@@ -412,7 +413,7 @@ def _arrowhead(anormpath, arclenfrombegin, direction, size, angle, constrictionl
     arrowr = arrowtemplate.transformed(trafo.rotate( angle/2.0, tx, ty))
 
     # now come the joining backward parts
-    if constrictionlen is not None:
+    if constriction:
         # constriction point (cx, cy) lies on path
         cx, cy = anormpath.at(arclenfrombegin - direction * constrictionlen)
         arrowcr= path.line(*(arrowr.atend() + (cx,cy)))
@@ -440,6 +441,18 @@ class arrow(deco, attr.attr):
         self.angle = angle
         self.constriction = constriction
 
+        # calculate absolute arc length of constricition
+        # Note that we have to correct this length because the arrowtemplates are rotated
+        # by self.angle/2 to the left and right. Hence, if we want no constriction, i.e., for
+        # self.constriction = 1, we actually have a length which is approximately shorter
+        # by the given geometrical factor.
+        if self.constriction is not None:
+            self.constrictionlen = self.size * self.constriction * math.cos(math.radians(self.angle/2.0))
+        else:
+            # if we do not want a constriction, i.e. constriction is None, we still
+            # need constrictionlen for cutting the path
+            self.constrictionlen = self.size * 1 * math.cos(math.radians(self.angle/2.0))
+
     def __call__(self, attrs=None, pos=None, reversed=None, size=None, angle=None, constriction=_marker):
         if attrs is None:
             attrs = self.attrs
@@ -459,31 +472,19 @@ class arrow(deco, attr.attr):
         dp.ensurenormpath()
         anormpath = dp.path
 
-        # calculate absolute arc length of constricition
-        # Note that we have to correct this length because the arrowtemplates are rotated
-        # by self.angle/2 to the left and right. Hence, if we want no constriction, i.e., for
-        # self.constriction = 1, we actually have a length which is approximately shorter
-        # by the given geometrical factor.
-        if self.constriction is not None:
-            constrictionlen = arrowheadconstrictionlen = self.size * self.constriction * math.cos(math.radians(self.angle/2.0))
-        else:
-            # if we do not want a constriction, i.e. constriction is None, we still
-            # need constrictionlen for cutting the path
-            constrictionlen = self.size * 1 * math.cos(math.radians(self.angle/2.0))
-            arrowheadconstrictionlen = None
-
-        arclenfrombegin = (1-self.reversed)*constrictionlen + self.pos * (anormpath.arclen() - constrictionlen)
+        arclenfrombegin = (1-self.reversed)*self.constrictionlen + self.pos * (anormpath.arclen() - self.constrictionlen)
         direction = self.reversed and -1 or 1
-        arrowhead = _arrowhead(anormpath, arclenfrombegin, direction, self.size, self.angle, arrowheadconstrictionlen)
+        arrowhead = _arrowhead(anormpath, arclenfrombegin, direction, self.size, self.angle,
+                               self.constriction is not None, self.constrictionlen)
 
         # add arrowhead to decoratedpath
         dp.ornaments.draw(arrowhead, self.attrs)
 
         # exlude part of the path from stroking when the arrow is strictly at the begin or the end
         if self.pos == 0 and self.reversed:
-            dp.excluderange(0, min(self.size, constrictionlen))
+            dp.excluderange(0, min(self.size, self.constrictionlen))
         elif self.pos == 1 and not self.reversed:
-            dp.excluderange(anormpath.end() - min(self.size, constrictionlen), anormpath.end())
+            dp.excluderange(anormpath.end() - min(self.size, self.constrictionlen), anormpath.end())
 
 arrow.clear = attr.clearclass(arrow)
 
