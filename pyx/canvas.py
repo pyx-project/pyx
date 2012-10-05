@@ -336,8 +336,8 @@ class canvas(_canvas):
 
 class layered_canvas(canvas):
 
-    def __init__(self, **kwargs):
-        canvas.__init__(self, **kwargs)
+    def __init__(self, *args, **kwargs):
+        canvas.__init__(self, *args, **kwargs)
         self._layers = {}
 
     def layer(self, name):
