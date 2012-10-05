@@ -349,16 +349,16 @@ class layered_canvas(canvas):
         canvas.__init__(self, *args, **kwargs)
         self._layers = {}
 
-    def layer(self, name):
+    def layer(self, name, above=None, below=None):
         try:
             group, layer = name.split(".", 1)
         except ValueError:
             if not name in self._layers:
-                self._layers[name] = self.insert(layered_canvas(texrunner=self.texrunner))
+                self._layers[name] = self.insert(layered_canvas(texrunner=self.texrunner), after=above, before=below)
             return self._layers[name]
         else:
             if not group in self._layers:
                 self._layers[group] = self.insert(layered_canvas(texrunner=self.texrunner))
-            return self._layers[group].layer(layer)
+            return self._layers[group].layer(layer, above=above, below=below)
 
 
