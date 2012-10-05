@@ -188,7 +188,7 @@ class _canvas(canvasitem.canvasitem):
 
         If attrs are passed, a canvas containing the item is inserted applying attrs.
 
-        returns the item
+        returns the item, possibly wrapped in canvas
 
         """
 
@@ -198,9 +198,8 @@ class _canvas(canvasitem.canvasitem):
         if attrs:
             sc = _canvas(attrs)
             sc.insert(item)
-            self.items.append(sc)
-        else:
-            self.items.append(item)
+            item = sc
+        self.items.append(item)
         return item
 
     def draw(self, path, attrs):
