@@ -135,6 +135,7 @@ TODO:
   - canvas:
     - fix pipeGS (adding support for writing using pycompat.popen)
     - insert method now returns canvas wrapping item if attrs are given
+    - insert method allows specification of position where item is inserted by before and after arguments
   - deco module:
     - arrow decorator: proper sign of constriction length for positioning
       reversed arrows

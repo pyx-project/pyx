@@ -183,23 +183,33 @@ class _canvas(canvasitem.canvasitem):
             bbox += nbbox
             file.write("Q\n") # grestore
 
-    def insert(self, item, attrs=None):
+    def insert(self, item, attrs=None, before=None, after=None):
         """insert item in the canvas.
 
-        If attrs are passed, a canvas containing the item is inserted applying attrs.
+        If attrs are passed, a canvas containing the item is inserted applying
+        attrs. If one of before or after is not None, the new item is
+        positioned accordingly in the canvas.
 
-        returns the item, possibly wrapped in canvas
+        returns the item, possibly wrapped in a canvas
 
         """
 
         if not isinstance(item, canvasitem.canvasitem):
-            raise RuntimeError("only instances of canvasitem.canvasitem can be inserted into a canvas")
+            raise ValueError("only instances of canvasitem.canvasitem can be inserted into a canvas")
 
         if attrs:
             sc = _canvas(attrs)
             sc.insert(item)
             item = sc
-        self.items.append(item)
+
+        if before is not None:
+            if after:
+                raise ValueError("before and after cannot be specified at the same time")
+            self.items.insert(self.items.index(before), item)
+        elif after is not None:
+            self.items.insert(self.items.index(after)+1, item)
+        else:
+            self.items.append(item)
         return item
 
     def draw(self, path, attrs):
