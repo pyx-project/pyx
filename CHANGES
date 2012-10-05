@@ -38,7 +38,6 @@ TODO:
     - rename period argument of decimal texters to recurring_decimal or something similar (as pointed out
       by Tim Head)
   - canvas module:
-    - contructor should only take a texrunner keyword argument
     - SVG support
     - stroking of patterns does not work in PDF
   - style and color module:
