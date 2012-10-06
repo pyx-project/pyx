@@ -131,9 +131,11 @@ TODO:
   - bitmap module:
     - new fundamental constructor based on arbitrary affine transformations
       (TODO: documentation)
+    - add ASCIIHexDecode end marker
   - color module:
     - add rgbgradient and cmykgradient to force color space (TODO: documentation)
-
+  - mesh module:
+    - add ASCIIHexDecode end marker
 
 0.11.1 (2011/05/20):
   - canvas:
