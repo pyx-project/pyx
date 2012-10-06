@@ -113,12 +113,8 @@ class mesh(canvasitem.canvasitem):
             import Image
             c = canvas.canvas()
             c.insert(self)
-            fd, fname = tempfile.mkstemp()
-            f = os.fdopen(fd, "wb")
-            f.close()
-            c.pipeGS(fname, device="pngalpha", resolution=writer.mesh_as_bitmap_resolution)
-            i = Image.open(fname)
-            os.unlink(fname)
+            i = Image.open(c.pipeGS("pngalpha", resolution=writer.mesh_as_bitmap_resolution, seekable=True))
+            i.load()
             b = bitmap.bitmap_pt(self.bbox().llx_pt, self.bbox().lly_pt, i)
             # we slightly shift the bitmap to re-center it, as the bitmap might contain some additional border
             # unfortunately we need to construct another bitmap instance for that ...
@@ -147,12 +143,8 @@ class mesh(canvasitem.canvasitem):
             import Image
             c = canvas.canvas()
             c.insert(self)
-            fd, fname = tempfile.mkstemp()
-            f = os.fdopen(fd, "wb")
-            f.close()
-            c.pipeGS(fname, device="pngalpha", resolution=writer.mesh_as_bitmap_resolution)
-            i = Image.open(fname)
-            os.unlink(fname)
+            i = Image.open(c.pipeGS("pngalpha", resolution=writer.mesh_as_bitmap_resolution, seekable=True))
+            i.load()
             b = bitmap.bitmap_pt(self.bbox().llx_pt, self.bbox().lly_pt, i)
             # we slightly shift the bitmap to re-center it, as the bitmap might contain some additional border
             # unfortunately we need to construct another bitmap instance for that ...
