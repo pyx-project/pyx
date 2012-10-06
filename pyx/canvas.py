@@ -25,7 +25,7 @@
 A canvas holds a collection of all elements and corresponding attributes to be
 displayed. """
 
-import os, sys, string, tempfile, warnings
+import cStringIO, os, sys, string, tempfile, warnings
 import attr, canvasitem, deco, deformer, document, font, pycompat, style, trafo
 import bbox as bboxmodule
 
@@ -144,9 +144,15 @@ class canvas(canvasitem.canvasitem):
         Automatically represent as PNG graphic when evaluated in IPython notebook.
         """
         file = self.pipeGS(device="png16m")
-        result = file.read()
+        # the read method of a pipe object may not return the full content
+        s = cStringIO.StringIO()
+        while True:
+            data = file.read()
+            if not data:
+               break
+            s.write(data)
         file.close()
-        return result
+        return s.getvalue()
 
     def bbox(self):
         """returns bounding box of canvas
