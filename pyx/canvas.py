@@ -25,10 +25,28 @@
 A canvas holds a collection of all elements and corresponding attributes to be
 displayed. """
 
-import os, tempfile
+import os, tempfile, warnings
 import attr, canvasitem, deco, deformer, document, font, pycompat, style, trafo
 import bbox as bboxmodule
 
+def _wrappedindocument(method):
+    def wrappedindocument(self, file=None, **kwargs):
+        page_kwargs = {}
+        write_kwargs = {}
+        for name, value in kwargs.items():
+            if name.startswith("page_"):
+                page_kwargs[name[5:]] = value
+            elif name.startswith("write_"):
+                write_kwargs[name[6:]] = value
+            else:
+                warnings.warn("Keyword argument %s of %s method should be prefixed with 'page_'" %
+                                (name, method.__name__), DeprecationWarning)
+                page_kwargs[name] = value
+        d = document.document([document.page(self, **kwargs)])
+        self.__name__ = method.__name__
+        self.__doc__ = method.__doc__
+        return method(d, file)
+    return wrappedindocument
 
 #
 # clipping class
@@ -64,7 +82,7 @@ class clip(canvasitem.canvasitem):
 # general canvas class
 #
 
-class _canvas(canvasitem.canvasitem):
+class canvas(canvasitem.canvasitem):
 
     """a canvas holds a collection of canvasitems"""
 
@@ -86,9 +104,10 @@ class _canvas(canvasitem.canvasitem):
 
         """
 
-        self.items     = []
-        self.trafo     = trafo.trafo()
-        self.clipbbox  = None
+        self.items = []
+        self.trafo = trafo.trafo()
+        self.clipbbox = None
+        self.layers = {}
         if attrs is None:
             attrs = []
         if texrunner is not None:
@@ -183,6 +202,28 @@ class _canvas(canvasitem.canvasitem):
             bbox += nbbox
             file.write("Q\n") # grestore
 
+    def layer(self, name, above=None, below=None):
+        """create or get a layer with name
+
+        A layer is a canvas itself and can be used to combine drawing
+        operations for ordering purposes, i.e., what is above and below each
+        other. The layer name is a dotted string, where dots are used to form
+        a hierarchy of layer groups. When inserting a layer, it is put on top
+        of its layer group except when another layer of this group is specified
+        by means of the parameters above or below.
+
+        """
+        try:
+            group, layer = name.split(".", 1)
+        except ValueError:
+            if not name in self.layers:
+                self.layers[name] = self.insert(canvas(texrunner=self.texrunner), after=above, before=below)
+            return self.layers[name]
+        else:
+            if not group in self.layers:
+                self.layers[group] = self.insert(canvas(texrunner=self.texrunner))
+            return self.layers[group].layer(layer, above=above, below=below)
+
     def insert(self, item, attrs=None, before=None, after=None):
         """insert item in the canvas.
 
@@ -198,7 +239,7 @@ class _canvas(canvasitem.canvasitem):
             raise ValueError("only instances of canvasitem.canvasitem can be inserted into a canvas")
 
         if attrs:
-            sc = _canvas(attrs)
+            sc = canvas(attrs)
             sc.insert(item)
             item = sc
 
@@ -286,23 +327,6 @@ class _canvas(canvasitem.canvasitem):
 
         return self.insert(self.texrunner.text_pt(x, y, atext, *args))
 
-#
-# user canvas class which adds a few convenience methods for single page output
-#
-
-def _wrappedindocument(method):
-    def wrappedindocument(self, file=None, **kwargs):
-        d = document.document([document.page(self, **kwargs)])
-        self.__name__ = method.__name__
-        self.__doc__ = method.__doc__
-        return method(d, file)
-    return wrappedindocument
-
-
-class canvas(_canvas):
-
-    """a canvas holds a collection of canvasitems"""
-
     writeEPSfile = _wrappedindocument(document.document.writeEPSfile)
     writePSfile = _wrappedindocument(document.document.writePSfile)
     writePDFfile = _wrappedindocument(document.document.writePDFfile)
@@ -341,24 +365,4 @@ class canvas(_canvas):
             os.unlink(fname)
         else:
             raise RuntimeError("input 'eps' or 'pdf' expected")
-
-
-class layered_canvas(canvas):
-
-    def __init__(self, *args, **kwargs):
-        canvas.__init__(self, *args, **kwargs)
-        self._layers = {}
-
-    def layer(self, name, above=None, below=None):
-        try:
-            group, layer = name.split(".", 1)
-        except ValueError:
-            if not name in self._layers:
-                self._layers[name] = self.insert(layered_canvas(texrunner=self.texrunner), after=above, before=below)
-            return self._layers[name]
-        else:
-            if not group in self._layers:
-                self._layers[group] = self.insert(layered_canvas(texrunner=self.texrunner))
-            return self._layers[group].layer(layer, above=above, below=below)
-
 

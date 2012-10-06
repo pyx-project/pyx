@@ -38,7 +38,7 @@ class axiscanvas(canvas.canvas):
         """initializes the instance
         - sets extent to zero
         - sets labels to an empty list"""
-        canvas._canvas.__init__(self)
+        canvas.canvas.__init__(self)
         self.extent_pt = 0
         self.labels = []
         if isinstance(painter, _text) and painter.texrunner:

@@ -28,11 +28,11 @@ class _marker: pass
 
 # TODO: pattern should not derive from canvas but wrap a canvas
 
-class pattern(canvas._canvas, attr.exclusiveattr, style.fillstyle):
+class pattern(canvas.canvas, attr.exclusiveattr, style.fillstyle):
 
     def __init__(self, painttype=1, tilingtype=1, xstep=None, ystep=None,
                  bbox=None, trafo=None, bboxenlarge=5*unit.t_pt, **kwargs):
-        canvas._canvas.__init__(self, **kwargs)
+        canvas.canvas.__init__(self, **kwargs)
         attr.exclusiveattr.__init__(self, pattern)
         self.id = "pattern%d" % id(self)
         self.patterntype = 1
@@ -73,7 +73,7 @@ class pattern(canvas._canvas, attr.exclusiveattr, style.fillstyle):
         # process pattern, letting it register its resources and calculate the bbox of the pattern
         patternfile = cStringIO.StringIO()
         realpatternbbox = bboxmodule.empty()
-        canvas._canvas.processPS(self, patternfile, writer, pswriter.context(), registry, realpatternbbox)
+        canvas.canvas.processPS(self, patternfile, writer, pswriter.context(), registry, realpatternbbox)
         patternproc = patternfile.getvalue()
         patternfile.close()
 
@@ -114,7 +114,7 @@ class pattern(canvas._canvas, attr.exclusiveattr, style.fillstyle):
 
         patternfile = cStringIO.StringIO()
         realpatternbbox = bboxmodule.empty()
-        canvas._canvas.processPDF(self, patternfile, writer, pdfwriter.context(), patternregistry, realpatternbbox)
+        canvas.canvas.processPDF(self, patternfile, writer, pdfwriter.context(), patternregistry, realpatternbbox)
         patternproc = patternfile.getvalue()
         patternfile.close()
 

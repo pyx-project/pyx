@@ -664,7 +664,7 @@ class _readpipe(threading.Thread):
         self.quitevent.set()
 
 
-class textbox(box.rect, canvas._canvas):
+class textbox(box.rect, canvas.canvas):
     """basically a box.rect, but it contains a text created by the texrunner
     - texrunner._text and texrunner.text return such an object
     - _textbox instances can be inserted into a canvas
@@ -683,7 +683,7 @@ class textbox(box.rect, canvas._canvas):
         self.depth = depth
         self.texttrafo = trafo.scale(unit.scale["x"]).translated(x, y)
         box.rect.__init__(self, x - left, y - depth, left + right, depth + height, abscenter = (left, depth))
-        canvas._canvas.__init__(self, attrs)
+        canvas.canvas.__init__(self, attrs)
         self.finishdvi = finishdvi
         self.dvicanvas = None
         self.insertdvicanvas = 0
@@ -726,13 +726,13 @@ class textbox(box.rect, canvas._canvas):
     def processPS(self, file, writer, context, registry, bbox):
         self.ensuredvicanvas()
         abbox = bboxmodule.empty()
-        canvas._canvas.processPS(self, file, writer, context, registry, abbox)
+        canvas.canvas.processPS(self, file, writer, context, registry, abbox)
         bbox += box.rect.bbox(self)
 
     def processPDF(self, file, writer, context, registry, bbox):
         self.ensuredvicanvas()
         abbox = bboxmodule.empty()
-        canvas._canvas.processPDF(self, file, writer, context, registry, abbox)
+        canvas.canvas.processPDF(self, file, writer, context, registry, abbox)
         bbox += box.rect.bbox(self)
 
 
