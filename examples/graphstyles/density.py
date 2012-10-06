@@ -1,6 +1,6 @@
-# contributed by Stephen Phillips
-
 from pyx import *
+
+# Mandelbrot calculation contributed by Stephen Phillips
 
 # Mandelbrot parameters
 re_min = -2
@@ -27,16 +27,13 @@ for re_index in range(gridx):
         while n < max_iter and abs(z) < 2:
             z = (z * z) + c
             n += 1
-        d.append([re - 0.5 * re_step, re + 0.5 * re_step,
-                  im - 0.5 * im_step, im + 0.5 * im_step,
-                  float(n)/max_iter])
+        d.append([re, im, float(n)/max_iter])
 
 # Plot graph
 g = graph.graphxy(height=8, width=8,
-                  x=graph.axis.linear(min=re_min, max=re_max, title=r'$\Re(c)$'),
+                  x=graph.axis.linear(min=re_min, max=re_max, title=r"$\Re(c)$"),
                   y=graph.axis.linear(min=im_min, max=im_max, title=r'$\Im(c)$'))
-g.plot(graph.data.points(d, xmin=1, xmax=2, ymin=3, ymax=4, color=5),
-       [graph.style.rect(color.gradient.Rainbow)])
-g.dodata() # plot data first, then axes
-g.writeEPSfile('mandel')
-g.writePDFfile('mandel')
+g.plot(graph.data.points(d, x=1, y=2, color=3),
+       [graph.style.density(gradient=color.rgbgradient.Rainbow)])
+g.writeEPSfile()
+g.writePDFfile()
