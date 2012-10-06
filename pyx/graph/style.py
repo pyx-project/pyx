@@ -2017,7 +2017,7 @@ class surface(_style):
         graph.insert(m)
 
 
-class bitmap(_style):
+class density(_style):
 
     needsdata = ["values1", "values2", "data12", "data21"]
 
