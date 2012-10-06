@@ -143,16 +143,7 @@ class canvas(canvasitem.canvasitem):
         """
         Automatically represent as PNG graphic when evaluated in IPython notebook.
         """
-        file = self.pipeGS(device="png16m")
-        # the read method of a pipe object may not return the full content
-        s = cStringIO.StringIO()
-        while True:
-            data = file.read()
-            if not data:
-               break
-            s.write(data)
-        file.close()
-        return s.getvalue()
+        return self.pipeGS(device="png16m", seekable=True).getvalue()
 
     def bbox(self):
         """returns bounding box of canvas
@@ -416,9 +407,12 @@ class canvas(canvasitem.canvasitem):
             raise RuntimeError("input 'eps' or 'pdf' expected")
 
 
-    def pipeGS(self, device, input="eps", **kwargs):
+    def pipeGS(self, device, input="eps", seekable=False, **kwargs):
         """
         returns a pipe with the Ghostscript output of the EPS or PDF of the canvas
+
+        If seekable is True, a StringIO instance will be returned instead of a
+        pipe to allow random access.
         """
 
         gscmd, kwargs = self._gscmd(device, "-", **kwargs)
@@ -430,7 +424,6 @@ class canvas(canvasitem.canvasitem):
             stdin, stdout = pycompat.popen2(gscmd)
             self.writeEPSfile(stdin, **kwargs)
             stdin.close()
-            return stdout
         elif input == "pdf":
             # PDF files need to be accesible by random access and thus we need to create
             # a temporary file
@@ -441,6 +434,19 @@ class canvas(canvasitem.canvasitem):
             f.close()
             stdout = pycompat.popen(gscmd, "rb")
             os.unlink(fname)
-            return stdout
         else:
             raise RuntimeError("input 'eps' or 'pdf' expected")
+
+        if seekable:
+            # the read method of a pipe object may not return the full content
+            f = cStringIO.StringIO()
+            while True:
+                data = stdout.read()
+                if not data:
+                   break
+                f.write(data)
+            stdout.close()
+            f.seek(0)
+            return f
+        else:
+            return stdout
