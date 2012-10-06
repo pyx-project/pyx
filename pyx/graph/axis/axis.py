@@ -403,7 +403,9 @@ class bar(_axis):
                 subaxis.vmaxover = position / float(data.size)
             subaxis.setpositioner(subaxispositioner(positioner, subaxis))
             subaxis.create()
-            canvas.insert(subaxis.canvas)
+            for layer, subcanvas in subaxis.canvas.layers.items():
+                canvas.layer(layer).insert(subcanvas)
+            assert len(subaxis.canvas.layers) == len(subaxis.canvas.items)
             if canvas.extent_pt < subaxis.canvas.extent_pt:
                 canvas.extent_pt = subaxis.canvas.extent_pt
             position += 0.5*self.dist
@@ -419,7 +421,9 @@ class bar(_axis):
             subaxis = linkedaxis(subaxis, name)
             subaxis.setpositioner(subaxispositioner(positioner, data.subaxes[name]))
             subaxis.create()
-            canvas.insert(subaxis.canvas)
+            for layer, subcanvas in subaxis.canvas.layers.items():
+                canvas.layer(layer).insert(subcanvas)
+            assert len(subaxis.canvas.layers) == len(subaxis.canvas.items)
             if canvas.extent_pt < subaxis.canvas.extent_pt:
                 canvas.extent_pt = subaxis.canvas.extent_pt
         if linkpainter is not None:

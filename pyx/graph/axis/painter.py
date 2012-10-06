@@ -106,7 +106,7 @@ class _title(_text):
                     dy2 *= -1
                     dx2 *= -1
                 titleattrs.append(self.titledirection.trafo(dy2, -dx2))
-            title = canvas.text_pt(x, y, axis.title, titleattrs)
+            title = canvas.layer("title").text_pt(x, y, axis.title, titleattrs)
             canvas.extent_pt += unit.topt(self.titledist)
             title.linealign_pt(canvas.extent_pt, -dx, -dy)
             canvas.extent_pt += title.extent_pt(dx, dy)
@@ -224,7 +224,7 @@ class regular(_title):
                         y1 = t.temp_y_pt + t.temp_dy * innerticklength_pt
                         x2 = t.temp_x_pt - t.temp_dx * outerticklength_pt
                         y2 = t.temp_y_pt - t.temp_dy * outerticklength_pt
-                        canvas.stroke(path.line_pt(x1, y1, x2, y2), tickattrs)
+                        canvas.layer("ticks").stroke(path.line_pt(x1, y1, x2, y2), tickattrs)
                         if outerticklength_pt > canvas.extent_pt:
                             canvas.extent_pt = outerticklength_pt
                         if -innerticklength_pt > canvas.extent_pt:
@@ -232,9 +232,9 @@ class regular(_title):
             if self.gridattrs is not None:
                 gridattrs = attr.selectattrs(self.defaultgridattrs + self.gridattrs, t.ticklevel, maxticklevel)
                 if gridattrs is not None:
-                    canvas.stroke(axispos.vgridpath(t.temp_v), gridattrs)
+                    canvas.layer("grid").stroke(axispos.vgridpath(t.temp_v), gridattrs)
             if t.labellevel is not None and self.labelattrs is not None:
-                canvas.insert(t.temp_labelbox)
+                canvas.layer("labels").insert(t.temp_labelbox)
                 canvas.labels.append(t.temp_labelbox)
                 extent_pt = t.temp_labelbox.extent_pt(t.temp_dx, t.temp_dy) + labeldist_pt
                 if extent_pt > canvas.extent_pt:
@@ -244,7 +244,7 @@ class regular(_title):
             canvas.labels = None
 
         if self.basepathattrs is not None:
-            canvas.stroke(axispos.vbasepath(), self.defaultbasepathattrs + self.basepathattrs)
+            canvas.layer("baseline").stroke(axispos.vbasepath(), self.defaultbasepathattrs + self.basepathattrs)
 
         # for t in data.ticks:
         #     del t.temp_v    # we've inserted those temporary variables ... and do not care any longer about them
@@ -331,7 +331,7 @@ class bar(_title):
         if self.basepathattrs is not None:
             p = positioner.vbasepath()
             if p is not None:
-                canvas.stroke(p, self.defaultbasepathattrs + self.basepathattrs)
+                canvas.layer("baseline").stroke(p, self.defaultbasepathattrs + self.basepathattrs)
         if ( self.tickattrs is not None and
              (self.innerticklength is not None or self.outerticklength is not None) ):
             if self.innerticklength is not None:
@@ -353,13 +353,13 @@ class bar(_title):
                 y1 = y + dy * innerticklength_pt
                 x2 = x - dx * outerticklength_pt
                 y2 = y - dy * outerticklength_pt
-                canvas.stroke(path.line_pt(x1, y1, x2, y2), self.defaulttickattrs + self.tickattrs)
+                canvas.layer("ticks").stroke(path.line_pt(x1, y1, x2, y2), self.defaulttickattrs + self.tickattrs)
         for (v, x, y, dx, dy), namebox in zip(namepos, nameboxes):
             newextent_pt = namebox.extent_pt(dx, dy) + labeldist_pt
             if canvas.extent_pt < newextent_pt:
                 canvas.extent_pt = newextent_pt
         for namebox in nameboxes:
-            canvas.insert(namebox)
+            canvas.layer("labels").insert(namebox)
         _title.paint(self, canvas, data, axis, positioner)
 
 
@@ -411,13 +411,13 @@ class split(_title):
                 breakline = breakline.transformed(trafomodule.translate(*tocenter).rotated(self.breaklinesangle, *breakline.atbegin()))
                 breakline1 = breakline.transformed(trafomodule.translate(*towidth))
                 breakline2 = breakline.transformed(trafomodule.translate(-towidth[0], -towidth[1]))
-                canvas.fill(path.path(path.moveto_pt(*breakline1.atbegin_pt()),
-                                  path.lineto_pt(*breakline1.atend_pt()),
-                                  path.lineto_pt(*breakline2.atend_pt()),
-                                  path.lineto_pt(*breakline2.atbegin_pt()),
-                                  path.closepath()), [color.gray.white])
-                canvas.stroke(breakline1, self.defaultbreaklinesattrs + self.breaklinesattrs)
-                canvas.stroke(breakline2, self.defaultbreaklinesattrs + self.breaklinesattrs)
+                canvas.layer("baseline").fill(path.path(path.moveto_pt(*breakline1.atbegin_pt()),
+                                              path.lineto_pt(*breakline1.atend_pt()),
+                                              path.lineto_pt(*breakline2.atend_pt()),
+                                              path.lineto_pt(*breakline2.atbegin_pt()),
+                                              path.closepath()), [color.gray.white])
+                canvas.layer("baseline").stroke(breakline1, self.defaultbreaklinesattrs + self.breaklinesattrs)
+                canvas.layer("baseline").stroke(breakline2, self.defaultbreaklinesattrs + self.breaklinesattrs)
         _title.paint(self, canvas, data, axis, axispos)
 
 

@@ -550,7 +550,7 @@ class symbol(_styleneedingpointpos):
             privatedata.symbol(privatedata.symbolcanvas, x_pt, y_pt, privatedata.size_pt, privatedata.symbolattrs)
 
     def donedrawpoints(self, privatedata, sharedata, graph):
-        graph.insert(privatedata.symbolcanvas)
+        graph.layer("data").insert(privatedata.symbolcanvas)
 
     def key_pt(self, privatedata, sharedata, graph, x_pt, y_pt, width_pt, height_pt):
         if privatedata.symbolattrs is not None:
@@ -732,7 +732,7 @@ class line(_line):
     def donedrawpoints(self, privatedata, sharedata, graph):
         path = self.donepointstopath(privatedata)
         if privatedata.lineattrs is not None and len(path):
-            graph.stroke(path, privatedata.lineattrs)
+            graph.layer("data").stroke(path, privatedata.lineattrs)
 
     def key_pt(self, privatedata, sharedata, graph, x_pt, y_pt, width_pt, height_pt):
         if privatedata.lineattrs is not None:
@@ -780,8 +780,8 @@ class impulses(_styleneedingpointpos):
             if privatedata.vfromvalue > 1:
                 privatedata.vfromvalue = 1
             if self.frompathattrs is not None and privatedata.insertfrompath:
-                graph.stroke(graph.axes[valueaxisname].vgridpath(privatedata.vfromvalue),
-                             self.defaultfrompathattrs + self.frompathattrs)
+                graph.layer("data").stroke(graph.axes[valueaxisname].vgridpath(privatedata.vfromvalue),
+                                           self.defaultfrompathattrs + self.frompathattrs)
         else:
             privatedata.vfromvalue = 0
 
@@ -792,7 +792,7 @@ class impulses(_styleneedingpointpos):
             privatedata.impulsescanvas.stroke(graph.vgeodesic(*(vpos + sharedata.vpos)), privatedata.lineattrs)
 
     def donedrawpoints(self, privatedata, sharedata, graph):
-        graph.insert(privatedata.impulsescanvas)
+        graph.layer("data").insert(privatedata.impulsescanvas)
 
     def key_pt(self, privatedata, sharedata, graph, x_pt, y_pt, width_pt, height_pt):
         if privatedata.lineattrs is not None:
@@ -873,7 +873,7 @@ class errorbar(_style):
 
     def donedrawpoints(self, privatedata, sharedata, graph):
         if privatedata.errorbarattrs is not None:
-            graph.insert(privatedata.errorbarcanvas)
+            graph.layer("data").insert(privatedata.errorbarcanvas)
 
 
 class text(_styleneedingpointpos):
@@ -940,7 +940,7 @@ class text(_styleneedingpointpos):
                     dy_pt = privatedata.textdy_pt
                 else:
                     dy_pt = float(point[self.dyname]) * privatedata.dyunit_pt
-                graph.text_pt(x_pt + dx_pt, y_pt + dy_pt, text, privatedata.textattrs)
+                graph.layer("data").text_pt(x_pt + dx_pt, y_pt + dy_pt, text, privatedata.textattrs)
 
     def key_pt(self, privatedata, sharedata, graph, x_pt, y_pt, width_pt, height_pt):
         raise RuntimeError("Style currently doesn't provide a graph key")
@@ -1008,7 +1008,7 @@ class arrow(_styleneedingpointpos):
                         privatedata.arrowcanvas.stroke(path.line_pt(x1, y1, x2, y2), privatedata.lineattrs)
 
     def donedrawpoints(self, privatedata, sharedata, graph):
-        graph.insert(privatedata.arrowcanvas)
+        graph.layer("data").insert(privatedata.arrowcanvas)
 
     def key_pt(self, privatedata, sharedata, graph, x_pt, y_pt, width_pt, height_pt):
         raise RuntimeError("Style currently doesn't provide a graph key")
@@ -1031,7 +1031,7 @@ class rect(_style):
         return ["color"]
 
     def initdrawpoints(self, privatedata, sharedata, graph):
-        privatedata.rectcanvas = graph.insert(canvas.canvas())
+        privatedata.rectcanvas = graph.layer("filldata").insert(canvas.canvas())
 
     def drawpoint(self, privatedata, sharedata, graph, point):
         xvmin = sharedata.vrange[0][0]
@@ -1342,8 +1342,8 @@ class histogram(_style):
                 privatedata.vfromvalue = 1
                 privatedata.vfromvaluecut = 1
             if self.frompathattrs is not None and privatedata.insertfrompath:
-                graph.stroke(graph.axes[valueaxisname].vgridpath(privatedata.vfromvalue),
-                             self.defaultfrompathattrs + self.frompathattrs)
+                graph.layer("data").stroke(graph.axes[valueaxisname].vgridpath(privatedata.vfromvalue),
+                                           self.defaultfrompathattrs + self.frompathattrs)
         else:
             privatedata.vfromvalue = 0
 
@@ -1394,7 +1394,7 @@ class histogram(_style):
     def donedrawpoints(self, privatedata, sharedata, graph):
         self.drawvalue(privatedata, sharedata, graph, None, None, None)
         if privatedata.lineattrs is not None and len(privatedata.path):
-           graph.draw(privatedata.path, privatedata.lineattrs)
+           graph.layer("data").draw(privatedata.path, privatedata.lineattrs)
 
     def key_pt(self, privatedata, sharedata, graph, x_pt, y_pt, width_pt, height_pt):
         if privatedata.lineattrs is not None:
@@ -1480,8 +1480,8 @@ class barpos(_style):
             if privatedata.vfromvalue > 1:
                 privatedata.vfromvalue = 1
             if self.frompathattrs is not None and privatedata.insertfrompath:
-                graph.stroke(graph.axes[sharedata.barposcolumnnames[sharedata.barvalueindex]].vgridpath(privatedata.vfromvalue),
-                             self.defaultfrompathattrs + self.frompathattrs)
+                graph.layer("data").stroke(graph.axes[sharedata.barposcolumnnames[sharedata.barvalueindex]].vgridpath(privatedata.vfromvalue),
+                                           self.defaultfrompathattrs + self.frompathattrs)
         else:
             privatedata.vfromvalue = 0
 
@@ -1582,7 +1582,7 @@ class bar(_style):
         privatedata.barattrs = attr.selectattrs(self.defaultbarattrs + self.barattrs, selectindex, selecttotal)
 
     def initdrawpoints(self, privatedata, sharedata, graph):
-        privatedata.barcanvas = graph.insert(canvas.canvas())
+        privatedata.barcanvas = graph.layer("filldata").insert(canvas.canvas())
         sharedata.stackedbardraw = 1
         privatedata.stackedbar = sharedata.stackedbar
         privatedata.todraw = []
@@ -1778,7 +1778,7 @@ class grid(_line, _style):
                         self.addpoint(privatedata, graph.vpos_pt, *data)
                 p = self.donepointstopath(privatedata)
                 if len(p):
-                    graph.stroke(p, privatedata.gridattrs)
+                    graph.layer("data").stroke(p, privatedata.gridattrs)
         if self.gridlines2:
             for value1 in values1:
                 data2 = sharedata.data12[value1]
@@ -1792,7 +1792,7 @@ class grid(_line, _style):
                         self.addpoint(privatedata, graph.vpos_pt, *data)
                 p = self.donepointstopath(privatedata)
                 if len(p):
-                    graph.stroke(p, privatedata.gridattrs)
+                    graph.layer("data").stroke(p, privatedata.gridattrs)
 
 
 class surface(_style):
@@ -2014,7 +2014,7 @@ class surface(_style):
                                                           mesh.node_pt(graph.vpos_pt(*v4), self.gridcolor),
                                                           mesh.node_pt(graph.vpos_pt(*v4f), self.gridcolor))))
         m = mesh.mesh(elements, check=0)
-        graph.insert(m)
+        graph.layer("filldata").insert(m)
 
 
 class density(_style):
@@ -2169,4 +2169,4 @@ class density(_style):
         c = canvas.canvas([canvas.clip(p)])
         b = bitmapmodule.bitmap_trafo(t, i)
         c.insert(b)
-        graph.insert(c)
+        graph.layer("filldata").insert(c)

@@ -35,6 +35,8 @@ class graph(canvas.canvas):
 
     def __init__(self):
         canvas.canvas.__init__(self)
+        for name in ["background", "filldata", "axes.grid", "axis.baseline", "axis.ticks", "axis.labels", "axis.title", "data", "key"]:
+            self.layer(name)
         self.axes = {}
         self.plotitems = []
         self.keyitems = []
@@ -54,6 +56,7 @@ class graph(canvas.canvas):
     def bbox(self):
         self.finish()
         return canvas.canvas.bbox(self)
+
 
     def registerPS(self, registry):
         self.finish()
@@ -398,8 +401,8 @@ class graphxy(graph):
         if self.did(self.dobackground):
             return
         if self.backgroundattrs is not None:
-            self.draw(path.rect_pt(self.xpos_pt, self.ypos_pt, self.width_pt, self.height_pt),
-                      self.backgroundattrs)
+            self.layer("background").draw(path.rect_pt(self.xpos_pt, self.ypos_pt, self.width_pt, self.height_pt),
+                                          self.backgroundattrs)
 
     def doaxes(self):
         if self.did(self.doaxes):
@@ -407,7 +410,9 @@ class graphxy(graph):
         self.dolayout()
         self.dobackground()
         for axis in self.axes.values():
-            self.insert(axis.canvas)
+            for layer, canvas in axis.canvas.layers.items():
+                self.layer("axes.%s" % layer).insert(canvas)
+            assert len(axis.canvas.layers) == len(axis.canvas.items), str(axis.canvas.items)
 
     def dokey(self):
         if self.did(self.dokey):
@@ -429,7 +434,7 @@ class graphxy(graph):
                 y = parentchildalign(self.ypos_pt, self.ypos_pt+self.height_pt,
                                      bbox.lly_pt, bbox.ury_pt,
                                      self.key.vpos, unit.topt(self.key.vdist), self.key.vinside)
-                self.insert(c, [trafo.translate_pt(x, y)])
+                self.layer("key").insert(c, [trafo.translate_pt(x, y)])
 
 
 class graphxyz(graphxy):
@@ -786,7 +791,7 @@ class graphxyz(graphxy):
         self.dolayout()
         self.dobackground()
         for axis in self.axes.values():
-            self.insert(axis.canvas)
+            self.layer("axes").insert(axis.canvas)
 
     def dokey(self):
         if self.did(self.dokey):

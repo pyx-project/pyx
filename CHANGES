@@ -96,7 +96,7 @@ TODO:
     - insert method allows specification of position where item is inserted
       by before and after arguments
     - new layer method allows creation of separated drawing layers for
-      grouping of drawing operations
+      grouping of drawing operations (TODO: documentation)
     - writeXXXfile methods now use "page_" and "write_" prefixes for passing
       the keyword arguments to the page constructor and write method
   - type 1 font modules:
@@ -126,6 +126,8 @@ TODO:
   - graph modules:
     - graph styles:
       - add bitmap style (TODO: documentation)
+    - uses new canvas layers to stack graph components (fixing bug #1518414,
+      reported by Dominic Ford)
   - added the metapost module:
     - create smooth paths from a series of points
   - bitmap module:
