@@ -25,7 +25,7 @@
 A canvas holds a collection of all elements and corresponding attributes to be
 displayed. """
 
-import os, tempfile, warnings
+import os, sys, string, tempfile, warnings
 import attr, canvasitem, deco, deformer, document, font, pycompat, style, trafo
 import bbox as bboxmodule
 
@@ -138,6 +138,15 @@ class canvas(canvasitem.canvasitem):
 
     def __getitem__(self, i):
         return self.items[i]
+
+    def _repr_png_(self):
+        """
+        Automatically represent as PNG graphic when evaluated in IPython notebook.
+        """
+        file = self.pipeGS(device="png16m")
+        result = file.read()
+        file.close()
+        return result
 
     def bbox(self):
         """returns bounding box of canvas
@@ -332,37 +341,100 @@ class canvas(canvasitem.canvasitem):
     writePDFfile = _wrappedindocument(document.document.writePDFfile)
     writetofile = _wrappedindocument(document.document.writetofile)
 
-    def pipeGS(self, filename="-", device=None, resolution=100,
-               gscommand="gs", gsoptions="",
-               textalphabits=4, graphicsalphabits=4,
-               ciecolor=False, input="eps", **kwargs):
+
+    def _gscmd(self, device, filename, resolution=100, gscmd="gs", gsoptions="",
+               textalphabits=4, graphicsalphabits=4, ciecolor=False, **kwargs):
+
+        allowed_chars = string.ascii_letters + string.digits + "_-./"
+        if filename.translate(string.maketrans("", ""), allowed_chars):
+            raise ValueError("for security reasons, only characters, digits and the characters '_-./' are allowed in filenames")
+
+        gscmd += " -dEPSCrop -dNOPAUSE -dQUIET -dBATCH -r%i -sDEVICE=%s -sOutputFile=%s" % (resolution, device, filename)
+        if gsoptions:
+            gscmd += " %s" % gsoptions
+        if textalphabits is not None:
+            gscmd += " -dTextAlphaBits=%i" % textalphabits
+        if graphicsalphabits is not None:
+            gscmd += " -dGraphicsAlphaBits=%i" % graphicsalphabits
+        if ciecolor:
+            gscmd += " -dUseCIEColor"
+
+        return gscmd, kwargs
+
+    def writeGSfile(self, filename=None, device=None, input="eps", **kwargs):
+        """
+        convert EPS or PDF output to a file via Ghostscript
+
+        If filename is None it is auto-guessed from the script name. If
+        filename is "-", the output is written to stdout. In both cases, a
+        device needs to be specified to define the format.
+
+        If device is None, but a filename with suffix is given, PNG files will
+        be written using the png16m device and JPG files using the jpeg device.
+        """
+        if filename is None:
+            if not sys.argv[0].endswith(".py"):
+                raise RuntimeError("could not auto-guess filename")
+            if device.startswith("png"):
+                filename = sys.argv[0][:-2] + "png"
+            elif device.startswith("jpeg"):
+                filename = sys.argv[0][:-2] + "jpg"
+            else:
+                filename = sys.argv[0][:-2] + device
         if device is None:
             if filename.endswith(".png"):
                 device = "png16m"
-            if filename.endswith(".jpg"):
+            elif filename.endswith(".jpg"):
                 device = "jpeg"
-        gscommand += " -dEPSCrop -dNOPAUSE -dQUIET -dBATCH -r%i -sDEVICE=%s -sOutputFile=%s" % (resolution, device, filename)
-        if gsoptions:
-            gscommand += " %s" % gsoptions
-        if textalphabits is not None:
-            gscommand += " -dTextAlphaBits=%i" % textalphabits
-        if graphicsalphabits is not None:
-            gscommand += " -dGraphicsAlphaBits=%i" % graphicsalphabits
-        if ciecolor:
-            gscommand += " -dUseCIEColor"
+            else:
+                raise RuntimeError("could not auto-guess device")
+
+        gscmd, kwargs = self._gscmd(device, filename, **kwargs)
+
         if input == "eps":
-            gscommand += " -"
-            pipe = pycompat.popen(gscommand, "wb")
-            self.writeEPSfile(pipe, **kwargs)
-            pipe.close()
+            gscmd += " -"
+            stdin = pycompat.popen(gscmd, "wb")
+            self.writeEPSfile(stdin, **kwargs)
+            stdin.close()
         elif input == "pdf":
+            # PDF files need to be accesible by random access and thus we need to create
+            # a temporary file
             fd, fname = tempfile.mkstemp()
             f = os.fdopen(fd, "wb")
-            gscommand += " %s" % fname
+            gscmd += " %s" % fname
             self.writePDFfile(f, **kwargs)
             f.close()
-            os.system(gscommand)
+            os.system(gscmd)
             os.unlink(fname)
         else:
             raise RuntimeError("input 'eps' or 'pdf' expected")
 
+
+    def pipeGS(self, device, input="eps", **kwargs):
+        """
+        returns a pipe with the Ghostscript output of the EPS or PDF of the canvas
+        """
+
+        gscmd, kwargs = self._gscmd(device, "-", **kwargs)
+
+        if input == "eps":
+            gscmd += " -"
+            # we can safely ignore that the input and output pipes could block each other,
+            # because Ghostscript has to read the full input before writing the output
+            stdin, stdout = pycompat.popen2(gscmd)
+            self.writeEPSfile(stdin, **kwargs)
+            stdin.close()
+            return stdout
+        elif input == "pdf":
+            # PDF files need to be accesible by random access and thus we need to create
+            # a temporary file
+            fd, fname = tempfile.mkstemp()
+            f = os.fdopen(fd, "wb")
+            gscmd += " %s" % fname
+            self.writePDFfile(f, **kwargs)
+            f.close()
+            stdout = pycompat.popen(gscmd, "rb")
+            os.unlink(fname)
+            return stdout
+        else:
+            raise RuntimeError("input 'eps' or 'pdf' expected")

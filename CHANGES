@@ -99,6 +99,11 @@ TODO:
       grouping of drawing operations (TODO: documentation)
     - writeXXXfile methods now use "page_" and "write_" prefixes for passing
       the keyword arguments to the page constructor and write method
+    - pipeGS now returns a file handle instead of writing to a file or to stdout
+    - the new method writeGSfile restores the previous pipeGS functionality
+  - document module:
+    - writeXXXfile methods now support writing to stdout when filename is set
+      to "-"
   - type 1 font modules:
     - allow font slanting for T1builtinfont instances
     - improve stripped font compatibility
