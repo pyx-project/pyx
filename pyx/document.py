@@ -137,6 +137,8 @@ def _outputstream(file, suffix):
         if not sys.argv[0].endswith(".py"):
             raise RuntimeError("could not auto-guess filename")
         return open("%s.%s" % (sys.argv[0][:-3], suffix), "wb")
+    if file == "-":
+        return sys.stdout
     try:
         file.write("")
         return file
