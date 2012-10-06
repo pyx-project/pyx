@@ -42,10 +42,10 @@ def _wrappedindocument(method):
                 warnings.warn("Keyword argument %s of %s method should be prefixed with 'page_'" %
                                 (name, method.__name__), DeprecationWarning)
                 page_kwargs[name] = value
-        d = document.document([document.page(self, **kwargs)])
+        d = document.document([document.page(self, **page_kwargs)])
         self.__name__ = method.__name__
         self.__doc__ = method.__doc__
-        return method(d, file)
+        return method(d, file, **write_kwargs)
     return wrappedindocument
 
 #
