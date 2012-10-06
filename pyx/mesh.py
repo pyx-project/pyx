@@ -139,7 +139,7 @@ class mesh(canvasitem.canvasitem):
                   thisbbox.llx_pt, thisbbox.urx_pt, thisbbox.lly_pt, thisbbox.ury_pt,
                   " ".join(["0 1" for value in self.elements[0].nodes[0].value.to8bitstring()])))
             file.write(binascii.b2a_hex(zlib.compress(self.data(thisbbox))))
-            file.write("\n")
+            file.write(">\n")
 
     def processPDF(self, file, writer, context, registry, bbox):
         if writer.mesh_as_bitmap:

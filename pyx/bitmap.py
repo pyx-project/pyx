@@ -477,6 +477,7 @@ class bitmap_trafo(canvasitem.canvasitem):
                 file.write("%%%%BeginData: %i ASCII Lines\n"
                            "image\n" % (asciihexlines(len(data)) + 1))
                 asciihexstream(file, data)
+                file.write(">\n")
             else:
                 # the datasource is currentstream (plus some filters)
                 file.write("%%%%BeginData: %i ASCII Lines\n"
