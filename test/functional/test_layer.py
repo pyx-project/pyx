@@ -1,7 +1,7 @@
 import sys; sys.path.insert(0, "../..")
 from pyx import *
 
-c = canvas.layered_canvas()
+c = canvas.canvas()
 
 l1b = c.layer("1.b")
 c.stroke(path.line(0, 0, 1, 0))
