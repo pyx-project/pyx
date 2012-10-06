@@ -101,6 +101,8 @@ TODO:
       the keyword arguments to the page constructor and write method
     - pipeGS now returns a file handle instead of writing to a file or to stdout
     - the new method writeGSfile restores the previous pipeGS functionality
+    - support rendering as png for use in IPython notebooks (as suggested by
+      Nikolas Tezak)
   - document module:
     - writeXXXfile methods now support writing to stdout when filename is set
       to "-"
