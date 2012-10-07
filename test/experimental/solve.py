@@ -21,7 +21,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 
-import Numeric, LinearAlgebra
+import numpy
 
 
 def sum(list):
@@ -588,8 +588,8 @@ class Solver:
                     if var is not None and var not in vars:
                         vars.append(var)
             if len(vars) == l:
-                a = Numeric.zeros((l, l), Numeric.Float)
-                b = Numeric.zeros((l, ), Numeric.Float)
+                a = numpy.zeros((l, l), numpy.float)
+                b = numpy.zeros((l, ), numpy.float)
                 for i, eq in enumerate(eqs):
                     for addend in eq._addends:
                         var = addend.variable()
@@ -597,7 +597,7 @@ class Solver:
                             a[i, vars.index(var)] += addend.prefactor()
                         else:
                             b[i] -= addend.prefactor()
-                for i, value in enumerate(LinearAlgebra.solve_linear_equations(a, b)):
+                for i, value in enumerate(numpy.linalg.solve(a, b)):
                     vars[i].set(value)
                 for eq in eqs:
                     i, = [i for i, selfeq in enumerate(self.eqs) if selfeq == eq]

@@ -81,5 +81,6 @@ c.stroke(line(z2, z4), [color.rgb.green])
 
 c.fill(path.circle(float(z0.x), float(z0.y), 0.1), [color.rgb.blue])
 
-c.writeEPSfile("quadrilateral")
+c.writeEPSfile()
+c.writePDFfile()
 
