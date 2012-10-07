@@ -192,7 +192,7 @@ class graph(canvas.canvas):
 class graphxy(graph):
 
     def __init__(self, xpos=0, ypos=0, width=None, height=None, ratio=goldenmean,
-                 key=None, backgroundattrs=None, axesdist=0.8*unit.v_cm,
+                 key=None, backgroundattrs=None, axesdist=0.8*unit.v_cm, flipped=False,
                  xaxisat=None, yaxisat=None, **axes):
         graph.__init__(self)
 
@@ -205,6 +205,7 @@ class graphxy(graph):
         self.key = key
         self.backgroundattrs = backgroundattrs
         self.axesdist_pt = unit.topt(axesdist)
+        self.flipped = flipped
 
         self.width = width
         self.height = height
@@ -269,28 +270,57 @@ class graphxy(graph):
                 self.axesnames[1].append(axisname)
             aaxis.setcreatecall(self.doaxiscreate, axisname)
 
+        self.axespositioners = dict(x=positioner.lineaxispos_pt(self.xpos_pt, self.ypos_pt,
+                                                                self.xpos_pt + self.width_pt, self.ypos_pt,
+                                                                (0, 1), self.xvgridpath),
+                                    x2=positioner.lineaxispos_pt(self.xpos_pt, self.ypos_pt + self.height_pt,
+                                                                 self.xpos_pt + self.width_pt, self.ypos_pt + self.height_pt,
+                                                                 (0, -1), self.xvgridpath),
+                                    y=positioner.lineaxispos_pt(self.xpos_pt, self.ypos_pt,
+                                                                self.xpos_pt, self.ypos_pt + self.height_pt,
+                                                                (1, 0), self.yvgridpath),
+                                    y2=positioner.lineaxispos_pt(self.xpos_pt + self.width_pt, self.ypos_pt,
+                                                                 self.xpos_pt + self.width_pt, self.ypos_pt + self.height_pt,
+                                                                 (-1, 0), self.yvgridpath))
+        if self.flipped:
+            self.axespositioners = dict(x=self.axespositioners["y2"],
+                                        y2=self.axespositioners["x2"],
+                                        y=self.axespositioners["x"],
+                                        x2=self.axespositioners["y"])
 
     def pos_pt(self, x, y, xaxis=None, yaxis=None):
         if xaxis is None:
             xaxis = self.axes["x"]
         if yaxis is None:
             yaxis = self.axes["y"]
-        return (self.xpos_pt + xaxis.convert(x)*self.width_pt,
-                self.ypos_pt + yaxis.convert(y)*self.height_pt)
+        vx = xaxis.convert(x)
+        vy = yaxis.convert(y)
+        if self.flipped:
+            vx, vy = vy, vx
+        return (self.xpos_pt + vx*self.width_pt,
+                self.ypos_pt + vy*self.height_pt)
 
     def pos(self, x, y, xaxis=None, yaxis=None):
         if xaxis is None:
             xaxis = self.axes["x"]
         if yaxis is None:
             yaxis = self.axes["y"]
-        return (self.xpos + xaxis.convert(x)*self.width,
-                self.ypos + yaxis.convert(y)*self.height)
+        vx = xaxis.convert(x)
+        vy = yaxis.convert(y)
+        if self.flipped:
+            vx, vy = vy, vx
+        return (self.xpos + vx*self.width,
+                self.ypos + vy*self.height)
 
     def vpos_pt(self, vx, vy):
+        if self.flipped:
+            vx, vy = vy, vx
         return (self.xpos_pt + vx*self.width_pt,
                 self.ypos_pt + vy*self.height_pt)
 
     def vpos(self, vx, vy):
+        if self.flipped:
+            vx, vy = vy, vx
         return (self.xpos + vx*self.width,
                 self.ypos + vy*self.height)
 
@@ -302,6 +332,9 @@ class graphxy(graph):
 
     def vgeodesic(self, vx1, vy1, vx2, vy2):
         """returns a geodesic path between two points in graph coordinates"""
+        if self.flipped:
+            vx1, vy1 = vy1, vx1
+            vx2, vy2 = vy2, vx2
         return path.line_pt(self.xpos_pt + vx1*self.width_pt,
                             self.ypos_pt + vy1*self.height_pt,
                             self.xpos_pt + vx2*self.width_pt,
@@ -309,12 +342,18 @@ class graphxy(graph):
 
     def vgeodesic_el(self, vx1, vy1, vx2, vy2):
         """returns a geodesic path element between two points in graph coordinates"""
+        if self.flipped:
+            vx1, vy1 = vy1, vx1
+            vx2, vy2 = vy2, vx2
         return path.lineto_pt(self.xpos_pt + vx2*self.width_pt,
                               self.ypos_pt + vy2*self.height_pt)
 
     def vcap_pt(self, coordinate, length_pt, vx, vy):
         """returns an error cap path for a given coordinate, lengths and
         point in graph coordinates"""
+        if self.flipped:
+            coordinate = 1-coordinate
+            vx, vy = vy, vx
         if coordinate == 0:
             return path.line_pt(self.xpos_pt + vx*self.width_pt - 0.5*length_pt,
                                 self.ypos_pt + vy*self.height_pt,
@@ -353,22 +392,8 @@ class graphxy(graph):
         if self.did(self.doaxispositioner, axisname):
             return
         self.doranges()
-        if axisname == "x":
-            self.axes["x"].setpositioner(positioner.lineaxispos_pt(self.xpos_pt, self.ypos_pt,
-                                                                   self.xpos_pt + self.width_pt, self.ypos_pt,
-                                                                   (0, 1), self.xvgridpath))
-        elif axisname == "x2":
-            self.axes["x2"].setpositioner(positioner.lineaxispos_pt(self.xpos_pt, self.ypos_pt + self.height_pt,
-                                                                    self.xpos_pt + self.width_pt, self.ypos_pt + self.height_pt,
-                                                                    (0, -1), self.xvgridpath))
-        elif axisname == "y":
-            self.axes["y"].setpositioner(positioner.lineaxispos_pt(self.xpos_pt, self.ypos_pt,
-                                                                   self.xpos_pt, self.ypos_pt + self.height_pt,
-                                                                   (1, 0), self.yvgridpath))
-        elif axisname == "y2":
-            self.axes["y2"].setpositioner(positioner.lineaxispos_pt(self.xpos_pt + self.width_pt, self.ypos_pt,
-                                                                    self.xpos_pt + self.width_pt, self.ypos_pt + self.height_pt,
-                                                                    (-1, 0), self.yvgridpath))
+        if axisname in ["x", "x2", "y", "y2"]:
+            self.axes[axisname].setpositioner(self.axespositioners[axisname])
         else:
             if axisname[1:] == "3":
                 dependsonaxisname = axisname[0]
@@ -376,7 +401,9 @@ class graphxy(graph):
                 dependsonaxisname = "%s%d" % (axisname[0], int(axisname[1:]) - 2)
             self.doaxiscreate(dependsonaxisname)
             sign = 2*(int(axisname[1:]) % 2) - 1
-            if axisname[0] == "x":
+            if axisname[0] == "x" and self.flipped:
+                sign = -sign
+            if axisname[0] == "x" and not self.flipped or axisname[0] == "y" and self.flipped:
                 y_pt = self.axes[dependsonaxisname].positioner.y1_pt - sign * (self.axes[dependsonaxisname].canvas.extent_pt + self.axesdist_pt)
                 self.axes[axisname].setpositioner(positioner.lineaxispos_pt(self.xpos_pt, y_pt,
                                                                             self.xpos_pt + self.width_pt, y_pt,
