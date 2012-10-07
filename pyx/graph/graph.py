@@ -375,20 +375,18 @@ class graphxy(graph):
         return path.line_pt(self.xpos_pt, self.ypos_pt + vy*self.height_pt,
                             self.xpos_pt + self.width_pt, self.ypos_pt + vy*self.height_pt)
 
-    def axistrafo(self, axis, t):
+    def axisatv(self, axis, v):
+        if axis.positioner.fixtickdirection[0]:
+            # it is a y-axis
+            t = trafo.translate_pt(self.xpos_pt + v*self.width_pt - axis.positioner.x1_pt, 0)
+        else:
+            # it is an x-axis
+            t = trafo.translate_pt(0, self.ypos_pt + v*self.height_pt - axis.positioner.y1_pt)
         c = canvas.canvas()
         for layer, subcanvas in axis.canvas.layers.items():
             c.layer(layer).insert(subcanvas, [t])
         assert len(axis.canvas.layers) == len(axis.canvas.items), str(axis.canvas.items)
         axis.canvas = c
-
-    def axisatv(self, axis, v):
-        if axis.positioner.fixtickdirection[0]:
-            # it is a y-axis
-            self.axistrafo(axis, trafo.translate_pt(self.xpos_pt + v*self.width_pt - axis.positioner.x1_pt, 0))
-        else:
-            # it is an x-axis
-            self.axistrafo(axis, trafo.translate_pt(0, self.ypos_pt + v*self.height_pt - axis.positioner.y1_pt))
 
     def doaxispositioner(self, axisname):
         if self.did(self.doaxispositioner, axisname):
