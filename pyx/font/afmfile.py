@@ -1378,7 +1378,7 @@ class AFMfile(metric.metric):
             if i:
                 kernpair = self.kernpairsdict.get((glyphnames[i-1], glyphname))
                 if kernpair:
-                    if size is not None:
+                    if size_pt is not None:
                         result[2*i-1] = kernpair.x*size_pt/1000.0
                     else:
                         result[2*i-1] = kernpair.x
