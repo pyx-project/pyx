@@ -376,8 +376,10 @@ class graphxy(graph):
                             self.xpos_pt + self.width_pt, self.ypos_pt + vy*self.height_pt)
 
     def axistrafo(self, axis, t):
-        c = canvas.canvas([t])
-        c.insert(axis.canvas)
+        c = canvas.canvas()
+        for layer, subcanvas in axis.canvas.layers.items():
+            c.layer(layer).insert(subcanvas, [t])
+        assert len(axis.canvas.layers) == len(axis.canvas.items), str(axis.canvas.items)
         axis.canvas = c
 
     def axisatv(self, axis, v):
