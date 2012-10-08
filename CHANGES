@@ -16,7 +16,7 @@ TODO:
       texmessage.load
   - graph.graph module
     - common bboxes for different graphs
-    - 3d graphs, circular graphs
+    - circular graphs
     - axis painter labelattrs=None + automatic axis partitioning leads to no valid partitioning
     - when all titles are None, a graph key currently raises an exception
     - translatecanvas should be the default in graph.style.symbol
@@ -45,7 +45,6 @@ TODO:
   - bitmap module:
     - ReusableStreamDecode?
     - proper ASCII85Decode/HexDecode switch
-    - Support for transparent bitmaps?
   - bbox module:
     - rewrite height, etc. using properties
   - deformer module:
