@@ -123,12 +123,19 @@ class _regularaxis(_axis):
             else:
                 raise RuntimeError("zero axis range%s" % errorname)
 
+        if self.divisor is not None:
+            divisor = self.divisor
+            rational_divisor = tick.rational(divisor)
+        else:
+            divisor = 1
+
         def layout(data):
-            self.adjustaxis(data, data.ticks, graphtexrunner, errorname)
+            if data.ticks:
+                self.adjustaxis(data, [float(data.ticks[0])*divisor, float(data.ticks[-1])*divisor], graphtexrunner, errorname)
             self.texter.labels(data.ticks)
             if self.divisor:
                 for t in data.ticks:
-                    t *= tick.rational(self.divisor)
+                    t *= rational_divisor
             canvas = painter.axiscanvas(self.painter, graphtexrunner)
             if self.painter is not None:
                 self.painter.paint(canvas, data, self, positioner)
@@ -181,11 +188,11 @@ class _regularaxis(_axis):
                 if ticks:
                     rate = rater.rateticks(self, ticks, self.density)
                     if self.reverse:
-                        rate += rater.raterange(self.convert(data, ticks[0]) -
-                                                self.convert(data, ticks[-1]), 1)
+                        rate += rater.raterange(self.convert(data, float(ticks[0])*divisor) -
+                                                self.convert(data, float(ticks[-1])*divisor), 1)
                     else:
-                        rate += rater.raterange(self.convert(data, ticks[-1]) -
-                                                self.convert(data, ticks[0]), 1)
+                        rate += rater.raterange(self.convert(data, float(ticks[-1])*divisor) -
+                                                self.convert(data, float(ticks[0])*divisor), 1)
                     if bestrate is None or rate < bestrate:
                         bestrate = rate
                         worse = 0
