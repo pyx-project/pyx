@@ -136,6 +136,7 @@ TODO:
       - add a flipped option to graphxy to exchange x and y coordinates
     - graph styles:
       - add bitmap style (TODO: documentation)
+      - add a usenames dictionary to the pos style (like rangepos had it already)
     - axis module:
       - divisor was not properly taken into account in tick handling (axis
         range extension and range rating)

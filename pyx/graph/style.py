@@ -228,34 +228,47 @@ class pos(_style):
 
     providesdata = ["vpos", "vposmissing", "vposavailable", "vposvalid", "poscolumnnames"]
 
-    def __init__(self, epsilon=1e-10):
+    def __init__(self, usenames={}, epsilon=1e-10):
+        self.usenames = usenames
         self.epsilon = epsilon
 
     def columnnames(self, privatedata, sharedata, graph, columnnames):
-        sharedata.poscolumnnames = []
-        sharedata.vposmissing = []
+        privatedata.poscolumnnames = []
+        privatedata.vposmissing = []
+        privatedata.axisnames = {}
         for count, axisnames in enumerate(graph.axesnames):
-            # all used axisnames are also data columns
             for axisname in axisnames:
+                try:
+                    usename = self.usenames[axisname]
+                except KeyError:
+                    usename = axisname
                 for columnname in columnnames:
-                    if axisname == columnname:
-                         sharedata.poscolumnnames.append(columnname)
-            if len(sharedata.poscolumnnames) > count+1:
+                    if usename == columnname:
+                         privatedata.poscolumnnames.append(columnname)
+                         privatedata.axisnames[columnname] = axisname
+            if len(privatedata.poscolumnnames) > count+1:
                 raise ValueError("multiple axes per graph dimension")
-            elif len(sharedata.poscolumnnames) < count+1:
-                sharedata.vposmissing.append(count)
-                sharedata.poscolumnnames.append(None)
-        return [columnname for columnname in sharedata.poscolumnnames if columnname is not None]
+            elif len(privatedata.poscolumnnames) < count+1:
+                privatedata.vposmissing.append(count)
+                privatedata.poscolumnnames.append(None)
+        # Make poscolumnnames and vposmissing available to the outside,
+        # but keep a private reference. A copy is not needed, because
+        # the data is not altered in place, but might be exchanged my a
+        # later, different pos style in the styles list (due to different
+        # usenames).
+        sharedata.poscolumnnames = privatedata.poscolumnnames
+        sharedata.vposmissing = privatedata.vposmissing
+        return [columnname for columnname in privatedata.poscolumnnames if columnname is not None]
 
     def adjustaxis(self, privatedata, sharedata, graph, columnname, data):
-        if columnname in sharedata.poscolumnnames:
-            graph.axes[columnname].adjustaxis(data)
+        if columnname in privatedata.axisnames:
+            graph.axes[privatedata.axisnames[columnname]].adjustaxis(data)
 
     def initdrawpoints(self, privatedata, sharedata, graph):
         sharedata.vpos = [None]*(len(graph.axesnames))
-        privatedata.pointpostmplist = [[columnname, index, graph.axes[columnname]] # temporarily used by drawpoint only
-                                       for index, columnname in enumerate([columnname for columnname in sharedata.poscolumnnames if columnname is not None])]
-        for missing in sharedata.vposmissing:
+        privatedata.pointpostmplist = [[columnname, index, graph.axes[privatedata.axisnames[columnname]]] # temporarily used by drawpoint only
+                                       for index, columnname in enumerate([columnname for columnname in privatedata.poscolumnnames if columnname is not None])]
+        for missing in privatedata.vposmissing:
             for pointpostmp in privatedata.pointpostmplist:
                 if pointpostmp[1] >= missing:
                     pointpostmp[1] += 1

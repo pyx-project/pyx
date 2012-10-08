@@ -709,15 +709,16 @@ styles manually. The hidden styles register themself to be the default for
 providing certain internal data.
 
 
-.. class:: pos(epsilon=1e-10)
+.. class:: pos(usenames={}, epsilon=1e-10)
 
    This class is a hidden style providing a position in the graph. It needs a data
    column for each graph dimension. For that the column names need to be equal to
-   an axis name. Data points are considered to be out of graph when their position
-   in graph coordinates exceeds the range [0:1] by more than *epsilon*.
+   an axis name, or a name translation from axis names to column names need to be
+   given by *usenames*. Data points are considered to be out of graph when their
+   position in graph coordinates exceeds the range [0:1] by more than *epsilon*.
 
 
-.. class:: range(usenames=, epsilon=1e-10)
+.. class:: range(usenames={}, epsilon=1e-10)
 
    This class is a hidden style providing an errorbar range. It needs data column
    names constructed out of a axis name ``X`` for each dimension errorbar data
