@@ -22,9 +22,8 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 import math, re, ConfigParser, struct, warnings
-from pyx import text
-from pyx.style import linestyle
-from pyx.graph import style
+from pyx import text, pycompat
+import style
 
 
 def splitatvalue(value, *splitpoints):
@@ -97,6 +96,13 @@ class _data:
         """
         return {}
 
+    def __add__(self, other):
+        columns = {}
+        self_empty_columns = [None]*len(self.columns.values()[0])
+        other_empty_columns = [None]*len(other.columns.values()[0])
+        for columnname in pycompat.set(self.columnnames).union(pycompat.set(other.columnnames)):
+            columns[columnname] = self.columns.get(columnname, self_empty_columns) + other.columns.get(columnname, other_empty_columns)
+        return values(title=self.title, **columns)
 
 defaultsymbols = [style.symbol()]
 defaultlines = [style.line()]
