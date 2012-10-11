@@ -24,11 +24,127 @@
 
 import math, re, string, warnings
 from pyx import canvas, path, trafo, unit
-from pyx.graph import style
 from pyx.graph.axis import axis, positioner
 
 
 goldenmean = 0.5 * (math.sqrt(5) + 1)
+
+
+# The following two methods are used to register and get a default provider
+# for keys. A key is a variable name in sharedata. A provider is a style
+# which creates variables in sharedata.
+
+_defaultprovider = {}
+
+def registerdefaultprovider(style, keys):
+    """sets a style as a default creator for sharedata variables 'keys'"""
+    for key in keys:
+        assert key in style.providesdata, "key not provided by style"
+        # we might allow for overwriting the defaults, i.e. the following is not checked:
+        # assert key in _defaultprovider.keys(), "default provider already registered for key"
+        _defaultprovider[key] = style
+
+def getdefaultprovider(key):
+    """returns a style, which acts as a default creator for the
+    sharedata variable 'key'"""
+    return _defaultprovider[key]
+
+
+class styledata:
+    """style data storage class
+
+    Instances of this class are used to store data from the styles
+    and to pass point data to the styles by instances named privatedata
+    and sharedata. sharedata is shared between all the style(s) in use
+    by a data instance, while privatedata is private to each style and
+    used as a storage place instead of self to prevent side effects when
+    using a style several times."""
+    pass
+
+
+class plotitem:
+
+    def __init__(self, graph, data, styles):
+        self.data = data
+        self.title = data.title
+
+        addstyles = [None]
+        while addstyles:
+            # add styles to ensure all needs of the given styles
+            provided = [] # already provided sharedata variables
+            addstyles = [] # a list of style instances to be added in front
+            for s in styles:
+                for n in s.needsdata:
+                    if n not in provided:
+                        defaultprovider = getdefaultprovider(n)
+                        addstyles.append(defaultprovider)
+                        provided.extend(defaultprovider.providesdata)
+                provided.extend(s.providesdata)
+            styles = addstyles + styles
+
+        self.styles = styles
+        self.sharedata = styledata()
+        self.dataaxisnames = {}
+        self.privatedatalist = [styledata() for s in self.styles]
+
+        # perform setcolumns to all styles
+        self.usedcolumnnames = pycompat.set()
+        for privatedata, s in zip(self.privatedatalist, self.styles):
+            self.usedcolumnnames.update(pycompat.set(s.columnnames(privatedata, self.sharedata, graph, self.data.columnnames, self.dataaxisnames)))
+
+    def selectstyles(self, graph, selectindex, selecttotal):
+        for privatedata, style in zip(self.privatedatalist, self.styles):
+            style.selectstyle(privatedata, self.sharedata, graph, selectindex, selecttotal)
+
+    def adjustaxesstatic(self, graph):
+        for columnname, data in self.data.columns.items():
+            for privatedata, style in zip(self.privatedatalist, self.styles):
+                style.adjustaxis(privatedata, self.sharedata, graph, columnname, data)
+
+    def makedynamicdata(self, graph):
+        self.dynamiccolumns = self.data.dynamiccolumns(graph, self.dataaxisnames)
+
+    def adjustaxesdynamic(self, graph):
+        for columnname, data in self.dynamiccolumns.items():
+            for privatedata, style in zip(self.privatedatalist, self.styles):
+                style.adjustaxis(privatedata, self.sharedata, graph, columnname, data)
+
+    def draw(self, graph):
+        for privatedata, style in zip(self.privatedatalist, self.styles):
+            style.initdrawpoints(privatedata, self.sharedata, graph)
+        point = {}
+        useitems = []
+        for columnname in self.usedcolumnnames:
+            try:
+                useitems.append((columnname, self.dynamiccolumns[columnname]))
+            except KeyError:
+                useitems.append((columnname, self.data.columns[columnname]))
+        if not useitems:
+            raise ValueError("cannot draw empty data")
+        for i in xrange(len(useitems[0][1])):
+            for columnname, data in useitems:
+                point[columnname] = data[i]
+            for privatedata, style in zip(self.privatedatalist, self.styles):
+                style.drawpoint(privatedata, self.sharedata, graph, point)
+        for privatedata, style in zip(self.privatedatalist, self.styles):
+            style.donedrawpoints(privatedata, self.sharedata, graph)
+
+    def key_pt(self, graph, x_pt, y_pt, width_pt, height_pt):
+        for privatedata, style in zip(self.privatedatalist, self.styles):
+            style.key_pt(privatedata, self.sharedata, graph, x_pt, y_pt, width_pt, height_pt)
+
+    def __getattr__(self, attr):
+        # read only access to the styles privatedata
+        # this is just a convenience method
+        # use case: access the path of a the line style
+        stylesdata = [getattr(styledata, attr)
+                      for styledata in self.privatedatalist
+                      if hasattr(styledata, attr)]
+        if len(stylesdata) > 1:
+            return stylesdata
+        elif len(stylesdata) == 1:
+            return stylesdata[0]
+        raise AttributeError("access to styledata attribute '%s' failed" % attr)
 
 
 class graph(canvas.canvas):
@@ -96,7 +212,7 @@ class graph(canvas.canvas):
                     raise RuntimeError("defaultstyles differ")
         plotitems = []
         for d in usedata:
-            plotitems.append(style.plotitem(self, d, styles))
+            plotitems.append(plotitem(self, d, styles))
         self.plotitems.extend(plotitems)
         if self.didranges:
             for aplotitem in plotitems:
