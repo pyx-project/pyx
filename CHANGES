@@ -134,8 +134,10 @@ TODO:
       - uses new canvas layers to stack graph components (fixing bug #1518414,
         reported by Dominic Ford)
       - add a flipped option to graphxy to exchange x and y coordinates
+      - add a 1d graph "graphx" (use case: convert a value to a color)
     - graph styles:
-      - add bitmap style (TODO: documentation)
+      - add density style (TODO: documentation)
+      - add gradient style to convert a value to a color using a 1d graph
       - add a usenames dictionary to the pos style (like rangepos had it already)
     - axis module:
       - divisor was not properly taken into account in tick handling (axis

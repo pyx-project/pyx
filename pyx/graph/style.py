@@ -23,10 +23,11 @@
 
 
 import math, warnings, cStringIO
-from pyx import attr, deco, style, color, unit, canvas, path, mesh, pycompat, trafo
+from pyx import attr, deco, bitmap, style, color, unit, canvas, path, mesh, pycompat, trafo
 from pyx import text as textmodule
-from graph import registerdefaultprovider
-from pyx import bitmap as bitmapmodule
+from graph import registerdefaultprovider, graphx
+import data as datamodule
+import axis
 
 builtinrange = range
 
@@ -1915,23 +1916,41 @@ class surface(_style):
         graph.layer("filldata").insert(m)
 
 
+class _autokeygraph:
+
+    pass
+
+
 class density(_style):
 
     needsdata = ["values1", "values2", "data12", "data21"]
 
-    def __init__(self, colorname="color", gradient=color.gradient.Grey, mincolor=None, maxcolor=None, epsilon=1e-10):
+    def __init__(self, colorname="color", gradient=color.gradient.Grey, coloraxis=axis.lin(), epsilon=1e-10, key=_autokeygraph):
         self.colorname = colorname
         self.gradient = gradient
-        self.mincolor = mincolor
-        self.maxcolor = maxcolor
+        self.coloraxis = coloraxis
         self.epsilon = epsilon
+        self.key = key
 
     def columnnames(self, privatedata, sharedata, graph, columnnames):
         return [self.colorname]
 
+    def adjustaxis(self, privatedata, sharedata, graph, columnname, data):
+        if columnname == self.colorname:
+            if self.key is None:
+                # we always need a keygraph, but we might not show it
+                privatedata.keygraph = graphx(0, 0, length=10, direction="vertical", x=self.coloraxis)
+            elif self.key is _autokeygraph:
+                # TODO: take axes into account
+                # TODO: auto positioning for 3d graphs
+                privatedata.keygraph = graphx(graph.xpos + graph.width + 1, graph.ypos, length=graph.height, direction="vertical", x=self.coloraxis)
+            else:
+                privatedata.keygraph = keygraph
+            # TODO: we shouldn't have multiple plotitems
+            privatedata.keygraph.plot(datamodule.values(x=data), [gradient(gradient=self.gradient)])
+
     def initdrawpoints(self, privatedata, sharedata, graph):
         privatedata.colors = {}
-        privatedata.mincolor = privatedata.maxcolor = None
         privatedata.vfixed = [None]*len(graph.axesnames)
 
     def drawpoint(self, privatedata, sharedata, graph, point):
@@ -1941,10 +1960,6 @@ class density(_style):
             pass
         else:
             privatedata.colors.setdefault(sharedata.value1, {})[sharedata.value2] = color
-            if privatedata.mincolor is None or color < privatedata.mincolor:
-                privatedata.mincolor = color
-            if privatedata.mincolor is None or privatedata.maxcolor < color:
-                privatedata.maxcolor = color
         if len(privatedata.vfixed) > 2 and sharedata.vposavailable:
             for i, (v1, v2) in enumerate(zip(privatedata.vfixed, sharedata.vpos)):
                 if i != sharedata.index1 and i != sharedata.index2:
@@ -1954,11 +1969,7 @@ class density(_style):
                         raise ValueError("data must be in a plane for the bitmap style")
 
     def donedrawpoints(self, privatedata, sharedata, graph):
-        mincolor, maxcolor = privatedata.mincolor, privatedata.maxcolor
-        if self.mincolor is not None:
-            mincolor = self.mincolor
-        if self.maxcolor is not None:
-            maxcolor = self.maxcolor
+        privatedata.keygraph.doaxes()
 
         values1 = pycompat.sorted(sharedata.values1.keys())
         values2 = pycompat.sorted(sharedata.values2.keys())
@@ -2004,18 +2015,11 @@ class density(_style):
                     data.write(empty)
                     continue
                 c = privatedata.colors[value1][value2]
-                vc = (c - mincolor) / float(maxcolor - mincolor)
-                if vc < 0:
-                    warnings.warn("gradiend color range is exceeded due to mincolor setting")
-                    vc = 0
-                if vc > 1:
-                    warnings.warn("gradiend color range is exceeded due to maxcolor setting")
-                    vc = 1
-                c = self.gradient.getcolor(vc)
+                c = self.gradient.getcolor(privatedata.keygraph.axes["x"].convert(c))
                 if needalpha:
                     data.write(chr(255))
                 data.write(c.to8bitstring())
-        i = bitmapmodule.image(len(values1), len(values2), mode, data.getvalue())
+        i = bitmap.image(len(values1), len(values2), mode, data.getvalue())
 
         v1enlargement = (values1[-1]-values1[0])*0.5/len(values1)
         v2enlargement = (values2[-1]-values2[0])*0.5/len(values2)
@@ -2065,6 +2069,64 @@ class density(_style):
         p.append(path.closepath())
 
         c = canvas.canvas([canvas.clip(p)])
-        b = bitmapmodule.bitmap_trafo(t, i)
+        b = bitmap.bitmap_trafo(t, i)
         c.insert(b)
         graph.layer("filldata").insert(c)
+
+        if self.key is not None:
+            graph.layer("key").insert(privatedata.keygraph)
+
+
+
+class gradient(_style):
+
+    defaultbarattrs = [color.gradient.Rainbow, deco.stroked([color.grey.black])]
+
+    def __init__(self, gradient=color.gradient.Gray, resolution=100, columnname="x"):
+        self.gradient = gradient
+        self.resolution = resolution
+        self.columnname = columnname
+
+    def columnnames(self, privatedata, sharedata, graph, columnnames):
+        return [self.columnname]
+
+    def adjustaxis(self, privatedata, sharedata, graph, columnname, data):
+        graph.axes[self.columnname].adjustaxis(data)
+
+    def selectstyle(self, privatedata, sharedata, graph, selectindex, selecttotal):
+        pass
+
+    def initdrawpoints(self, privatedata, sharedata, graph):
+        pass
+
+    def drawpoint(self, privatedata, sharedata, graph, point):
+        pass
+
+    def donedrawpoints(self, privatedata, sharedata, graph):
+        mode = {"/DeviceGray": "L",
+                "/DeviceRGB": "RGB",
+                "/DeviceCMYK": "CMYK"}[self.gradient.getcolor(0).colorspacestring()]
+        data = cStringIO.StringIO()
+        for i in builtinrange(self.resolution):
+            c = self.gradient.getcolor(i*1.0/self.resolution)
+            data.write(c.to8bitstring())
+        i = bitmap.image(self.resolution, 1, mode, data.getvalue())
+
+        llx_pt, lly_pt = graph.vpos_pt(0-0.5/(self.resolution-1))
+        urx_pt, ury_pt = graph.vpos_pt(1+0.5/(self.resolution-1))
+        if graph.direction == "horizontal":
+            lly_pt -= 0.5*graph.height_pt
+            ury_pt += 0.5*graph.height_pt
+        else:
+            llx_pt -= 0.5*graph.width_pt
+            urx_pt += 0.5*graph.width_pt
+
+        t = trafo.trafo_pt(((0, urx_pt-llx_pt), (ury_pt-lly_pt, 0)), (llx_pt, lly_pt))
+
+        c = canvas.canvas([canvas.clip(path.rect_pt(llx_pt, lly_pt, urx_pt, ury_pt))])
+        b = bitmap.bitmap_trafo(t, i)
+        c.insert(b)
+        graph.layer("filldata").insert(c)
+
+    def key_pt(self, privatedata, sharedata, graph, x_pt, y_pt, width_pt, height_pt):
+        pass
