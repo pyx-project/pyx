@@ -22,11 +22,11 @@
 
 __allmodules__ = ["data", "key", "style", "axis"]
 for module in __allmodules__:
-    __import__(module, globals(), locals(), [])
+__import__(module, globals(), locals(), [])
 
-import graph
-__allgraph__ = ["graphxy", "graphxyz"]
-for importfromgraph in __allgraph__:
-    locals()[importfromgraph] = getattr(graph, importfromgraph)
+    import graph
+    __allgraph__ = ["graphx", "graphxy", "graphxyz"]
+    for importfromgraph in __allgraph__:
+locals()[importfromgraph] = getattr(graph, importfromgraph)
 
-__all__ = __allmodules__ + __allgraph__
+    __all__ = __allmodules__ + __allgraph__

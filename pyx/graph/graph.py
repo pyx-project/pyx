@@ -23,7 +23,7 @@
 
 
 import math, re, string, warnings
-from pyx import canvas, path, trafo, unit
+from pyx import canvas, path, pycompat, trafo, unit
 from pyx.graph.axis import axis, positioner
 
 
@@ -578,6 +578,61 @@ class graphxy(graph):
                                      bbox.lly_pt, bbox.ury_pt,
                                      self.key.vpos, unit.topt(self.key.vdist), self.key.vinside)
                 self.layer("key").insert(c, [trafo.translate_pt(x, y)])
+
+
+
+class graphx(graphxy):
+
+    def __init__(self, xpos=0, ypos=0, length=None, size=0.5*unit.v_cm, direction="vertical",
+                 key=None, backgroundattrs=None, axesdist=0.8*unit.v_cm, **axes):
+        for name in axes:
+            if not name.startswith("x"):
+                raise ValueError("Only x axes are allowed")
+        self.direction = direction
+        if self.direction == "vertical":
+            kwargsxy = dict(width=size, height=length, flipped=True)
+        elif self.direction == "horizontal":
+            kwargsxy = dict(width=length, height=size)
+        else:
+            raise ValueError("vertical or horizontal direction required")
+        kwargsxy.update(**axes)
+
+        graphxy.__init__(self, xpos=xpos, ypos=ypos, ratio=None, key=key, y=axis.lin(min=0, max=1, parter=None),
+                         backgroundattrs=backgroundattrs, axesdist=axesdist, **kwargsxy)
+
+    def pos_pt(self, x, xaxis=None):
+        return graphxy.pos_pt(self, x, 0.5, xaxis)
+
+    def pos(self, x, xaxis=None):
+        return graphxy.pos(self, x, 0.5, xaxis)
+
+    def vpos_pt(self, vx):
+        return graphxy.vpos_pt(self, vx, 0.5)
+
+    def vpos(self, vx):
+        return graphxy.vpos(self, vx, 0.5)
+
+    def vgeodesic(self, vx1, vx2):
+        return graphxy.vgeodesic(self, vx1, 0.5, vx2, 0.5)
+
+    def vgeodesic_el(self, vx1, vy1, vx2, vy2):
+        return graphxy.vgeodesic_el(self, vx1, 0.5, vx2, 0.5)
+
+    def vcap_pt(self, coordinate, length_pt, vx):
+        if coordinate == 0:
+            return graphxy.vcap_pt(self, coordinate, length_pt, vx, 0.5)
+        else:
+            raise ValueError("direction invalid")
+
+    def xvgridpath(self, vx):
+        return graphxy.xvgridpath(self, vx)
+
+    def yvgridpath(self, vy):
+        raise Exception("This method does not exist on a one dimensional graph.")
+
+    def axisatv(self, axis, v):
+        raise Exception("This method does not exist on a one dimensional graph.")
+
 
 
 class graphxyz(graphxy):
