@@ -24,6 +24,7 @@
 import math, re, ConfigParser, struct, warnings
 from pyx import text, pycompat
 import style
+builtinlist = list
 
 
 def splitatvalue(value, *splitpoints):
@@ -84,25 +85,22 @@ class _data:
     and stated in the columnnames dictionary.
 
     The instance variable title and defaultstyles contain the data title and
-    the default styles (a list of styles), respectively.
+    the default styles (a list of styles), respectively. If defaultstyles is None,
+    the data cannot be plotted without user provided styles.
     """
 
-    def dynamiccolumns(self, graph):
+    def dynamiccolumns(self, graph, axisnames):
         """create and return dynamic columns data
 
         Returns dynamic data matching the given axes (the axes range and other
         data might be used). The return value is a dictionary similar to the
-        columns instance variable.
+        columns instance variable. However, the static and dynamic data does
+        not need to be correlated in any way, i.e. the number of data points in
+        self.columns might differ from the number of data points represented by
+        the return value of the dynamiccolumns method.
         """
         return {}
 
-    def __add__(self, other):
-        columns = {}
-        self_empty_columns = [None]*len(self.columns.values()[0])
-        other_empty_columns = [None]*len(other.columns.values()[0])
-        for columnname in pycompat.set(self.columnnames).union(pycompat.set(other.columnnames)):
-            columns[columnname] = self.columns.get(columnname, self_empty_columns) + other.columns.get(columnname, other_empty_columns)
-        return values(title=self.title, **columns)
 
 defaultsymbols = [style.symbol()]
 defaultlines = [style.line()]
@@ -529,10 +527,10 @@ class function(_data):
         self.columns = {}
         self.columnnames = [self.xname, self.yname]
 
-    def dynamiccolumns(self, graph):
+    def dynamiccolumns(self, graph, axisnames):
         dynamiccolumns = {self.xname: [], self.yname: []}
 
-        xaxis = graph.axes[self.xname]
+        xaxis = graph.axes[axisnames.get(self.xname, self.xname)]
         from pyx.graph.axis import logarithmic
         logaxis = isinstance(xaxis.axis, logarithmic)
         if self.min is not None:
@@ -597,3 +595,64 @@ class paramfunctionxy(paramfunction):
 
     def __init__(self, f, min, max, **kwargs):
         paramfunction.__init__(self, "t", min, max, "x, y = f(t)", context={"f": f}, **kwargs)
+
+
+class _nodefaultstyles:
+    pass
+
+
+class join(_data):
+    "creates a new data set by joining from a list of data, it does however *not* combine points, but fills data with None if necessary"
+
+    def merge_lists(self, lists):
+        "merges list items w/o duplications, resulting order is arbitraty"
+        result = pycompat.set()
+        for l in lists:
+            result.update(pycompat.set(l))
+        return builtinlist(result)
+
+    def merge_dicts(self, dicts):
+        """merge dicts containing lists as values (with equal number of items
+        per list in each dict), missing data is padded by None"""
+        keys = self.merge_lists([d.keys() for d in dicts])
+        empties = []
+        for d in dicts:
+            if len(d.keys()) == len(keys):
+                empties.append(None) # won't be needed later on
+            else:
+                values = d.values()
+                if len(values):
+                    empties.append([None]*len(values[0]))
+                else:
+                    # has no data at all -> do not add anything
+                    empties.append([])
+        result = {}
+        for key in keys:
+            result[key] = []
+            for d, e in zip(dicts, empties):
+                result[key].extend(d.get(key, e))
+        return result
+
+    def __init__(self, data, title=_notitle, defaultstyles=_nodefaultstyles):
+        """takes a list of data, a title (if it should not be autoconstructed)
+        and a defaultstyles list if there is no common defaultstyles setting
+        for in the provided data"""
+        assert len(data)
+        self.data = data
+        self.columnnames = self.merge_lists([d.columnnames for d in data])
+        self.columns = self.merge_dicts([d.columns for d in data])
+        if title is _notitle:
+            self.title = " + ".join([d.title for d in data])
+        else:
+            self.title = title
+        if defaultstyles is _nodefaultstyles:
+            self.defaultstyles = data[0].defaultstyles
+            for d in data[1:]:
+                if d.defaultstyles is not self.defaultstyles:
+                    self.defaultstyles = None
+                    break
+        else:
+            self.defaultstyles = defaultstyles
+
+    def dynamiccolumns(self, graph, axisnames):
+        return self.merge_dicts([d.dynamiccolumns(graph, axisnames) for d in self.data])

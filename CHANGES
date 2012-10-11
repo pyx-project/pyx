@@ -139,6 +139,8 @@ TODO:
       - add density style (TODO: documentation)
       - add gradient style to convert a value to a color using a 1d graph
       - add a usenames dictionary to the pos style (like rangepos had it already)
+    - graph data:
+      - add a join data provide which adds concatenates several data sources
     - axis module:
       - divisor was not properly taken into account in tick handling (axis
         range extension and range rating)

@@ -61,13 +61,17 @@ class _style:
     providesdata = [] # by default, we provide nothing
     needsdata = [] # and do not depend on anything
 
-    def columnnames(self, privatedata, sharedata, graph, columnnames):
+    def columnnames(self, privatedata, sharedata, graph, columnnames, dataaxisnames):
         """Set column information
 
         This method is used setup the column name information to be
         accessible to the style later on. The style should analyse
         the list of column names. The method should return a list of
-        column names which the style will make use of."""
+        column names which the style will make use of. If a style
+        uses some column data to feed into an axis with a different
+        name, it should add an entry into the dataaxisnames dictionary
+        with key begin the column name and the value being the axis
+        name."""
         return []
 
     def adjustaxis(self, privatedata, sharedata, graph, columnname, data):
@@ -118,7 +122,7 @@ class pos(_style):
         self.usenames = usenames
         self.epsilon = epsilon
 
-    def columnnames(self, privatedata, sharedata, graph, columnnames):
+    def columnnames(self, privatedata, sharedata, graph, columnnames, dataaxisnames):
         privatedata.poscolumnnames = []
         privatedata.vposmissing = []
         privatedata.axisnames = {}
@@ -130,8 +134,8 @@ class pos(_style):
                     usename = axisname
                 for columnname in columnnames:
                     if usename == columnname:
-                         privatedata.poscolumnnames.append(columnname)
-                         privatedata.axisnames[columnname] = axisname
+                        privatedata.poscolumnnames.append(columnname)
+                        privatedata.axisnames[columnname] = axisname
             if len(privatedata.poscolumnnames) > count+1:
                 raise ValueError("multiple axes per graph dimension")
             elif len(privatedata.poscolumnnames) < count+1:
@@ -144,6 +148,7 @@ class pos(_style):
         # usenames).
         sharedata.poscolumnnames = privatedata.poscolumnnames
         sharedata.vposmissing = privatedata.vposmissing
+        dataaxisnames.update(privatedata.axisnames)
         return [columnname for columnname in privatedata.poscolumnnames if columnname is not None]
 
     def adjustaxis(self, privatedata, sharedata, graph, columnname, data):
@@ -201,7 +206,7 @@ class range(_style):
         else:
             return self._numberofbits(mask >> 1)
 
-    def columnnames(self, privatedata, sharedata, graph, columnnames):
+    def columnnames(self, privatedata, sharedata, graph, columnnames, dataaxisnames):
         usecolumns = []
         privatedata.rangeposcolumns = []
         sharedata.vrangemissing = []
@@ -233,6 +238,7 @@ class range(_style):
                         addusecolumns = 0
                     if addusecolumns:
                         usecolumns.append(columnname)
+                        dataaxisnames[columnname] = axisname
                 if mask & (self.mask_min | self.mask_max | self.mask_dmin | self.mask_dmax | self.mask_d):
                     if (self._numberofbits(mask & (self.mask_min | self.mask_dmin | self.mask_d)) > 1 or
                         self._numberofbits(mask & (self.mask_max | self.mask_dmax | self.mask_d)) > 1):
@@ -385,7 +391,7 @@ class _styleneedingpointpos(_style):
 
     needsdata = ["vposmissing"]
 
-    def columnnames(self, privatedata, sharedata, graph, columnnames):
+    def columnnames(self, privatedata, sharedata, graph, columnnames, dataaxisnames):
         if len(sharedata.vposmissing):
             raise ValueError("incomplete position information")
         return []
@@ -711,7 +717,7 @@ class errorbar(_style):
         self.errorbarattrs = errorbarattrs
         self.epsilon = epsilon
 
-    def columnnames(self, privatedata, sharedata, graph, columnnames):
+    def columnnames(self, privatedata, sharedata, graph, columnnames, dataaxisnames):
         for i in sharedata.vposmissing:
             if i in sharedata.vrangeminmissing and i in sharedata.vrangemaxmissing:
                 raise ValueError("position and range for a graph dimension missing")
@@ -793,7 +799,7 @@ class text(_styleneedingpointpos):
         self.textdy = textdy
         self.textattrs = textattrs
 
-    def columnnames(self, privatedata, sharedata, graph, columnnames):
+    def columnnames(self, privatedata, sharedata, graph, columnnames, dataaxisnames):
         if self.textname not in columnnames:
             raise ValueError("column '%s' missing" % self.textname)
         names = [self.textname]
@@ -861,7 +867,7 @@ class arrow(_styleneedingpointpos):
         self.epsilon = epsilon
         self.decorator = decorator
 
-    def columnnames(self, privatedata, sharedata, graph, columnnames):
+    def columnnames(self, privatedata, sharedata, graph, columnnames, dataaxisnames):
         if len(graph.axesnames) != 2:
             raise ValueError("arrow style restricted on two-dimensional graphs")
         if "size" not in columnnames:
@@ -920,7 +926,7 @@ class rect(_style):
     def __init__(self, gradient=color.gradient.Grey):
         self.gradient = gradient
 
-    def columnnames(self, privatedata, sharedata, graph, columnnames):
+    def columnnames(self, privatedata, sharedata, graph, columnnames, dataaxisnames):
         if len(graph.axesnames) != 2:
             raise TypeError("arrow style restricted on two-dimensional graphs")
         if "color" not in columnnames:
@@ -979,7 +985,7 @@ class histogram(_style):
         self.autohistogrampointpos = autohistogrampointpos
         self.epsilon = epsilon
 
-    def columnnames(self, privatedata, sharedata, graph, columnnames):
+    def columnnames(self, privatedata, sharedata, graph, columnnames, dataaxisnames):
         if len(graph.axesnames) != 2:
             raise TypeError("histogram style restricted on two-dimensional graphs")
         privatedata.rangeaxisindex = None
@@ -1315,7 +1321,7 @@ class barpos(_style):
         self.frompathattrs = frompathattrs
         self.epsilon = epsilon
 
-    def columnnames(self, privatedata, sharedata, graph, columnnames):
+    def columnnames(self, privatedata, sharedata, graph, columnnames, dataaxisnames):
         sharedata.barposcolumnnames = []
         sharedata.barvalueindex = None
         for dimension, axisnames in enumerate(graph.axesnames):
@@ -1422,7 +1428,7 @@ class stackedbarpos(_style):
         self.epsilon = epsilon
         self.addontop = addontop
 
-    def columnnames(self, privatedata, sharedata, graph, columnnames):
+    def columnnames(self, privatedata, sharedata, graph, columnnames, dataaxisnames):
         if self.stackname not in columnnames:
             raise ValueError("column '%s' missing" % self.stackname)
         return [self.stackname]
@@ -1474,7 +1480,7 @@ class bar(_style):
     def lighting(self, angle, zindex):
         return self.gradient.getcolor(0.7-0.4*abs(angle)+0.1*zindex)
 
-    def columnnames(self, privatedata, sharedata, graph, columnnames):
+    def columnnames(self, privatedata, sharedata, graph, columnnames, dataaxisnames):
         return []
 
     def selectstyle(self, privatedata, sharedata, graph, selectindex, selecttotal):
@@ -1727,7 +1733,7 @@ class surface(_style):
             return self.backcolor
         return self.gradient.getcolor(0.7-0.4*abs(angle)+0.1*zindex)
 
-    def columnnames(self, privatedata, sharedata, graph, columnnames):
+    def columnnames(self, privatedata, sharedata, graph, columnnames, dataaxisnames):
         privatedata.colorize = self.colorname in columnnames
         if privatedata.colorize:
             return [self.colorname]
@@ -1932,7 +1938,7 @@ class density(_style):
         self.epsilon = epsilon
         self.key = key
 
-    def columnnames(self, privatedata, sharedata, graph, columnnames):
+    def columnnames(self, privatedata, sharedata, graph, columnnames, dataaxisnames):
         return [self.colorname]
 
     def adjustaxis(self, privatedata, sharedata, graph, columnname, data):
@@ -2087,7 +2093,7 @@ class gradient(_style):
         self.resolution = resolution
         self.columnname = columnname
 
-    def columnnames(self, privatedata, sharedata, graph, columnnames):
+    def columnnames(self, privatedata, sharedata, graph, columnnames, dataaxisnames):
         return [self.columnname]
 
     def adjustaxis(self, privatedata, sharedata, graph, columnname, data):
