@@ -670,7 +670,7 @@ class graphx(graphxy):
 
 
 
-class graphxyz(graphxy):
+class graphxyz(graph):
 
     class central:
 
@@ -750,7 +750,7 @@ class graphxyz(graphxy):
 
     def __init__(self, xpos=0, ypos=0, size=None,
                  xscale=1, yscale=1, zscale=1/goldenmean,
-                 projector=central(10, -30, 30), key=None,
+                 projector=central(10, -30, 30), axesdist=0.8*unit.v_cm, key=None,
                  **axes):
         graph.__init__(self)
 
@@ -764,6 +764,7 @@ class graphxyz(graphxy):
         self.yscale = yscale
         self.zscale = zscale
         self.projector = projector
+        self.axesdist_pt = unit.topt(axesdist)
         self.key = key
 
         self.xorder = projector.zindex(0, -1, 0) > projector.zindex(0, 1, 0) and 1 or 0
@@ -952,6 +953,15 @@ class graphxyz(graphxy):
                          path.lineto_pt(*self.vpos_pt(1, 1, vz)),
                          path.lineto_pt(*self.vpos_pt(0, 1, vz)),
                          path.closepath())
+
+    def autokeygraphattrs(self):
+        return dict(direction="vertical", length=self.size)
+
+    def autokeygraphtrafo(self, keygraph):
+        self.doaxes()
+        x_pt = self.layer("axes").bbox().right_pt() + self.axesdist_pt
+        y_pt = 0.5*(self.layer("axes").bbox().top_pt() + self.layer("axes").bbox().bottom_pt() - self.size_pt)
+        return trafo.translate_pt(x_pt, y_pt)
 
     def doaxispositioner(self, axisname):
         if self.did(self.doaxispositioner, axisname):

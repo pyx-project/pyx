@@ -112,6 +112,58 @@ class _style:
 
     def key_pt(self, privatedata, sharedata, graph, x_pt, y_pt, width_pt, height_pt):
         """Draw graph key"""
+        pass
+
+
+class _autokeygraph: pass
+class _copyfromdata: pass
+class _grabfromdata: pass
+
+
+class _keygraphstyle(_style):
+
+    autographkey = _autokeygraph
+    copyfromdata = _copyfromdata
+    grabfromdata = _grabfromdata
+
+    def __init__(self, colorname="color", gradient=color.gradient.Grey, coloraxis=axis.lin(title=_grabfromdata), keygraph=_autokeygraph):
+        self.colorname = colorname
+        self.gradient = gradient
+        self.coloraxis = coloraxis
+        self.keygraph = keygraph
+
+    def columnnames(self, privatedata, sharedata, graph, columnnames, dataaxisnames):
+        return [self.colorname]
+
+    def adjustaxis(self, privatedata, sharedata, graph, plotitem, columnname, data):
+        if columnname == self.colorname:
+            if self.keygraph is None:
+                # we always need a keygraph, but we might not show it
+                privatedata.keygraph = graphx(length=10, direction="vertical", x=self.coloraxis)
+            elif self.keygraph is _autokeygraph:
+                if self.coloraxis.title is _grabfromdata:
+                    plotitem.title, self.coloraxis.title = None, plotitem.title
+                elif self.coloraxis.title is _copyfromdata:
+                    self.coloraxis.title = plotitem.title
+                privatedata.keygraph = graphx(x=self.coloraxis, **graph.autokeygraphattrs())
+            else:
+                privatedata.keygraph = self.keygraph
+            # TODO: we shouldn't have multiple plotitems
+            privatedata.keygraph.plot(datamodule.values(x=data), [gradient(gradient=self.gradient)])
+
+    def color(self, privatedata, c):
+        vc = privatedata.keygraph.axes["x"].convert(c)
+        if vc < 0:
+            warnings.warn("gradiend color range is exceeded (lower bound)")
+            vc = 0
+        if vc > 1:
+            warnings.warn("gradiend color range is exceeded (upper bound)")
+            vc = 1
+        return self.gradient.getcolor(vc)
+
+    def donedrawpoints(self, privatedata, sharedata, graph):
+        if self.keygraph is _autokeygraph:
+            graph.layer("key").insert(privatedata.keygraph, [graph.autokeygraphtrafo(privatedata.keygraph)])
 
 
 class pos(_style):
@@ -919,21 +971,16 @@ class arrow(_styleneedingpointpos):
         raise RuntimeError("Style currently doesn't provide a graph key")
 
 
-class rect(_style):
+class rect(_keygraphstyle):
 
     needsdata = ["vrange", "vrangeminmissing", "vrangemaxmissing"]
 
-    def __init__(self, gradient=color.gradient.Grey):
-        self.gradient = gradient
-
     def columnnames(self, privatedata, sharedata, graph, columnnames, dataaxisnames):
         if len(graph.axesnames) != 2:
-            raise TypeError("arrow style restricted on two-dimensional graphs")
-        if "color" not in columnnames:
-            raise ValueError("color missing")
+            raise TypeError("rect style restricted on two-dimensional graphs")
         if len(sharedata.vrangeminmissing) + len(sharedata.vrangemaxmissing):
             raise ValueError("incomplete range")
-        return ["color"]
+        return _keygraphstyle.columnnames(self, privatedata, sharedata, graph, columnnames, dataaxisnames)
 
     def initdrawpoints(self, privatedata, sharedata, graph):
         privatedata.rectcanvas = graph.layer("filldata").insert(canvas.canvas())
@@ -960,10 +1007,7 @@ class rect(_style):
             p.append(graph.vgeodesic_el(xvmax, yvmax, xvmin, yvmax))
             p.append(graph.vgeodesic_el(xvmin, yvmax, xvmin, yvmin))
             p.append(path.closepath())
-            privatedata.rectcanvas.fill(p, [self.gradient.getcolor(point["color"])])
-
-    def key_pt(self, privatedata, sharedata, graph, x_pt, y_pt, width_pt, height_pt):
-        raise RuntimeError("Style currently doesn't provide a graph key")
+            privatedata.rectcanvas.fill(p, [self.color(privatedata, point["color"])])
 
 
 class histogram(_style):
@@ -1700,23 +1744,19 @@ class grid(_line, _style):
                     graph.layer("data").stroke(p, privatedata.gridattrs)
 
 
-class surface(_style):
+class surface(_keygraphstyle):
 
     needsdata = ["values1", "values2", "data12", "data21"]
 
-    def __init__(self, colorname="color", gradient=color.gradient.Grey, mincolor=None, maxcolor=None,
-                       gridlines1=0.05, gridlines2=0.05, gridcolor=None,
-                       backcolor=color.gray.black):
-        self.colorname = colorname
-        self.gradient = gradient
-        self.mincolor = mincolor
-        self.maxcolor = maxcolor
+    def __init__(self, gridlines1=0.05, gridlines2=0.05, gridcolor=None,
+                       backcolor=color.gray.black, **kwargs):
+        _keygraphstyle.__init__(self, **kwargs)
         self.gridlines1 = gridlines1
         self.gridlines2 = gridlines2
         self.gridcolor = gridcolor
         self.backcolor = backcolor
 
-        colorspacestring = gradient.getcolor(0).colorspacestring()
+        colorspacestring = self.gradient.getcolor(0).colorspacestring()
         if self.gridcolor is not None and self.gridcolor.colorspacestring() != colorspacestring:
             raise RuntimeError("colorspace mismatch (gradient/grid)")
         if self.backcolor is not None and self.backcolor.colorspacestring() != colorspacestring:
@@ -1736,7 +1776,7 @@ class surface(_style):
     def columnnames(self, privatedata, sharedata, graph, columnnames, dataaxisnames):
         privatedata.colorize = self.colorname in columnnames
         if privatedata.colorize:
-            return [self.colorname]
+            return _keygraphstyle.columnnames(self, privatedata, sharedata, graph, columnnames, dataaxisnames)
         return []
 
     def initdrawpoints(self, privatedata, sharedata, graph):
@@ -1798,11 +1838,6 @@ class surface(_style):
         sortElements = [(zindex, i) for i, zindex in enumerate(sortElements)]
         sortElements.sort()
 
-        mincolor, maxcolor = privatedata.mincolor, privatedata.maxcolor
-        if self.mincolor is not None:
-            mincolor = self.mincolor
-        if self.maxcolor is not None:
-            maxcolor = self.maxcolor
         nodes = []
         elements = []
         for value1a, value1b in zip(values1[:-1], values1[1:]):
@@ -1840,25 +1875,16 @@ class surface(_style):
                 x4_pt, y4_pt = graph.vpos_pt(*v4)
                 x5_pt, y5_pt = graph.vpos_pt(*v5)
                 if privatedata.colorize:
-                    def colorfromgradient(c):
-                        vc = (c - mincolor) / float(maxcolor - mincolor)
-                        if vc < 0:
-                            warnings.warn("gradiend color range is exceeded due to mincolor setting")
-                            vc = 0
-                        if vc > 1:
-                            warnings.warn("gradiend color range is exceeded due to maxcolor setting")
-                            vc = 1
-                        return self.gradient.getcolor(vc)
                     c1 = privatedata.colors[value1a][value2a]
                     c2 = privatedata.colors[value1a][value2b]
                     c3 = privatedata.colors[value1b][value2a]
                     c4 = privatedata.colors[value1b][value2b]
                     c5 = self.midcolor(c1, c2, c3, c4)
-                    c1a = c1b = colorfromgradient(c1)
-                    c2a = c2c = colorfromgradient(c2)
-                    c3b = c3d = colorfromgradient(c3)
-                    c4c = c4d = colorfromgradient(c4)
-                    c5a = c5b = c5c = c5d = colorfromgradient(c5)
+                    c1a = c1b = self.color(privatedata, c1)
+                    c2a = c2c = self.color(privatedata, c2)
+                    c3b = c3d = self.color(privatedata, c3)
+                    c4c = c4d = self.color(privatedata, c4)
+                    c5a = c5b = c5c = c5d = self.color(privatedata, c5)
                     if self.backcolor is not None and sign*graph.vangle(*(v1+v2+v5)) < 0:
                         c1a = c2a = c5a = self.backcolor
                     if self.backcolor is not None and sign*graph.vangle(*(v3+v1+v5)) < 0:
@@ -1921,45 +1947,17 @@ class surface(_style):
         m = mesh.mesh(elements, check=0)
         graph.layer("filldata").insert(m)
 
+        if privatedata.colorize:
+            _keygraphstyle.donedrawpoints(self, privatedata, sharedata, graph)
 
-class _autokeygraph: pass
-class _copyfromdata: pass
-class _grabfromdata: pass
 
-class density(_style):
-
-    autographkey = _autokeygraph
-    copyfromdata = _copyfromdata
-    grabfromdata = _grabfromdata
+class density(_keygraphstyle):
 
     needsdata = ["values1", "values2", "data12", "data21"]
 
-    def __init__(self, colorname="color", gradient=color.gradient.Grey, coloraxis=axis.lin(title=_grabfromdata), epsilon=1e-10, keygraph=_autokeygraph):
-        self.colorname = colorname
-        self.gradient = gradient
-        self.coloraxis = coloraxis
+    def __init__(self, epsilon=1e-10, **kwargs):
+        _keygraphstyle.__init__(self, **kwargs)
         self.epsilon = epsilon
-        self.keygraph = keygraph
-
-    def columnnames(self, privatedata, sharedata, graph, columnnames, dataaxisnames):
-        return [self.colorname]
-
-    def adjustaxis(self, privatedata, sharedata, graph, plotitem, columnname, data):
-        if columnname == self.colorname:
-            if self.keygraph is None:
-                # we always need a keygraph, but we might not show it
-                privatedata.keygraph = graphx(length=10, direction="vertical", x=self.coloraxis)
-            elif self.keygraph is _autokeygraph:
-                # TODO: auto positioning for 3d graphs
-                if self.coloraxis.title is _grabfromdata:
-                    plotitem.title, self.coloraxis.title = None, plotitem.title
-                elif self.coloraxis.title is _copyfromdata:
-                    self.coloraxis.title = plotitem.title
-                privatedata.keygraph = graphx(x=self.coloraxis, **graph.autokeygraphattrs())
-            else:
-                privatedata.keygraph = self.keygraph
-            # TODO: we shouldn't have multiple plotitems
-            privatedata.keygraph.plot(datamodule.values(x=data), [gradient(gradient=self.gradient)])
 
     def initdrawpoints(self, privatedata, sharedata, graph):
         privatedata.colors = {}
@@ -2027,7 +2025,7 @@ class density(_style):
                     data.write(empty)
                     continue
                 c = privatedata.colors[value1][value2]
-                c = self.gradient.getcolor(privatedata.keygraph.axes["x"].convert(c))
+                c = self.color(privatedata, c)
                 if needalpha:
                     data.write(chr(255))
                 data.write(c.to8bitstring())
@@ -2085,8 +2083,7 @@ class density(_style):
         c.insert(b)
         graph.layer("filldata").insert(c)
 
-        if self.keygraph is _autokeygraph:
-            graph.layer("key").insert(privatedata.keygraph, [graph.autokeygraphtrafo(privatedata.keygraph)])
+        _keygraphstyle.donedrawpoints(self, privatedata, sharedata, graph)
 
 
 
@@ -2139,6 +2136,3 @@ class gradient(_style):
         b = bitmap.bitmap_trafo(t, i)
         c.insert(b)
         graph.layer("filldata").insert(c)
-
-    def key_pt(self, privatedata, sharedata, graph, x_pt, y_pt, width_pt, height_pt):
-        pass
