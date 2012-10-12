@@ -4,7 +4,7 @@
 
   <div metal:fill-slot="body">
 
-    <h1>PyX - Python graphics package</h1>
+    <h1>PyX &mdash; Python graphics package</h1>
 
     <div class="image">
       <img src="example.png" alt="3d plot example" width=374 height=129>
