@@ -22,39 +22,37 @@
 
 import types
 
-scale = { 't':1, 'u':1, 'v':1, 'w':1, 'x':1 }
+scale = dict(u=1, v=1, w=1, x=1)
 
 _default_unit = "cm"
 
-_m = { 
-      'm' :   1,
-      'cm':   0.01,
-      'mm':   0.001,
-      'inch': 0.01*2.54,
-      'pt':   0.01*2.54/72,
+_m = {
+      "m":   1,
+      "cm":   0.01,
+      "mm":   0.001,
+      "inch": 0.01*2.54,
+      "pt":   0.01*2.54/72,
     }
 
 def set(uscale=None, vscale=None, wscale=None, xscale=None, defaultunit=None):
     if uscale is not None:
-        scale['u'] = uscale
+        scale["u"] = uscale
     if vscale is not None:
-        scale['v'] = vscale
+        scale["v"] = vscale
     if wscale is not None:
-        scale['w'] = wscale
+        scale["w"] = wscale
     if xscale is not None:
-        scale['x'] = xscale
+        scale["x"] = xscale
     if defaultunit is not None:
         global _default_unit
         _default_unit = defaultunit
 
 
 def _convert_to(l, dest_unit="m"):
-    if type(l) in (types.IntType, types.LongType, types.FloatType):
-        return l * _m[_default_unit] * scale['u'] / _m[dest_unit]
-    elif not isinstance(l, length): 
-        l = length(l)       # convert to length instance if necessary
-
-    return (l.t + l.u*scale['u'] + l.v*scale['v'] + l.w*scale['w'] + l.x*scale['x']) / _m[dest_unit]
+    if isinstance(l, length): 
+       return (l.t + l.u*scale["u"] + l.v*scale["v"] + l.w*scale["w"] + l.x*scale["x"]) / _m[dest_unit]
+    else:
+        return l * _m[_default_unit] * scale["u"] / _m[dest_unit]
 
 def tom(l):
     return _convert_to(l, "m")
