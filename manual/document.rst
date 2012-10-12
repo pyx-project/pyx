@@ -44,29 +44,31 @@ A :class:`document` can be written to a file using one of the following methods:
 
 .. method:: document.writeEPSfile(file, title=None, strip_fonts=True, text_as_path=False, mesh_as_bitmap=False, mesh_as_bitmap_resolution=300)
 
-   Write a single page :class:`document` to an EPS file. *title* is used as the
-   document title, *strip_fonts* enabled font stripping (removal of unused glyphs),
-   *text_as_path* converts all text to paths instead of using fonts in the output,
-   *mesh_as_bitmap* converts meshs (like 3d surface plots) to bitmaps (to reduce
-   complexity in the output) and *mesh_as_bitmap_resolution* is the resolution of
-   this conversion in dots per inch.
+   Write a single page :class:`document` to an EPS file or to stdout if *file* is
+   set to *-*. *title* is used as the document title, *strip_fonts* enabled
+   font stripping (removal of unused glyphs), *text_as_path* converts all text
+   to paths instead of using fonts in the output, *mesh_as_bitmap* converts
+   meshs (like 3d surface plots) to bitmaps (to reduce complexity in the
+   output) and *mesh_as_bitmap_resolution* is the resolution of this conversion
+   in dots per inch.
 
 
 .. method:: document.writePSfile(file, writebbox=False, title=None, strip_fonts=True, text_as_path=False, mesh_as_bitmap=False, mesh_as_bitmap_resolution=300)
 
-   Write :class:`document` to a PS file. *writebbox* add the page bounding boxes to
-   the output. All other parameters are identical to the :meth:`writeEPSfile`
-   method.
+   Write :class:`document` to a PS file or to to stdout if *file* is set to
+   *-*. *writebbox* add the page bounding boxes to the output. All other
+   parameters are identical to the :meth:`writeEPSfile` method.
 
 
 .. method:: document.writePDFfile(file, title=None, author=None, subject=None, keywords=None, fullscreen=False, writebbox=False, compress=True, compresslevel=6, strip_fonts=True, text_as_path=False, mesh_as_bitmap=False, mesh_as_bitmap_resolution=300)
 
-   Write :class:`document` to a PDF file. *author*, *subject*, and *keywords* are
-   used for the document author, subject, and keyword information, respectively.
-   *fullscreen* enabled fullscreen mode when the document is opened, *writebbox*
-   enables writing of the crop box to each page, *compress* enables output stream
-   compression and *compresslevel* sets the compress level to be used (from 1 to
-   9). All other parameters are identical to the :meth:`writeEPSfile`.
+   Write :class:`document` to a PDF file or to stdout if *file* is set to *-*.
+   *author*, *subject*, and *keywords* are used for the document author,
+   subject, and keyword information, respectively. *fullscreen* enabled
+   fullscreen mode when the document is opened, *writebbox* enables writing of
+   the crop box to each page, *compress* enables output stream compression and
+   *compresslevel* sets the compress level to be used (from 1 to 9). All other
+   parameters are identical to the :meth:`writeEPSfile`.
 
 
 .. method:: document.writetofile(filename, *args, **kwargs)
