@@ -112,18 +112,26 @@ class plotitem:
     def draw(self, graph):
         for privatedata, style in zip(self.privatedatalist, self.styles):
             style.initdrawpoints(privatedata, self.sharedata, graph)
-        point = {}
-        useitems = []
-        for columnname in self.usedcolumnnames:
-            try:
-                useitems.append((columnname, self.dynamiccolumns[columnname]))
-            except KeyError:
-                useitems.append((columnname, self.data.columns[columnname]))
-        if not useitems:
-            raise ValueError("cannot draw empty data")
-        for i in xrange(len(useitems[0][1])):
-            for columnname, data in useitems:
-                point[columnname] = data[i]
+
+        point = dict([(columnname, None) for columnname in self.usedcolumnnames])
+        # fill point with (static) column data first
+        columns = self.data.columns.keys()
+        for values in zip(*self.data.columns.values()):
+            for column, value in zip(columns, values):
+                point[column] = value
+            for privatedata, style in zip(self.privatedatalist, self.styles):
+                style.drawpoint(privatedata, self.sharedata, graph, point)
+
+        point = dict([(columnname, None) for columnname in self.usedcolumnnames])
+        # insert an empty point
+        if self.data.columns and self.dynamiccolumns:
+            for privatedata, style in zip(self.privatedatalist, self.styles):
+                style.drawpoint(privatedata, self.sharedata, graph, point)
+        # fill point with dynamic column data
+        columns = self.dynamiccolumns.keys()
+        for values in zip(*self.dynamiccolumns.values()):
+            for key, value in zip(columns, values):
+                point[key] = value
             for privatedata, style in zip(self.privatedatalist, self.styles):
                 style.drawpoint(privatedata, self.sharedata, graph, point)
         for privatedata, style in zip(self.privatedatalist, self.styles):
