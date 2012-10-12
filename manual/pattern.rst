@@ -8,7 +8,7 @@ Module :mod:`pattern`
 .. sectionauthor:: Jörg Lehmann <joergl@users.sourceforge.net>
 
 
-This module contains the :class:`pattern` class, whichs allows the definition of
+This module contains the :class:`pattern.pattern` class, whichs allows the definition of
 PostScript Tiling patterns (cf. Sect. 4.9 of the PostScript Language Reference
 Manual) which may then be used to fill paths. In addition, a number of
 predefined hatch patterns are included.
@@ -17,7 +17,7 @@ predefined hatch patterns are included.
 Class :class:`pattern`
 ======================
 
-The classes :class:`pattern` and :class:`canvas` differ only in their
+The classes :class:`pattern.pattern` and :class:`canvas.canvas` differ only in their
 constructor and in the absence of a :meth:`writeEPSfile` method in the former.
 The :class:`pattern` constructor accepts the following keyword arguments:
 
