@@ -54,7 +54,13 @@ Color gradients
 ===============
 
 The color module provides a class :class:`gradient` for continous transitions between
-colors. A list of named gradients is available in appendix :ref:`gradientname`.
+colors. A list of named gradients is available in appendix :ref:`gradientname`. 
+
+Note that all predefined non-gray gradients are defined in the RGB color space,
+except for `gradient.Rainbow`, `gradient.ReverseRainbow`, `gradient.Hue`, and
+`gradient.ReverseHue`, which are naturally defined in the HSB color space. Converted
+RGB and CMYK versions of these latter gradients are also defined under the names
+`rgbgradient.Rainbow` and `cmykgradient.Rainbow`, etc.
 
 
 .. class:: gradient(min=0, max=1)
@@ -96,6 +102,19 @@ colors. A list of named gradients is available in appendix :ref:`gradientname`.
    *functions* is a dictionary that maps the color components onto given functions.
    E.g. for ``type="rgb"`` this dictionary must have the keys ``"r"``, ``"g"``, and
    ``"b"``.
+
+.. class:: class rgbgradient(gradient)
+
+   This class takes an arbitrary gradient and converts it into one in the RGB color model.
+   This is useful for instance in bitmap output, where only certain color models
+   are supported in Postscript/PDF.
+
+.. class:: class cmykgradient(gradient)
+
+   This class takes an arbitrary gradient and converts it into one in the CMYK color mode.
+   This is useful for instance in bitmap output, where only certain color models
+   are supported in Postscript/PDF.
+
 
 
 Transparency

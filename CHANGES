@@ -151,7 +151,7 @@ TODO:
       (TODO: documentation)
     - add ASCIIHexDecode end marker
   - color module:
-    - add rgbgradient and cmykgradient to force color space (TODO: documentation)
+    - add rgbgradient and cmykgradient to force color space
   - mesh module:
     - add ASCIIHexDecode end marker
 
