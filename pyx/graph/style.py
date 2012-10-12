@@ -74,7 +74,7 @@ class _style:
         name."""
         return []
 
-    def adjustaxis(self, privatedata, sharedata, graph, columnname, data):
+    def adjustaxis(self, privatedata, sharedata, graph, plotitem, columnname, data):
         """Adjust axis range
 
         This method is called in order to adjust the axis range to
@@ -151,7 +151,7 @@ class pos(_style):
         dataaxisnames.update(privatedata.axisnames)
         return [columnname for columnname in privatedata.poscolumnnames if columnname is not None]
 
-    def adjustaxis(self, privatedata, sharedata, graph, columnname, data):
+    def adjustaxis(self, privatedata, sharedata, graph, plotitem, columnname, data):
         if columnname in privatedata.axisnames:
             graph.axes[privatedata.axisnames[columnname]].adjustaxis(data)
 
@@ -263,7 +263,7 @@ class range(_style):
                     sharedata.vrangemaxmissing.append(count)
         return usecolumns
 
-    def adjustaxis(self, privatedata, sharedata, graph, columnname, data):
+    def adjustaxis(self, privatedata, sharedata, graph, plotitem, columnname, data):
         for axisname, usename, mask in privatedata.rangeposcolumns:
             if columnname == usename + "min" and mask & self.mask_min:
                 graph.axes[axisname].adjustaxis(data)
@@ -664,7 +664,7 @@ class impulses(_styleneedingpointpos):
         else:
             privatedata.lineattrs = None
 
-    def adjustaxis(self, privatedata, sharedata, graph, columnname, data):
+    def adjustaxis(self, privatedata, sharedata, graph, plotitem, columnname, data):
         if self.fromvalue is not None:
             try:
                 i = sharedata.poscolumnnames.index(columnname)
@@ -1004,7 +1004,7 @@ class histogram(_style):
             privatedata.autohistogram = 0
         return []
 
-    def adjustaxis(self, privatedata, sharedata, graph, columnname, data):
+    def adjustaxis(self, privatedata, sharedata, graph, plotitem, columnname, data):
         if privatedata.autohistogram and columnname == sharedata.poscolumnnames[privatedata.rangeaxisindex]:
             if len(data) == 1:
                 raise ValueError("several data points needed for automatic histogram width calculation")
@@ -1356,7 +1356,7 @@ class barpos(_style):
         else:
             return value, subvalue
 
-    def adjustaxis(self, privatedata, sharedata, graph, columnname, data):
+    def adjustaxis(self, privatedata, sharedata, graph, plotitem, columnname, data):
         try:
             i = sharedata.barposcolumnnames.index(columnname)
         except ValueError:
@@ -1433,7 +1433,7 @@ class stackedbarpos(_style):
             raise ValueError("column '%s' missing" % self.stackname)
         return [self.stackname]
 
-    def adjustaxis(self, privatedata, sharedata, graph, columnname, data):
+    def adjustaxis(self, privatedata, sharedata, graph, plotitem, columnname, data):
         if columnname == self.stackname:
             graph.axes[sharedata.barposcolumnnames[sharedata.barvalueindex]].adjustaxis(data)
 
@@ -1922,36 +1922,42 @@ class surface(_style):
         graph.layer("filldata").insert(m)
 
 
-class _autokeygraph:
-
-    pass
-
+class _autokeygraph: pass
+class _copyfromdata: pass
+class _grabfromdata: pass
 
 class density(_style):
 
+    autographkey = _autokeygraph
+    copyfromdata = _copyfromdata
+    grabfromdata = _grabfromdata
+
     needsdata = ["values1", "values2", "data12", "data21"]
 
-    def __init__(self, colorname="color", gradient=color.gradient.Grey, coloraxis=axis.lin(), epsilon=1e-10, key=_autokeygraph):
+    def __init__(self, colorname="color", gradient=color.gradient.Grey, coloraxis=axis.lin(title=_grabfromdata), epsilon=1e-10, keygraph=_autokeygraph):
         self.colorname = colorname
         self.gradient = gradient
         self.coloraxis = coloraxis
         self.epsilon = epsilon
-        self.key = key
+        self.keygraph = keygraph
 
     def columnnames(self, privatedata, sharedata, graph, columnnames, dataaxisnames):
         return [self.colorname]
 
-    def adjustaxis(self, privatedata, sharedata, graph, columnname, data):
+    def adjustaxis(self, privatedata, sharedata, graph, plotitem, columnname, data):
         if columnname == self.colorname:
-            if self.key is None:
+            if self.keygraph is None:
                 # we always need a keygraph, but we might not show it
-                privatedata.keygraph = graphx(0, 0, length=10, direction="vertical", x=self.coloraxis)
-            elif self.key is _autokeygraph:
-                # TODO: take axes into account
+                privatedata.keygraph = graphx(length=10, direction="vertical", x=self.coloraxis)
+            elif self.keygraph is _autokeygraph:
                 # TODO: auto positioning for 3d graphs
-                privatedata.keygraph = graphx(graph.xpos + graph.width + 1, graph.ypos, length=graph.height, direction="vertical", x=self.coloraxis)
+                if self.coloraxis.title is _grabfromdata:
+                    plotitem.title, self.coloraxis.title = None, plotitem.title
+                elif self.coloraxis.title is _copyfromdata:
+                    self.coloraxis.title = plotitem.title
+                privatedata.keygraph = graphx(x=self.coloraxis, **graph.autokeygraphattrs())
             else:
-                privatedata.keygraph = keygraph
+                privatedata.keygraph = self.keygraph
             # TODO: we shouldn't have multiple plotitems
             privatedata.keygraph.plot(datamodule.values(x=data), [gradient(gradient=self.gradient)])
 
@@ -2079,8 +2085,8 @@ class density(_style):
         c.insert(b)
         graph.layer("filldata").insert(c)
 
-        if self.key is not None:
-            graph.layer("key").insert(privatedata.keygraph)
+        if self.keygraph is _autokeygraph:
+            graph.layer("key").insert(privatedata.keygraph, [graph.autokeygraphtrafo(privatedata.keygraph)])
 
 
 
@@ -2096,7 +2102,7 @@ class gradient(_style):
     def columnnames(self, privatedata, sharedata, graph, columnnames, dataaxisnames):
         return [self.columnname]
 
-    def adjustaxis(self, privatedata, sharedata, graph, columnname, data):
+    def adjustaxis(self, privatedata, sharedata, graph, plotitem, columnname, data):
         graph.axes[self.columnname].adjustaxis(data)
 
     def selectstyle(self, privatedata, sharedata, graph, selectindex, selecttotal):

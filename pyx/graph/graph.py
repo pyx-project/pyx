@@ -99,7 +99,7 @@ class plotitem:
     def adjustaxesstatic(self, graph):
         for columnname, data in self.data.columns.items():
             for privatedata, style in zip(self.privatedatalist, self.styles):
-                style.adjustaxis(privatedata, self.sharedata, graph, columnname, data)
+                style.adjustaxis(privatedata, self.sharedata, graph, self, columnname, data)
 
     def makedynamicdata(self, graph):
         self.dynamiccolumns = self.data.dynamiccolumns(graph, self.dataaxisnames)
@@ -107,7 +107,7 @@ class plotitem:
     def adjustaxesdynamic(self, graph):
         for columnname, data in self.dynamiccolumns.items():
             for privatedata, style in zip(self.privatedatalist, self.styles):
-                style.adjustaxis(privatedata, self.sharedata, graph, columnname, data)
+                style.adjustaxis(privatedata, self.sharedata, graph, self, columnname, data)
 
     def draw(self, graph):
         for privatedata, style in zip(self.privatedatalist, self.styles):
@@ -498,6 +498,33 @@ class graphxy(graph):
     def yvgridpath(self, vy):
         return path.line_pt(self.xpos_pt, self.ypos_pt + vy*self.height_pt,
                             self.xpos_pt + self.width_pt, self.ypos_pt + vy*self.height_pt)
+
+    def autokeygraphattrs(self):
+        return dict(direction="vertical", length=self.height)
+
+    def autokeygraphtrafo(self, keygraph):
+        dependsonaxisnumber = None
+        if self.flipped:
+            dependsonaxisname = "x"
+        else:
+            dependsonaxisname = "y"
+        for axisname in self.axes:
+            if axisname[0] == dependsonaxisname:
+                if len(axisname) == 1:
+                    axisname += "1"
+                axisnumber = int(axisname[1:])
+                if not (axisnumber % 2) and not self.flipped or (axisnumber % 2) and self.flipped:
+                    if dependsonaxisnumber is None or dependsonaxisnumber < axisnumber:
+                        dependsonaxisnumber = axisnumber
+        if dependsonaxisnumber is None:
+            x_pt = self.xpos_pt + self.width_pt
+        else:
+            if dependsonaxisnumber > 1:
+                dependsonaxisname += str(dependsonaxisnumber)
+            self.doaxiscreate(dependsonaxisname)
+            x_pt = self.axes[dependsonaxisname].positioner.x1_pt + self.axes[dependsonaxisname].canvas.extent_pt
+        x_pt += self.axesdist_pt
+        return trafo.translate_pt(x_pt, self.ypos_pt)
 
     def axisatv(self, axis, v):
         if axis.positioner.fixtickdirection[0]:
