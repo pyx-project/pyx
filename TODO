@@ -1,6 +1,4 @@
 Code:
-- style module:
-  - make dash length available
 - text module:
   - repair PDF generation with unincluded standard fonts (currently broken)
   - change DSC in PS fonts: Resource instead of Font (also in pswriter)
@@ -43,8 +41,6 @@ Code:
 - bitmap module:
   - ReusableStreamDecode?
   - proper ASCII85Decode/HexDecode switch
-- bbox module:
-  - rewrite height, etc. using properties
 - deformer module:
   - move helper path routines to some more generic place for paths?
 - pdffile module needed (similar to epsfile)
