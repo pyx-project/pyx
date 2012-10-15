@@ -22,7 +22,7 @@
     - allow Type1 font usage without TeX and without AFM font metric
     - add support for pfm font matrices
   - epsfile module:
-    - fix raise condition while generating bitmap for PDF inclusion
+    - fix race condition while generating bitmap for PDF inclusion
     - fix file opening for bbox reading when using filelocator (reported by
       Michael J Gruber)
   - filelocator module:
