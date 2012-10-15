@@ -4,7 +4,7 @@
 
   <div metal:fill-slot="body">
 
-    <h1>PyX &mdash; Python graphics package</h1>
+    <h1>PyX â€” Python graphics package</h1>
 
     <div class="image">
       <img src="example.png" alt="3d plot example" width=374 height=129>
@@ -55,9 +55,9 @@
 
     <p>
       PyX is written by
-      <a href="http://theorie5.physik.unibas.ch/lehmann/">Jörg Lehmann</a>,
+      <a href="http://theorie5.physik.unibas.ch/lehmann/">JÃ¶rg Lehmann</a>,
       <a href="http://www.pct.espci.fr/~michael/">Michael Schindler</a>, and
-      <a href="http://www.wobsta.de/">André Wobst</a>. PyX is free
+      <a href="http://www.wobsta.de/">AndrÃ© Wobst</a>. PyX is free
       software licensed under the GNU GPL Version&nbsp;2 or
       (at your option) any later version. Other licensing
       schemes might be available upon request. Refer to the

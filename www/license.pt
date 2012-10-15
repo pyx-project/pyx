@@ -4,7 +4,7 @@
 
   <div metal:fill-slot="body">
 
-    <h1>PyX - License</h1>
+    <h1>PyX — License</h1>
 
     <p> PyX is free software licensed under the GNU GPL Version&nbsp;2 or (at
     your option) any later version. However, since the copyright of the source

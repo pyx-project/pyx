@@ -4,7 +4,7 @@
 
   <div metal:fill-slot="body">
 
-    <h1>PyX - Documentation</h1>
+    <h1>PyX — Documentation</h1>
 
 
     <h2>Examples and gallery</h2>

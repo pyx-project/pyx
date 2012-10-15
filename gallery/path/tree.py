@@ -1,6 +1,6 @@
-# -*- coding: ISO-8859-1 -*-
+# -*- coding: utf-8 -*-
 # fractal tree
-# contributed by Gerhard Schmid and André Wobst
+# contributed by Gerhard Schmid and AndrÃ© Wobst
 
 from pyx import *
 

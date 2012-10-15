@@ -6,7 +6,7 @@ import Image
 
 # make zope 3.2.1 run:
 import zope.pagetemplate.pagetemplatefile as pagetemplatefile
-pagetemplatefile.DEFAULT_ENCODING = "latin1"
+pagetemplatefile.DEFAULT_ENCODING = "utf-8"
 
 sys.path[:0]=[".."]
 import pyx
@@ -139,7 +139,7 @@ class example:
             name = basename
         relname = os.path.join(basesrcdir, name)
         self.filename = "%s.py" % name
-        self.code = makehtml.fromPython(codecs.open("%s.py" % relname, encoding="iso-8859-1").read())
+        self.code = makehtml.fromPython(codecs.open("%s.py" % relname, encoding="utf-8").read())
         self.html = "%s.html" % basename
         self.png = "%s.png" % basename
         self.width, self.height = Image.open("%s.png" % relname).size
@@ -157,18 +157,10 @@ class example:
                                        "filesize": filesize,
                                        "iconname": "%s.png" % suffix})
         if os.path.exists("%s.txt" % relname):
-            self.title, self.shorttext, self.text = makehtml.fromText(codecs.open("%s.txt" % relname, encoding="iso-8859-1").read(), bend="<div class=\"examplebend\"><img src=\"../../bend.png\" width=22 height=31></div>\n")
+            self.title, self.shorttext, self.text = makehtml.fromText(codecs.open("%s.txt" % relname, encoding="utf-8").read(), bend="<div class=\"examplebend\"><img src=\"../../bend.png\" width=22 height=31></div>\n")
         else:
             self.title = basename
             self.shorttext = self.text = None
-
-
-class MyPageTemplateFile(PageTemplateFile):
-
-    def write(self, text):
-        if isinstance(text, str):
-            text = unicode(text, encoding="iso-8859-1")
-        return PageTemplateFile.write(self, text)
 
 
 def mkrellink(linkname, options):
@@ -186,7 +178,7 @@ def mkrellink(linkname, options):
         linkname = "../" + linkname
     return linkname
 
-maintemplate = MyPageTemplateFile("maintemplate.pt")
+maintemplate = PageTemplateFile("maintemplate.pt")
 
 latestnews = 2
 newsdom = xml.dom.minidom.parse("news.pt")
@@ -197,20 +189,20 @@ news = "".join(["%s%s" % (dt.toxml(), dd.toxml())
 for ptname in glob.glob("*.pt"):
     if ptname not in ["maintemplate.pt", "exampleindex.pt", "examples.pt", "example.pt"]:
         htmlname = "%s.html" % ptname[:-3]
-        template = MyPageTemplateFile(ptname)
+        template = PageTemplateFile(ptname)
         content = template(pagename=htmlname,
                            maintemplate=maintemplate,
                            subtype=None,
                            mkrellink=mkrellink,
                            version=pyx.__version__,
                            news=news)
-        codecs.open("build/%s" % htmlname, "w", encoding="iso-8859-1").write(content)
+        codecs.open("build/%s" % htmlname, "w", encoding="utf-8").write(content)
 
 
 def processexamples(basedir):
-    exampleindextemplate = MyPageTemplateFile("exampleindex.pt")
-    examplestemplate = MyPageTemplateFile("examples.pt")
-    exampletemplate = MyPageTemplateFile("example.pt")
+    exampleindextemplate = PageTemplateFile("exampleindex.pt")
+    examplestemplate = PageTemplateFile("examples.pt")
+    exampletemplate = PageTemplateFile("example.pt")
 
     exampledirs = [None]
     examplepages = []
@@ -266,7 +258,7 @@ def processexamples(basedir):
                            mkrellink=mkrellink,
                            prev=prev,
                            next=next)
-        codecs.open("build/%s" % htmlname, "w", encoding="iso-8859-1").write(content)
+        codecs.open("build/%s" % htmlname, "w", encoding="utf-8").write(content)
         prev = os.path.join(destdir, "index.html")
         if dir:
             for exampleindex, aexample in enumerate(examples):
@@ -287,7 +279,7 @@ def processexamples(basedir):
                                           mkrellink=mkrellink,
                                           prev=prev,
                                           next=next)
-                codecs.open("build/%s" % htmlname, "w", encoding="iso-8859-1").write(content)
+                codecs.open("build/%s" % htmlname, "w", encoding="utf-8").write(content)
                 prev = os.path.join(destdir, aexample.html)
 
 

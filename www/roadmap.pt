@@ -4,7 +4,7 @@
 
   <div metal:fill-slot="body">
 
-    <h1>PyX - Roadmap</h1>
+    <h1>PyX — Roadmap</h1>
 
     <p>
       The following table shows a list of planned enhancements to PyX. The

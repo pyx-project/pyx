@@ -17,7 +17,7 @@ the original path does.
 few path elements as possible. This is a striking feature of the parallel
 deformer, resulting in small EPS and PDF files, as well as in paths which can
 be processed further in PyX. In the example, the parallel curves for the curved
-right part of the original path consists of a single Bézier curve only.
+right part of the original path consists of a single BÃ©zier curve only.
 
 ! Note that the order of the deformer attributes is not arbitrary, since the
 deforming operations do not commute. If you want first to smooth and then get
