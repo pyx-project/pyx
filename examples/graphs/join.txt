@@ -6,14 +6,14 @@ a more detailed calculation, you can pass a list of datasets to the
 `graph.data.join` class.
 
 When doing so, you have to assign unique names to the corresponding datasets.
-In the example, we have used `x_anal` and `y_anal` as well as `x_sim` and
-`y_sim` as names. Subsequently, you have to tell the graph style which data
-columns---identified by the given name---it has to plot. This has to be done
+In the example, we have used ``x_a and ``y_a`` as well as ``x_b`` and
+``y_b`` as names. Subsequently, one has to tell the graph style which data
+columns---identified by the given name---it has to plot. This can be done
 by inserting `graph.style.pos` instances before the respective graph style. By
-means of passing a dictionary to the `usenames` argument, you specify the
-mapping from the data columns to the corresponding graph axes `x`, `y`, `x2`,
+passing a dictionary to the ``usenames`` argument, one specifies the
+mapping from the data columns to the corresponding graph axes ``x``, ``y``, ``x2``,
 and so on.
 
-! When using the standard names `x`, `y`, etc. for the data columns, as is done
+! When using the standard names ``x``, ``y``, etc. for the data columns, as is done
 in most cases, PyX does insert the `graph.style.pos` instance mapping those
 data columns to the axis with the same name, automatically.
