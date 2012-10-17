@@ -66,6 +66,8 @@
     - add rgbgradient and cmykgradient to force color space
   - mesh module:
     - add ASCIIHexDecode end marker
+  - sourceforge.net:
+    - upgrade PyX project page to the Allura platform
 
 0.11.1 (2011/05/20):
   - canvas:
