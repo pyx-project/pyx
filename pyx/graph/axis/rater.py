@@ -166,6 +166,8 @@ class rater:
         - within the rating, all ticks with a higher level are
           considered as ticks for a given level"""
         maxticklevel, maxlabellevel = tick.maxlevels(ticks)
+        if not maxticklevel and not maxlabellevel:
+            return None
         numticks = [0]*maxticklevel
         numlabels = [0]*maxlabellevel
         for t in ticks:

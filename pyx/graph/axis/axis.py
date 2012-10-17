@@ -183,20 +183,20 @@ class _regularaxis(_axis):
                 ticks = partfunction()
                 if ticks is None:
                     break
-                ticks = [t for t in tick.mergeticklists(self.manualticks, ticks, mergeequal=0)
-                         if t.ticklevel is not None or t.labellevel is not None]
+                ticks = tick.mergeticklists(self.manualticks, ticks, mergeequal=0)
                 if ticks:
                     rate = rater.rateticks(self, ticks, self.density)
-                    if self.reverse:
-                        rate += rater.raterange(self.convert(data, float(ticks[0])*divisor) -
-                                                self.convert(data, float(ticks[-1])*divisor), 1)
-                    else:
-                        rate += rater.raterange(self.convert(data, float(ticks[-1])*divisor) -
-                                                self.convert(data, float(ticks[0])*divisor), 1)
-                    if bestrate is None or rate < bestrate:
-                        bestrate = rate
-                        worse = 0
-                    variants.append(variant(data, rate=rate, ticks=ticks))
+                    if rate is not None:
+                        if self.reverse:
+                            rate += rater.raterange(self.convert(data, float(ticks[0])*divisor) -
+                                                    self.convert(data, float(ticks[-1])*divisor), 1)
+                        else:
+                            rate += rater.raterange(self.convert(data, float(ticks[-1])*divisor) -
+                                                    self.convert(data, float(ticks[0])*divisor), 1)
+                        if bestrate is None or rate < bestrate:
+                            bestrate = rate
+                            worse = 0
+                        variants.append(variant(data, rate=rate, ticks=ticks))
 
         if not variants:
             raise RuntimeError("no axis partitioning found%s" % errorname)
