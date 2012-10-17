@@ -67,13 +67,28 @@ Text output on the canvas is possible using
    Inserts *text* at position (*x*, *y*) into the canvas applying *attrs*. This is
    a shortcut for ``insert(texrunner.text(x, y, text, attrs))``.
 
+To group drawing operations, layers can be used:
+
+
+.. method:: canvas.layer( name, above=None, below=None)
+
+   This method creates or gets a layer with name *name*.
+
+   A layer is a canvas itself and can be used to combine drawing operations for
+   ordering purposes, i.e., what is above and below each other. The layer name
+   *name* is a dotted string, where dots are used to form a hierarchy of layer
+   groups. When inserting a layer, it is put on top of its layer group except
+   when another layer of this group is specified by means of the parameters
+   *above* or *below*.
+
+
 The :class:`canvas` class provides access to the total geometrical size of its
 element:
 
 
 .. method:: canvas.bbox()
 
-   Returns the bounding box enclosing all elements of the canvas (see Sect. :ref:`bbox_module`).
+   Returns the bounding box enclosing all elements of the canvas (see Sect. :mod:`bbox`).
 
 A canvas also allows to set its TeX runner:
 
@@ -113,20 +128,17 @@ convenience methods, which wrap the canvas into a single page document.
    *kwargs*.
 
 
-.. method:: canvas.pipeGS(filename="-", device=None, resolution=100, gscommand="gs", gsoptions="", textalphabits=4, graphicsalphabits=4, ciecolor=False, input="eps", **kwargs)
+.. method:: canvas.pipeGS(device, seekable=False, resolution=100, gscommand="gs", gsoptions="", textalphabits=4, graphicsalphabits=4, ciecolor=False, input="eps", **kwargs)
 
    This method pipes the content of a canvas to the ghostscript interpreter
-   to generate other output formats. At least *filename* or *device* must
-   be set. *filename* specifies the name of the output file. No file extension will
-   be added to that name. When no *filename* is specified, the output
-   is written to stdout. *device* specifies a ghostscript output device by a
-   string. Depending on the ghostscript configuration ``"png16"``, ``"png16m"``,
-   ``"png256"``, ``"png48"``, ``"pngalpha"``, ``"pnggray"``, ``"pngmono"``,
-   ``"jpeg"``, and ``"jpeggray"`` might be available among others. See the output
-   of ``gs --help`` and the ghostscript documentation for more information. When
-   *filename* is specified but the device is not set, ``"png16m"`` is used when the
-   filename ends in ``.png`` and ``"jpeg"`` is used when the filename ends in
-   ``.jpg``.
+   to generate other output formats. The output is returned by means of a
+   python file object. As this file object is generated from a pipe, it is
+   not seekable by default. To make it seekable, enable the *seekable* flag.
+   *device* specifies a ghostscript output device by a string. Depending on the
+   ghostscript configuration ``"png16"``, ``"png16m"``, ``"png256"``,
+   ``"png48"``, ``"pngalpha"``, ``"pnggray"``, ``"pngmono"``, ``"jpeg"``, and
+   ``"jpeggray"`` might be available among others. See the output of ``gs
+   --help`` and the ghostscript documentation for more information.
 
    *resolution* specifies the resolution in dpi (dots per inch). *gscmd* is the
    command to be used to invoke ghostscript. *gsoptions* is an option string
@@ -142,6 +154,19 @@ convenience methods, which wrap the canvas into a single page document.
    *kwargs* are passed to the :meth:`writeEPSfile` method (not counting the *file*
    parameter), which is used to generate the input for ghostscript. By that you
    gain access to the :class:`document.page` constructor arguments.
+
+.. method:: canvas.writeGSfile(filename=None, device=None, **kwargs)
+
+   This method is similar to pipeGS, but the content is written into the file
+   *filename*. If filename is None it is auto-guessed from the script name. If
+   filename is "-", the output is written to stdout. In both cases, a device
+   needs to be specified to define the format (and the file suffix in case the
+   filename is created from the script name).
+
+   If device is None, but a filename with suffix is given, PNG files will
+   be written using the png16m device and JPG files using the jpeg device.
+
+   All other arguments are identical to those of the :meth:`canvas.pipeGS`.
 
 For more information about the possible arguments of the :class:`document.page`
 constructor, we refer to Sect. :mod:`document`.

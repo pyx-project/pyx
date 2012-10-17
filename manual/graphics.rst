@@ -298,7 +298,8 @@ PyX is given in the following table.
 +============================+=================================+====================================+
 | :class:`deco.deco`         | decorator specifying the way    | :class:`deco.stroked`,             |
 |                            | the path is drawn               | :class:`deco.filled`,              |
-|                            |                                 | :class:`deco.arrow`                |
+|                            |                                 | :class:`deco.arrow`,               |
+|                            |                                 | :class:`deco.text`                 |
 +----------------------------+---------------------------------+------------------------------------+
 | :class:`style.strokestyle` | style used for path stroking    | :class:`style.linecap`,            |
 |                            |                                 | :class:`style.linejoin`,           |

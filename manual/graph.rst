@@ -208,11 +208,11 @@ create the whole plot. Once this is done, further calls of :meth:`plot` will
 fail. Usually you do not need to take care about the finalization of the graph,
 because it happens automatically once you write the plot into a file. However,
 sometimes position methods (described below) are nice to be accessible. For
-that, at least the layout of the graph must have been finished. By calling the
-:meth:`do`\ -methods yourself you can also alter the order in which the graph
-components are plotted. Multiple calls to any of the :meth:`do`\ -methods have
-no effect (only the first call counts). The orginal order in which the
-:meth:`do`\ -methods are called is:
+that, at least the layout of the graph must have been finished. However, the
+drawing order is based on canvas layers and thus the order in which the
+:meth:`do`\ -methods are called will not alter the output. Multiple calls to
+any of the :meth:`do`\ -methods have no effect (only the first call counts).
+The orginal order in which the :meth:`do`\ -methods are called is:
 
 
 .. method:: graphxy.dolayout()
@@ -929,12 +929,17 @@ The class :class:`line` provides a changeable line style. Its definition is:
    be added to the line.
 
 
-.. class:: rect(gradient=color.gradient.Grey)
+.. class:: rect(colorname="color", gradient=color.gradient.Grey, coloraxis=None, keygraph=_autokeygraph)
 
    This class is a style to plot colored rectangles into a two-dimensional graph.
    The size of the rectangles is taken from the data provided by the :class:`range`
-   style. The additional data column named ``color`` specifies the color of the
-   rectangle defined by *gradient*. The valid color range is [0:1].
+   style. The additional data column named *colorname* specifies the color of the
+   rectangle defined by *gradient*. The translation of the data values to the
+   gradient is done by the *coloraxis*, which is set to be a linear axis if not
+   provided by *coloraxis*. A key graph, a graphx instance, is generated
+   automatically to indicate the color scale if not provided by *keygraph*.
+   If a *keygraph* is given, its ``x`` axis defines the color conversion and
+   *coloraxis* is ignored.
 
 
 .. class:: histogram(lineattrs=[], steps=0, fromvalue=0, frompathattrs=[], fillable=0, rectkey=0, autohistogramaxisindex=0, autohistogrampointpos=0.5, epsilon=1e-10)
@@ -1034,20 +1039,10 @@ The class :class:`line` provides a changeable line style. Its definition is:
    ``changelinestyle`` of the :class:`line` class.
 
 
-.. class:: surface(colorname="color", gradient=color.gradient.Grey, mincolor=None, maxcolor=None, gridlines1=0.05, gridlines2=0.05, gridcolor=None, backcolor=color.gray.black)
+.. class:: surface(gridlines1=0.05, gridlines2=0.05, gridcolor=None, backcolor=color.gray.black, **kwargs)
 
    Draws a surface of a rectangular grid. Each rectangle is divided into 4
    triangles.
-
-   The grid can be colored using values provided by the data column named
-   *colorname*. The values are rescaled to the range [0:1] using mincolor and
-   maxcolor (which are taken from the minimal and maximal values, but larger bounds
-   could be set).
-
-   If no *colorname* column exists, the surface style falls back to a lighting
-   coloring taking into account the angle between the view ray and the triangle and
-   the distance between viewer and triangle. The precise conversion is defined in
-   the :meth:`lighting` method.
 
    If a *gridcolor* is set, the rectangular grid is marked by small stripes of the
    relative (compared to each rectangle) size of *gridlines1* and *gridlines2* for
@@ -1062,8 +1057,9 @@ The class :class:`line` provides a changeable line style. Its definition is:
 * All colors must use the same color space.
 
 * HSB colors are not allowed, whereas Gray, RGB, and CMYK are allowed. You can
-     convert HSB colors into a different color space before passing them to the
-     surface.
+     convert HSB colors into a different color space by means of
+     :class:`rgbgradient` and class:`cmykgradient` before passing it to the
+     surface style.
 
 * The grid itself is also constructed out of triangles. The grid is transformed
      along with the triangles thus looking quite different from a stroked grid (as
@@ -1073,6 +1069,22 @@ The class :class:`line` provides a changeable line style. Its definition is:
 
 * Color changes are continuous (in the selected color space) for each triangle.
 
+   Further arguments are identical to the :class:`graph.style.rect` style. However,
+   if no *colorname* column exists, the surface style falls back to a lighting
+   coloring taking into account the angle between the view ray and the triangle and
+   the distance between viewer and triangle. The precise conversion is defined in
+   the :meth:`lighting` method.
+
+
+.. class:: density(epsilon=1e-10, **kwargs):
+
+   Density plots can be created by the density style. It is similar to a surface
+   plot in 2d, but it does not use a mesh, but a bitmap representation instead.
+   Due to that difference, the file size is smaller and not color interpolation
+   takes place. Furthermore the style can be used with equidistantly spaced data
+   only (after conversion by the axis, so logarithmic raw data and such are
+   possible using proper axes). Further arguments are identical to the
+   :class:`graph.style.rect` style.
 
 
 .. module:: graph.key

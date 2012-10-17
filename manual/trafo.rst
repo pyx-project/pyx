@@ -14,7 +14,7 @@ and mirroring.
 
 
 Class :class:`trafo`
-===================
+====================
 
 The ``trafo`` class represents a general linear transformation, which is defined
 for a vector :math:`\vec{x}` as
