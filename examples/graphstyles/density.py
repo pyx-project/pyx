@@ -27,13 +27,13 @@ for re_index in range(gridx):
         while n < max_iter and abs(z) < 2:
             z = (z * z) + c
             n += 1
-        d.append([re, im, float(n)/max_iter])
+        d.append([re, im, n])
 
 # Plot graph
 g = graph.graphxy(height=8, width=8,
                   x=graph.axis.linear(min=re_min, max=re_max, title=r"$\Re(c)$"),
                   y=graph.axis.linear(min=im_min, max=im_max, title=r'$\Im(c)$'))
-g.plot(graph.data.points(d, x=1, y=2, color=3),
+g.plot(graph.data.points(d, x=1, y=2, color=3, title="iterations"),
        [graph.style.density(gradient=color.rgbgradient.Rainbow)])
 g.writeEPSfile()
 g.writePDFfile()
