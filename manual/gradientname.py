@@ -1,4 +1,8 @@
 #!/usr/bin/env python
+
+# WARNING: THIS IS REALLY OLD CODE. IT COULD PROBABLY BE DONE USING GRAPHX NOWADAYS.
+# HOWEVER, WE DON'T CARE. JUST DON'T TAKE THIS CODE TOO SERIOUSLY.
+
 import sys, imp, re
 sys.path[:0] = [".."]
 import pyx
@@ -37,7 +41,7 @@ for line in lines: # we yet don't use a file iterator
             firstgraph = g = graph.graphxy(ypos=y, width=10, height=0.5, x2=xaxis, y=graph.axis.lin(parter=None))
         else:
             g = graph.graphxy(ypos=y, width=10, height=0.5, x2=graph.axis.linkedaxis(firstgraph.axes["x2"]), y=graph.axis.lin(parter=None))
-        g.plot(pf, [graph.style.rect(getattr(pyx.color.gradient, m.group("name")))])
+        g.plot(pf, [graph.style.rect(gradient=getattr(pyx.color.gradient, m.group("name")), keygraph=None)])
         g.doplot()
         g.finish()
         c.insert(g)
