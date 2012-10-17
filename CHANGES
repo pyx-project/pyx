@@ -4,7 +4,7 @@
     - insert method allows specification of position where item is inserted
       by before and after arguments
     - new layer method allows creation of separated drawing layers for
-      grouping of drawing operations (TODO: documentation)
+      grouping of drawing operations
     - writeXXXfile methods now use "page_" and "write_" prefixes for passing
       the keyword arguments to the page constructor and write method
     - pipeGS now returns a file handle instead of writing to a file or to stdout
@@ -35,7 +35,6 @@
       (thanks to Michael J Gruber)
   - deco module:
     - decorator to put text along a path; based on a patch by Michael J Gruber
-      (TODO: documentation)
   - dvifile module:
     - fix for MS Windows: open virtual font files in binary mode
   - graph modules:
@@ -48,7 +47,7 @@
       - add linkedaxes for the xy-plane in 3d like in 2d (works now properly due
         to the hiddenaxes feature)
     - graph styles:
-      - add density style (TODO: documentation)
+      - add density style
       - add gradient style to convert a value to a color using a 1d graph
       - add a usenames dictionary to the pos style (like rangepos had it already)
     - graph data:
@@ -60,7 +59,6 @@
     - create smooth paths from a series of points
   - bitmap module:
     - new fundamental constructor based on arbitrary affine transformations
-      (TODO: documentation)
     - add ASCIIHexDecode end marker
   - color module:
     - add rgbgradient and cmykgradient to force color space
@@ -68,6 +66,7 @@
     - add ASCIIHexDecode end marker
   - sourceforge.net:
     - upgrade PyX project page to the Allura platform
+
 
 0.11.1 (2011/05/20):
   - canvas:
