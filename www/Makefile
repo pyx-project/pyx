@@ -1,4 +1,3 @@
-ZOPEDIR ?= $(HOME)/bin/python/Zope3/src
 PYTHON ?= python
 
 default: build
@@ -22,9 +21,10 @@ copy:
 	mkdir -p build
 	cp main.css build
 	cp *.png *.ico build
-	cp png/*.png ../manual/_build/latex/manual.pdf ../faq/pyxfaq.pdf build
+	cp png/*.png ../manual/_build/latex/manual.pdf ../faq/_build/latex/pyxfaq.pdf build
 	cp -r ../manual/_build/html build/manual
 	cp -r ../manual/_build/html/manual.html build/manual/index.html
+	cp -r ../faq/_build/html build/pyxfaq
 	for s in examples gallery; \
 	do \
 	  for d in "" $$(grep / ../$$s/INDEX); \
@@ -38,4 +38,4 @@ copy:
 	done
 
 html:
-	PYTHONPATH=$(ZOPEDIR) $(PYTHON) pt2html.py
+	$(PYTHON) pt2html.py
