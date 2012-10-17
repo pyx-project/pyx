@@ -1,4 +1,4 @@
-0.12 (2012/../..):
+0.12 (2012/10/17):
   - canvas module:
     - insert method now returns canvas wrapping item if attrs are given
     - insert method allows specification of position where item is inserted
