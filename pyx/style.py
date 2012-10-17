@@ -1,9 +1,9 @@
 # -*- encoding: utf-8 -*-
 #
 #
-# Copyright (C) 2002-2011 Jörg Lehmann <joergl@users.sourceforge.net>
+# Copyright (C) 2002-2012 Jörg Lehmann <joergl@users.sourceforge.net>
 # Copyright (C) 2003-2006 Michael Schindler <m-schindler@users.sourceforge.net>
-# Copyright (C) 2002-2011 André Wobst <wobsta@users.sourceforge.net>
+# Copyright (C) 2002-2012 André Wobst <wobsta@users.sourceforge.net>
 #
 # This file is part of PyX (http://pyx.sourceforge.net/).
 #
