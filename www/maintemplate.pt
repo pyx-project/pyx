@@ -10,6 +10,7 @@
 <html metal:define-macro="page">
 
   <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
     <title>PyX — Python graphics package</title>
     <link rel="shortcut icon" type="image/x-icon" tal:attributes="href python: options['mkrellink']('pyx.ico', options)">
     <link rel="stylesheet" type="text/css" tal:attributes="href python: options['mkrellink']('main.css', options)">

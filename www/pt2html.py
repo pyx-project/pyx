@@ -1,15 +1,16 @@
 import sys, os, os.path, cgi, StringIO, codecs, glob, re, warnings
 import keyword, token, tokenize
 import xml.dom.minidom
-from zope.pagetemplate.pagetemplatefile import PageTemplateFile
+from zope.pagetemplate.pagetemplate import PageTemplate
 import Image
-
-# make zope 3.2.1 run:
-import zope.pagetemplate.pagetemplatefile as pagetemplatefile
-pagetemplatefile.DEFAULT_ENCODING = "utf-8"
 
 sys.path[:0]=[".."]
 import pyx
+
+def PageTemplateFile(filename):
+    pt = PageTemplate()
+    pt.write(codecs.open(filename, "r", encoding="utf-8").read())
+    return pt
 
 _KEYWORD = token.NT_OFFSET
 
