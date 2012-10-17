@@ -9,6 +9,14 @@
     <h1>PyX — News</h1>
 
     <dl>
+      <dt>2012-10-17: PyX 0.12 released</dt>
+      <dd>
+        This release adds a density graph style to create density plots. The color
+        scale is shown by a separate key graph. The key graph feature has been
+        integrated in existing styles where appropriate, like the 3d surface style.
+        A rather large set of other additions and bug fixes all over the place
+        completes this release.
+      </dd>
       <dt>2011-05-20: PyX 0.11.1 released</dt>
       <dd>
         This release fixes a few bugs, most importantly the extension build process.
