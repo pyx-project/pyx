@@ -17,3 +17,7 @@ In this example we set an `outerticklength`. Together with the
 stroked across the axis. As it is common to sub-components of the axis, you
 need to pass the adapted instances (stored in the variable `mypainter` here) to
 the axis in its constructor.
+
+! In this example there is no tick at the end due to the axis range. You can
+suppress individual ticks by the `manualticks` axis parameter with ticklevel
+and labellevel being zero.
