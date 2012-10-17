@@ -115,6 +115,7 @@ class _style:
         pass
 
 
+class _marker: pass
 class _autokeygraph: pass
 
 
@@ -864,7 +865,7 @@ class text(_styleneedingpointpos):
             if self.dyname not in columnnames:
                 raise ValueError("column '%s' missing" % self.dyname)
             names.append(self.dyname)
-        return names + _styleneedingpointpos.columnnames(self, privatedata, sharedata, graph, columnnames)
+        return names + _styleneedingpointpos.columnnames(self, privatedata, sharedata, graph, columnnames, dataaxisnames)
 
     def selectstyle(self, privatedata, sharedata, graph, selectindex, selecttotal):
         if self.textattrs is not None:
@@ -927,7 +928,7 @@ class arrow(_styleneedingpointpos):
             raise ValueError("size missing")
         if "angle" not in columnnames:
             raise ValueError("angle missing")
-        return ["size", "angle"] + _styleneedingpointpos.columnnames(self, privatedata, sharedata, graph, columnnames)
+        return ["size", "angle"] + _styleneedingpointpos.columnnames(self, privatedata, sharedata, graph, columnnames, dataaxisnames)
 
     def selectstyle(self, privatedata, sharedata, graph, selectindex, selecttotal):
         if self.lineattrs is not None:

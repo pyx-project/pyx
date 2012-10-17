@@ -15,15 +15,15 @@ class changesymbol(graph.style.symbol):
         self.gradient = gradient
         graph.style.symbol.__init__(self, symbol=symbol, symbolattrs=symbolattrs, **kwargs)
 
-    def columnnames(self, privatedata, sharedata, agraph, columnnames):
+    def columnnames(self, privatedata, sharedata, agraph, columnnames, dataaxisnames):
         # register the new column names
         if self.sizecolumnname not in columnnames:
             raise ValueError("column '%s' missing" % self.sizecolumnname)
         if self.colorcolumnname not in columnnames:
             raise ValueError("column '%s' missing" % self.colorcolumnname)
         return ([self.sizecolumnname, self.colorcolumnname] +
-                graph.style.symbol.columnnames(self, privatedata,
-                                               sharedata, agraph, columnnames))
+                graph.style.symbol.columnnames(self, privatedata, sharedata, agraph,
+                                               columnnames, dataaxisnames))
 
     def drawpoint(self, privatedata, sharedata, graph, point):
         # replace the original drawpoint method by a slightly revised one

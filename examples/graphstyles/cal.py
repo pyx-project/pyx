@@ -3,7 +3,7 @@ from pyx import *
 
 class daystyle(graph.style._style):
 
-    def columnnames(self, privatedata, sharedata, graph, columnnames):
+    def columnnames(self, privatedata, sharedata, graph, columnnames, dataaxisnames):
         # register the new column names
         usecolumnnames = ["day", "month", "weekday", "note"]
         for columnname in usecolumnnames:
@@ -11,7 +11,7 @@ class daystyle(graph.style._style):
                 raise ValueError("column '%s' missing" % columnname)
         return usecolumnnames
 
-    def adjustaxis(self, privatedata, sharedata, graph, columnname, data):
+    def adjustaxis(self, privatedata, sharedata, graph, plotitem, columnname, data):
         # adjust axes ranges
         if columnname == "month":
             graph.axes["x"].adjustaxis([(x, 0) for x in data])
