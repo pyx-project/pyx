@@ -116,17 +116,13 @@ class _style:
 
 
 class _autokeygraph: pass
-class _copyfromdata: pass
-class _grabfromdata: pass
 
 
 class _keygraphstyle(_style):
 
     autographkey = _autokeygraph
-    copyfromdata = _copyfromdata
-    grabfromdata = _grabfromdata
 
-    def __init__(self, colorname="color", gradient=color.gradient.Grey, coloraxis=axis.lin(title=_grabfromdata), keygraph=_autokeygraph):
+    def __init__(self, colorname="color", gradient=color.gradient.Grey, coloraxis=None, keygraph=_autokeygraph):
         self.colorname = colorname
         self.gradient = gradient
         self.coloraxis = coloraxis
@@ -139,13 +135,18 @@ class _keygraphstyle(_style):
         if columnname == self.colorname:
             if self.keygraph is None:
                 # we always need a keygraph, but we might not show it
-                privatedata.keygraph = graphx(length=10, direction="vertical", x=self.coloraxis)
+                if self.coloraxis is None:
+                    coloraxis = axis.lin()
+                else:
+                    coloraxis = self.coloraxis
+                privatedata.keygraph = graphx(length=10, direction="vertical", x=coloraxis)
             elif self.keygraph is _autokeygraph:
-                if self.coloraxis.title is _grabfromdata:
-                    plotitem.title, self.coloraxis.title = None, plotitem.title
-                elif self.coloraxis.title is _copyfromdata:
-                    self.coloraxis.title = plotitem.title
-                privatedata.keygraph = graphx(x=self.coloraxis, **graph.autokeygraphattrs())
+                if self.coloraxis is None:
+                    coloraxis = axis.lin(title=plotitem.title)
+                    plotitem.title = None # Huui!?
+                else:
+                    coloraxis = self.coloraxis
+                privatedata.keygraph = graphx(x=coloraxis, **graph.autokeygraphattrs())
             else:
                 privatedata.keygraph = self.keygraph
             # TODO: we shouldn't have multiple plotitems
