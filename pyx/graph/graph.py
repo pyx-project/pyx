@@ -753,6 +753,9 @@ class graphxyz(graph):
                  projector=central(10, -30, 30), axesdist=0.8*unit.v_cm, key=None,
                  **axes):
         graph.__init__(self)
+        self.layer("hiddenaxes", below=self.layer("filldata"))
+        for name in ["hiddenaxes.grid", "hiddenaxes.baseline", "hiddenaxes.ticks", "hiddenaxes.labels", "hiddenaxes.title"]:
+            self.layer(name)
 
         self.xpos = xpos
         self.ypos = ypos
@@ -771,6 +774,18 @@ class graphxyz(graph):
         self.yorder = projector.zindex(-1, 0, 0) > projector.zindex(1, 0, 0) and 1 or 0
         self.zindexscale = math.sqrt(xscale*xscale+yscale*yscale+zscale*zscale)
 
+        # the pXYshow attributes are booleans stating whether plane perpendicular to axis X
+        # at the virtual graph coordinate Y will be hidden by data or not. An axis is considered
+        # to be visible if one of the two planes it is part of is visible. Other axes are drawn
+        # in the hiddenaxes layer (i.e. layer group).
+        # TODO: Tick and grid visibility is treated like the axis visibility at the moment.
+        self.pz0show = self.vangle(0, 0, 0, 1, 0, 0, 1, 1, 0) > 0
+        self.pz1show = self.vangle(0, 0, 1, 0, 1, 1, 1, 1, 1) > 0
+        self.py0show = self.vangle(0, 0, 0, 0, 0, 1, 1, 0, 1) > 0
+        self.py1show = self.vangle(0, 1, 0, 1, 1, 0, 1, 1, 1) > 0
+        self.px0show = self.vangle(0, 0, 0, 0, 1, 0, 0, 1, 1) > 0
+        self.px1show = self.vangle(1, 0, 0, 1, 0, 1, 1, 1, 1) > 0
+
         for axisname, aaxis in axes.items():
             if aaxis is not None:
                 if not isinstance(aaxis, axis.linkedaxis):
@@ -786,6 +801,8 @@ class graphxyz(graph):
                         self.axes[okey] = axis.linkedaxis(self.axes[axisname], okey)
                 else:
                     self.axes[axisname] = axis.linkedaxis(self.axes[okey], axisname)
+            elif not axes.has_key(okey):
+                self.axes[okey] = axis.linkedaxis(self.axes[axisname], okey)
         if not axes.has_key("z"):
             self.axes["z"] = axis.anchoredaxis(axis.linear(), self.texrunner, "z")
 
@@ -968,53 +985,89 @@ class graphxyz(graph):
             return
         self.doranges()
         if axisname == "x":
-            self.axes["x"].setpositioner(positioner.flexlineaxispos_pt(lambda vx: self.vpos_pt(vx, self.xorder, 0),
-                                                                       lambda vx: self.vtickdirection(vx, self.xorder, 0, vx, 1-self.xorder, 0),
-                                                                       self.xvgridpath))
+            self.axes[axisname].setpositioner(positioner.flexlineaxispos_pt(lambda vx: self.vpos_pt(vx, self.xorder, 0),
+                                                                            lambda vx: self.vtickdirection(vx, self.xorder, 0, vx, 1-self.xorder, 0),
+                                                                            self.xvgridpath))
+            if self.xorder:
+                self.axes[axisname].hidden = not self.py1show and not self.pz0show
+            else:
+                self.axes[axisname].hidden = not self.py0show and not self.pz0show
         elif axisname == "x2":
-            self.axes["x2"].setpositioner(positioner.flexlineaxispos_pt(lambda vx: self.vpos_pt(vx, 1-self.xorder, 0),
-                                                                        lambda vx: self.vtickdirection(vx, 1-self.xorder, 0, vx, self.xorder, 0),
-                                                                        self.xvgridpath))
+            self.axes[axisname].setpositioner(positioner.flexlineaxispos_pt(lambda vx: self.vpos_pt(vx, 1-self.xorder, 0),
+                                                                            lambda vx: self.vtickdirection(vx, 1-self.xorder, 0, vx, self.xorder, 0),
+                                                                            self.xvgridpath))
+            if self.xorder:
+                self.axes[axisname].hidden = not self.py0show and not self.pz0show
+            else:
+                self.axes[axisname].hidden = not self.py1show and not self.pz0show
         elif axisname == "x3":
-            self.axes["x3"].setpositioner(positioner.flexlineaxispos_pt(lambda vx: self.vpos_pt(vx, self.xorder, 1),
-                                                                        lambda vx: self.vtickdirection(vx, self.xorder, 1, vx, 1-self.xorder, 1),
-                                                                        self.xvgridpath))
+            self.axes[axisname].setpositioner(positioner.flexlineaxispos_pt(lambda vx: self.vpos_pt(vx, self.xorder, 1),
+                                                                            lambda vx: self.vtickdirection(vx, self.xorder, 1, vx, 1-self.xorder, 1),
+                                                                            self.xvgridpath))
+            if self.xorder:
+                self.axes[axisname].hidden = not self.py1show and not self.pz1show
+            else:
+                self.axes[axisname].hidden = not self.py0show and not self.pz1show
         elif axisname == "x4":
-            self.axes["x4"].setpositioner(positioner.flexlineaxispos_pt(lambda vx: self.vpos_pt(vx, 1-self.xorder, 1),
-                                                                        lambda vx: self.vtickdirection(vx, 1-self.xorder, 1, vx, self.xorder, 1),
-                                                                        self.xvgridpath))
+            self.axes[axisname].setpositioner(positioner.flexlineaxispos_pt(lambda vx: self.vpos_pt(vx, 1-self.xorder, 1),
+                                                                            lambda vx: self.vtickdirection(vx, 1-self.xorder, 1, vx, self.xorder, 1),
+                                                                            self.xvgridpath))
+            if self.xorder:
+                self.axes[axisname].hidden = not self.py0show and not self.pz1show
+            else:
+                self.axes[axisname].hidden = not self.py1show and not self.pz1show
         elif axisname == "y":
-            self.axes["y"].setpositioner(positioner.flexlineaxispos_pt(lambda vy: self.vpos_pt(self.yorder, vy, 0),
-                                                                       lambda vy: self.vtickdirection(self.yorder, vy, 0, 1-self.yorder, vy, 0),
-                                                                       self.yvgridpath))
+            self.axes[axisname].setpositioner(positioner.flexlineaxispos_pt(lambda vy: self.vpos_pt(self.yorder, vy, 0),
+                                                                            lambda vy: self.vtickdirection(self.yorder, vy, 0, 1-self.yorder, vy, 0),
+                                                                            self.yvgridpath))
+            if self.yorder:
+                self.axes[axisname].hidden = not self.px1show and not self.pz0show
+            else:
+                self.axes[axisname].hidden = not self.px0show and not self.pz0show
         elif axisname == "y2":
-            self.axes["y2"].setpositioner(positioner.flexlineaxispos_pt(lambda vy: self.vpos_pt(1-self.yorder, vy, 0),
-                                                                       lambda vy: self.vtickdirection(1-self.yorder, vy, 0, self.yorder, vy, 0),
-                                                                       self.yvgridpath))
+            self.axes[axisname].setpositioner(positioner.flexlineaxispos_pt(lambda vy: self.vpos_pt(1-self.yorder, vy, 0),
+                                                                            lambda vy: self.vtickdirection(1-self.yorder, vy, 0, self.yorder, vy, 0),
+                                                                            self.yvgridpath))
+            if self.yorder:
+                self.axes[axisname].hidden = not self.px0show and not self.pz0show
+            else:
+                self.axes[axisname].hidden = not self.px1show and not self.pz0show
         elif axisname == "y3":
-            self.axes["y3"].setpositioner(positioner.flexlineaxispos_pt(lambda vy: self.vpos_pt(self.yorder, vy, 1),
-                                                                       lambda vy: self.vtickdirection(self.yorder, vy, 1, 1-self.yorder, vy, 1),
-                                                                       self.yvgridpath))
+            self.axes[axisname].setpositioner(positioner.flexlineaxispos_pt(lambda vy: self.vpos_pt(self.yorder, vy, 1),
+                                                                            lambda vy: self.vtickdirection(self.yorder, vy, 1, 1-self.yorder, vy, 1),
+                                                                            self.yvgridpath))
+            if self.yorder:
+                self.axes[axisname].hidden = not self.px1show and not self.pz1show
+            else:
+                self.axes[axisname].hidden = not self.px0show and not self.pz1show
         elif axisname == "y4":
-            self.axes["y4"].setpositioner(positioner.flexlineaxispos_pt(lambda vy: self.vpos_pt(1-self.yorder, vy, 1),
-                                                                       lambda vy: self.vtickdirection(1-self.yorder, vy, 1, self.yorder, vy, 1),
-                                                                       self.yvgridpath))
+            self.axes[axisname].setpositioner(positioner.flexlineaxispos_pt(lambda vy: self.vpos_pt(1-self.yorder, vy, 1),
+                                                                            lambda vy: self.vtickdirection(1-self.yorder, vy, 1, self.yorder, vy, 1),
+                                                                            self.yvgridpath))
+            if self.yorder:
+                self.axes[axisname].hidden = not self.px0show and not self.pz1show
+            else:
+                self.axes[axisname].hidden = not self.px1show and not self.pz1show
         elif axisname == "z":
-            self.axes["z"].setpositioner(positioner.flexlineaxispos_pt(lambda vz: self.vpos_pt(0, 0, vz),
-                                                                       lambda vz: self.vtickdirection(0, 0, vz, 1, 1, vz),
-                                                                       self.zvgridpath))
+            self.axes[axisname].setpositioner(positioner.flexlineaxispos_pt(lambda vz: self.vpos_pt(0, 0, vz),
+                                                                            lambda vz: self.vtickdirection(0, 0, vz, 1, 1, vz),
+                                                                            self.zvgridpath))
+            self.axes[axisname].hidden = not self.px0show and not self.py0show
         elif axisname == "z2":
-            self.axes["z2"].setpositioner(positioner.flexlineaxispos_pt(lambda vz: self.vpos_pt(1, 0, vz),
-                                                                       lambda vz: self.vtickdirection(1, 0, vz, 0, 1, vz),
-                                                                       self.zvgridpath))
+            self.axes[axisname].setpositioner(positioner.flexlineaxispos_pt(lambda vz: self.vpos_pt(1, 0, vz),
+                                                                            lambda vz: self.vtickdirection(1, 0, vz, 0, 1, vz),
+                                                                            self.zvgridpath))
+            self.axes[axisname].hidden = not self.px1show and not self.py0show
         elif axisname == "z3":
-            self.axes["z3"].setpositioner(positioner.flexlineaxispos_pt(lambda vz: self.vpos_pt(0, 1, vz),
-                                                                       lambda vz: self.vtickdirection(0, 1, vz, 1, 0, vz),
-                                                                       self.zvgridpath))
+            self.axes[axisname].setpositioner(positioner.flexlineaxispos_pt(lambda vz: self.vpos_pt(0, 1, vz),
+                                                                            lambda vz: self.vtickdirection(0, 1, vz, 1, 0, vz),
+                                                                            self.zvgridpath))
+            self.axes[axisname].hidden = not self.px0show and not self.py1show
         elif axisname == "z4":
-            self.axes["z4"].setpositioner(positioner.flexlineaxispos_pt(lambda vz: self.vpos_pt(1, 1, vz),
-                                                                       lambda vz: self.vtickdirection(1, 1, vz, 0, 0, vz),
-                                                                       self.zvgridpath))
+            self.axes[axisname].setpositioner(positioner.flexlineaxispos_pt(lambda vz: self.vpos_pt(1, 1, vz),
+                                                                            lambda vz: self.vtickdirection(1, 1, vz, 0, 0, vz),
+                                                                            self.zvgridpath))
+            self.axes[axisname].hidden = not self.px1show and not self.py1show
         else:
             raise NotImplementedError("4 axis per dimension supported only")
 
@@ -1034,7 +1087,10 @@ class graphxyz(graph):
         self.dolayout()
         self.dobackground()
         for axis in self.axes.values():
-            self.layer("axes").insert(axis.canvas)
+            if axis.hidden:
+                self.layer("hiddenaxes").insert(axis.canvas)
+            else:
+                self.layer("axes").insert(axis.canvas)
 
     def dokey(self):
         if self.did(self.dokey):

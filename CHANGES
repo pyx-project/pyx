@@ -44,6 +44,9 @@
         reported by Dominic Ford)
       - add a flipped option to graphxy to exchange x and y coordinates
       - add a 1d graph "graphx" (use case: convert a value to a color)
+      - add hiddenaxes layer to the 3d graph
+      - add linkedaxes for the xy-plane in 3d like in 2d (works now properly due
+        to the hiddenaxes feature)
     - graph styles:
       - add density style (TODO: documentation)
       - add gradient style to convert a value to a color using a 1d graph
