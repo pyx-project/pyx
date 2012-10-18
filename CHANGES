@@ -1,3 +1,7 @@
+0.12.1 (2012/??/??):
+  - graph styles:
+    - fix clipping of gradient style
+
 0.12 (2012/10/17):
   - canvas module:
     - insert method now returns canvas wrapping item if attrs are given
