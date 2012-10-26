@@ -2133,9 +2133,7 @@ class gradient(_style):
             llx_pt -= 0.5*graph.width_pt
             urx_pt += 0.5*graph.width_pt
 
-        c = canvas.canvas([canvas.clip(path.rect_pt(llx_pt, lly_pt, urx_pt, ury_pt))])
-
-        graph.layer("filldata").stroke(path.rect_pt(llx_pt, lly_pt, urx_pt, ury_pt), [color.rgb.red])
+        c = canvas.canvas([canvas.clip(path.rect_pt(llx_pt, lly_pt, urx_pt-llx_pt, ury_pt-lly_pt))])
 
         if graph.direction == "horizontal":
             add_pt = (urx_pt-llx_pt)*0.5/(self.resolution-1)
@@ -2146,7 +2144,10 @@ class gradient(_style):
             lly_pt -= add_pt
             ury_pt += add_pt
 
-        t = trafo.trafo_pt(((0, urx_pt-llx_pt), (ury_pt-lly_pt, 0)), (llx_pt, lly_pt))
+        if graph.direction == "horizontal":
+            t = trafo.trafo_pt(((urx_pt-llx_pt,0 ), (0, ury_pt-lly_pt)), (llx_pt, lly_pt))
+        else:
+            t = trafo.trafo_pt(((0, urx_pt-llx_pt), (ury_pt-lly_pt, 0)), (llx_pt, lly_pt))
 
         b = bitmap.bitmap_trafo(t, i)
         c.insert(b)
