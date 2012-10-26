@@ -9,6 +9,11 @@
     <h1>PyX — News</h1>
 
     <dl>
+      <dt>2012-10-26: PyX 0.12.1 released</dt>
+      <dd>
+        This release fixes drawing bugs in the gradient style for the recently
+        introduced key graph.
+      </dd>
       <dt>2012-10-17: PyX 0.12 released</dt>
       <dd>
         This release adds a density graph style to create density plots. The color
