@@ -1,3 +1,7 @@
+0.???? (201?/??/??):
+  - filelocator module:
+    - cygwin LaTeX with windows python patch (thanks to Sybren A. Stüvel)
+
 0.12.1 (2012/10/26):
   - graph styles:
     - fix drawing and clipping of gradient style

@@ -201,6 +201,11 @@ class kpsewhich:
         else:
             return []
         full_filename = full_filenames.split("\n")[0].rstrip("\r")
+
+        # Detect Cygwin kpsewhich on Windows Python
+        if os.name == 'nt' and full_filename.startswith('/'):
+            full_filename = pycompat.popen('cygpath -w "%s"' % full_filename).read().strip()
+
         def _opener():
             try:
                 return builtinopen(full_filename, mode)
