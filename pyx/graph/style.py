@@ -1783,20 +1783,10 @@ class surface(_keygraphstyle):
 
     def initdrawpoints(self, privatedata, sharedata, graph):
         privatedata.colors = {}
-        privatedata.mincolor = privatedata.maxcolor = None
 
     def drawpoint(self, privatedata, sharedata, graph, point):
         if privatedata.colorize:
-            try:
-                color = point[self.colorname] + 0
-            except:
-                pass
-            else:
-                privatedata.colors.setdefault(sharedata.value1, {})[sharedata.value2] = color
-                if privatedata.mincolor is None or color < privatedata.mincolor:
-                    privatedata.mincolor = color
-                if privatedata.mincolor is None or privatedata.maxcolor < color:
-                    privatedata.maxcolor = color
+            privatedata.colors.setdefault(sharedata.value1, {})[sharedata.value2] = point[self.colorname]
 
     def donedrawpoints(self, privatedata, sharedata, graph):
         v1 = [0]*len(graph.axesnames)
@@ -1966,12 +1956,7 @@ class density(_keygraphstyle):
         privatedata.vfixed = [None]*len(graph.axesnames)
 
     def drawpoint(self, privatedata, sharedata, graph, point):
-        try:
-            color = point[self.colorname] + 0
-        except:
-            pass
-        else:
-            privatedata.colors.setdefault(sharedata.value1, {})[sharedata.value2] = color
+        privatedata.colors.setdefault(sharedata.value1, {})[sharedata.value2] = point[self.colorname]
         if len(privatedata.vfixed) > 2 and sharedata.vposavailable:
             for i, (v1, v2) in enumerate(zip(privatedata.vfixed, sharedata.vpos)):
                 if i != sharedata.index1 and i != sharedata.index2:
