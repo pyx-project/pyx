@@ -1978,7 +1978,7 @@ class density(_keygraphstyle):
                     if v1 is None:
                         privatedata.vfixed[i] = v2
                     elif abs(v1-v2) > self.epsilon:
-                        raise ValueError("data must be in a plane for the bitmap style")
+                        raise ValueError("data must be in a plane for the density style")
 
     def donedrawpoints(self, privatedata, sharedata, graph):
         privatedata.keygraph.doaxes()
@@ -1988,11 +1988,11 @@ class density(_keygraphstyle):
         def equidistant(values):
             l = len(values) - 1
             if l < 1:
-                raise ValueError("several data points required by the bitmap style in each dimension")
+                raise ValueError("several data points required by the density style in each dimension")
             range = values[-1] - values[0]
             for i, value in enumerate(values):
                 if abs(value - values[0] - i * range / l) > self.epsilon:
-                    raise ValueError("data must be equidistant for the bitmap style")
+                    raise ValueError("data must be equidistant for the density style")
         equidistant(values1)
         equidistant(values2)
         needalpha = False
@@ -2051,7 +2051,7 @@ class density(_keygraphstyle):
         privatedata.vfixed[sharedata.index2] = values2[0]-v2enlargement
         vx4, vy4 = t.inverse().apply_pt(*graph.vpos_pt(*privatedata.vfixed))
         if abs(vx4 - 1) > self.epsilon or abs(vy4 - 1) > self.epsilon:
-            raise ValueError("invalid graph layout for bitmap style (bitmap positioning by affine transformation failed)")
+            raise ValueError("invalid graph layout for density style (bitmap positioning by affine transformation failed)")
 
         p = path.path()
         privatedata.vfixed[sharedata.index1] = 0
