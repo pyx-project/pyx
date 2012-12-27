@@ -9,4 +9,4 @@ Appendix: Named gradients
 .. figure:: gradientname.*
    :align:  center
 
-   Names gradients
+   Named gradients
