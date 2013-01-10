@@ -78,8 +78,8 @@ To group drawing operations, layers can be used:
    ordering purposes, i.e., what is above and below each other. The layer name
    *name* is a dotted string, where dots are used to form a hierarchy of layer
    groups. When inserting a layer, it is put on top of its layer group except
-   when another layer of this group is specified by means of the parameters
-   *above* or *below*.
+   when another layer instance of this group is specified by means of the
+   parameters *above* or *below*.
 
 
 The :class:`canvas` class provides access to the total geometrical size of its
