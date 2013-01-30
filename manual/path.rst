@@ -318,10 +318,10 @@ A given path ``p`` can easily be converted to the corresponding
 
    np = p.normpath()
 
-Additionally, the accuracy is used in all :class:`normpath` calculations can be
+Additionally, the accuracy that is used in all :class:`normpath` calculations can be
 specified by means of the argument *epsilon*, which defaults to to
-:math:`10^{-5}` where units of PostScript points are understood. This default
-value can be changed using the module function :func:`path.set`.
+:math:`10^{-5}`, where units of PostScript points are understood. This default
+value can also be changed using the module function :func:`path.set`.
 
 To construct a :class:`normpath` from a list of :class:`normsubpath` instances,
 they are passed to the :class:`normpath` constructor:
