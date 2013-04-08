@@ -863,13 +863,14 @@ filling and stroking. Those are especially useful in combination with the
    attr.changelist([deco.filled, deco.stroked])
 
 
-.. class:: line(lineattrs=[])
+.. class:: line(lineattrs=[], epsilon=1e-10)
 
    This class is a style to stroke lines in a graph. *lineattrs* is merged with
    ``defaultlineattrs`` which is a list containing the member variable
    ``changelinestyle`` as described below. An instance of :class:`line` is the
    default style of the graph data classes :class:`function` and
-   :class:`paramfunction` described in section :mod:`graph.data`.
+   :class:`paramfunction` described in section :mod:`graph.data`. *epsilon* is
+   a precision in graph coordinates for line clipping.
 
 The class :class:`line` provides a changeable line style. Its definition is:
 
@@ -1031,12 +1032,13 @@ The class :class:`line` provides a changeable line style. Its definition is:
    coordinate value when their difference in graph coordinates is below *epsilon*.
 
 
-.. class:: grid(gridlines1=1, gridlines2=1, gridattrs=[])
+.. class:: grid(gridlines1=1, gridlines2=1, gridattrs=[], epsilon=1e-10)
 
    Strokes a rectangular grid in the first grid direction, when *gridlines1* is set
    and in the second grid direction, when *gridlines2* is set. *gridattrs* is
    merged with ``defaultgridattrs`` which is a list containing the member variable
-   ``changelinestyle`` of the :class:`line` class.
+   ``changelinestyle`` of the :class:`line` class. *epsilon* is a precision in graph
+   coordinates for line clipping.
 
 
 .. class:: surface(gridlines1=0.05, gridlines2=0.05, gridcolor=None, backcolor=color.gray.black, **kwargs)

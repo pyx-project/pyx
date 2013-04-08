@@ -521,6 +521,9 @@ class _line(_styleneedingpointpos):
     # this style is not a complete style, but it provides the basic functionality to
     # create a line, which is cut at the graph boundaries (or at otherwise invalid points)
 
+    def __init__(self, epsilon=1e-10):
+        self.epsilon = epsilon
+
     def initpointstopath(self, privatedata):
         privatedata.path = path.path()
         privatedata.linebasepoints = []
@@ -547,26 +550,20 @@ class _line(_styleneedingpointpos):
                     # cut end
                     cut = 1
                     for vstart, vend in zip(privatedata.lastvpos, vpos):
-                        newcut = None
-                        if vend > 1:
-                            # 1 = vstart + (vend - vstart) * cut
-                            try:
+                        if abs(vend - vstart) > self.epsilon:
+                            newcut = None
+                            if vend > 1:
+                                # 1 = vstart + (vend - vstart) * cut
                                 newcut = (1 - vstart)/(vend - vstart)
-                            except (ArithmeticError, TypeError):
-                                break
-                        if vend < 0:
-                            # 0 = vstart + (vend - vstart) * cut
-                            try:
+                            if vend < 0:
+                                # 0 = vstart + (vend - vstart) * cut
                                 newcut = - vstart/(vend - vstart)
-                            except (ArithmeticError, TypeError):
-                                break
-                        if newcut is not None and newcut < cut:
-                            cut = newcut
-                    else:
-                        cutvpos = []
-                        for vstart, vend in zip(privatedata.lastvpos, vpos):
-                            cutvpos.append(vstart + (vend - vstart) * cut)
-                        privatedata.linebasepoints.append(graphvpos_pt(*cutvpos))
+                            if newcut is not None and newcut < cut:
+                                cut = newcut
+                    cutvpos = []
+                    for vstart, vend in zip(privatedata.lastvpos, vpos):
+                        cutvpos.append(vstart + (vend - vstart) * cut)
+                    privatedata.linebasepoints.append(graphvpos_pt(*cutvpos))
                     self.addpointstopath(privatedata)
             else:
                 # the last point was outside the graph
@@ -575,66 +572,46 @@ class _line(_styleneedingpointpos):
                         # cut beginning
                         cut = 0
                         for vstart, vend in zip(privatedata.lastvpos, vpos):
-                            newcut = None
-                            if vstart > 1:
-                                # 1 = vstart + (vend - vstart) * cut
-                                try:
+                            if abs(vend - vstart) > self.epsilon:
+                                newcut = None
+                                if vstart > 1:
+                                    # 1 = vstart + (vend - vstart) * cut
                                     newcut = (1 - vstart)/(vend - vstart)
-                                except (ArithmeticError, TypeError):
-                                    break
-                            if vstart < 0:
-                                # 0 = vstart + (vend - vstart) * cut
-                                try:
+                                if vstart < 0:
+                                    # 0 = vstart + (vend - vstart) * cut
                                     newcut = - vstart/(vend - vstart)
-                                except (ArithmeticError, TypeError):
-                                    break
-                            if newcut is not None and newcut > cut:
-                                cut = newcut
-                        else:
-                            cutvpos = []
-                            for vstart, vend in zip(privatedata.lastvpos, vpos):
-                                cutvpos.append(vstart + (vend - vstart) * cut)
-                            privatedata.linebasepoints.append(graphvpos_pt(*cutvpos))
-                            privatedata.linebasepoints.append(graphvpos_pt(*vpos))
+                                if newcut is not None and newcut > cut:
+                                    cut = newcut
+                        cutvpos = []
+                        for vstart, vend in zip(privatedata.lastvpos, vpos):
+                            cutvpos.append(vstart + (vend - vstart) * cut)
+                        privatedata.linebasepoints.append(graphvpos_pt(*cutvpos))
+                        privatedata.linebasepoints.append(graphvpos_pt(*vpos))
                     else:
                         # sometimes cut beginning and end
                         cutfrom = 0
                         cutto = 1
                         for vstart, vend in zip(privatedata.lastvpos, vpos):
-                            newcutfrom = None
-                            if vstart > 1:
-                                if vend > 1:
-                                    break
-                                # 1 = vstart + (vend - vstart) * cutfrom
-                                try:
+                            if vstart > 1 and vend > 1: break
+                            if vstart < 0 and vend < 0: break
+                            if abs(vend - vstart) > self.epsilon:
+                                newcutfrom = None
+                                if vstart > 1:
                                     newcutfrom = (1 - vstart)/(vend - vstart)
-                                except (ArithmeticError, TypeError):
-                                    break
-                            if vstart < 0:
-                                if vend < 0:
-                                    break
-                                # 0 = vstart + (vend - vstart) * cutfrom
-                                try:
+                                if vstart < 0:
+                                    # 0 = vstart + (vend - vstart) * cutfrom
                                     newcutfrom = - vstart/(vend - vstart)
-                                except (ArithmeticError, TypeError):
-                                    break
-                            if newcutfrom is not None and newcutfrom > cutfrom:
-                                cutfrom = newcutfrom
-                            newcutto = None
-                            if vend > 1:
-                                # 1 = vstart + (vend - vstart) * cutto
-                                try:
+                                if newcutfrom is not None and newcutfrom > cutfrom:
+                                    cutfrom = newcutfrom
+                                newcutto = None
+                                if vend > 1:
+                                    # 1 = vstart + (vend - vstart) * cutto
                                     newcutto = (1 - vstart)/(vend - vstart)
-                                except (ArithmeticError, TypeError):
-                                    break
-                            if vend < 0:
-                                # 0 = vstart + (vend - vstart) * cutto
-                                try:
+                                if vend < 0:
+                                    # 0 = vstart + (vend - vstart) * cutto
                                     newcutto = - vstart/(vend - vstart)
-                                except (ArithmeticError, TypeError):
-                                    break
-                            if newcutto is not None and newcutto < cutto:
-                                cutto = newcutto
+                                if newcutto is not None and newcutto < cutto:
+                                    cutto = newcutto
                         else:
                             if cutfrom < cutto:
                                 cutfromvpos = []
@@ -673,7 +650,8 @@ class line(_line):
 
     defaultlineattrs = [changelinestyle]
 
-    def __init__(self, lineattrs=[]):
+    def __init__(self, lineattrs=[], **kwargs):
+        _line.__init__(self, **kwargs)
         self.lineattrs = lineattrs
 
     def selectstyle(self, privatedata, sharedata, graph, selectindex, selecttotal):
@@ -1694,13 +1672,14 @@ class gridpos(_style):
 registerdefaultprovider(gridpos(), gridpos.providesdata)
 
 
-class grid(_line, _style):
+class grid(_line):
 
     needsdata = ["values1", "values2", "data12", "data21"]
 
     defaultgridattrs = [line.changelinestyle]
 
-    def __init__(self, gridlines1=1, gridlines2=1, gridattrs=[]):
+    def __init__(self, gridlines1=1, gridlines2=1, gridattrs=[], **kwargs):
+        _line.__init__(self, **kwargs)
         self.gridlines1 = gridlines1
         self.gridlines2 = gridlines2
         self.gridattrs = gridattrs
