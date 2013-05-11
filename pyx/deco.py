@@ -610,13 +610,15 @@ class curvedtext(deco, attr.attr):
         t = texrunner.text(0, 0, self.text, textattrs, singlecharmode=1)
         t.ensuredvicanvas()
 
+        texttrafos = attr.getattrs(textattrs, [trafo.trafo_pt])
+
         c = canvas.canvas()
         for item in t.dvicanvas.items:
             bbox = item.bbox()
             if bbox:
                 x = item.bbox().center()[0]
                 atrafo = dp.path.trafo(textpos+x)
-                c.insert(item, [trafo.translate(-x, 0), atrafo])
+                c.insert(item, [trafo.translate(-x, 0)] + texttrafos + [atrafo])
                 if self.exclude is not None:
                     dp.excluderange(textpos+bbox.left()-self.exclude, textpos+bbox.right()+self.exclude)
             else:

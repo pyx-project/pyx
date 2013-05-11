@@ -3,6 +3,8 @@
     - cygwin LaTeX with windows python patch (thanks to Sybren A. Stüvel)
   - graph styles:
     - fix numerical instability of line clippings
+  - deco module:
+    - apply text trafos to each character in curvedtext (reported by Hans L)
 
 0.12.1 (2012/10/26):
   - graph styles:
