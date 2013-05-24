@@ -349,7 +349,7 @@ differences to the :class:`graphxy` class are described.
    *projector* defines the conversion of 3d coordinates to 2d coordinates. It can
    be an instance of :class:`central` or :class:`parallel` described below.
 
-   *\*\*axes* receives axes instances as for :class:`graphxyz`. The graphxyz allows
+   *\*\*axes* receives axes instances as for :class:`graphxy`. The graphxyz allows
    for 4 axes per graph dimension ``x``, ``x2``, ``x3``, ``x4``, ``y``, ``y2``,
    ``y3``, ``y4``, ``z``, ``z2``, ``z3``, and ``z4``. The x-y-plane is the
    horizontal plane at the bottom and the ``x``, ``x2``, ``y``, and ``y2`` axes are
@@ -387,7 +387,7 @@ from 0 to 1 per dimension).
 .. method:: graphxyz.vzindex(vx, vy, vz)
 
    The depths of the point defined by *vx*, *vy*, and *vz* scaled to a range [-1:1]
-   where 1 in closed to the viewer. All arguments passed to the method are in graph
+   where 1 is closest to the viewer. All arguments passed to the method are in graph
    coordinates with range [0:1].
 
 
