@@ -610,21 +610,19 @@ class curvedtext(deco, attr.attr):
         t = texrunner.text(0, 0, self.text, textattrs, singlecharmode=1)
         t.ensuredvicanvas()
 
-        texttrafos = attr.getattrs(textattrs, [trafo.trafo_pt])
-
-        c = canvas.canvas()
+        # we modify the original textbox to keep all its attributes and modify the position for each dvicanvas item
         for item in t.dvicanvas.items:
             bbox = item.bbox()
             if bbox:
-                x = item.bbox().center()[0]
+                bbox = bbox.transformed(t.texttrafo)
+                x = bbox.center()[0]
                 atrafo = dp.path.trafo(textpos+x)
-                c.insert(item, [trafo.translate(-x, 0)] + texttrafos + [atrafo])
+                t.dvicanvas.insert(item, [t.texttrafo] + [trafo.translate(-x, 0)] + [atrafo], replace=item)
                 if self.exclude is not None:
                     dp.excluderange(textpos+bbox.left()-self.exclude, textpos+bbox.right()+self.exclude)
-            else:
-                c.insert(item)
-        dp.ornaments.insert(c)
 
+        # when inserting the original textbox, we reverse the texttrafo, as it has been applied to each dvicanvas individually
+        dp.ornaments.insert(t, [t.texttrafo.inverse()])
 
 
 class shownormpath(deco, attr.attr):
