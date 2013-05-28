@@ -23,7 +23,10 @@
 
 
 import getopt, sys, os, StringIO, re, math
-import Image # we use the python image library (PIL)
+try:
+    from PIL import Image
+except ImportError:
+    import Image
 
 
 progname = "epstopng v0.1: eps to transparent antialiased png converter"

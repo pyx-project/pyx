@@ -1,5 +1,10 @@
 from pyx import *
-import Image
+
+# support Image module either from PIL or pillow
+try:
+    from PIL import Image
+except ImportError:
+    import Image
 
 im = Image.new("RGB", (3, 1))
 im.putpixel((0, 0), (255, 0, 0))

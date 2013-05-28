@@ -345,7 +345,10 @@ class epsfile(canvasitem.canvasitem):
     def processPDF(self, file, writer, context, registry, bbox):
         warnings.warn("EPS file is included as a bitmap created using pipeGS")
         from pyx import bitmap, canvas
-        import Image
+        try:
+            from PIL import Image
+        except ImportError:
+            import Image
         c = canvas.canvas()
         c.insert(self)
         i = Image.open(c.pipeGS(device="pngalpha", resolution=600, seekable=True))
