@@ -5,6 +5,10 @@
     - fix numerical instability of line clippings
   - deco module:
     - apply text trafos to each character in curvedtext (reported by Hans L)
+  - canvas module:
+    - insert method allows for a replacement of an existing item (might still
+      need some discussion; needs documentation, as well as the before and
+      after arguments introduced in 0.12)
 
 0.12.1 (2012/10/26):
   - graph styles:
