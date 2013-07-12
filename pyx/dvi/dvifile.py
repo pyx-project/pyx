@@ -22,7 +22,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 import cStringIO, math, re, string, struct, sys, warnings
-from pyx import  bbox, canvas, canvasitem, color, epsfile, filelocator, path, reader, trafo, unit
+from pyx import  bbox, canvas, color, epsfile, filelocator, path, reader, trafo, unit
 import texfont, tfmfile
 
 
@@ -77,46 +77,6 @@ _READ_DONE      = 6
 
 class DVIError(Exception): pass
 
-# save and restore colors
-
-class _canvasitem(canvasitem.canvasitem):
-
-    def bbox(self):
-        # TODO: see TODO in bbox method of canvasitem
-        return bbox.empty()
-
-
-class _savecolor(_canvasitem):
-    def processPS(self, file, writer, context, registry, bbox):
-        file.write("currentcolor currentcolorspace\n")
-
-    def processPDF(self, file, writer, context, registry, bbox):
-        file.write("q\n")
-
-
-class _restorecolor(_canvasitem):
-    def processPS(self, file, writer, context, registry, bbox):
-        file.write("setcolorspace setcolor\n")
-
-    def processPDF(self, file, writer, context, registry, bbox):
-        file.write("Q\n")
-
-
-class _savetrafo(_canvasitem):
-    def processPS(self, file, writer, context, registry, bbox):
-        file.write("matrix currentmatrix\n")
-
-    def processPDF(self, file, writer, context, registry, bbox):
-        file.write("q\n")
-
-
-class _restoretrafo(_canvasitem):
-    def processPS(self, file, writer, context, registry, bbox):
-        file.write("setmatrix\n")
-
-    def processPDF(self, file, writer, context, registry, bbox):
-        file.write("Q\n")
-
 
 class DVIfile:
 
@@ -148,6 +108,17 @@ class DVIfile:
         self._read_pre()
 
     # helper routines
+
+    def beginsubpage(self, attrs):
+        c = canvas.canvas(attrs)
+        c.parent = self.actpage
+        c.markers = {}
+        self.actpage.insert(c)
+        self.actpage = c
+
+    def endsubpage(self):
+        # TODO handle markers
+        self.actpage = self.actpage.parent
 
     def flushtext(self, fontmap):
         """ finish currently active text object """
@@ -300,20 +271,18 @@ class DVIfile:
                     raise RuntimeError("cannot access PyX color '%s' in TeX, aborting" % " ".join(args[1:]))
             else:
                 raise RuntimeError("color model '%s' cannot be handled by PyX, aborting" % args[0])
-            self.actpage.insert(_savecolor())
-            self.actpage.insert(c)
+
+            self.beginsubpage([c])
         elif command == "color_end":
-            self.actpage.insert(_restorecolor())
+            self.endsubpage()
         elif command == "rotate_begin":
-            self.actpage.insert(_savetrafo())
-            self.actpage.insert(trafo.rotate_pt(float(args[0]), x, y))
+            self.beginsubpage([trafo.rotate_pt(float(args[0]), x, y)])
         elif command == "rotate_end":
-            self.actpage.insert(_restoretrafo())
+            self.endsubpage()
         elif command == "scale_begin":
-            self.actpage.insert(_savetrafo())
-            self.actpage.insert(trafo.scale_pt(float(args[0]), float(args[1]), x, y))
+            self.beginsubpage([trafo.scale_pt(float(args[0]), float(args[1]), x, y)])
         elif command == "scale_end":
-            self.actpage.insert(_restoretrafo())
+            self.endsubpage()
         elif command == "epsinclude":
             # parse arguments
             argdict = {}
