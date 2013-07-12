@@ -21,8 +21,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 import math
-import attr, canvasitem, deformer, unit
-import bbox as bboxmodule
+import attr, deformer, unit
 
 # global epsilon (used to judge whether a matrix is singular)
 _epsilon = (1e-5)**2
@@ -65,7 +64,7 @@ class TrafoException(Exception):
 
 # trafo: affine transformations
 
-class trafo_pt(canvasitem.canvasitem, deformer.deformer):
+class trafo_pt(deformer.deformer):
 
     """affine transformation (coordinates in constructor in pts)
 
@@ -136,9 +135,6 @@ class trafo_pt(canvasitem.canvasitem, deformer.deformer):
                     ( self.matrix[0][0], self.matrix[1][0],
                       self.matrix[0][1], self.matrix[1][1],
                       self.vector[0], self.vector[1] ) )
-
-    def bbox(self):
-        return bboxmodule.empty()
 
     def apply_pt(self, x_pt, y_pt):
         """apply transformation to point (x_pt, y_pt) in pts"""

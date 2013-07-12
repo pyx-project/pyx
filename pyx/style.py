@@ -22,22 +22,18 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 import math
-import attr, unit, canvasitem
+import attr, unit
 import bbox as bboxmodule
 
 #
 # base classes for stroke and fill styles
 #
 
-class strokestyle(canvasitem.canvasitem):
-    def bbox(self):
-        # TODO: see TODO in bbox method of canvasitem
-        return bboxmodule.empty()
+class strokestyle:
+    pass
 
-class fillstyle(canvasitem.canvasitem):
-    def bbox(self):
-        # TODO: see TODO in bbox method of canvasitem
-        return bboxmodule.empty()
+class fillstyle:
+    pass
 
 #
 # common stroke styles

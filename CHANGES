@@ -15,6 +15,7 @@
     - remove the before and after arguments of insert
   - dvi/dvifile module:
     - change special handling for transformations and colors to use subcanvases
+  - trafos and styles are no longer canvasitems
 
 0.12.1 (2012/10/26):
   - graph styles:

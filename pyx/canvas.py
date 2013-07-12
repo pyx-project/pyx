@@ -52,17 +52,13 @@ def _wrappedindocument(method):
 # clipping class
 #
 
-class clip(canvasitem.canvasitem):
+class clip:
 
     """class for use in canvas constructor which clips to a path"""
 
     def __init__(self, path):
         """construct a clip instance for a given path"""
         self.path = path
-
-    def bbox(self):
-        # as a canvasitem a clipping path has NO influence on the bbox...
-        return bboxmodule.empty()
 
     def clipbbox(self):
         # ... but for clipping, we nevertheless need the bbox
@@ -123,7 +119,8 @@ class canvas(canvasitem.canvasitem):
         # from the right.
         # Note that while for the stroke and fill styles the order doesn't matter at all,
         # this is not true for the clip operation.
-        for aattr in attrs[::-1]:
+        self.attrs = attrs[::-1]
+        for aattr in self.attrs:
             if isinstance(aattr, trafo.trafo_pt):
                 self.trafo = self.trafo * aattr
             elif isinstance(aattr, clip):
@@ -131,7 +128,6 @@ class canvas(canvasitem.canvasitem):
                     self.clipbbox = aattr.clipbbox().transformed(self.trafo)
                 else:
                     self.clippbox *= aattr.clipbbox().transformed(self.trafo)
-            self.items.append(aattr)
 
     def __len__(self):
         return len(self.items)
@@ -168,6 +164,8 @@ class canvas(canvasitem.canvasitem):
         if self.items:
             file.write("gsave\n")
             nbbox = bboxmodule.empty()
+            for attr in self.attrs:
+                attr.processPS(file, writer, context, registry, nbbox)
             for item in self.items:
                 item.processPS(file, writer, context, registry, nbbox)
             # update bounding bbox
@@ -183,9 +181,11 @@ class canvas(canvasitem.canvasitem):
         if self.items:
             file.write("q\n") # gsave
             nbbox = bboxmodule.empty()
+            for attr in self.attrs:
+                if isinstance(attr, style.fillstyle):
+                    context.fillstyles.append(attr)
+                attr.processPDF(file, writer, context, registry, nbbox)
             for item in self.items:
-                if isinstance(item, style.fillstyle):
-                    context.fillstyles.append(item)
                 if not writer.text_as_path:
                     if isinstance(item, font.text_pt):
                         if not context.textregion:
