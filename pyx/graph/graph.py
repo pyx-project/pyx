@@ -753,9 +753,9 @@ class graphxyz(graph):
                  projector=central(10, -30, 30), axesdist=0.8*unit.v_cm, key=None,
                  **axes):
         graph.__init__(self)
-        self.layer("hiddenaxes", below=self.layer("filldata"))
         for name in ["hiddenaxes.grid", "hiddenaxes.baseline", "hiddenaxes.ticks", "hiddenaxes.labels", "hiddenaxes.title"]:
             self.layer(name)
+        self.layer("hiddenaxes", below="filldata")
 
         self.xpos = xpos
         self.ypos = ypos
