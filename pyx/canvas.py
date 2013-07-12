@@ -219,15 +219,37 @@ class canvas(canvasitem.canvasitem):
         by means of the parameters above or below.
 
         """
+        if above is not None and below is not None:
+            raise ValueError("above and below cannot be specified at the same time")
         try:
             group, layer = name.split(".", 1)
         except ValueError:
-            if not name in self.layers:
-                self.layers[name] = self.insert(canvas(texrunner=self.texrunner), after=above, before=below)
+            if name in self.layers:
+                if above is not None and below is not None:
+                    # remove for repositioning
+                    self.items.remove(self.layers[name])
+            else:
+                # create new layer
+                self.layers[name] = canvas(texrunner=self.texrunner)
+                if above is None and below is None:
+                    self.items.append(self.layers[name])
+
+            # (re)position layer
+            if above is not None:
+                self.items.insert(self.items.index(self.layers[above])+1, self.layers[name])
+            elif below is not None:
+                self.items.insert(self.items.index(self.layers[below]), self.layers[name])
+
             return self.layers[name]
         else:
             if not group in self.layers:
                 self.layers[group] = self.insert(canvas(texrunner=self.texrunner))
+            if above is not None:
+                abovegroup, above = above.split(".", 1)
+                assert abovegroup == group
+            if below is not None:
+                belowgroup, below = below.split(".", 1)
+                assert belowgroup == group
             return self.layers[group].layer(layer, above=above, below=below)
 
     def insert(self, item, attrs=None, before=None, after=None, replace=None):
