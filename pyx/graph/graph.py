@@ -159,7 +159,7 @@ class graph(canvas.canvas):
 
     def __init__(self):
         canvas.canvas.__init__(self)
-        for name in ["background", "filldata", "axes.grid", "axis.baseline", "axis.ticks", "axis.labels", "axis.title", "data", "key"]:
+        for name in ["background", "filldata", "axes.grid", "axes.baseline", "axes.ticks", "axes.labels", "axes.title", "data", "key"]:
             self.layer(name)
         self.axes = {}
         self.plotitems = []
