@@ -12,6 +12,7 @@
       after arguments introduced in 0.12)
     - layer method takes layer names above or below (instead of an instance),
       also reorders layer accordingly when layer is already existing
+    - remove the before and after arguments of insert
 
 0.12.1 (2012/10/26):
   - graph styles:

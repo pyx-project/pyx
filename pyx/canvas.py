@@ -252,11 +252,11 @@ class canvas(canvasitem.canvasitem):
                 assert belowgroup == group
             return self.layers[group].layer(layer, above=above, below=below)
 
-    def insert(self, item, attrs=None, before=None, after=None, replace=None):
+    def insert(self, item, attrs=None, replace=None):
         """insert item in the canvas.
 
         If attrs are passed, a canvas containing the item is inserted applying
-        attrs. If one of before, after or replace is not None, the new item is
+        attrs. If replace is not None, the new item is
         positioned accordingly in the canvas.
 
         returns the item, possibly wrapped in a canvas
@@ -271,13 +271,7 @@ class canvas(canvasitem.canvasitem):
             sc.insert(item)
             item = sc
 
-        if [before, after, replace].count(None) < 2:
-            raise ValueError("before, after and replace cannot be specified at the same time")
-        if before is not None:
-            self.items.insert(self.items.index(before), item)
-        elif after is not None:
-            self.items.insert(self.items.index(after)+1, item)
-        elif replace is not None:
+        if replace is not None:
             self.items[self.items.index(replace)] = item
         else:
             self.items.append(item)
