@@ -326,7 +326,7 @@ def open(filename, formats, mode="r"):
     # return anything (like pykpathsea and kpsewhich).
     # This is useful for files not to be searched in the latex
     # installation at all (like lfs files).
-    extensions = pycompat.set([""])
+    extensions = set([""])
     for format in formats:
         for extension in format.extensions:
             extensions.add(extension)
