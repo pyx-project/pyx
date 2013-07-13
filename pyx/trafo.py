@@ -197,6 +197,8 @@ class trafo(trafo_pt):
 # some standard transformations 
 #
 
+identity = trafo()
+
 class mirror(trafo):
     def __init__(self, angle=0, epsilon=_marker):
         trafo.__init__(self, matrix=_mmatrix(angle), epsilon=epsilon)
