@@ -7,9 +7,6 @@
     - apply text trafos to each character in curvedtext (reported by Hans L)
     - properly apply all textattrs in curvedtext (for example colors or scalings)
   - canvas module:
-    - insert method allows for a replacement of an existing item (might still
-      need some discussion; needs documentation, as well as the before and
-      after arguments introduced in 0.12)
     - layer method takes layer names above or below (instead of an instance),
       also reorders layer accordingly when layer is already existing
     - remove the before and after arguments of insert

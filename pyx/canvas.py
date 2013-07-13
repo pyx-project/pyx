@@ -262,7 +262,7 @@ class canvas(canvasitem.canvasitem):
                 assert belowgroup == group
             return self.layers[group].layer(layer, above=above, below=below)
 
-    def insert(self, item, attrs=None, replace=None):
+    def insert(self, item, attrs=None):
         """insert item in the canvas.
 
         If attrs are passed, a canvas containing the item is inserted applying
@@ -281,10 +281,7 @@ class canvas(canvasitem.canvasitem):
             sc.insert(item)
             item = sc
 
-        if replace is not None:
-            self.items[self.items.index(replace)] = item
-        else:
-            self.items.append(item)
+        self.items.append(item)
         return item
 
     def draw(self, path, attrs):
