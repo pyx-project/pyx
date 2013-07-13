@@ -20,7 +20,6 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import string
 from . import metric
 
 unicodestring = {" ": "space",
@@ -1091,9 +1090,11 @@ class AFMfile(metric.metric):
             return _READ_COMPOSITES, 0
         elif key == "EndFontMetrics":
             return _READ_END, None
-        elif key[0] in string.lowercase:
+        elif key[0] in "abcdefghijklmnopqrstuvwxyz":
             # ignoring private commands
             pass
+        else:
+            raise AFMError("Unknown AFM key '%s'" % key)
         return _READ_MAIN, None
 
     def _processline_direction(self, line, direction):
