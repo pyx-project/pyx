@@ -1,4 +1,4 @@
-PYTHON ?= python
+PYTHON ?= python3
 
 pyfiles = $(wildcard *.py)
 epsfiles = $(patsubst %.py, %.eps, $(pyfiles))
