@@ -671,11 +671,11 @@ class T1file:
 
     def _eexecencode(self, data):
         """eexec encoding of data"""
-        return encoder(data, self.eexecr, "PyX!")
+        return encoder(data, self.eexecr, b"PyX!")
 
     def _charstringencode(self, data):
         """eexec encoding of data"""
-        return encoder(data, self.charstringr, "PyX!"[:self.lenIV])
+        return encoder(data, self.charstringr, b"PyX!"[:self.lenIV])
 
     def _encoding(self):
         """helper method to lookup the encoding in the font"""
@@ -714,23 +714,25 @@ class T1file:
         It doesn't make sense to call this method twice -- check the content of
         data2 before calling. The method also keeps the subrs and charstrings
         start and end positions for later use."""
-        self._data2 = self._eexecdecode(self._data2eexec).decode('ascii')
+        self._data2 = self._eexecdecode(self._data2eexec)
 
-        m = self.lenIVpattern.search(self._data2)
-        if m:
-            self.lenIV = int(m.group(1))
-        else:
-            self.lenIV = 4
-        self.emptysubr = self._charstringencode(chr(11))
+        # m = self.lenIVpattern.search(self._data2)
+        # if m:
+        #     self.lenIV = int(m.group(1))
+        # else:
+        #     self.lenIV = 4
+        self.lenIV = 4 # TODO!!!
+
+        self.emptysubr = self._charstringencode(b"\x0b") # 11
 
         # extract Subrs
-        c = reader.PStokenizer(self._data2, "/Subrs")
+        c = reader.PSbytes_tokenizer(self._data2, b"/Subrs")
         self.subrsstart = c.pos
         arraycount = c.getint()
-        token = c.gettoken(); assert token == "array"
+        token = c.gettoken(); assert token == b"array"
         self.subrs = []
         for i in range(arraycount):
-            token = c.gettoken(); assert token == "dup"
+            token = c.gettoken(); assert token == b"dup"
             token = c.getint(); assert token == i
             size = c.getint()
             if not i:
@@ -739,8 +741,8 @@ class T1file:
                 token = c.gettoken(); assert token == self.subrrdtoken
             self.subrs.append(c.getbytes(size))
             token = c.gettoken()
-            if token == "noaccess":
-                token = "%s %s" % (token, c.gettoken())
+            if token == b"noaccess":
+                token = token + b" " + c.gettoken()
             if not i:
                 self.subrnptoken = token
             else:
@@ -759,15 +761,15 @@ class T1file:
         # extract glyphs
         self.glyphs = {}
         self.glyphlist = [] # we want to keep the order of the glyph names
-        c = reader.PStokenizer(self._data2, "/CharStrings")
+        c = reader.PSbytes_tokenizer(self._data2, b"/CharStrings")
         self.charstringsstart = c.pos
         c.getint()
-        token = c.gettoken(); assert token == "dict"
-        token = c.gettoken(); assert token == "dup"
-        token = c.gettoken(); assert token == "begin"
+        token = c.gettoken(); assert token == b"dict"
+        token = c.gettoken(); assert token == b"dup"
+        token = c.gettoken(); assert token == b"begin"
         first = 1
         while 1:
-            chartoken = c.gettoken()
+            chartoken = c.gettoken().decode('ascii')
             if chartoken == "end":
                 break
             assert chartoken[0] == "/"
@@ -948,13 +950,25 @@ class T1file:
                     code = self.subrs[subr]
                 else:
                     code = self.emptysubr
-                result.append("dup %d %d %s %s %s\n" % (subr, len(code), self.subrrdtoken, code, self.subrnptoken))
+                result.append("dup %d %d " % (subr, len(code)))
+                result.append(self.subrrdtoken)
+                result.append(" ")
+                result.append(code)
+                result.append(" ")
+                result.append(self.subrnptoken)
+                result.append("\n")
 
         def addcharstrings(glyphs, result):
             result.append("%d dict dup begin\n" % (glyphs is None and len(self.glyphlist) or len(glyphs)))
             for glyph in self.glyphlist:
                 if glyphs is None or glyph in glyphs:
-                    result.append("/%s %d %s %s %s\n" % (glyph, len(self.glyphs[glyph]), self.glyphrdtoken, self.glyphs[glyph], self.glyphndtoken))
+                    result.append("/%s %d " % (glyph, len(self.glyphs[glyph])))
+                    result.append(self.glyphrdtoken)
+                    result.append(" ")
+                    result.append(self.glyphs[glyph])
+                    result.append(" ")
+                    result.append(self.glyphndtoken)
+                    result.append("\n")
             result.append("end\n")
 
         if self.subrsstart < self.charstringsstart:
@@ -969,7 +983,8 @@ class T1file:
             result.append(self._data2[self.charstringsend:self.subrsstart])
             addsubrs(subrs, result)
             result.append(self._data2[self.subrsend:])
-        return "".join(result)
+        result = [x.encode("ascii") if isinstance(x, str) else x for x in result]
+        return b"".join(result)
 
     def getdata2eexec(self):
         if self._data2eexec:
@@ -1014,7 +1029,8 @@ class T1file:
         data1 = self.uniqueidpattern.subn("", data1)[0]
 
         # strip data2
-        data2 = self.uniqueidpattern.subn("", self.getdata2(subrs, glyphs))[0]
+        # data2 = self.uniqueidpattern.subn("", self.getdata2(subrs, glyphs))[0] # TODO!!!
+        data2 = self.getdata2(subrs, glyphs)
 
         # strip data3
         data3 = self.newlinepattern.subn("\n", self.data3)[0]

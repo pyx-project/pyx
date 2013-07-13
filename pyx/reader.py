@@ -94,7 +94,9 @@ class bytesreader(reader):
 class PStokenizer:
     """cursor to read a string token by token"""
 
-    def __init__(self, data, startstring=None, eattokensep=1, tokenseps=" \t\r\n", tokenstarts="()<>[]{}/%"):
+    def __init__(self, data, startstring=None, eattokensep=1,
+                 tokenseps=" \t\r\n", tokenstarts="()<>[]{}/%",
+                 commentchar="%", newlinechars="\r\n"):
         """creates a cursor for the string data
 
         startstring is a string at which the cursor should start at. The first
@@ -113,6 +115,8 @@ class PStokenizer:
             self.pos = 0
         self.tokenseps = tokenseps
         self.tokenstarts = tokenstarts
+        self.commentchar = commentchar
+        self.newlinechars = newlinechars
         if eattokensep:
             if self.data[self.pos] not in self.tokenstarts:
                 if self.data[self.pos] not in self.tokenseps:
@@ -127,8 +131,8 @@ class PStokenizer:
         while self.data[self.pos] in self.tokenseps:
             self.pos += 1
         # ignore comments including subsequent whitespace characters
-        while self.data[self.pos] == "%":
-            while self.data[self.pos] not in "\r\n":
+        while self.data[self.pos] == self.commentchar:
+            while self.data[self.pos] not in self.newlinechars:
                 self.pos += 1
             while self.data[self.pos] in self.tokenseps:
                 self.pos += 1
@@ -155,3 +159,11 @@ class PStokenizer:
 
 
 
+class PSbytes_tokenizer(PStokenizer):
+
+    def __init__(self, data, startstring=None, eattokensep=1,
+                 tokenseps=b" \t\r\n", tokenstarts=b"()<>[]{}/%",
+                 commentchar=b"%", newlinechars=b"\r\n"):
+        super().__init__(data, startstring=startstring, eattokensep=eattokensep,
+                         tokenseps=tokenseps, tokenstarts=tokenstarts,
+                         commentchar=commentchar, newlinechars=newlinechars)
