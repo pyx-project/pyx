@@ -120,7 +120,7 @@ class page:
         else:
             cc = self.canvas
 
-        getattr(style.linewidth.normal, processMethod)(contentfile, writer, context, registry, bbox)
+        getattr(style.linewidth.normal, processMethod)(contentfile, writer, context, registry)
         if self.pagebbox:
             bbox = bbox.copy() # don't alter the bbox provided to the constructor -> use a copy
         getattr(cc, processMethod)(contentfile, writer, context, registry, bbox)

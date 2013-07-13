@@ -66,10 +66,7 @@ class pattern(canvas.canvas, attr.exclusiveattr, style.fillstyle):
             bboxenlarge = self.bboxenlarge
         return pattern(painttype, tilingtype, xstep, ystep, bbox, trafo, bboxenlarge)
 
-    def bbox(self):
-        return bboxmodule.empty()
-
-    def processPS(self, file, writer, context, registry, bbox):
+    def processPS(self, file, writer, context, registry):
         # process pattern, letting it register its resources and calculate the bbox of the pattern
         patternfile = cStringIO.StringIO()
         realpatternbbox = bboxmodule.empty()
@@ -107,7 +104,7 @@ class pattern(canvas.canvas, attr.exclusiveattr, style.fillstyle):
         # activate pattern
         file.write("%s setpattern\n" % self.id)
 
-    def processPDF(self, file, writer, context, registry, bbox):
+    def processPDF(self, file, writer, context, registry):
         # we need to keep track of the resources used by the pattern, hence
         # we create our own registry, which we merge immediately in the main registry
         patternregistry = pdfwriter.PDFregistry()

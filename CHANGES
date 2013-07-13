@@ -13,6 +13,9 @@
     - layer method takes layer names above or below (instead of an instance),
       also reorders layer accordingly when layer is already existing
     - remove the before and after arguments of insert
+    - handle trafo and clip separately in constructor and write methods
+    - allow for one clipping instance only
+    - optimize graphics state stack usage
   - dvi/dvifile module:
     - change special handling for transformations and colors to use subcanvases
     - apply transformations to markers

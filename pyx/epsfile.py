@@ -331,7 +331,7 @@ class epsfile(canvasitem.canvasitem):
             llx_pt, lly_pt, urx_pt, ury_pt = self.mybbox.transformed(self.trafo).highrestuple_pt()
             file.write("%g %g %g %g rectclip\n" % (llx_pt, lly_pt, urx_pt-llx_pt, ury_pt-lly_pt))
 
-        self.trafo.processPS(file, writer, context, registry, bbox)
+        self.trafo.processPS(file, writer, context, registry)
 
         file.write("%%%%BeginDocument: %s\n" % self.filename)
 

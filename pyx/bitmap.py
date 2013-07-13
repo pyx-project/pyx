@@ -504,7 +504,7 @@ class bitmap_trafo(canvasitem.canvasitem):
         bbox += self.bbox()
 
         file.write("q\n")
-        self.pdftrafo.processPDF(file, writer, context, registry, bbox)
+        self.pdftrafo.processPDF(file, writer, context, registry)
         file.write("/%s Do\n" % name)
         file.write("Q\n")
 

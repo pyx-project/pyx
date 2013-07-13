@@ -126,9 +126,9 @@ class decoratedpath(canvasitem.canvasitem):
         # not writing one path two times
 
         # small helper
-        def _writestyles(styles, context, registry, bbox):
+        def _writestyles(styles, context, registry):
             for style in styles:
-                style.processPS(file, writer, context, registry, bbox)
+                style.processPS(file, writer, context, registry)
 
         if self.strokestyles is None and self.fillstyles is None:
             if not len(self.ornaments):
@@ -144,7 +144,7 @@ class decoratedpath(canvasitem.canvasitem):
         if self.styles:
             file.write("gsave\n")
             context = context()
-            _writestyles(self.styles, context, registry, bbox)
+            _writestyles(self.styles, context, registry)
 
         if self.fillstyles is not None:
             file.write("newpath\n")
@@ -155,7 +155,7 @@ class decoratedpath(canvasitem.canvasitem):
                 file.write("gsave\n")
 
                 if self.fillstyles:
-                    _writestyles(self.fillstyles, context(), registry, bbox)
+                    _writestyles(self.fillstyles, context(), registry)
 
                 if context.fillrule:
                     file.write("eofill\n")
@@ -166,7 +166,7 @@ class decoratedpath(canvasitem.canvasitem):
                 acontext = context()
                 if self.strokestyles:
                     file.write("gsave\n")
-                    _writestyles(self.strokestyles, acontext, registry, bbox)
+                    _writestyles(self.strokestyles, acontext, registry)
 
                 file.write("stroke\n")
                 # take linewidth into account for bbox when stroking a path
@@ -178,7 +178,7 @@ class decoratedpath(canvasitem.canvasitem):
                 # only fill fillpath - for the moment
                 if self.fillstyles:
                     file.write("gsave\n")
-                    _writestyles(self.fillstyles, context(), registry, bbox)
+                    _writestyles(self.fillstyles, context(), registry)
 
                 if context.fillrule:
                     file.write("eofill\n")
@@ -195,7 +195,7 @@ class decoratedpath(canvasitem.canvasitem):
             acontext = context()
             if self.strokestyles:
                 file.write("gsave\n")
-                _writestyles(self.strokestyles, acontext, registry, bbox)
+                _writestyles(self.strokestyles, acontext, registry)
 
             file.write("newpath\n")
             strokepath.outputPS(file, writer)
@@ -216,20 +216,20 @@ class decoratedpath(canvasitem.canvasitem):
     def processPDF(self, file, writer, context, registry, bbox):
         # draw (stroke and/or fill) the decoratedpath on the canvas
 
-        def _writestyles(styles, context, registry, bbox):
+        def _writestyles(styles, context, registry):
             for style in styles:
-                style.processPDF(file, writer, context, registry, bbox)
+                style.processPDF(file, writer, context, registry)
 
-        def _writestrokestyles(strokestyles, context, registry, bbox):
+        def _writestrokestyles(strokestyles, context, registry):
             context.fillattr = 0
             for style in strokestyles:
-                style.processPDF(file, writer, context, registry, bbox)
+                style.processPDF(file, writer, context, registry)
             context.fillattr = 1
 
-        def _writefillstyles(fillstyles, context, registry, bbox):
+        def _writefillstyles(fillstyles, context, registry):
             context.strokeattr = 0
             for style in fillstyles:
-                style.processPDF(file, writer, context, registry, bbox)
+                style.processPDF(file, writer, context, registry)
             context.strokeattr = 1
 
         if self.strokestyles is None and self.fillstyles is None:
@@ -246,7 +246,7 @@ class decoratedpath(canvasitem.canvasitem):
         if self.styles:
             file.write("q\n") # gsave
             context = context()
-            _writestyles(self.styles, context, registry, bbox)
+            _writestyles(self.styles, context, registry)
 
         if self.fillstyles is not None:
             fillpath.outputPDF(file, writer)
@@ -257,9 +257,9 @@ class decoratedpath(canvasitem.canvasitem):
                 acontext = context()
 
                 if self.fillstyles:
-                    _writefillstyles(self.fillstyles, acontext, registry, bbox)
+                    _writefillstyles(self.fillstyles, acontext, registry)
                 if self.strokestyles:
-                    _writestrokestyles(self.strokestyles, acontext, registry, bbox)
+                    _writestrokestyles(self.strokestyles, acontext, registry)
 
                 if context.fillrule:
                     file.write("B*\n")
@@ -273,7 +273,7 @@ class decoratedpath(canvasitem.canvasitem):
                 # only fill fillpath - for the moment
                 if self.fillstyles:
                     file.write("q\n") # gsave
-                    _writefillstyles(self.fillstyles, context(), registry, bbox)
+                    _writefillstyles(self.fillstyles, context(), registry)
 
                 if context.fillrule:
                     file.write("f*\n")
@@ -291,7 +291,7 @@ class decoratedpath(canvasitem.canvasitem):
 
             if self.strokestyles:
                 file.write("q\n") # gsave
-                _writestrokestyles(self.strokestyles, acontext, registry, bbox)
+                _writestrokestyles(self.strokestyles, acontext, registry)
 
             strokepath.outputPDF(file, writer)
             file.write("S\n") # stroke
@@ -610,13 +610,13 @@ class curvedtext(deco, attr.attr):
         # we modify the original textbox to keep all its attributes and modify the position for each dvicanvas item
         for item in t.dvicanvas.items:
             bbox = item.bbox()
-            if bbox:
-                bbox = bbox.transformed(t.texttrafo)
-                x = bbox.center()[0]
-                atrafo = dp.path.trafo(textpos+x)
-                t.dvicanvas.insert(item, [t.texttrafo] + [trafo.translate(-x, 0)] + [atrafo], replace=item)
-                if self.exclude is not None:
-                    dp.excluderange(textpos+bbox.left()-self.exclude, textpos+bbox.right()+self.exclude)
+            assert bbox
+            bbox = bbox.transformed(t.texttrafo)
+            x = bbox.center()[0]
+            atrafo = dp.path.trafo(textpos+x)
+            t.dvicanvas.insert(item, [t.texttrafo] + [trafo.translate(-x, 0)] + [atrafo], replace=item)
+            if self.exclude is not None:
+                dp.excluderange(textpos+bbox.left()-self.exclude, textpos+bbox.right()+self.exclude)
 
         # when inserting the original textbox, we reverse the texttrafo, as it has been applied to each dvicanvas individually
         dp.ornaments.insert(t, [t.texttrafo.inverse()])

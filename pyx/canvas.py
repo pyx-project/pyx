@@ -52,7 +52,7 @@ def _wrappedindocument(method):
 # clipping class
 #
 
-class clip:
+class clip(attr.attr):
 
     """class for use in canvas constructor which clips to a path"""
 
@@ -60,16 +60,12 @@ class clip:
         """construct a clip instance for a given path"""
         self.path = path
 
-    def clipbbox(self):
-        # ... but for clipping, we nevertheless need the bbox
-        return self.path.bbox()
-
-    def processPS(self, file, writer, context, registry, bbox):
+    def processPS(self, file, writer, context, registry):
         file.write("newpath\n")
         self.path.outputPS(file, writer)
         file.write("clip\n")
 
-    def processPDF(self, file, writer, context, registry, bbox):
+    def processPDF(self, file, writer, context, registry):
         self.path.outputPDF(file, writer)
         file.write("W n\n")
 
@@ -101,8 +97,8 @@ class canvas(canvasitem.canvasitem):
         """
 
         self.items = []
-        self.trafo = trafo.trafo()
-        self.clipbbox = None
+        self.trafo = trafo.identity
+        self.clip = None
         self.layers = {}
         if attrs is None:
             attrs = []
@@ -113,21 +109,24 @@ class canvas(canvasitem.canvasitem):
             import text
             self.texrunner = text.defaulttexrunner
 
-        attr.checkattrs(attrs, [trafo.trafo_pt, clip, style.strokestyle, style.fillstyle])
+        attr.checkattrs(attrs, [trafo.trafo_pt, clip, style.style])
+        attrs = attr.mergeattrs(attrs)
+        self.modifies_state = bool(attrs)
+
+        self.styles = attr.getattrs(attrs, [style.style])
+
         # We have to reverse the trafos such that the PostScript concat operators
         # are in the right order. Correspondingly, we below multiply the current self.trafo
         # from the right.
-        # Note that while for the stroke and fill styles the order doesn't matter at all,
-        # this is not true for the clip operation.
-        self.attrs = attrs[::-1]
-        for aattr in self.attrs:
+        for aattr in reversed(attr.getattrs(attrs, [trafo.trafo_pt, clip])):
             if isinstance(aattr, trafo.trafo_pt):
                 self.trafo = self.trafo * aattr
-            elif isinstance(aattr, clip):
-                if self.clipbbox is None:
-                    self.clipbbox = aattr.clipbbox().transformed(self.trafo)
-                else:
-                    self.clippbox *= aattr.clipbbox().transformed(self.trafo)
+                if self.clip is not None:
+                    self.clip = clip(self.clip.path.transformed(aattr))
+            else:
+                if self.clip is not None:
+                    raise ValueError("single clipping allowed only")
+                self.clip = aattr
 
     def __len__(self):
         return len(self.items)
@@ -155,36 +154,47 @@ class canvas(canvasitem.canvasitem):
         # intersect with clipping bounding box (which has already been
         # transformed in canvas.__init__())
         obbox.transform(self.trafo)
-        if self.clipbbox is not None:
-            obbox *= self.clipbbox
+        if self.clip is not None:
+            obbox *= self.clip.path.bbox()
         return obbox
 
     def processPS(self, file, writer, context, registry, bbox):
         context = context()
         if self.items:
-            file.write("gsave\n")
+            if self.modifies_state:
+                file.write("gsave\n")
+                for attr in self.styles:
+                    attr.processPS(file, writer, context, registry)
+                if self.trafo is not trafo.identity:
+                    self.trafo.processPS(file, writer, context, registry)
+                if self.clip is not None:
+                    self.clip.processPS(file, writer, context, registry)
             nbbox = bboxmodule.empty()
-            for attr in self.attrs:
-                attr.processPS(file, writer, context, registry, nbbox)
             for item in self.items:
                 item.processPS(file, writer, context, registry, nbbox)
             # update bounding bbox
             nbbox.transform(self.trafo)
-            if self.clipbbox is not None:
-                nbbox *= self.clipbbox
+            if self.clip is not None:
+                nbbox *= self.clip.path.bbox()
             bbox += nbbox
-            file.write("grestore\n")
+            if self.modifies_state:
+                file.write("grestore\n")
 
     def processPDF(self, file, writer, context, registry, bbox):
         context = context()
         context.trafo = context.trafo * self.trafo
         if self.items:
-            file.write("q\n") # gsave
+            if self.modifies_state:
+                file.write("q\n") # gsave
+                for attr in self.styles:
+                    if isinstance(attr, style.fillstyle):
+                        context.fillstyles.append(attr)
+                    attr.processPDF(file, writer, context, registry)
+                if self.trafo is not trafo.identity:
+                    self.trafo.processPDF(file, writer, context, registry)
+                if self.clip is not None:
+                    self.clip.processPDF(file, writer, context, registry)
             nbbox = bboxmodule.empty()
-            for attr in self.attrs:
-                if isinstance(attr, style.fillstyle):
-                    context.fillstyles.append(attr)
-                attr.processPDF(file, writer, context, registry, nbbox)
             for item in self.items:
                 if not writer.text_as_path:
                     if isinstance(item, font.text_pt):
@@ -203,10 +213,11 @@ class canvas(canvasitem.canvasitem):
                 context.selectedfont = None
             # update bounding bbox
             nbbox.transform(self.trafo)
-            if self.clipbbox is not None:
-                nbbox *= self.clipbbox
+            if self.clip is not None:
+                nbbox *= self.clip.path.bbox()
             bbox += nbbox
-            file.write("Q\n") # grestore
+            if self.modifies_state:
+                file.write("Q\n") # grestore
 
     def layer(self, name, above=None, below=None):
         """create or get a layer with name

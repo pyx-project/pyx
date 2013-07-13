@@ -69,10 +69,10 @@ class grey(color):
         if gray<0 or gray>1: raise ValueError
         self.color = {"gray": gray}
 
-    def processPS(self, file, writer, context, registry, bbox):
+    def processPS(self, file, writer, context, registry):
         file.write("%(gray)g setgray\n" % self.color)
 
-    def processPDF(self, file, writer, context, registry, bbox):
+    def processPDF(self, file, writer, context, registry):
         if context.strokeattr:
             file.write("%(gray)f G\n" % self.color)
         if context.fillattr:
@@ -111,10 +111,10 @@ class rgb(color):
         if r<0 or r>1 or g<0 or g>1 or b<0 or b>1: raise ValueError
         self.color = {"r": r, "g": g, "b": b}
 
-    def processPS(self, file, writer, context, registry, bbox):
+    def processPS(self, file, writer, context, registry):
         file.write("%(r)g %(g)g %(b)g setrgbcolor\n" % self.color)
 
-    def processPDF(self, file, writer, context, registry, bbox):
+    def processPDF(self, file, writer, context, registry):
         if context.strokeattr:
             file.write("%(r)f %(g)f %(b)f RG\n" % self.color)
         if context.fillattr:
@@ -200,12 +200,12 @@ class hsb(color):
         if h<0 or h>1 or s<0 or s>1 or b<0 or b>1: raise ValueError
         self.color = {"h": h, "s": s, "b": b}
 
-    def processPS(self, file, writer, context, registry, bbox):
+    def processPS(self, file, writer, context, registry):
         file.write("%(h)g %(s)g %(b)g sethsbcolor\n" % self.color)
 
-    def processPDF(self, file, writer, context, registry, bbox):
+    def processPDF(self, file, writer, context, registry):
         r, g, b = colorsys.hsv_to_rgb(self.color["h"], self.color["s"], self.color["b"])
-        rgb(r, g, b).processPDF(file, writer, context, registry, bbox)
+        rgb(r, g, b).processPDF(file, writer, context, registry)
 
     def cmyk(self):
         return self.rgb().cmyk()
@@ -248,10 +248,10 @@ class cmyk(color):
         if c<0 or c>1 or m<0 or m>1 or y<0 or y>1 or k<0 or k>1: raise ValueError
         self.color = {"c": c, "m": m, "y": y, "k": k}
 
-    def processPS(self, file, writer, context, registry, bbox):
+    def processPS(self, file, writer, context, registry):
         file.write("%(c)g %(m)g %(y)g %(k)g setcmykcolor\n" % self.color)
 
-    def processPDF(self, file, writer, context, registry, bbox):
+    def processPDF(self, file, writer, context, registry):
         if context.strokeattr:
             file.write("%(c)f %(m)f %(y)f %(k)f K\n" % self.color)
         if context.fillattr:
@@ -530,11 +530,11 @@ class transparency(attr.exclusiveattr, style.strokestyle, style.fillstyle):
         self.value = 1-value
         attr.exclusiveattr.__init__(self, transparency)
 
-    def processPS(self, file, writer, context, registry, bbox):
+    def processPS(self, file, writer, context, registry):
         warnings.warn("Transparency not available in PostScript, proprietary ghostscript extension code inserted.")
         file.write("%f .setshapealpha\n" % self.value)
 
-    def processPDF(self, file, writer, context, registry, bbox):
+    def processPDF(self, file, writer, context, registry):
         if context.strokeattr and context.fillattr:
             registry.add(PDFextgstate("Transparency-%f" % self.value,
                                       "<< /Type /ExtGState /CA %f /ca %f >>" % (self.value, self.value), registry))
