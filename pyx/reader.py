@@ -85,11 +85,10 @@ class reader:
         return self.file.read(bytes-1)[:l]
 
 
+class bytesreader(reader):
 
-class stringreader(reader):
-
-    def __init__(self, s):
-        self.file = io.StringIO(s)
+    def __init__(self, b):
+        self.file = io.BytesIO(b)
 
 
 class PStokenizer:

@@ -714,7 +714,7 @@ class T1file:
         It doesn't make sense to call this method twice -- check the content of
         data2 before calling. The method also keeps the subrs and charstrings
         start and end positions for later use."""
-        self._data2 = self._eexecdecode(self._data2eexec)
+        self._data2 = self._eexecdecode(self._data2eexec).decode('ascii')
 
         m = self.lenIVpattern.search(self._data2)
         if m:
@@ -1082,8 +1082,8 @@ class T1file:
         file.write(data1)
         data2eexechex = binascii.b2a_hex(self.getdata2eexec())
         linelength = 64
-        for i in range((len(data2eexechex)-1)/linelength + 1):
-            file.write(data2eexechex[i*linelength: i*linelength+linelength])
+        for i in range((len(data2eexechex)-1)//linelength + 1):
+            file.write_bytes(data2eexechex[i*linelength: i*linelength+linelength])
             file.write("\n")
         file.write(data3)
 
@@ -1151,10 +1151,10 @@ def from_PFA_bytes(bytes):
     except ValueError:
        raise FontFormatError
 
-    data1 = bytes[:m1]
-    data2 = binascii.a2b_hex(bytes[m1: m2].replace(" ", "").replace("\r", "").replace("\n", ""))
-    data3 = bytes[m2:]
-    return T1file(data1, data2, data3)
+    data1 = bytes[:m1].decode('ascii')
+    data2eexec = binascii.a2b_hex(bytes[m1: m2].replace(" ", "").replace("\r", "").replace("\n", ""))
+    data3 = bytes[m2:].decode('ascii')
+    return T1file(data1, data2eexec, data3)
 
 def from_PFA_filename(filename):
     """create a T1file instance from PFA font file of given name"""
@@ -1169,10 +1169,10 @@ def from_PFB_bytes(bytes):
     def pfblength(s):
         if len(s) != 4:
             raise ValueError("invalid string length")
-        return (ord(s[0]) +
-                ord(s[1])*256 +
-                ord(s[2])*256*256 +
-                ord(s[3])*256*256*256)
+        return (s[0] +
+                s[1]*256 +
+                s[2]*256*256 +
+                s[3]*256*256*256)
     class consumer:
         def __init__(self, bytes):
             self.bytes = bytes
@@ -1184,26 +1184,26 @@ def from_PFB_bytes(bytes):
 
     consume = consumer(bytes)
     mark = consume(2)
-    if mark != "\200\1":
+    if mark != b"\200\1":
         raise FontFormatError
-    data1= consume(pfblength(consume(4)))
+    data1 = consume(pfblength(consume(4))).decode('ascii')
     mark = consume(2)
-    if mark != "\200\2":
+    if mark != b"\200\2":
         raise FontFormatError
-    data2 = ""
-    while mark == "\200\2":
-        data2 = data2 + consume(pfblength(consume(4)))
+    data2eexec = b""
+    while mark == b"\200\2":
+        data2eexec = data2eexec + consume(pfblength(consume(4)))
         mark = consume(2)
-    if mark != "\200\1":
+    if mark != b"\200\1":
         raise FontFormatError
-    data3 = consume(pfblength(consume(4)))
+    data3 = consume(pfblength(consume(4))).decode('ascii')
     mark = consume(2)
-    if mark != "\200\3":
+    if mark != b"\200\3":
         raise FontFormatError
     if consume(1):
         raise FontFormatError
 
-    return T1file(data1, data2, data3)
+    return T1file(data1, data2eexec, data3)
 
 def from_PFB_filename(filename):
     """create a T1file instance from PFB font file of given name"""
@@ -1213,10 +1213,10 @@ def from_PFB_filename(filename):
     return t1file
 
 def from_PF_bytes(bytes):
-    try:
+    #try:
         return from_PFB_bytes(bytes)
-    except FontFormatError:
-        return from_PFA_bytes(bytes)
+    #except FontFormatError:
+    #    return from_PFA_bytes(bytes)
 
 def from_PF_filename(filename):
     """create a T1file instance from PFA or PFB font file of given name"""

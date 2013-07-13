@@ -41,7 +41,7 @@ class vffile:
         self.widths = {}           # widths of defined chars
         self.chardefs = {}         # dvi chunks for defined chars
 
-        afile = reader.stringreader(file.read())
+        afile = reader.bytesreader(file.read())
 
         cmd = afile.readuchar()
         if cmd == _VF_PRE:

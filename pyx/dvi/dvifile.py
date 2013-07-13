@@ -337,7 +337,7 @@ class DVIfile:
         # This yields the following scale factor for the height and width of rects:
         self.scale = fontsize/2**20/self.pyxconv
 
-        self.file = reader.stringreader(dvi)
+        self.file = reader.bytesreader(dvi)
         self.fonts = fonts
         self.stack = []
         self.filepos = 0
@@ -607,6 +607,6 @@ class DVIfile:
                                 afile.readint32(),
                                 afile.readint32(),
                                 afile.readint32(),
-                                afile.read(afile.readuchar()+afile.readuchar()))
+                                afile.read(afile.readuchar()+afile.readuchar()).decode('ascii'))
             else:
                 raise DVIError
