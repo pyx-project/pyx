@@ -20,6 +20,8 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
+import subprocess
+
 class _marker: pass
 
 
@@ -38,58 +40,33 @@ class wait_pipe:
 
 
 def popen(cmd, mode="r", bufsize=_marker):
-    try:
-        import subprocess
-        if mode[0] not in "rw" or "r" in mode[1:] or "w" in mode[1:]:
-            raise ValueError("read or write mode expected")
-        if mode[0] == "r":
-            kwargs = {"stdout": subprocess.PIPE}
-        else:
-            kwargs = {"stdin": subprocess.PIPE}
-        if bufsize is not _marker:
-            kwargs["bufsize"] = bufsize
-        pipes = subprocess.Popen(cmd, shell=True, **kwargs)
-        if mode[0] == "r":
-            return pipes.stdout
-        else:
-            return wait_pipe(pipes.stdin, pipes.wait)
-    except ImportError:
-        import os
-        if bufsize is _marker:
-            return os.popen(cmd, mode)
-        else:
-            return os.popen(cmd, mode, bufsize)
+    if mode[0] not in "rw" or "r" in mode[1:] or "w" in mode[1:]:
+        raise ValueError("read or write mode expected")
+    if mode[0] == "r":
+        kwargs = {"stdout": subprocess.PIPE}
+    else:
+        kwargs = {"stdin": subprocess.PIPE}
+    if bufsize is not _marker:
+        kwargs["bufsize"] = bufsize
+    pipes = subprocess.Popen(cmd, shell=True, **kwargs)
+    if mode[0] == "r":
+        return pipes.stdout
+    else:
+        return wait_pipe(pipes.stdin, pipes.wait)
 
 def popen2(cmd, mode="t", bufsize=_marker):
-    try:
-        import subprocess
-        kwargs = {"stdin": subprocess.PIPE,
-                  "stdout": subprocess.PIPE}
-        if bufsize is not _marker:
-            kwargs["bufsize"] = bufsize
-        pipes = subprocess.Popen(cmd, shell=True, **kwargs)
-        return pipes.stdin, pipes.stdout
-    except ImportError:
-        import os
-        if bufsize is _marker:
-            return os.popen2(cmd, mode)
-        else:
-            return os.popen2(cmd, mode, bufsize)
+    kwargs = {"stdin": subprocess.PIPE,
+              "stdout": subprocess.PIPE}
+    if bufsize is not _marker:
+        kwargs["bufsize"] = bufsize
+    pipes = subprocess.Popen(cmd, shell=True, **kwargs)
+    return pipes.stdin, pipes.stdout
 
 def popen4(cmd, mode="t", bufsize=_marker):
-    try:
-        import subprocess
-        kwargs = {"stdin": subprocess.PIPE,
-                  "stdout": subprocess.PIPE,
-                  "stderr": subprocess.STDOUT}
-        if bufsize is not _marker:
-            kwargs["bufsize"] = bufsize
-        pipes = subprocess.Popen(cmd, shell=True, **kwargs)
-        return pipes.stdin, pipes.stdout
-    except ImportError:
-        import os
-        if bufsize is _marker:
-            return os.popen4(cmd, mode)
-        else:
-            return os.popen4(cmd, mode, bufsize)
-
+    kwargs = {"stdin": subprocess.PIPE,
+              "stdout": subprocess.PIPE,
+              "stderr": subprocess.STDOUT}
+    if bufsize is not _marker:
+        kwargs["bufsize"] = bufsize
+    pipes = subprocess.Popen(cmd, shell=True, **kwargs)
+    return pipes.stdin, pipes.stdout
