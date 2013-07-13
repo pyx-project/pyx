@@ -20,7 +20,7 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import array, binascii, math, re, warnings
+import array, binascii, io, math, re, warnings
 try:
     import zlib
     haszlib = 1
@@ -28,7 +28,7 @@ except ImportError:
     haszlib = 0
 
 
-from pyx import trafo, reader
+from pyx import trafo, reader, writer
 from pyx.path import path, moveto_pt, lineto_pt, curveto_pt, closepath
 
 try:
@@ -925,7 +925,9 @@ class T1file:
         glyphs is a dict containing those glyph names as keys,
         which are to be contained in the charstringsstring to be created.
         If glyphs is None, all glyphs in self.glyphs will be used."""
-        def addsubrs(subrs, result):
+        w = writer.writer(io.BytesIO())
+
+        def addsubrs(subrs):
             if subrs is not None:
                 # some adjustments to the subrs dict
                 if subrs:
@@ -944,47 +946,46 @@ class T1file:
                 subrsmax = len(self.subrs) - 1
 
             # build the string from all selected subrs
-            result.append("%d array\n" % (subrsmax + 1))
+            w.write("%d array\n" % (subrsmax + 1))
             for subr in range(subrsmax+1):
                 if subr in subrs:
                     code = self.subrs[subr]
                 else:
                     code = self.emptysubr
-                result.append("dup %d %d " % (subr, len(code)))
-                result.append(self.subrrdtoken)
-                result.append(" ")
-                result.append(code)
-                result.append(" ")
-                result.append(self.subrnptoken)
-                result.append("\n")
+                w.write("dup %d %d " % (subr, len(code)))
+                w.write_bytes(self.subrrdtoken)
+                w.write_bytes(b" ")
+                w.write_bytes(code)
+                w.write_bytes(b" ")
+                w.write_bytes(self.subrnptoken)
+                w.write_bytes(b"\n")
 
-        def addcharstrings(glyphs, result):
-            result.append("%d dict dup begin\n" % (glyphs is None and len(self.glyphlist) or len(glyphs)))
+        def addcharstrings(glyphs):
+            w.write("%d dict dup begin\n" % (glyphs is None and len(self.glyphlist) or len(glyphs)))
             for glyph in self.glyphlist:
                 if glyphs is None or glyph in glyphs:
-                    result.append("/%s %d " % (glyph, len(self.glyphs[glyph])))
-                    result.append(self.glyphrdtoken)
-                    result.append(" ")
-                    result.append(self.glyphs[glyph])
-                    result.append(" ")
-                    result.append(self.glyphndtoken)
-                    result.append("\n")
-            result.append("end\n")
+                    w.write("/%s %d " % (glyph, len(self.glyphs[glyph])))
+                    w.write_bytes(self.glyphrdtoken)
+                    w.write_bytes(b" ")
+                    w.write_bytes(self.glyphs[glyph])
+                    w.write_bytes(b" ")
+                    w.write_bytes(self.glyphndtoken)
+                    w.write_bytes(b"\n")
+            w.write("end\n")
 
         if self.subrsstart < self.charstringsstart:
-            result = [self._data2[:self.subrsstart]]
-            addsubrs(subrs, result)
-            result.append(self._data2[self.subrsend:self.charstringsstart])
-            addcharstrings(glyphs, result)
-            result.append(self._data2[self.charstringsend:])
+            w.write_bytes(self._data2[:self.subrsstart])
+            addsubrs(subrs)
+            w.write_bytes(self._data2[self.subrsend:self.charstringsstart])
+            addcharstrings(glyphs)
+            w.write_bytes(self._data2[self.charstringsend:])
         else:
-            result = [self._data2[:self.charstringsstart]]
-            addcharstrings(glyphs, result)
-            result.append(self._data2[self.charstringsend:self.subrsstart])
-            addsubrs(subrs, result)
-            result.append(self._data2[self.subrsend:])
-        result = [x.encode("ascii") if isinstance(x, str) else x for x in result]
-        return b"".join(result)
+            w.write_bytes(self._data2[:self.charstringsstart])
+            addcharstrings(glyphs)
+            w.write_bytes(self._data2[self.charstringsend:self.subrsstart])
+            addsubrs(subrs)
+            w.write_bytes(self._data2[self.subrsend:])
+        return w.file.getvalue()
 
     def getdata2eexec(self):
         if self._data2eexec:
