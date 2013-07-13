@@ -124,14 +124,14 @@ class _regularaxis(_axis):
                 raise RuntimeError("zero axis range%s" % errorname)
 
         if self.divisor is not None:
-            divisor = self.divisor
-            rational_divisor = tick.rational(divisor)
+            rational_divisor = tick.rational(self.divisor)
+            convert_tick = lambda x: float(x)*self.divisor
         else:
-            divisor = 1
+            convert_tick = lambda x: x
 
         def layout(data):
             if data.ticks:
-                self.adjustaxis(data, [float(data.ticks[0])*divisor, float(data.ticks[-1])*divisor], graphtexrunner, errorname)
+                self.adjustaxis(data, [convert_tick(data.ticks[0]), convert_tick(data.ticks[-1])], graphtexrunner, errorname)
             self.texter.labels(data.ticks)
             if self.divisor:
                 for t in data.ticks:
@@ -188,11 +188,11 @@ class _regularaxis(_axis):
                     rate = rater.rateticks(self, ticks, self.density)
                     if rate is not None:
                         if self.reverse:
-                            rate += rater.raterange(self.convert(data, float(ticks[0])*divisor) -
-                                                    self.convert(data, float(ticks[-1])*divisor), 1)
+                            rate += rater.raterange(self.convert(data, convert_tick(ticks[0])) -
+                                                    self.convert(data, convert_tick(ticks[-1])), 1)
                         else:
-                            rate += rater.raterange(self.convert(data, float(ticks[-1])*divisor) -
-                                                    self.convert(data, float(ticks[0])*divisor), 1)
+                            rate += rater.raterange(self.convert(data, convert_tick(ticks[-1])) -
+                                                    self.convert(data, convert_tick(ticks[0])), 1)
                         if bestrate is None or rate < bestrate:
                             bestrate = rate
                             worse = 0
