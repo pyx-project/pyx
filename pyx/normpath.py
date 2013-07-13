@@ -21,7 +21,7 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import math
+import math, functools
 from . import mathutils, trafo, unit
 from . import bbox as bboxmodule
 
@@ -711,7 +711,7 @@ class _leftnormline_pt(normline_pt):
             # (we want the solution to be in the range 0 <= param <= 1; in case
             # we get several solutions in this range, they all will be close to
             # each other since l1_pt+l2_pt+l3_pt-l0_pt < epsilon)
-            params.sort(lambda t1, t2: cmp(abs(t1-0.5), abs(t2-0.5)))
+            params.sort(key=lambda t: abs(t-0.5))
             return 0.5*params[0]
         else:
             # when we are outside the proper parameter range, we skip the non-linear
@@ -1329,6 +1329,7 @@ class normsubpath:
 # normpath
 ################################################################################
 
+@functools.total_ordering
 class normpathparam:
 
     """parameter of a certain point along a normpath"""
@@ -1339,7 +1340,6 @@ class normpathparam:
         self.normpath = normpath
         self.normsubpathindex = normsubpathindex
         self.normsubpathparam = normsubpathparam
-        float(normsubpathparam)
 
     def __str__(self):
         return "normpathparam(%s, %s, %s)" % (self.normpath, self.normsubpathindex, self.normsubpathparam)
@@ -1377,12 +1377,19 @@ class normpathparam:
     def __neg__(self):
         return self.normpath.arclentoparam_pt(-self.normpath.paramtoarclen_pt(self))
 
-    def __cmp__(self, other):
+    def __eq__(self, other):
         if isinstance(other, normpathparam):
             assert self.normpath is other.normpath, "normpathparams have to belong to the same normpath"
-            return cmp((self.normsubpathindex, self.normsubpathparam), (other.normsubpathindex, other.normsubpathparam))
+            return (self.normsubpathindex, self.normsubpathparam) == (other.normsubpathindex, other.normsubpathparam)
         else:
-            return cmp(self.normpath.paramtoarclen_pt(self), unit.topt(other))
+            return self.normpath.paramtoarclen_pt(self) == unit.topt(other)
+
+    def __lt__(self, other):
+        if isinstance(other, normpathparam):
+            assert self.normpath is other.normpath, "normpathparams have to belong to the same normpath"
+            return (self.normsubpathindex, self.normsubpathparam) < (other.normsubpathindex, other.normsubpathparam)
+        else:
+            return self.normpath.paramtoarclen_pt(self) < unit.topt(other)
 
     def arclen_pt(self):
         """return arc length in pts corresponding to the normpathparam """

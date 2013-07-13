@@ -28,7 +28,7 @@ try:
 except:
     haszlib = 0
 
-from . import bbox, config, style, unit, version, trafo
+from . import bbox, config, style, unit, version, trafo, writer
 
 
 
@@ -259,27 +259,27 @@ class PDFpage(PDFobject):
 
 class PDFcontent(PDFobject):
 
-    def __init__(self, page, writer, registry):
+    def __init__(self, page, awriter, registry):
         PDFobject.__init__(self, registry, "content")
-        contentfile = io.StringIO()
+        contentfile = writer.writer(io.BytesIO())
         self.bbox = bbox.empty()
         acontext = context()
-        page.processPDF(contentfile, writer, acontext, registry, self.bbox)
-        self.content = contentfile.getvalue()
+        page.processPDF(contentfile, awriter, acontext, registry, self.bbox)
+        self.content = contentfile.file.getvalue()
         contentfile.close()
 
-    def write(self, file, writer, registry):
-        if writer.compress:
+    def write(self, file, awriter, registry):
+        if awriter.compress:
             content = zlib.compress(self.content)
         else:
             content = self.content
         file.write("<<\n"
                    "/Length %i\n" % len(content))
-        if writer.compress:
+        if awriter.compress:
             file.write("/Filter /FlateDecode\n")
         file.write(">>\n"
                    "stream\n")
-        file.write(content)
+        file.write_bytes(content)
         file.write("endstream\n")
 
 
@@ -316,7 +316,8 @@ class PDFwriter:
         catalog = PDFcatalog(document, self, registry)
         registry.add(catalog)
 
-        file.write("%%PDF-1.4\n%%%s%s%s%s\n" % (chr(195), chr(182), chr(195), chr(169)))
+        file = writer.writer(file)
+        file.write_bytes(b"%%PDF-1.4\n%%\xc3\xb6\xc3\xa9\n")
         registry.write(file, self, catalog)
         file.close()
 

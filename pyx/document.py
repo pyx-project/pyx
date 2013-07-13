@@ -20,8 +20,8 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import io, sys, warnings
-from . import bbox, pswriter, pdfwriter, trafo, style, unit
+import sys, warnings
+from . import bbox, pswriter, pdfwriter, writer, trafo, style, unit
 
 
 class paperformat:
@@ -138,9 +138,9 @@ def _outputstream(file, suffix):
             raise RuntimeError("could not auto-guess filename")
         return open("%s.%s" % (sys.argv[0][:-3], suffix), "wb")
     if file == "-":
-        return sys.stdout
+        return sys.stdout.buffer
     try:
-        file.write("")
+        file.write(b"")
         return file
     except:
         if not file.endswith(".%s" % suffix):

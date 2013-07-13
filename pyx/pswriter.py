@@ -21,7 +21,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 import io, copy, time, math
-from . import bbox, config, style, version, unit, trafo
+from . import bbox, config, style, version, unit, trafo, writer
 
 
 class PSregistry:
@@ -126,6 +126,7 @@ class EPSwriter(_PSwriter):
 
     def __init__(self, document, file, **kwargs):
         _PSwriter.__init__(self, **kwargs)
+        file = writer.writer(file)
 
         if len(document.pages) != 1:
             raise ValueError("EPS file can be constructed out of a single page document only")
@@ -162,6 +163,7 @@ class PSwriter(_PSwriter):
 
     def __init__(self, document, file, writebbox=False, **kwargs):
         _PSwriter.__init__(self, **kwargs)
+        file = writer.writer(file)
 
         # We first have to process the content of the pages, writing them into the stream pagesfile
         # Doing so, we fill the registry and also calculate the page bounding boxes, which are

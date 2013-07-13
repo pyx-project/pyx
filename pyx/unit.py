@@ -20,7 +20,7 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import types
+import types, functools
 
 scale = dict(u=1, v=1, w=1, x=1)
 
@@ -73,6 +73,7 @@ def topt(l):
 # class for generic length
 ################################################################################
 
+@functools.total_ordering
 class length:
     """ PyX lengths
 
@@ -101,14 +102,17 @@ class length:
         elif type == "x":
             self.x = l
 
-    def __cmp__(self, other):
-        # we try to convert self and other into meters and
-        # if this fails, we give other a chance to do the comparison
+    def __eq__(self, other):
         try:
-            return cmp(tom(self), tom(other))
-        except:
-            # why does -cmp(other, self) not work?
-            return -other.__cmp__(self)
+            return tom(self) == tom(other)
+        except TypeError:
+            return NotImplemented
+
+    def __lt__(self, other):
+        try:
+            return tom(self) < tom(other)
+        except TypeError:
+            return NotImplemented
 
     def __mul__(self, factor):
         result = length()
