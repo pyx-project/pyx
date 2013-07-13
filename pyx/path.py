@@ -32,8 +32,6 @@ from .normpath import set
 # normpath's invalid is available as an external interface
 from .normpath import invalid
 
-# use new style classes when possible
-__metaclass__ = type
 
 class _marker: pass
 

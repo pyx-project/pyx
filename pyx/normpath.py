@@ -26,9 +26,6 @@ from . import mathutils, trafo, unit
 from . import bbox as bboxmodule
 
 
-# use new style classes when possible
-__metaclass__ = type
-
 class _marker: pass
 
 ################################################################################
