@@ -5,6 +5,7 @@ from Numeric import *
 from RandomArray import *
 from LinearAlgebra import *
 from FFT import *
+from functools import reduce
 
 
 sqrt2 = math.sqrt(2)
@@ -38,7 +39,7 @@ def diag_anderson(l, w):
     seed(x=1705, y=1111)
     pot=w*random(l)-0.5*w
     ham = zeros((l, l), Float)
-    for i in xrange(l):
+    for i in range(l):
         ham[i, i] = pot[i]
         ham[i, (i+1)%l] = -1
         ham[i, (i-1)%l] = -1
@@ -63,7 +64,7 @@ def diag_harper_full(l, lam):
 
     pot=lam*cos((2*pi*l2*arange(l))/l)
     ham = zeros((l, l), Float)
-    for i in xrange(l):
+    for i in range(l):
         ham[i, i] = pot[i]
         ham[i, (i+1)%l] = 1
         ham[i, (i-1)%l] = 1
@@ -87,24 +88,24 @@ def diag_harper(l, lam):
         l = len(dest)
         if l % 2:
             dest[0] = source[0]
-            for i in xrange(1, (l+1)/2):
+            for i in range(1, (l+1)/2):
                 dest[i] = dest[l-i] = source[i] / sqrt2
         else:
             dest[0] = source[0]
             dest[l/2] = source[l/2]
-            for i in xrange(1, l/2):
+            for i in range(1, l/2):
                 dest[i] = dest[l-i] = source[i] / sqrt2
 
     def createasymm(dest, source):
         l = len(dest)
         if l % 2:
             dest[0] = 0
-            for i in xrange(1, (l+1)/2):
+            for i in range(1, (l+1)/2):
                 dest[i] = source[i-1] / sqrt2
                 dest[l-i] = -source[i-1] / sqrt2
         else:
             dest[0] = dest[l/2] = 0
-            for i in xrange(1, l/2):
+            for i in range(1, l/2):
                 dest[i] = -source[i-1] / sqrt2
                 dest[l-i] = source[i-1] / sqrt2
 
@@ -118,7 +119,7 @@ def diag_harper(l, lam):
         pot = lam*cos((2*pi*l2*arange(symmsize))/l)
         pot[symmsize - 1] += 1
         symmham = zeros((symmsize, symmsize), Float)
-        for i in xrange(symmsize):
+        for i in range(symmsize):
             symmham[i, i] = pot[i]
             if i > 1:
                 symmham[i, i-1] = symmham[i-1, i] = 1
@@ -129,7 +130,7 @@ def diag_harper(l, lam):
         symmsize = l/2 + 1
         pot = lam*cos((2*pi*l2*arange(symmsize))/l)
         symmham = zeros((symmsize, symmsize), Float)
-        for i in xrange(symmsize):
+        for i in range(symmsize):
             symmham[i, i] = pot[i]
             if i > 1 and i < symmsize - 1:
                 symmham[i, i-1] = symmham[i-1, i] = 1
@@ -143,7 +144,7 @@ def diag_harper(l, lam):
         pot = lam*cos((2*pi*l2*(arange(asymmsize)+1))/l)
         pot[asymmsize-1] -= 1
         asymmham = zeros((asymmsize, asymmsize), Float)
-        for i in xrange(asymmsize):
+        for i in range(asymmsize):
             asymmham[i, i] = pot[i]
             if i:
                 asymmham[i, i-1] = asymmham[i-1, i] = 1
@@ -152,7 +153,7 @@ def diag_harper(l, lam):
         asymmsize = l/2 - 1
         pot = lam*cos((2*pi*l2*(arange(asymmsize)+1))/l)
         asymmham = zeros((asymmsize, asymmsize), Float)
-        for i in xrange(asymmsize):
+        for i in range(asymmsize):
             asymmham[i, i] = pot[i]
             if i:
                 asymmham[i, i-1] = asymmham[i-1, i] = 1
@@ -164,7 +165,7 @@ def diag_harper(l, lam):
     j = k = 0
     evalues = zeros((l,), Float)
     evectors = zeros((l, l), Float)
-    for i in xrange(l):
+    for i in range(l):
         if j != symmsize and (k == asymmsize or
                               symmevalues[symmsort[j]] < asymmevalues[asymmsort[k]]):
             evalues[i] = symmevalues[symmsort[j]]
@@ -209,15 +210,15 @@ def wigner_slow(vector):
     wig = zeros((l, l), Float)
 
     # wigner function (direct way)
-    for x0loop in xrange(l):
+    for x0loop in range(l):
         x0 = x0loop
-        for k0loop in xrange(l):
+        for k0loop in range(l):
             if l%2:
                 k0 = (k0loop-0.5*l+0.5)*2*pi/l
             else:
                 k0 = (k0loop-0.5*l+1)*2*pi/l
             sum = 0j
-            for yloop in xrange(l):
+            for yloop in range(l):
                 y = yloop - l/2 + 1 - l%2
                 v = lambda x: vector[(x+10*l)%l]
                 if y%2:
@@ -246,9 +247,9 @@ def wigner(vector):
     fftarray = zeros(l, Float)
     fftresult = zeros(l, Complex)
     wig = zeros((l, l), Float)
-    for x0loop in xrange(l):
+    for x0loop in range(l):
         x0 = x0loop
-        for yloop in xrange(l):
+        for yloop in range(l):
             y = yloop - l/2 + 1 - l%2
             v = lambda x: vector[(x+10*l)%l]
             if y%2:
@@ -261,7 +262,7 @@ def wigner(vector):
                 v2 = v(x0+y/2)
             fftarray[(y+10*l)%l] = v1 * v2
         fftresult = real_fft(fftarray)
-        for k0loop in xrange(l):
+        for k0loop in range(l):
             if l%2:
                 index = int(abs(k0loop-0.5*l+0.5))
             else:
@@ -294,12 +295,12 @@ def husimi_from_wigner(wig):
     sigma = sqrt(l/pi/4)
 
     hus = zeros((l, l), Float)
-    for x1 in xrange(l):
-        for k1 in xrange(l):
+    for x1 in range(l):
+        for k1 in range(l):
             sys.stderr.write("wigner -> husimi (very slow) ...%6.2f%%\r" % ((100.0*(x1*l+k1))/l/l))
             hus[x1, k1] = 0
-            for x2 in xrange(l):
-                for k2 in xrange(l):
+            for x2 in range(l):
+                for k2 in range(l):
                     dx = x1-x2
                     if dx < -l/2: dx += l
                     if dx > l/2: dx -= l
@@ -322,15 +323,15 @@ def husimi_slow(vector):
     sigma=sqrt(l/pi/4)
     factor=1/sqrt(sqrt(2*pi)*sigma*l)
 
-    for x0loop in xrange(l):
+    for x0loop in range(l):
         x0 = x0loop
-        for k0loop in xrange(l):
+        for k0loop in range(l):
             if l%2:
                 k0 = (k0loop-0.5*l+0.5)*2*pi/l
             else:
                 k0 = (k0loop-0.5*l+1)*2*pi/l
             sum = 0j
-            for x in xrange(l):
+            for x in range(l):
                 phase = exp(1j*k0*x)
                 sum += vector[x] * factor * exp(-(x-x0-l)*(x-x0-l)/(4*sigma*sigma)) * phase
                 sum += vector[x] * factor * exp(-(x-x0  )*(x-x0  )/(4*sigma*sigma)) * phase
@@ -353,16 +354,16 @@ def husimi(vector):
     fftresult = zeros(l, Complex)
     heights = zeros((l, l), Float)
     phases = zeros((l, l), Float)
-    for x0loop in xrange(l):
+    for x0loop in range(l):
         x0 = x0loop
-        for xloop in xrange(l):
+        for xloop in range(l):
             x = xloop
             while (x-x0 < -0.5*l): x += l
             while (x-x0 > 0.5*l): x -=l
             fftarray[xloop] = vector[xloop] * factor * exp(-(x-x0)*(x-x0)/(4*sigma*sigma))
         #fftresult = real_fft(fftarray)
         fftresult = fft(fftarray)
-        for k0loop in xrange(l):
+        for k0loop in range(l):
             if l%2:
                 index = (int(k0loop-0.5*l+0.5) + 10*l)%l
                 #index = int(abs(k0loop-0.5*l+0.5))

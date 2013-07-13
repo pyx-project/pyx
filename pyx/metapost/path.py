@@ -22,7 +22,7 @@ from math import atan2, radians
 from pyx import unit, attr, normpath
 from pyx import path as pathmodule
 
-from mp_path import mp_endpoint, mp_explicit, mp_given, mp_curl, mp_open, mp_end_cycle, mp_make_choices
+from .mp_path import mp_endpoint, mp_explicit, mp_given, mp_curl, mp_open, mp_end_cycle, mp_make_choices
 
 # global epsilon (default precision length of metapost, in pt)
 _epsilon = 1e-5
@@ -77,10 +77,10 @@ class _knot:
     def linked_len(self):
         """returns the length of a circularly linked list of knots"""
         n = 1
-        p = self.next
+        p = self.__next__
         while not p is self:
             n += 1
-            p = p.next
+            p = p.__next__
         return n
 
     def __repr__(self):

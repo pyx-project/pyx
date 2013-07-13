@@ -23,7 +23,7 @@
 
 
 import types, math
-import bbox, path, unit, trafo
+from . import bbox, path, unit, trafo
 
 class _marker: pass
 
@@ -142,10 +142,10 @@ class polygon_pt:
     def alignvector_pt(self, a, dx, dy, alignlinevector, alignpointvector):
         n = math.hypot(dx, dy)
         dx, dy = dx / n, dy / n
-        linevectors = map(lambda (p1, p2), self=self, a=a, dx=dx, dy=dy, alignlinevector=alignlinevector:
-                                alignlinevector(a, dx, dy, *(p1 + p2)), self.successivepoints())
+        linevectors = list(map(lambda ps, self=self, a=a, dx=dx, dy=dy, alignlinevector=alignlinevector:
+                                alignlinevector(a, dx, dy, *(ps[0] + ps[1])), self.successivepoints()))
         for linevector in linevectors:
-            if type(linevector) is types.TupleType:
+            if type(linevector) is tuple:
                 return linevector
         for i, j in self.successivepointnumbers():
             l1, l2 = linevectors[i], linevectors[j]

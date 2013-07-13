@@ -56,7 +56,7 @@ def mp_make_choices(knots, epsilon): # <<<
     # 334: If consecutive knots are equal, join them explicitly
     p = knots
     while True:
-        q = p.next
+        q = p.__next__
         if p.rtype > mp_explicit and (p.x_pt-q.x_pt)**2 + (p.y_pt-q.y_pt)**2 < epsilon**2:
             p.rtype = mp_explicit
             if p.ltype == mp_open:
@@ -83,7 +83,7 @@ def mp_make_choices(knots, epsilon): # <<<
     while True:
         if h.ltype != mp_open or h.rtype != mp_open:
             break
-        h = h.next
+        h = h.__next__
         if h is knots:
             h.ltype = mp_end_cycle
             break
@@ -92,10 +92,10 @@ def mp_make_choices(knots, epsilon): # <<<
     while True:
         # 336:
         # Fill in the control points between p and the next breakpoint, then advance p to that breakpoint
-        q = p.next
+        q = p.__next__
         if p.rtype >= mp_given:
             while q.ltype == mp_open and q.rtype == mp_open:
-                q = q.next
+                q = q.__next__
             # the breakpoints are now p and q
 
             # 346:
@@ -106,7 +106,7 @@ def mp_make_choices(knots, epsilon): # <<<
             n = knots.linked_len()
             delta_x, delta_y, delta, psi = [], [], [], [None]
             while True:
-                t = s.next
+                t = s.__next__
                 assert len(delta_x) == k
                 delta_x.append(t.x_pt - s.x_pt)
                 delta_y.append(t.y_pt - s.y_pt)
@@ -180,7 +180,7 @@ def mp_solve_choices(p, q, n, delta_x, delta_y, delta, psi): # <<<
     s = p
     r = 0
     while True:
-        t = s.next
+        t = s.__next__
         if k == 0: # <<<
             # 354:
             # Get the linear equations started
@@ -325,7 +325,7 @@ def mp_solve_choices(p, q, n, delta_x, delta_y, delta, psi): # <<<
     s = p
     k = 0
     while True:
-        t = s.next
+        t = s.__next__
         ct, st = mp_n_sin_cos(theta[k])
         cf, sf = mp_n_sin_cos(-psi[k+1]-theta[k+1])
         mp_set_controls(s, t, delta_x[k], delta_y[k], st, ct, sf, cf)

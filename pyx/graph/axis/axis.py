@@ -37,7 +37,7 @@ class axisdata:
     graph during initialization."""
 
     def __init__(self, **kwargs):
-        for key, value in kwargs.items():
+        for key, value in list(kwargs.items()):
             setattr(self, key, value)
 
 
@@ -149,7 +149,7 @@ class _regularaxis(_axis):
         class variant:
             def __init__(self, data, **kwargs):
                 self.data = data
-                for key, value in kwargs.items():
+                for key, value in list(kwargs.items()):
                     setattr(self, key, value)
 
             def __getattr__(self, key):
@@ -410,7 +410,7 @@ class bar(_axis):
                 subaxis.vmaxover = position / float(data.size)
             subaxis.setpositioner(subaxispositioner(positioner, subaxis))
             subaxis.create()
-            for layer, subcanvas in subaxis.canvas.layers.items():
+            for layer, subcanvas in list(subaxis.canvas.layers.items()):
                 canvas.layer(layer).insert(subcanvas)
             assert len(subaxis.canvas.layers) == len(subaxis.canvas.items)
             if canvas.extent_pt < subaxis.canvas.extent_pt:
@@ -428,7 +428,7 @@ class bar(_axis):
             subaxis = linkedaxis(subaxis, name)
             subaxis.setpositioner(subaxispositioner(positioner, data.subaxes[name]))
             subaxis.create()
-            for layer, subcanvas in subaxis.canvas.layers.items():
+            for layer, subcanvas in list(subaxis.canvas.layers.items()):
                 canvas.layer(layer).insert(subcanvas)
             assert len(subaxis.canvas.layers) == len(subaxis.canvas.items)
             if canvas.extent_pt < subaxis.canvas.extent_pt:

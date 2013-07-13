@@ -4,7 +4,7 @@ import sys; sys.path[:0] = ["../.."]
 try:
     import datetime
 except:
-    print "datetime import failed (needs python 2.3+) -> test skiped"
+    print("datetime import failed (needs python 2.3+) -> test skiped")
 else:
     import time
     from pyx import *

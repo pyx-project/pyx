@@ -20,9 +20,9 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import cStringIO, math, warnings
-import attr, canvas, path, pdfwriter, pswriter, style, unit, trafo
-import bbox as bboxmodule
+import io, math, warnings
+from . import attr, canvas, path, pdfwriter, pswriter, style, unit, trafo
+from . import bbox as bboxmodule
 
 class _marker: pass
 
@@ -68,7 +68,7 @@ class pattern(canvas.canvas, attr.exclusiveattr, style.fillstyle):
 
     def processPS(self, file, writer, context, registry):
         # process pattern, letting it register its resources and calculate the bbox of the pattern
-        patternfile = cStringIO.StringIO()
+        patternfile = io.StringIO()
         realpatternbbox = bboxmodule.empty()
         canvas.canvas.processPS(self, patternfile, writer, pswriter.context(), registry, realpatternbbox)
         patternproc = patternfile.getvalue()
@@ -109,7 +109,7 @@ class pattern(canvas.canvas, attr.exclusiveattr, style.fillstyle):
         # we create our own registry, which we merge immediately in the main registry
         patternregistry = pdfwriter.PDFregistry()
 
-        patternfile = cStringIO.StringIO()
+        patternfile = io.StringIO()
         realpatternbbox = bboxmodule.empty()
         canvas.canvas.processPDF(self, patternfile, writer, pdfwriter.context(), patternregistry, realpatternbbox)
         patternproc = patternfile.getvalue()

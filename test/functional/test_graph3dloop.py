@@ -19,7 +19,7 @@ while phi < 360:
     g.doplot()
     g.text(2, 2, str(phi))
     def vrect(vx1, vy1, vz1, vx2, vy2, vz2):
-        assert len(filter(lambda (v1, v2): v1 == v2, [(vx1, vx2), (vy1, vy2), (vz1, vz2)])) == 1
+        assert len([v1_v2 for v1_v2 in [(vx1, vx2), (vy1, vy2), (vz1, vz2)] if v1_v2[0] == v1_v2[1]]) == 1
         if vz1 == vz2:
             return path.path(path.moveto_pt(*g.vpos_pt(vx1, vy1, vz1)),
                              path.lineto_pt(*g.vpos_pt(vx1, vy2, vz1)),
@@ -44,7 +44,7 @@ while phi < 360:
     g.fill(vrect(0.4, 1, 0.4, 0.6, 1, 0.6), [g.py1show and color.rgb.green or color.rgb.red])
     g.fill(vrect(0, 0.4, 0.4, 0, 0.6, 0.6), [g.px0show and color.rgb.green or color.rgb.red])
     g.fill(vrect(1, 0.4, 0.4, 1, 0.6, 0.6), [g.px1show and color.rgb.green or color.rgb.red])
-    for axis in g.axes.values():
+    for axis in list(g.axes.values()):
         g.stroke(axis.basepath(), [axis.hidden and color.rgb.red or color.rgb.green])
     d.append(document.page(c))
     phi += 5.67

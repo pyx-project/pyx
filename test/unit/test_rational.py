@@ -35,8 +35,8 @@ class RationalTestCase(unittest.TestCase):
         self.RationalEqual(-11, 10, rational("-1.1e-0"))
         self.RationalEqual(-10, 1, rational("-1.e+1"))
         self.RationalEqual(-1, 100, rational("-.1e-1"))
-        self.RationalEqual(-100000000000000000000L, 1, rational("-1e+20"))
-        self.RationalEqual(-1, 100000000000000000000L, rational("-1e-20"))
+        self.RationalEqual(-100000000000000000000, 1, rational("-1e+20"))
+        self.RationalEqual(-1, 100000000000000000000, rational("-1e-20"))
 
         self.RationalEqual(1234, 1, rational(" 1234"))
         self.failUnlessRaises(ValueError, rational, "12 34")

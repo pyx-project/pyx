@@ -19,9 +19,9 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import cStringIO, math
-import canvasitem, bbox, pdfwriter, color, unit
-from font.font import PDFHelvetica, PDFZapfDingbats
+import io, math
+from . import baseclasses, bbox, pdfwriter, color, unit
+from .font.font import PDFHelvetica, PDFZapfDingbats
 
 # TODO:
 # - discuss behaviour under transformations with André and Jörg
@@ -88,11 +88,11 @@ def _pdfflags(flags): # <<<
     formflag = flag(value=0)
 
     for key, value in PDFannotflags:
-        if flags.has_key(key) and flags[key]:
+        if key in flags and flags[key]:
             annotflag.set(value)
 
     for key, value in PDFformflags:
-        if flags.has_key(key) and flags[key]:
+        if key in flags and flags[key]:
             formflag.set(value)
 
     return int(annotflag), int(formflag)
@@ -125,7 +125,7 @@ def _sizetrafo(s, tr): # <<<
 # >>>
 
 
-class formfield(canvasitem.canvasitem): # <<<
+class formfield(baseclasses.canvasitem): # <<<
     """Base class for acroforms"""
 
     defaultflags = dict()
@@ -133,8 +133,8 @@ class formfield(canvasitem.canvasitem): # <<<
     def selectflags(self, flags):
         newflags = dict(**self.defaultflags)
         # overwrite the default flags with given values:
-        for key, value in flags.items():
-            if newflags.has_key(key):
+        for key, value in list(flags.items()):
+            if key in newflags:
                 newflags[key] = value
             else:
                 raise RuntimeError("unknown argument \"%s\" to formfield" % key)
@@ -235,7 +235,7 @@ class PDFtextfield(pdfwriter.PDFobject): # <<<
             self.defaulttext = None
 
         # process some fillstyles:
-        fillstring = cStringIO.StringIO()
+        fillstring = io.StringIO()
         for attr in fillstyles:
             if 1:#isinstance(attr, color.color):
                 cont = pdfwriter.context()
@@ -458,7 +458,7 @@ class PDFbuttonlist(pdfwriter.PDFobject): # <<<
         self.offstate = offstate
 
         self.checkboxes = []
-        for i, pos_pt, value in zip(range(len(values)), positions_pt, values):
+        for i, pos_pt, value in zip(list(range(len(values))), positions_pt, values):
             chbox = PDFcheckboxfield(pos_pt, value, size_pt, _simplestring(value), (value == defaultvalue),
                 self, self.onstate, self.offstate, self.annotflag, self.formflag, writer, registry)
             self.checkboxes.append(chbox)
@@ -537,7 +537,7 @@ class PDFButtonState(pdfwriter.PDFobject): # <<<
     def __init__(self, writer, registry, fontsize, font, bgchar, fgchar,
         bgscale=None, bgrelshift=None, fgscale=None, fgrelshift=None):
 
-        pdfwriter.PDFobject.__init__(self, "buttonstate", "buttonstate" + "_".join(map(str, map(id, [fontsize, font, bgchar, fgchar, bgscale, bgrelshift, fgscale, fgrelshift]))))
+        pdfwriter.PDFobject.__init__(self, "buttonstate", "buttonstate" + "_".join(map(str, list(map(id, [fontsize, font, bgchar, fgchar, bgscale, bgrelshift, fgscale, fgrelshift])))))
         self.font = font
         self.fontsize = fontsize
         registry.addresource("Font", self.font.name, self.font, procset="Text")

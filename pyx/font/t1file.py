@@ -34,7 +34,7 @@ from pyx.path import path, moveto_pt, lineto_pt, curveto_pt, closepath
 try:
     from _t1code import *
 except:
-    from t1code import *
+    from .t1code import *
 
 
 adobestandardencoding = [None, None, None, None, None, None, None, None,
@@ -658,7 +658,7 @@ class T1file:
         self.encoding = None
 
         self.name, = self.fontnamepattern.search(self.data1).groups()
-        m11, m12, m21, m22, v1, v2 = map(float, self.fontmatrixpattern.search(self.data1).groups()[:6])
+        m11, m12, m21, m22, v1, v2 = list(map(float, self.fontmatrixpattern.search(self.data1).groups()[:6]))
         self.fontmatrix = trafo.trafo_pt(matrix=((m11, m12), (m21, m22)), vector=(v1, v2))
 
     def _eexecdecode(self, code):
@@ -803,9 +803,9 @@ class T1file:
             elif 251 <= x <= 254: # mid size ints
                 cmds.append(-((x - 251)*256) - code.pop(0) - 108)
             else: # x = 255, i.e. full size ints
-                y = ((code.pop(0)*256l+code.pop(0))*256+code.pop(0))*256+code.pop(0)
-                if y > (1l << 31):
-                    cmds.append(y - (1l << 32))
+                y = ((code.pop(0)*256+code.pop(0))*256+code.pop(0))*256+code.pop(0)
+                if y > (1 << 31):
+                    cmds.append(y - (1 << 32))
                 else:
                     cmds.append(y)
         return cmds
@@ -831,7 +831,7 @@ class T1file:
                     code.append(b)
                 else:
                     if cmd < 0:
-                        cmd += 1l << 32
+                        cmd += 1 << 32
                     cmd, x4 = divmod(cmd, 256)
                     cmd, x3 = divmod(cmd, 256)
                     x1, x2 = divmod(cmd, 256)
@@ -1214,9 +1214,9 @@ def from_PFB_filename(filename):
 
 def from_PF_bytes(bytes):
     try:
-         return from_PFB_bytes(bytes)
+        return from_PFB_bytes(bytes)
     except FontFormatError:
-         return from_PFA_bytes(bytes)
+        return from_PFA_bytes(bytes)
 
 def from_PF_filename(filename):
     """create a T1file instance from PFA or PFB font file of given name"""

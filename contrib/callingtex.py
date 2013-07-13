@@ -17,16 +17,16 @@ def test_installation():
     except ImportError:
         compiled_pykpathsea = False
 
-    print "Platform is %s" % sys.platform
-    print "Python installation prefix is %s" % sys.prefix
-    print "Python executable is %s" % sys.executable
-    print "PyX comes from %s" % pyx.__file__
-    print "PyX version %s" % pyx.__version__
+    print("Platform is %s" % sys.platform)
+    print("Python installation prefix is %s" % sys.prefix)
+    print("Python executable is %s" % sys.executable)
+    print("PyX comes from %s" % pyx.__file__)
+    print("PyX version %s" % pyx.__version__)
     if compiled_pykpathsea:
-        print "PyX pykpathsea compiled from C module"
+        print("PyX pykpathsea compiled from C module")
     else:
-        print "PyX pykpathsea python module used"
-    print
+        print("PyX pykpathsea python module used")
+    print()
 
 def test_commands():
     for command in [r"echo $0 \"$*\"",
@@ -46,12 +46,12 @@ def test_commands():
                     r"file `which latex`",
                     ]:
         stdin, stdout, stderr = os.popen3(command)
-        print "\"%22s\" -->" % (command),
+        print("\"%22s\" -->" % (command), end=' ')
         for line in stdout:
-            print " %s" % line,
+            print(" %s" % line, end=' ')
         for x in [stdin, stdout, stderr]:
             x.close()
-    print
+    print()
 
 def test_fontmaps():
     allformats = []
@@ -131,10 +131,10 @@ def test_fontmaps():
             mappath = pyx.pykpathsea.find_file(fontmap, form)
             if mappath:
                 found = 1
-                print "\"%s\" found at \"%s\" as format \"%s\"" % (fontmap, mappath, allnames[form])
+                print("\"%s\" found at \"%s\" as format \"%s\"" % (fontmap, mappath, allnames[form]))
         if not found:
-            print "\"%s\" not found" % fontmap
-    print
+            print("\"%s\" not found" % fontmap)
+    print()
 
 test_installation()
 test_commands()

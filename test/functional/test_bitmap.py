@@ -3,7 +3,7 @@ from pyx import *
 try:
     from Image import open
 except:
-    print "PIL not available, skipping palette test"
+    print("PIL not available, skipping palette test")
     paletteimage = None
 else:
     paletteimage = open("../../www/vcss.png")

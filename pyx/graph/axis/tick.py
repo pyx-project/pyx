@@ -26,7 +26,7 @@ import sys
 
 # test automatic long conversion
 try:
-    sys.maxint+1
+    sys.maxsize+1
     autolong = 1
 except OverflowError:
     autolong = 0
@@ -51,7 +51,7 @@ class rational:
         if autolong:
             self.denom = 10 ** len(commaparts[1])
         else:
-            self.denom = 10L ** len(commaparts[1])
+            self.denom = 10 ** len(commaparts[1])
         neg = len(commaparts[0]) and commaparts[0][0] == "-"
         if neg:
             commaparts[0] = commaparts[0][1:]
@@ -63,7 +63,7 @@ class rational:
             try:
                 x = int(commaparts[0])
             except:
-                x = long(commaparts[0])
+                x = int(commaparts[0])
         else:
             x = 0
         if len(commaparts[1]):
@@ -72,7 +72,7 @@ class rational:
             try:
                 y = int(commaparts[1])
             except:
-                y = long(commaparts[1])
+                y = int(commaparts[1])
         else:
             y = 0
         self.num = x*self.denom + y
@@ -90,12 +90,12 @@ class rational:
                 if autolong:
                     self.denom *= 10 ** int(expparts[1])
                 else:
-                    self.denom *= 10L ** int(expparts[1])
+                    self.denom *= 10 ** int(expparts[1])
             else:
                 if autolong:
                     self.num *= 10 ** int(expparts[1])
                 else:
-                    self.num *= 10L ** int(expparts[1])
+                    self.num *= 10 ** int(expparts[1])
 
     def initfromfloat(self, x, floatprecision):
         "converts a float into a rational with finite resolution"
@@ -147,14 +147,14 @@ class rational:
             if autolong:
                 self.num, self.denom = self.denom ** (-power), self.num ** (-power)
             else:
-                self.num, self.denom = long(self.denom) ** (-power), long(self.num) ** (-power)
+                self.num, self.denom = int(self.denom) ** (-power), int(self.num) ** (-power)
         elif power > 1:
             if autolong:
                 self.num = self.num ** power
                 self.denom = self.denom ** power
             else:
-                self.num = long(self.num) ** power
-                self.denom = long(self.denom) ** power
+                self.num = int(self.num) ** power
+                self.denom = int(self.denom) ** power
 
     def __cmp__(self, other):
         try:

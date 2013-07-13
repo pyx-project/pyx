@@ -15,15 +15,15 @@ class MessageParserTestCase(unittest.TestCase):
             warnings.resetwarnings()
             warnings.filterwarnings(action="error")
             text.text(0, 0, texexpression, textattrs=textattrs, texmessages=texmessages)
-        except UserWarning, w:
+        except UserWarning as w:
             if str(w) != warningmessage:
                 if 0: # turn on for debugging differences
-                    print len(str(w)), len(warningmessage)
-                    for i, (c1, c2) in enumerate(zip(str(w), warningmessage)):
-                        print c1,
+                    print(len(str(w)), len(warningmessage))
+                    for i, (c1, c2) in enumerate(list(zip(str(w), warningmessage))):
+                        print(c1, end=' ')
                         if c1 != c2:
-                            print "difference at position %d" % i
-                            print ord(c1), ord(c2)
+                            print("difference at position %d" % i)
+                            print(ord(c1), ord(c2))
                             break
                 raise
 
@@ -87,7 +87,7 @@ Underfull \vbox (badness 10000) detected at line 0""", textattrs=[text.parbox(1.
             warnings.resetwarnings()
             warnings.filterwarnings(action="error")
             text.defaulttexrunner.finishdvi()
-        except UserWarning, w:
+        except UserWarning as w:
             if str(w) != """ignoring font warning:
 LaTeX Font Warning: Some font shapes were not available, defaults substituted.""":
                 raise

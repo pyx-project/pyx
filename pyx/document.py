@@ -20,9 +20,8 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import cStringIO, sys, warnings
-import bbox, pswriter, pdfwriter, trafo, style, unit
-import canvas as canvasmodule
+import io, sys, warnings
+from . import bbox, pswriter, pdfwriter, trafo, style, unit
 
 
 class paperformat:
@@ -115,6 +114,7 @@ class page:
                 pagetrafo = pagetrafo.scaled(sfactor, sfactor, self.margin + 0.5*paperwidth, self.margin + 0.5*paperheight)
 
             bbox.transform(pagetrafo)
+            from . import canvas as canvasmodule
             cc = canvasmodule.canvas()
             cc.insert(self.canvas, [pagetrafo])
         else:

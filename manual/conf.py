@@ -42,8 +42,8 @@ source_suffix = '.rst'
 master_doc = 'manual'
 
 # General information about the project.
-project = u'PyX'
-copyright = u'2011, Jörg Lehmann, Michael Schindler, André Wobst'
+project = 'PyX'
+copyright = '2011, Jörg Lehmann, Michael Schindler, André Wobst'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -182,8 +182,8 @@ latex_paper_size = 'a4'
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('manual', 'manual.tex', u'PyX Manual',
-   u'Jörg Lehmann, Michael Schindler, André Wobst', 'manual'),
+  ('manual', 'manual.tex', 'PyX Manual',
+   'Jörg Lehmann, Michael Schindler, André Wobst', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -220,8 +220,8 @@ latex_preamble = r'''
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('manual', 'pyx', u'PyX Manual',
-     [u'Jörg Lehmann, Michael Schindler, André Wobst'], 1)
+    ('manual', 'pyx', 'PyX Manual',
+     ['Jörg Lehmann, Michael Schindler, André Wobst'], 1)
 ]
 
 # -- Other options  ------------------------------------------------------------

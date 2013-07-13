@@ -13,7 +13,7 @@ def testspeed():
     c=canvas.canvas()
     p=path(moveto(0,0))
 
-    for i in xrange(1000):
+    for i in range(1000):
         p.append(lineto("%d pt" % i, "%d pt" % i))
 
     c.stroke(p)
@@ -25,7 +25,7 @@ def testspeed2():
     c=canvas.canvas()
     p=path(moveto(0,0))
 
-    for i in xrange(1000):
+    for i in range(1000):
         p.append(lineto(i,i))
 
     c.stroke(p)
@@ -37,7 +37,7 @@ def testspeed3():
     c=canvas.canvas()
     p=path(pyx.path.moveto_pt(0,0))
 
-    for i in xrange(1000):
+    for i in range(1000):
         p.append(pyx.path.lineto_pt(i, i))
 
     c.stroke(p)
@@ -47,7 +47,7 @@ def testspeedintersect():
     p=path(moveto(10,10), curveto(12,16,14,15,12,19))
     bp=normpath(p)
 
-    for x in xrange(1,100):
+    for x in range(1,100):
         q=path(moveto(x/5.0,10), curveto(12,16,14,22,11,16))
         bq=normpath(q)
         isect = bp.intersect(bq, epsilon=1e-3)

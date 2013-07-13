@@ -40,13 +40,13 @@ def curve1(): # <<<
     p = _knot(0, 0, mp_endpoint, None, None, mp_curl, 1, 1)
     knots = p
     p.next = _knot(60, 40, mp_open, None, 1, mp_open, None, 1)
-    p = p.next
+    p = p.__next__
     p.next = _knot(40, 90, mp_open, None, 1, mp_open, None, 1)
-    p = p.next
+    p = p.__next__
     p.next = _knot(10, 70, mp_open, None, 1, mp_open, None, 1)
-    p = p.next
+    p = p.__next__
     p.next = _knot(30, 50, mp_curl, 1.0, 1, mp_endpoint, None, None)
-    p = p.next
+    p = p.__next__
     p.next = knots
     refpoints = [
       ((None, None), (0, 0), (26.764633, -1.8454285)),
@@ -62,13 +62,13 @@ def curve2(): # <<<
     p = _knot(0, 0, mp_open, None, 1, mp_open, None, 1)
     knots = p
     p.next = _knot(60, 40, mp_open, None, 1, mp_open, None, 1)
-    p = p.next
+    p = p.__next__
     p.next = _knot(40, 90, mp_open, None, 1, mp_open, None, 1)
-    p = p.next
+    p = p.__next__
     p.next = _knot(10, 70, mp_open, None, 1, mp_open, None, 1)
-    p = p.next
+    p = p.__next__
     p.next = _knot(30, 50, mp_open, None, 1, mp_open, None, 1)
-    p = p.next
+    p = p.__next__
     p.next = knots
     refpoints = [
       ((-4.105545, 21.238037), (0, 0), (5.187561, -26.835297)),
@@ -86,13 +86,13 @@ def curve3(): # <<<
     # XXX: given angle is copied over from one side to the other:
     # this is mimicked by the default values of roughknot
     p.next = _knot(60, 40, mp_given, 0.5*pi, 1, mp_given, 0.5*pi, 1)
-    p = p.next
+    p = p.__next__
     p.next = _knot(40, 90, mp_given, pi, 1, mp_given, pi, 1)
-    p = p.next
+    p = p.__next__
     p.next = _knot(10, 70, mp_open, None, 1, mp_open, None, 1)
-    p = p.next
+    p = p.__next__
     p.next = _knot(30, 50, mp_curl, 1, 1, mp_endpoint, None, None)
-    p = p.next
+    p = p.__next__
     p.next = knots
     refpoints = [
       ((None, None), (0, 0), (28.543137, -11.892975)),
@@ -124,7 +124,7 @@ def curve4(a): # <<<
     p = _knot(0, 0, mp_endpoint, None, None, mp_given, 0.25*pi, 1)
     knots = p
     p.next = _knot(170.078740157, 0, mp_given, radians(a), 1, mp_endpoint, None, None)
-    p = p.next
+    p = p.__next__
     p.next = knots
     return knots, refpoints
 # >>>
@@ -134,9 +134,9 @@ def curve5(): # <<<
     p = _knot(0, 0, mp_endpoint, None, None, mp_given, 0.5*pi, -1)
     knots = p
     p.next = _knot(100, 20, mp_given, 0, -1, mp_given, 0, -1)
-    p = p.next
+    p = p.__next__
     p.next = _knot(200, 0, mp_given, -0.5*pi, -1, mp_endpoint, None, None)
-    p = p.next
+    p = p.__next__
     p.next = knots
 
     refpoints = [
@@ -151,11 +151,11 @@ def curve6a(): # <<<
     p = _knot(0, 0, mp_endpoint, None, None, mp_curl, 1, 1)
     knots = p
     p.next = _knot(50, 50, mp_open, None, 1, mp_open, None, 1)
-    p = p.next
+    p = p.__next__
     p.next = _knot(150, 50, mp_open, None, 1, mp_open, None, 1)
-    p = p.next
+    p = p.__next__
     p.next = _knot(200, 0, mp_curl, 1, 1, mp_endpoint, None, None)
-    p = p.next
+    p = p.__next__
     p.next = knots
 
     refpoints = [
@@ -171,11 +171,11 @@ def curve6b(): # <<<
     p = _knot(0, 0, mp_endpoint, None, None, mp_curl, 1, 1)
     knots = p
     p.next = _knot(50, 50, mp_open, None, 1, mp_open, None, 1.3)
-    p = p.next
+    p = p.__next__
     p.next = _knot(150, 50, mp_open, None, 1.3, mp_open, None, 1)
-    p = p.next
+    p = p.__next__
     p.next = _knot(200, 0, mp_curl, 1, 1, mp_endpoint, None, None)
-    p = p.next
+    p = p.__next__
     p.next = knots
 
     refpoints = [
@@ -191,11 +191,11 @@ def curve6c(): # <<<
     p = _knot(0, 0, mp_endpoint, None, None, mp_curl, 1, 1)
     knots = p
     p.next = _knot(50, 50, mp_open, None, 1, mp_open, None, 2.5)
-    p = p.next
+    p = p.__next__
     p.next = _knot(150, 50, mp_open, None, 1, mp_open, None, 1)
-    p = p.next
+    p = p.__next__
     p.next = _knot(200, 0, mp_curl, 1, 1, mp_endpoint, None, None)
-    p = p.next
+    p = p.__next__
     p.next = knots
 
     refpoints = [
@@ -212,17 +212,17 @@ def curve7(): # <<<
     p = _knot(0, 0, mp_endpoint, None, None, mp_curl, 1, 1) # z0
     knots = p
     p.next = _knot(50, 50, mp_open, None, 1, mp_open, None, -1) # z1
-    p = p.next
+    p = p.__next__
     # XXX: curl value is copied over from one side to the other:
     # this is mimicked by the default values of roughknot
     p.next = _knot(80, 0, mp_curl, 2, -1, mp_curl, 2, 1) # z2
-    p = p.next
+    p = p.__next__
     p.next = _knot(0, -20, mp_given, atan2(-2, -1), 1, mp_given, atan2(-2, -1), 3) # z3
-    p = p.next
+    p = p.__next__
     p.next = _knot(50, -20, mp_open, None, 4, mp_explicit, -10, -50) # z4
-    p = p.next
+    p = p.__next__
     p.next = _knot(150, 0, mp_explicit, 100, 50, mp_endpoint, None, None) # z5
-    p = p.next
+    p = p.__next__
     p.next = knots
 
     refpoints = [
@@ -241,17 +241,17 @@ def curve8a(): # <<<
     p = _knot(0.0, 0.0, mp_endpoint, None, None, mp_curl, 1.0, 1.0)
     knots = p
     p.next = _knot(100.0, 50.0, mp_open, None, 1, mp_open, None, 1.0)
-    p = p.next
+    p = p.__next__
     p.next = _knot(100.0, 50.0, mp_open, None, 1, mp_open, None, 1.0)
-    p = p.next
+    p = p.__next__
     p.next = _knot(200.0, 0.0, mp_curl, 1, 1, mp_curl, 1, 1)
-    p = p.next
+    p = p.__next__
     p.next = _knot(100.0, -50.0, mp_open, None, 1, mp_open, None, 1.0)
-    p = p.next
+    p = p.__next__
     p.next = _knot(100.0, -50.0, mp_open, None, 1, mp_open, None, 1.0)
-    p = p.next
+    p = p.__next__
     p.next = _knot(0.0, 0.0, mp_curl, 1, 1, mp_endpoint, None, None)
-    p = p.next
+    p = p.__next__
     p.next = knots
 
     refpoints = [
@@ -271,17 +271,17 @@ def curve8b(): # <<<
     p = _knot(0.0, 0.0, mp_endpoint, None, None, mp_curl, 1, 2)
     knots = p
     p.next = _knot(100.0, 50.0, mp_open, None, 3, mp_open, None, 3)
-    p = p.next
+    p = p.__next__
     p.next = _knot(100.0, 50.0, mp_open, None, 4, mp_open, None, 4)
-    p = p.next
+    p = p.__next__
     p.next = _knot(200.0, 0.0, mp_curl, 1, 2, mp_curl, 1, 2)
-    p = p.next
+    p = p.__next__
     p.next = _knot(100.0, -50.0, mp_open, None, 3, mp_open, None, 3)
-    p = p.next
+    p = p.__next__
     p.next = _knot(100.0, -50.0, mp_open, None, 4, mp_open, None, 4)
-    p = p.next
+    p = p.__next__
     p.next = _knot(0.0, 0.0, mp_curl, 1, 2, mp_endpoint, None, None)
-    p = p.next
+    p = p.__next__
     p.next = knots
 
     refpoints = [
@@ -301,13 +301,13 @@ def curve9(): # <<<
     p = _knot(0, 0, mp_endpoint, None, None, mp_curl, 1, 1)
     knots = p
     p.next = _knot(50, 10, mp_open, None, 1, mp_explicit, 50, 10)
-    p = p.next
+    p = p.__next__
     p.next = _knot(100, 0, mp_explicit, 100, 0, mp_open, None, 1)
-    p = p.next
+    p = p.__next__
     p.next = _knot(150, 50, mp_explicit, 149, 49, mp_open, None, 1)
-    p = p.next
+    p = p.__next__
     p.next = _knot(200.0, 0.0, mp_curl, 1, 1, mp_endpoint, None, None)
-    p = p.next
+    p = p.__next__
     p.next = knots
 
     refpoints = [
@@ -327,13 +327,13 @@ def curve10(): # <<<
     # ltype is curl, and not both tensions are 1:
     # This is already corrected by the parser of metapost
     p.next = _knot(60, 40, mp_curl, 2, 2, mp_open, None, -1) # z1
-    p = p.next
+    p = p.__next__
     p.next = _knot(40, 90, mp_open, None, -1, mp_open, None, -1) # z2
-    p = p.next
+    p = p.__next__
     p.next = _knot(10, 70, mp_open, None, -1, mp_open, None, -1) # z3
-    p = p.next
+    p = p.__next__
     p.next = _knot(30, 50, mp_open, None, -1, mp_open, None, -1) # z4
-    p = p.next
+    p = p.__next__
     p.next = knots
 
     refpoints = [
@@ -347,23 +347,23 @@ def curve10(): # <<<
 
 def myprint(knots): # <<<
     str = repr(knots)
-    p = knots.next
+    p = knots.__next__
     while not p is knots:
         str += " "
         str += repr(p)
-        p = p.next
+        p = p.__next__
     return str
 # >>>
 def mypath(knots): # <<<
     p = path.path(path.moveto_pt(knots.x_pt, knots.y_pt))
     cx, cy = knots.rx_pt, knots.ry_pt
     prev = knots
-    k = knots.next
+    k = knots.__next__
     while not k is knots:
         p.append(path.curveto_pt(cx, cy, k.lx_pt, k.ly_pt, k.x_pt, k.y_pt))
         cx, cy = k.rx_pt, k.ry_pt
         prev = k
-        k = k.next
+        k = k.__next__
     if knots.ltype == mp_explicit:
         p.append(path.curveto_pt(prev.rx_pt, prev.ry_pt, knots.lx_pt, knots.ly_pt, knots.x_pt, knots.y_pt))
         p.append(path.closepath())
@@ -383,12 +383,12 @@ def check(knots, refpoints, eps=1.0e-3, rel=1.0e-5): # <<<
         if right[0] is not None:
             assert abs(right[0]-p.rx_pt) < rel*(abs(right[0])+eps)
             assert abs(right[1]-p.ry_pt) < rel*(abs(right[1])+eps)
-        p = p.next
+        p = p.__next__
 # >>>
 def checkone(knots, refpoints): # <<<
-    print myprint(knots)
+    print(myprint(knots))
     mp_make_choices(knots, epsilon)
-    print myprint(knots)
+    print(myprint(knots))
 
     c = canvas.canvas()
     c.stroke(mypath(knots), [deco.shownormpath(), deco.earrow.normal])

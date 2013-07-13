@@ -1,4 +1,4 @@
-import sys, os, os.path, cgi, StringIO, codecs, glob, re, warnings
+import sys, os, os.path, cgi, io, codecs, glob, re, warnings
 import keyword, token, tokenize
 import xml.dom.minidom
 from zope.pagetemplate.pagetemplate import PageTemplate
@@ -24,8 +24,8 @@ tokclasses = {token.NUMBER: 'number',
 class MakeHtml:
 
     def fromPython(self, input):
-        input = StringIO.StringIO(input)
-        self.output = StringIO.StringIO()
+        input = io.StringIO(input)
+        self.output = io.StringIO()
         self.col = 0
         self.tokclass = None
         self.output.write("<pre id=python>")
@@ -35,7 +35,9 @@ class MakeHtml:
         self.output.write("</pre>\n")
         return self.output.getvalue()
 
-    def tokeneater(self, toktype, toktext, (srow, scol), (erow, ecol), line):
+    def tokeneater(self, toktype, toktext, xxx_todo_changeme, xxx_todo_changeme1, line):
+        (srow, scol) = xxx_todo_changeme
+        (erow, ecol) = xxx_todo_changeme1
         if toktype == token.ERRORTOKEN:
             raise RuntimeError("ErrorToken occured")
         if toktype in [token.NEWLINE, tokenize.NL]:
@@ -82,7 +84,7 @@ class MakeHtml:
     def fromText(self, input, bend=""):
         title = None
         pos = 0
-        output = StringIO.StringIO()
+        output = io.StringIO()
         while not self.emptypattern.match(input, pos):
             par = self.parpattern.match(input, pos)
             if par:

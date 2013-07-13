@@ -21,7 +21,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 
-import cStringIO, struct
+import io, struct
 
 
 class reader:
@@ -89,7 +89,7 @@ class reader:
 class stringreader(reader):
 
     def __init__(self, s):
-        self.file = cStringIO.StringIO(s)
+        self.file = io.StringIO(s)
 
 
 class PStokenizer:

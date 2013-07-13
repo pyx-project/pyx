@@ -26,7 +26,7 @@
 #   should we at least factor it out?
 
 import sys, math
-import attr, canvas, canvasitem, color, path, normpath, style, trafo, unit, deformer
+from . import attr, baseclasses, canvas, color, path, normpath, style, trafo, unit, deformer
 
 _marker = object()
 
@@ -34,7 +34,7 @@ _marker = object()
 # Decorated path
 #
 
-class decoratedpath(canvasitem.canvasitem):
+class decoratedpath(baseclasses.canvasitem):
     """Decorated path
 
     The main purpose of this class is during the drawing
@@ -539,7 +539,7 @@ class text(deco, attr.attr):
     def decorate(self, dp, texrunner):
         if self.texrunner:
             texrunner = self.texrunner
-        import text as textmodule
+        from . import text as textmodule
         textattrs = attr.mergeattrs([textmodule.halign.center, textmodule.vshift.mathaxis] + self.textattrs)
 
         dp.ensurenormpath()
@@ -591,7 +591,7 @@ class curvedtext(deco, attr.attr):
     def decorate(self, dp, texrunner):
         if self.texrunner:
             texrunner = self.texrunner
-        import text as textmodule
+        from . import text as textmodule
         self.defaulttextattrs = [textmodule.halign.center]
 
         dp.ensurenormpath()
@@ -891,7 +891,7 @@ class brace(deco, attr.attr):
             "totalheight", "barthickness", "innerstrokesthickness", "outerstrokesthickness",
             "innerstrokesrelheight", "outerstrokesrelheight", "innerstrokesangle", "outerstrokesangle", "slantstrokesangle",
             "innerstrokessmoothness", "outerstrokessmoothness", "middlerelpos"]:
-            if not kwargs.has_key(name):
+            if name not in kwargs:
                 kwargs[name] = self.__dict__[name]
         return brace(**kwargs)
 

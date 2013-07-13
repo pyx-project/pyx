@@ -1,6 +1,6 @@
 # contributed by Stefan Schenk
 
-from cStringIO import StringIO
+from io import StringIO
 from math import sqrt
 from pyx import *
 

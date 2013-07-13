@@ -20,8 +20,8 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import cStringIO, copy, time, math
-import bbox, config, style, version, unit, trafo
+import io, copy, time, math
+from . import bbox, config, style, version, unit, trafo
 
 
 class PSregistry:
@@ -36,7 +36,7 @@ class PSregistry:
 
     def add(self, resource):
         rkey = (resource.type, resource.id)
-        if self.resourceshash.has_key(rkey):
+        if rkey in self.resourceshash:
            self.resourceshash[rkey].merge(resource)
         else:
            self.resourceshash[rkey] = resource
@@ -132,7 +132,7 @@ class EPSwriter(_PSwriter):
         page = document.pages[0]
         canvas = page.canvas
 
-        pagefile = cStringIO.StringIO()
+        pagefile = io.StringIO()
         registry = PSregistry()
         acontext = context()
         pagebbox = bbox.empty()
@@ -166,7 +166,7 @@ class PSwriter(_PSwriter):
         # We first have to process the content of the pages, writing them into the stream pagesfile
         # Doing so, we fill the registry and also calculate the page bounding boxes, which are
         # stored in page._bbox for every page
-        pagesfile = cStringIO.StringIO()
+        pagesfile = io.StringIO()
         registry = PSregistry()
 
         # calculated bounding boxes of the whole document
@@ -174,7 +174,7 @@ class PSwriter(_PSwriter):
 
         for nr, page in enumerate(document.pages):
             # process contents of page
-            pagefile = cStringIO.StringIO()
+            pagefile = io.StringIO()
             acontext = context()
             pagebbox = bbox.empty()
             page.processPS(pagefile, self, acontext, registry, pagebbox)
@@ -212,7 +212,7 @@ class PSwriter(_PSwriter):
                 paperformats[page.paperformat] = page.paperformat
 
         first = 1
-        for paperformat in paperformats.values():
+        for paperformat in list(paperformats.values()):
             if first:
                 file.write("%%DocumentMedia: ")
                 first = 0
@@ -258,6 +258,6 @@ class context:
 
     def __call__(self, **kwargs):
         newcontext = copy.copy(self)
-        for key, value in kwargs.items():
+        for key, value in list(kwargs.items()):
             setattr(newcontext, key, value)
         return newcontext

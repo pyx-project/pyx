@@ -29,13 +29,14 @@ interface. Complex tasks like 2d and 3d plots in publication-ready quality are
 built out of these primitives.
 """
 
-import version
+from . import version
 __version__ = version.version
 
 __all__ = ["attr", "box", "bitmap", "canvas", "color", "connector", "deco", "deformer", "document",
            "epsfile", "graph", "mesh", "metapost", "path", "pattern", "pdfextra", "style", "trafo", "text", "unit"]
 
+import importlib
 
 # automatically import main modules into pyx namespace
 for module in __all__:
-    __import__(module, globals(), locals(), [])
+    importlib.import_module('.' + module, package='pyx')

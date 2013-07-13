@@ -2,7 +2,7 @@ import sys
 if sys.path[0] != "../..":
     sys.path.insert(0, "../..")
 
-import cStringIO, os, re, unittest
+import io, os, re, unittest
 
 from pyx.dvi import dvifile
 
@@ -14,7 +14,7 @@ class DvifileTestCase(unittest.TestCase):
         dvitypelines = dvitypefile.readlines()
         dvitypelineno = dvitypelines.index(" \n") + 1
 
-        pyxdvifile = cStringIO.StringIO()
+        pyxdvifile = io.StringIO()
         df = dvifile.DVIfile(advifile, debug=1, debugfile=pyxdvifile)
         while df.readpage():
             pass

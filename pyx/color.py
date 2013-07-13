@@ -22,7 +22,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 import binascii, colorsys, math, struct, warnings
-import attr, style, pdfwriter
+from . import attr, style, pdfwriter
 
 # device-dependend (nonlinear) functions for color conversion
 # UCRx : [0,1] -> [-1, 1] UnderColorRemoval (removes black from c, y, m)
@@ -136,7 +136,7 @@ class rgb(color):
 
     def hsb(self):
 
-        values = self.color.values()
+        values = list(self.color.values())
         values.sort()
         z, y, x = values
         r, g, b = self.color["r"], self.color["g"], self.color["b"]
@@ -397,7 +397,7 @@ class lineargradient(gradient):
 
     def getcolor(self, param):
         colordict = {}
-        for key in self.mincolor.color.keys():
+        for key in list(self.mincolor.color.keys()):
             colordict[key] = param * self.maxcolor.color[key] + (1 - param) * self.mincolor.color[key]
         return self.colorclass(**colordict)
 
@@ -417,7 +417,7 @@ class functiongradient(gradient):
 
     def getcolor(self, param):
         colordict = {}
-        for key in self.functions.keys():
+        for key in list(self.functions.keys()):
             colordict[key] = self.functions[key](param)
         return self.cls(**colordict)
 

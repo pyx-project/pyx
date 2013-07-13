@@ -21,7 +21,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 import os, string, tempfile, warnings
-import canvasitem, bbox, filelocator, unit, trafo, pswriter
+from . import baseclasses, bbox, config, unit, trafo, pswriter
 
 # PostScript-procedure definitions (cf. 5002.EPSF_Spec_v3.0.pdf)
 # with important correction in EndEPSF:
@@ -159,7 +159,7 @@ def _readbbox(file):
             else:
                 if len(values) != 4:
                     raise IOError("invalid number of bounding box values")
-                return bbox.bbox_pt(*map(int, values))
+                return bbox.bbox_pt(*list(map(int, values)))
         elif (line.rstrip() == "%%EndComments" or
               (len(line) >= 2 and line[0] != "%" and line[1] not in string.whitespace)):
             # implicit end of comments section
@@ -177,7 +177,7 @@ def _readbbox(file):
                 raise IOError("invalid number of arguments")
             if len(values) == 3:
                 if values[2] == "Lines":
-                    for i in xrange(int(values[0])):
+                    for i in range(int(values[0])):
                         file.readline()
                 elif values[2] != "Bytes":
                     raise IOError("invalid bytesorlines-value")
@@ -217,13 +217,13 @@ def _readbbox(file):
             values = line.split(":", 1)[1].split()
             if len(values) != 4:
                 raise IOError("invalid number of bounding box values")
-            usebbox = bbox.bbox_pt(*map(int, values))
+            usebbox = bbox.bbox_pt(*list(map(int, values)))
     if not usebbox:
         raise IOError("missing bounding box information in document trailer")
     return usebbox
 
 
-class epsfile(canvasitem.canvasitem):
+class epsfile(baseclasses.canvasitem):
 
     """class for epsfiles"""
 
@@ -313,7 +313,7 @@ class epsfile(canvasitem.canvasitem):
 
     def open(self):
         if self.kpsearch:
-            return filelocator.open(self.filename, [filelocator.format.pict], "rb")
+            return config.open(self.filename, [config.format.pict], "rb")
         else:
             return open(self.filename, "rb")
 

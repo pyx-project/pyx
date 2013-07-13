@@ -33,7 +33,7 @@ def output(boxes, shapes):
         c.stroke(path.rect(0, y, shape[0], -shape[1]))
         c.stroke(boxes[i].bbox().path(), [trafo.translate(0, y), color.rgb.red])
         c.insert(boxes[i], [trafo.translate(0, y)])
-        for mark in boxes[i].markers.keys():
+        for mark in list(boxes[i].markers.keys()):
             mx, my = boxes[i].markers[mark]
             c.insert(tr.text(mx,my+y, mark+"~", [text.size.tiny, text.halign.right]))
             if mark[:5] == "start":
@@ -41,7 +41,7 @@ def output(boxes, shapes):
             elif mark[:3] == "end":
                 c.fill(path.circle(mx, my+y, 0.05), [color.rgb.green])
             else:
-                raise "other marks in there!"
+                raise ValueError("other marks in there!")
         y -= shape[1] + 3
     c.writeEPSfile("textboxes")
 
@@ -50,7 +50,7 @@ shapes = [(10,7), (8,5)]*50
 n = 0
 only = 28
 while only is None or n <= only:
-    print n
+    print(n)
     n += 1
     if 1:
         thistext = randtext()
@@ -69,8 +69,8 @@ while only is None or n <= only:
         if i < len(shapes):
             shape = shapes[i]
         if abs(unit.topt(boxes[i].bbox().right()) - unit.topt(shape[0])) > 1:
-            print ("right boundary differs:",
+            print(("right boundary differs:",
                    unit.topt(boxes[i].bbox().bottom()), -unit.topt(shape[1]),
                    unit.topt(boxes[i].bbox().right()), unit.topt(shape[0]),
-                   i+1, len(boxes))
+                   i+1, len(boxes)))
 

@@ -22,7 +22,7 @@
 #       - this is much too slow --- consider a rewrite in C
 
 
-import getopt, sys, os, StringIO, re, math
+import getopt, sys, os, io, re, math
 try:
     from PIL import Image
 except ImportError:
@@ -35,7 +35,7 @@ progname = "epstopng v0.1: eps to transparent antialiased png converter"
 def epstopng(epsname, pngname, resolution, scale, transparent, gsname, quiet):
     sys.stderr.write("run ghostscript to create a %i times larger non-antialiased image ... " % scale)
     gsout = os.popen("%s -dEPSCrop -dNOPAUSE -dQUIET -dBATCH -sDEVICE=ppmraw -sOutputFile=- -r%i %s" % (gsname, resolution*scale, epsname))
-    input = Image.open(StringIO.StringIO(gsout.read())).convert("RGB") # ensure rgb here
+    input = Image.open(io.StringIO(gsout.read())).convert("RGB") # ensure rgb here
     output = Image.new("RGBA", [(x+scale-1)/scale for x in input.size])
     sys.stderr.write("done\n")
     sys.stderr.write("image size is %ix%i\n" % output.size)
@@ -68,16 +68,16 @@ def epstopng(epsname, pngname, resolution, scale, transparent, gsname, quiet):
 
 
 def usage():
-    print progname
-    print "Copyright (C) 2003 André Wobst <wobsta@users.sourceforge.net>"
-    print "usage: epstopng [options] <eps-file>"
-    print "-h, --help: show this help"
-    print "-q, --quiet: be quiet"
-    print "-o, --output <file>: output file name; must be set"
-    print "-r, --resolution <dpi>: resolution; default: 100"
-    print "-s, --scale <scale>: input scale for antialias; default: 4"
-    print "-t, --transparent (<r>, <g>, <b>): transparent color; default: (255, 255, 255)"
-    print "-g, --gsname <name>: name of the gs interpreter (gs version >= 8.0 needed!); default: \"gs\""
+    print(progname)
+    print("Copyright (C) 2003 André Wobst <wobsta@users.sourceforge.net>")
+    print("usage: epstopng [options] <eps-file>")
+    print("-h, --help: show this help")
+    print("-q, --quiet: be quiet")
+    print("-o, --output <file>: output file name; must be set")
+    print("-r, --resolution <dpi>: resolution; default: 100")
+    print("-s, --scale <scale>: input scale for antialias; default: 4")
+    print("-t, --transparent (<r>, <g>, <b>): transparent color; default: (255, 255, 255)")
+    print("-g, --gsname <name>: name of the gs interpreter (gs version >= 8.0 needed!); default: \"gs\"")
 
 
 def main():

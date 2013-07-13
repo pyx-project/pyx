@@ -25,15 +25,15 @@
 A canvas holds a collection of all elements and corresponding attributes to be
 displayed. """
 
-import cStringIO, os, sys, string, tempfile, warnings
-import attr, canvasitem, deco, deformer, document, font, pycompat, style, trafo
-import bbox as bboxmodule
+import io, os, sys, string, tempfile, warnings
+from . import attr, baseclasses, document, pycompat, style, trafo
+from . import bbox as bboxmodule
 
 def _wrappedindocument(method):
     def wrappedindocument(self, file=None, **kwargs):
         page_kwargs = {}
         write_kwargs = {}
-        for name, value in kwargs.items():
+        for name, value in list(kwargs.items()):
             if name.startswith("page_"):
                 page_kwargs[name[5:]] = value
             elif name.startswith("write_"):
@@ -74,7 +74,7 @@ class clip(attr.attr):
 # general canvas class
 #
 
-class canvas(canvasitem.canvasitem):
+class canvas(baseclasses.canvasitem):
 
     """a canvas holds a collection of canvasitems"""
 
@@ -106,7 +106,7 @@ class canvas(canvasitem.canvasitem):
             self.texrunner = texrunner
         else:
             # prevent cyclic imports
-            import text
+            from . import text
             self.texrunner = text.defaulttexrunner
 
         attr.checkattrs(attrs, [trafo.trafo_pt, clip, style.style])
@@ -181,6 +181,7 @@ class canvas(canvasitem.canvasitem):
 
     def processPDF(self, file, writer, context, registry, bbox):
         context = context()
+        textregion = False
         context.trafo = context.trafo * self.trafo
         if self.items:
             if self.modifies_state:
@@ -196,19 +197,19 @@ class canvas(canvasitem.canvasitem):
             nbbox = bboxmodule.empty()
             for item in self.items:
                 if not writer.text_as_path:
-                    if isinstance(item, font.text_pt):
-                        if not context.textregion:
+                    if item.requiretextregion:
+                        if not textregion:
                             file.write("BT\n")
-                            context.textregion = 1
+                            textregion = True
                     else:
-                        if context.textregion:
+                        if textregion:
                             file.write("ET\n")
-                            context.textregion = 0
+                            textregion = False
                             context.selectedfont = None
                 item.processPDF(file, writer, context, registry, nbbox)
-            if context.textregion:
+            if textregion:
                 file.write("ET\n")
-                context.textregion = 0
+                textregion = False
                 context.selectedfont = None
             # update bounding bbox
             nbbox.transform(self.trafo)
@@ -273,8 +274,8 @@ class canvas(canvasitem.canvasitem):
 
         """
 
-        if not isinstance(item, canvasitem.canvasitem):
-            raise ValueError("only instances of canvasitem.canvasitem can be inserted into a canvas")
+        if not isinstance(item, baseclasses.canvasitem):
+            raise ValueError("only instances of baseclasses.canvasitem can be inserted into a canvas")
 
         if attrs:
             sc = canvas(attrs)
@@ -293,11 +294,11 @@ class canvas(canvasitem.canvasitem):
         before drawing the path.
 
         """
-
+        from . import deco
         attrs = attr.mergeattrs(attrs)
-        attr.checkattrs(attrs, [deco.deco, deformer.deformer, style.style])
+        attr.checkattrs(attrs, [deco.deco, baseclasses.deformer, style.style])
 
-        for adeformer in attr.getattrs(attrs, [deformer.deformer]):
+        for adeformer in attr.getattrs(attrs, [baseclasses.deformer]):
             path = adeformer.deform(path)
 
         styles = attr.getattrs(attrs, [style.style])
@@ -318,7 +319,7 @@ class canvas(canvasitem.canvasitem):
         before drawing the path.
 
         """
-
+        from . import deco
         self.draw(path, [deco.stroked]+list(attrs))
 
     def fill(self, path, attrs=[]):
@@ -330,7 +331,7 @@ class canvas(canvasitem.canvasitem):
         before drawing the path.
 
         """
-
+        from . import deco
         self.draw(path, [deco.filled]+list(attrs))
 
     def settexrunner(self, texrunner):
@@ -463,7 +464,7 @@ class canvas(canvasitem.canvasitem):
 
         if seekable:
             # the read method of a pipe object may not return the full content
-            f = cStringIO.StringIO()
+            f = io.StringIO()
             while True:
                 data = stdout.read()
                 if not data:

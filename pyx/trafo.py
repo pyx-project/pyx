@@ -21,7 +21,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 import math
-import attr, deformer, unit
+from . import attr, baseclasses, unit
 
 # global epsilon (used to judge whether a matrix is singular)
 _epsilon = (1e-5)**2
@@ -64,7 +64,7 @@ class TrafoException(Exception):
 
 # trafo: affine transformations
 
-class trafo_pt(deformer.deformer):
+class trafo_pt(baseclasses.deformer):
 
     """affine transformation (coordinates in constructor in pts)
 

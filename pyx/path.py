@@ -23,14 +23,14 @@
 
 import math
 from math import cos, sin, tan, acos, pi, radians, degrees
-import trafo, unit
-from normpath import NormpathException, normpath, normsubpath, normline_pt, normcurve_pt
-import bbox as bboxmodule
+from . import trafo, unit
+from .normpath import NormpathException, normpath, normsubpath, normline_pt, normcurve_pt
+from . import bbox as bboxmodule
 
 # set is available as an external interface to the normpath.set method
-from normpath import set
+from .normpath import set
 # normpath's invalid is available as an external interface
-from normpath import invalid
+from .normpath import invalid
 
 # use new style classes when possible
 __metaclass__ = type

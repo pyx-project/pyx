@@ -21,7 +21,6 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 from pyx import reader
-import texfont
 
 _VF_LONG_CHAR  = 242   # character packet (long version)
 _VF_FNTDEF1234 = 243   # font definition
@@ -74,13 +73,14 @@ class vffile:
                 # of the virtual font itself.  Note that realscale has
                 # to be a fix_word (like s)
                 # XXX: check rounding
-                reals = int(round(self.scale * (16*self.ds/16777216L) * s))
+                reals = int(round(self.scale * (16*self.ds/16777216) * s))
 
                 # print ("defining font %s -- VF scale: %g, VF design size: %d, relative font size: %d => real size: %d" %
                 #        (fontname, self.scale, self.ds, s, reals)
                 #        )
 
                 # XXX allow for virtual fonts here too
+                from . import texfont
                 self.fonts[num] =  texfont.TeXfont(fontname, c, reals, d, self.tfmconv, self.pyxconv, self.debug > 1)
             elif cmd == _VF_LONG_CHAR:
                 # character packet (long form)

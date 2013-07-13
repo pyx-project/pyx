@@ -21,10 +21,10 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import errno, glob, os, threading, Queue, re, tempfile, atexit, time, warnings
-import config, unit, box, canvas, trafo, version, attr, style, filelocator, pycompat, path
+import errno, glob, os, threading, queue, re, tempfile, atexit, time, warnings
+from . import config, unit, box, canvas, trafo, version, attr, style, pycompat, path
 from pyx.dvi import dvifile
-import bbox as bboxmodule
+from . import bbox as bboxmodule
 
 class PyXTeXWarning(UserWarning): pass
 warnings.filterwarnings('always', category=PyXTeXWarning)
@@ -441,7 +441,7 @@ flushhalign.right = flushhalign(1)
 # flushhalign.clear = attr.clearclass(flushhalign) # we can't defined a clearclass for flushhalign since it couldn't clear a halign's flushhalign
 
 
-class halign(attr.exclusiveattr, textattr, boxhalign, flushhalign, _localattr):
+class halign(boxhalign, flushhalign, _localattr):
 
     def __init__(self, aboxhalign, aflushhalign):
         self.boxhalign = aboxhalign
@@ -637,13 +637,13 @@ class _readpipe(threading.Thread):
             while 1:
                 try:
                     return self.pipe.readline()
-                except IOError, e:
+                except IOError as e:
                     if e.errno != errno.EINTR:
                          raise
         read = _read() # read, what comes in
         try:
             self.expect = self.expectqueue.get_nowait() # read, what should be expected
-        except Queue.Empty:
+        except queue.Empty:
             pass
         while len(read):
             # universal EOL handling (convert everything into unix like EOLs)
@@ -655,7 +655,7 @@ class _readpipe(threading.Thread):
             read = _read() # read again
             try:
                 self.expect = self.expectqueue.get_nowait()
-            except Queue.Empty:
+            except queue.Empty:
                 pass
         # EOF reached
         self.pipe.close()
@@ -915,9 +915,9 @@ class texrunner:
                 # workaround: bufsize = 0 is not supported on MS windows for os.open4 (Python 2.4 and below, i.e. where subprocess is not available)
                 self.texinput, self.texoutput = pycompat.popen4("%s%s %s" % (self.mode, ipcflag, self.texfilename), "t")
             atexit.register(_cleantmp, self)
-            self.expectqueue = Queue.Queue(1)  # allow for a single entry only -> keeps the next InputMarker to be wait for
+            self.expectqueue = queue.Queue(1)  # allow for a single entry only -> keeps the next InputMarker to be wait for
             self.gotevent = threading.Event()  # keeps the got inputmarker event
-            self.gotqueue = Queue.Queue(0)     # allow arbitrary number of entries
+            self.gotqueue = queue.Queue(0)     # allow arbitrary number of entries
             self.quitevent = threading.Event() # keeps for end of terminal event
             self.readoutput = _readpipe(self.texoutput, self.expectqueue, self.gotevent, self.gotqueue, self.quitevent)
             self.texruns = 1
@@ -954,7 +954,7 @@ class texrunner:
                 if self.lfs:
                     if not self.lfs.endswith(".lfs"):
                         self.lfs = "%s.lfs" % self.lfs
-                    lfsfile = filelocator.open(self.lfs, [], "r")
+                    lfsfile = config.open(self.lfs, [], "r")
                     lfsdef = lfsfile.read()
                     lfsfile.close()
                     self.execute(lfsdef, [])
@@ -962,7 +962,7 @@ class texrunner:
                 self.execute("\\newdimen\\linewidth\\newdimen\\textwidth%\n", [])
             elif self.mode == "latex":
                 if self.pyxgraphics:
-                    pyxdef = filelocator.open("pyx.def", [], "rb")
+                    pyxdef = config.open("pyx.def", [], "rb")
                     pyxdef_filename = self.texfilename + ".pyx.def"
                     pyxdef_file = open(pyxdef_filename, "wb")
                     pyxdef_file.write(pyxdef.read())
@@ -1014,7 +1014,7 @@ class texrunner:
             self.texmessage = ""
             while 1:
                 self.texmessage += self.gotqueue.get_nowait()
-        except Queue.Empty:
+        except queue.Empty:
             pass
         self.texmessage = self.texmessage.replace("\r\n", "\n").replace("\r", "\n")
         self.texmessageparsed = self.texmessage
@@ -1192,7 +1192,7 @@ class texrunner:
             expr = textattrs[lentextattrs-1-i].apply(expr)
         try:
             self.execute(expr, self.defaulttexmessagesdefaultrun + self.texmessagesdefaultrun + texmessages)
-        except TexResultError, e:
+        except TexResultError as e:
             warnings.warn("We try to finish the dvi due to an unhandled tex error", PyXTeXWarning)
             try:
                 self.finishdvi(ignoretail=1)

@@ -4,7 +4,7 @@ if sys.path[0] != "../..":
 
 import unittest
 
-import StringIO
+import io
 from pyx.graph import data
 
 class DataTestCase(unittest.TestCase):
@@ -14,12 +14,12 @@ class DataTestCase(unittest.TestCase):
         self.failUnlessEqual(mydata.columndata[0], [1, 2])
         self.failUnlessEqual(mydata.columns["a"], [1, 4])
         self.failUnlessEqual(mydata.columndata[2], [2, 5])
-        self.failUnlessEqual("c" in mydata.columns.keys(), 0)
+        self.failUnlessEqual("c" in list(mydata.columns.keys()), 0)
 
     def testValues(self):
         mydata = data.values(a=[1, 4])
         self.failUnlessEqual(mydata.columns["a"], [1, 4])
-        self.failUnlessEqual("c" in mydata.columns.keys(), 0)
+        self.failUnlessEqual("c" in list(mydata.columns.keys()), 0)
 
     def testData(self):
         mydata = data.points([[1], [2]], a=1)
@@ -50,7 +50,7 @@ class DataTestCase(unittest.TestCase):
         self.failUnlessAlmostEqual(mydata2.columns["d"][1], 4.0)
 
     def testFile(self):
-        testfile = StringIO.StringIO("""#a
+        testfile = io.StringIO("""#a
 0
 1 eins
 2 "2"
@@ -65,7 +65,7 @@ class DataTestCase(unittest.TestCase):
         self.failUnlessEqual(mydata.columns["b"][1], "eins")
         self.failUnlessEqual(mydata.columns["b"][2], "2")
         self.failUnlessEqual(mydata.columns["b"][3], "x\"x")
-        testfile = StringIO.StringIO("""#a
+        testfile = io.StringIO("""#a
 0
 1
 2
@@ -81,7 +81,7 @@ class DataTestCase(unittest.TestCase):
         self.failUnlessEqual(mydata.title, "title")
 
     def testSec(self):
-        testfile = StringIO.StringIO("""[sec1]
+        testfile = io.StringIO("""[sec1]
 opt1=a1
 opt2=a2
 val=1

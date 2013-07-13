@@ -22,8 +22,8 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 import warnings
-from pyx import bbox, canvasitem, deco, path, pswriter, pdfwriter, trafo, unit, pycompat
-import t1file, afmfile
+from pyx import bbox, baseclasses, deco, path, pswriter, pdfwriter, trafo, unit, pycompat
+from . import t1file, afmfile
 
 
 ##############################################################################
@@ -96,7 +96,7 @@ class PSreencodefont(pswriter.PSresource):
         file.write("%%%%BeginResource: %s\n" % self.newfontname)
         file.write("/%s /%s\n[" % (self.basefontname, self.newfontname))
         vector = [None] * len(self.encoding)
-        for glyphname, charcode in self.encoding.items():
+        for glyphname, charcode in list(self.encoding.items()):
             vector[charcode] = glyphname
         for i, glyphname in enumerate(vector):
             if i:
@@ -287,7 +287,7 @@ class PDFencoding(pdfwriter.PDFobject):
         # As self.encoding might be appended after the constructur has set it,
         # we need to defer the calculation until the whole content was constructed.
         vector = [None] * len(self.encoding)
-        for glyphname, charcode in self.encoding.items():
+        for glyphname, charcode in list(self.encoding.items()):
             vector[charcode] = glyphname
         return vector
 
@@ -352,9 +352,10 @@ class selectedfont:
         file.write("/%s %f Tf\n" % (self.name, self.size_pt))
 
 
-class text_pt(canvasitem.canvasitem):
+class text_pt(baseclasses.canvasitem):
 
-    pass
+    def requiretextregion(self):
+        return True
 
 
 class T1text_pt(text_pt):
@@ -402,10 +403,10 @@ class T1text_pt(text_pt):
         glyphnames = pycompat.set(self.glyphnames)
         if len(glyphnames) > 256:
             raise ValueError("glyphs do not fit into one single encoding")
-        for encodingname, encoding in encodings.items():
+        for encodingname, encoding in list(encodings.items()):
             glyphsmissing = []
             for glyphname in glyphnames:
-                if glyphname not in encoding.keys():
+                if glyphname not in list(encoding.keys()):
                     glyphsmissing.append(glyphname)
 
             if len(glyphsmissing) + len(encoding) < 256:

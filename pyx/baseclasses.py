@@ -20,6 +20,8 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
+from . import attr
+
 class canvasitem:
 
     """Base class for everything which can be inserted into a canvas"""
@@ -27,6 +29,11 @@ class canvasitem:
     def bbox(self):
         """return bounding box of canvasitem"""
         raise NotImplementedError()
+
+    def requiretextregion(self):
+        """indicates whether a canvasitem needs to be part of a PDF text
+        region"""
+        return False
 
     def processPS(self, file, writer, context, registry, bbox):
         """process canvasitem by writing the corresponding PS code to file and
@@ -59,3 +66,10 @@ class canvasitem:
         - bbox has to be updated to include the bounding box of the canvasitem
         """
         raise NotImplementedError()
+
+
+class deformer(attr.attr):
+
+    def deform (self, basepath):
+        raise NotImplementedError()
+

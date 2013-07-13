@@ -27,7 +27,7 @@ try:
 except:
     haszlib = 0
 
-import bbox, canvasitem, pswriter, pdfwriter, trafo, unit
+from . import bbox, baseclasses, pswriter, pdfwriter, trafo, unit
 
 devicenames = {"L": "/DeviceGray",
                "RGB": "/DeviceRGB",
@@ -194,7 +194,7 @@ class PSimagedata(pswriter.PSresource):
                        ((tailpos/self.maxstrlen) * ascii85lines(self.maxstrlen) +
                         ascii85lines(datalen-tailpos)))
             file.write("[ ")
-            for i in xrange(0, tailpos, self.maxstrlen):
+            for i in range(0, tailpos, self.maxstrlen):
                 file.write("<~")
                 ascii85stream(file, self.data[i: i+self.maxstrlen])
                 file.write("~>\n")
@@ -278,7 +278,7 @@ class PDFimage(pdfwriter.PDFobject):
         file.write("\n"
                    "endstream\n")
 
-class bitmap_trafo(canvasitem.canvasitem):
+class bitmap_trafo(baseclasses.canvasitem):
 
     def __init__(self, trafo, image,
                        PSstoreimage=0, PSmaxstrlen=4093, PSbinexpand=1,

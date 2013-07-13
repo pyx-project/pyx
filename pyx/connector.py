@@ -22,7 +22,7 @@
 
 import math
 from math import degrees, radians, pi, sin, cos, atan2, tan, hypot, acos, sqrt
-import path, unit, mathutils, normpath
+from . import path, unit, mathutils, normpath
 
 
 #########################
@@ -253,7 +253,7 @@ class twolines_pt(connector_pt):
             if alength is not None: no_lengths += 1
 
         if no_angles + no_lengths != 2:
-            raise NotImplementedError, "Please specify exactly two angles or lengths"
+            raise NotImplementedError("Please specify exactly two angles or lengths")
 
         # calculate necessary angles and armlengths
         # always length1 and relangle1
@@ -295,7 +295,7 @@ class twolines_pt(connector_pt):
                     relangle1 = acos((distance**2 + length1**2 - length2**2) / (2.0*distance*length1))
                     middle = self._middle_a(begin, dangle, length1, relangle1)
             else:
-                raise NotImplementedError, "I found a strange combination of arguments"
+                raise NotImplementedError("I found a strange combination of arguments")
 
         connectorpath = path.path(path.moveto_pt(*self.box1.center),
                                   path.lineto_pt(*middle),
@@ -328,7 +328,7 @@ class line(line_pt):
     """a line is the straight connector between the centers of two boxes"""
 
     def __init__(self, box1, box2, boxdists=(0,0)):
-        line_pt.__init__(self, box1, box2, boxdists=map(unit.topt, boxdists))
+        line_pt.__init__(self, box1, box2, boxdists=list(map(unit.topt, boxdists)))
 
 
 class curve(curve_pt):
@@ -346,7 +346,7 @@ class curve(curve_pt):
                           relangle1=relangle1, relangle2=relangle2,
                           absangle1=absangle1, absangle2=absangle2,
                           absbulge=unit.topt(absbulge), relbulge=relbulge,
-                          boxdists=map(unit.topt, boxdists))
+                          boxdists=list(map(unit.topt, boxdists)))
 
 class arc(arc_pt):
 
@@ -363,7 +363,7 @@ class arc(arc_pt):
         arc_pt.__init__(self, box1, box2,
                         relangle=relangle,
                         absbulge=absbulge, relbulge=relbulge,
-                        boxdists=map(unit.topt, boxdists))
+                        boxdists=list(map(unit.topt, boxdists)))
 
 
 class twolines(twolines_pt):
@@ -396,7 +396,7 @@ class twolines(twolines_pt):
                              length1=length1, length2=length2,
                              bezierradius=bezierradius, beziersoftness=1,
                              arcradius=arcradius,
-                             boxdists=map(unit.topt, boxdists))
+                             boxdists=list(map(unit.topt, boxdists)))
 
 
 

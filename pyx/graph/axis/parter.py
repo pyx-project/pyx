@@ -37,7 +37,7 @@ class _partdata:
     """
 
     def __init__(self, **kwargs):
-        for key, value in kwargs.items():
+        for key, value in list(kwargs.items()):
             setattr(self, key, value)
 
 
@@ -69,11 +69,11 @@ class linear(_parter):
         if tickdists is None and labeldists is not None:
             self.ticklist = [tick.rational(labeldists[0])]
         else:
-            self.ticklist = map(tick.rational, tickdists)
+            self.ticklist = list(map(tick.rational, tickdists))
         if labeldists is None and tickdists is not None:
             self.labellist = [tick.rational(tickdists[0])]
         else:
-            self.labellist = map(tick.rational, labeldists)
+            self.labellist = list(map(tick.rational, labeldists))
         self.extendtick = extendtick
         self.extendlabel = extendlabel
         self.epsilon = epsilon
@@ -149,7 +149,7 @@ class autolinear(_parter):
             base = tick.rational((10, 1), power=int(logmm-1))
         else:
             base = tick.rational((10, 1), power=int(logmm))
-        ticks = map(tick.rational, self.variants[0])
+        ticks = list(map(tick.rational, self.variants[0]))
         useticks = [t * base for t in ticks]
 
         return [lambda d=_partdata(min=min, max=max, extendmin=extendmin, extendmax=extendmax,
@@ -219,7 +219,7 @@ class logarithmic(linear):
     def extendminmax(self, min, max, preexp, extendmin, extendmax):
         minpower = None
         maxpower = None
-        for i in xrange(len(preexp.pres)):
+        for i in range(len(preexp.pres)):
             imin = int(math.floor(math.log(min / float(preexp.pres[i])) /
                                   math.log(preexp.exp) + self.epsilon)) + 1
             imax = int(math.ceil(math.log(max / float(preexp.pres[i])) /

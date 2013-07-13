@@ -22,7 +22,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 import math
-import attr, unit
+from . import attr, unit
 
 #
 # base classes for stroke and fill styles

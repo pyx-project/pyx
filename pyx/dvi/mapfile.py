@@ -21,7 +21,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 import os.path, re, warnings
-from pyx import font, filelocator
+from pyx import font, config
 from pyx.font import t1file, afmfile, pfmfile
 from pyx.dvi import encfile
 
@@ -121,18 +121,18 @@ class MAPline:
     def getfont(self):
         if self._font is None:
             if self.fontfilename is not None:
-                fontfile = filelocator.open(self.fontfilename, [filelocator.format.type1], "rb")
+                fontfile = config.open(self.fontfilename, [config.format.type1], "rb")
                 t1font = t1file.from_PF_bytes(fontfile.read())
                 fontfile.close()
                 assert self.basepsname == t1font.name, "corrupt MAP file"
                 try:
-                    metricfile = filelocator.open(os.path.splitext(self.fontfilename)[0], [filelocator.format.afm])
+                    metricfile = config.open(os.path.splitext(self.fontfilename)[0], [config.format.afm])
                 except IOError:
                     try:
                         # fallback by using the pfm instead of the afm font metric
                         # (in all major TeX distributions there is no pfm file format defined by kpsewhich, but
                         # we can use the type1 format and search for the file including the expected suffix)
-                        metricfile = filelocator.open("%s.pfm" % os.path.splitext(self.fontfilename)[0], [filelocator.format.type1])
+                        metricfile = config.open("%s.pfm" % os.path.splitext(self.fontfilename)[0], [config.format.type1])
                     except IOError:
                         self._font = font.T1font(t1font)
                     else:
@@ -142,7 +142,7 @@ class MAPline:
                     self._font = font.T1font(t1font, afmfile.AFMfile(metricfile))
                     metricfile.close()
             else:
-                metricfile = filelocator.open(self.basepsname, [filelocator.format.afm])
+                metricfile = config.open(self.basepsname, [config.format.afm])
                 self._font = font.T1builtinfont(self.basepsname, afmfile.AFMfile(metricfile))
                 metricfile.close()
         return self._font
@@ -150,7 +150,7 @@ class MAPline:
     def getencoding(self):
         if self._encoding is _marker:
             if self.encodingfilename is not None:
-                encodingfile = filelocator.open(self.encodingfilename, [filelocator.format.tex_ps_header], "rb")
+                encodingfile = config.open(self.encodingfilename, [config.format.tex_ps_header], "rb")
                 ef = encfile.ENCfile(encodingfile.read())
                 encodingfile.close()
                 assert ef.name == "/%s" % self.reencodefont
@@ -170,7 +170,7 @@ def readfontmap(filenames):
     """ read font map from filename (without path) """
     fontmap = {}
     for filename in filenames:
-        mapfile = filelocator.open(filename, [filelocator.format.fontmap, filelocator.format.dvips_config], mode="rU")
+        mapfile = config.open(filename, [config.format.fontmap, config.format.dvips_config], mode="rU")
         lineno = 0
         for line in mapfile.readlines():
             lineno += 1
@@ -178,9 +178,9 @@ def readfontmap(filenames):
             if not (line=="" or line[0] in (" ", "%", "*", ";" , "#")):
                 try:
                     fm = MAPline(line)
-                except (ParseError, UnsupportedPSFragment), e:
+                except (ParseError, UnsupportedPSFragment) as e:
                     warnings.warn("Ignoring line %i in mapping file '%s': %s" % (lineno, filename, e))
-                except UnsupportedFontFormat, e:
+                except UnsupportedFontFormat as e:
                     pass
                 else:
                     fontmap[fm.texname] = fm

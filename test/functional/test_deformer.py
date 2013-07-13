@@ -91,7 +91,7 @@ def testcornersmoothed(c):
 
 
 def hard_test(c, p, dist, pardef, move=(0, 0), label=""):
-    print "hard test of parallel: ", label
+    print("hard test of parallel: ", label)
     p = p.transformed(trafo.translate(*move))
     c.text(move[0], move[1], label)
     c.stroke(p)

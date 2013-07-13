@@ -21,7 +21,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 import math, warnings
-import attr, mathutils, path, normpath, unit, color
+from . import attr, baseclasses, mathutils, path, normpath, unit, color
 
 # specific exception for an invalid parameterization point
 # used in parallel
@@ -127,7 +127,7 @@ def controldists_from_endgeometry_pt(A, B, tangA, tangB, curvA, curvB, allownega
                 return []
 
         if debug:
-            print "fallback with exact zero value"
+            print("fallback with exact zero value")
         return [(a, b)]
     # >>>
     def fallback_smallT(T, D, E, AB, curvA, curvB, threshold, debug):# <<<
@@ -139,7 +139,7 @@ def controldists_from_endgeometry_pt(A, B, tangA, tangB, curvA, curvB, allownega
             abs(b*T) < threshold * q1 and abs(1.5*a*abs(a)*curvA - D) < threshold * q1 and
             abs(a*T) < threshold * q2 and abs(1.5*b*abs(b)*curvB - E) < threshold * q2):
             if debug:
-                print "fallback with T approx 0"
+                print("fallback with T approx 0")
             return [(a, b)]
         return []
     # >>>
@@ -153,7 +153,7 @@ def controldists_from_endgeometry_pt(A, B, tangA, tangB, curvA, curvB, allownega
             abs(1.5*b*b*curvB) < threshold * min(abs(a*T), abs(E)) and
             abs(a*T - E) < threshold * min(abs(a*T), abs(E))):
             if debug:
-                print "fallback with curvB approx 0"
+                print("fallback with curvB approx 0")
             result.append((a, b))
 
         # is curvA approx zero?
@@ -163,7 +163,7 @@ def controldists_from_endgeometry_pt(A, B, tangA, tangB, curvA, curvB, allownega
             abs(1.5*a*a*curvA) < threshold * min(abs(b*T), abs(D)) and
             abs(b*T - D) < threshold * min(abs(b*T), abs(D))):
             if debug:
-                print "fallback with curvA approx 0"
+                print("fallback with curvA approx 0")
             result.append((a, b))
 
         return result
@@ -311,12 +311,7 @@ def intersection(A, D, tangA, tangD): # <<<
     return t, s
 # >>>
 
-class deformer(attr.attr):
-
-    def deform (self, basepath):
-        return basepath
-
-class cycloid(deformer): # <<<
+class cycloid(baseclasses.deformer): # <<<
     """Wraps a cycloid around a path.
 
     The outcome looks like a spring with the originalpath as the axis.
@@ -461,7 +456,7 @@ class cycloid(deformer): # <<<
 
 cycloid.clear = attr.clearclass(cycloid)
 
-class cornersmoothed(deformer): # <<<
+class cornersmoothed(baseclasses.deformer): # <<<
 
     """Bends corners in a normpath.
 
@@ -640,7 +635,7 @@ cornersmoothed.clear = attr.clearclass(cornersmoothed)
 smoothed = cornersmoothed
 smoothed.clear = attr.clearclass(smoothed)
 
-class parallel(deformer): # <<<
+class parallel(baseclasses.deformer): # <<<
 
     """creates a parallel normpath with constant distance to the original normpath
 
@@ -748,7 +743,7 @@ class parallel(deformer): # <<<
             # get the next parallel piece for the normpath
             try:
                 next_parallel_normpath = self.deformsubpathitem(next_orig_nspitem, epsilon)
-            except InvalidParamException, e:
+            except InvalidParamException as e:
                 invalid_nspitem_param = e.normsubpathitemparam
                 # split the nspitem apart and continue with pieces that do not contain
                 # the invalid point anymore. At the end, simply take one piece, otherwise two.
@@ -1105,8 +1100,8 @@ class parallel(deformer): # <<<
             if curv is normpath.invalid:
                 raise InvalidParamException(param)
 
-        parampairs = zip(params[:-1], params[1:])
-        curvpairs = zip(curvs[:-1], curvs[1:])
+        parampairs = list(zip(params[:-1], params[1:]))
+        curvpairs = list(zip(curvs[:-1], curvs[1:]))
 
         crossingparams = []
         for parampair, curvpair in zip(parampairs, curvpairs):
@@ -1175,9 +1170,9 @@ class parallel(deformer): # <<<
             for nsp_j in range(nsp_i, n):
                 for nspitem_i in range(len(np[nsp_i])):
                     if nsp_j == nsp_i:
-                        nspitem_j_range = range(nspitem_i+1, len(np[nsp_j]))
+                        nspitem_j_range = list(range(nspitem_i+1, len(np[nsp_j])))
                     else:
-                        nspitem_j_range = range(len(np[nsp_j]))
+                        nspitem_j_range = list(range(len(np[nsp_j])))
                     for nspitem_j in nspitem_j_range:
                         intsparams = np[nsp_i][nspitem_i].intersect(np[nsp_j][nspitem_j], epsilon)
                         if intsparams:
@@ -1362,7 +1357,7 @@ class parallel(deformer): # <<<
 
 parallel.clear = attr.clearclass(parallel)
 
-class linesmoothed(deformer): # <<<
+class linesmoothed(baseclasses.deformer): # <<<
 
     def __init__(self, tension=1, atleast=False, lcurl=1, rcurl=1):
         """Tension and atleast control the tension of the replacement curves.
@@ -1393,7 +1388,7 @@ class linesmoothed(deformer): # <<<
         return newnp
 
     def deformsubpath(self, nsp):
-        import metapost.path as mppath
+        from metapost import path as mppath
         """Returns a path/normpath from the points in the given normsubpath"""
         # TODO: epsilon ?
         knots = []

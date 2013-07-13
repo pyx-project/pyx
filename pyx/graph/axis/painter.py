@@ -406,8 +406,8 @@ class split(_title):
                 breakline = p.tangent(0, length=self.breaklineslength)
                 widthline = p.tangent(0, length=self.breaklinesdist).transformed(trafomodule.rotate(self.breaklinesangle+90, *breakline.atbegin()))
                 # XXX Uiiii
-                tocenter = map(lambda x: 0.5*(x[0]-x[1]), zip(breakline.atbegin(), breakline.atend()))
-                towidth = map(lambda x: 0.5*(x[0]-x[1]), zip(widthline.atbegin(), widthline.atend()))
+                tocenter = [0.5*(x[0]-x[1]) for x in zip(breakline.atbegin(), breakline.atend())]
+                towidth = [0.5*(x[0]-x[1]) for x in zip(widthline.atbegin(), widthline.atend())]
                 breakline = breakline.transformed(trafomodule.translate(*tocenter).rotated(self.breaklinesangle, *breakline.atbegin()))
                 breakline1 = breakline.transformed(trafomodule.translate(*towidth))
                 breakline2 = breakline.transformed(trafomodule.translate(-towidth[0], -towidth[1]))

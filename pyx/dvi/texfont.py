@@ -21,8 +21,8 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 
-from pyx import bbox, canvasitem, font, filelocator
-import tfmfile, vffile
+from pyx import bbox, font, config
+from . import tfmfile, vffile
 
 class TeXFontError(Exception): pass
 
@@ -34,7 +34,7 @@ class TeXfont:
         self.d = d                  # design size of font (fix_word) in TeX points
         self.tfmconv = tfmconv      # conversion factor from tfm units to dvi units
         self.pyxconv = pyxconv      # conversion factor from dvi units to PostScript points
-        file = filelocator.open(self.name, [filelocator.format.tfm], "rb")
+        file = config.open(self.name, [config.format.tfm], "rb")
         self.TFMfile = tfmfile.TFMfile(file, debug)
         file.close()
 
@@ -57,8 +57,8 @@ class TeXfont:
 
     def __str__(self):
         return "font %s designed at %g TeX pts used at %g TeX pts" % (self.name, 
-                                                                      16.0*self.d/16777216L,
-                                                                      16.0*self.q/16777216L)
+                                                                      16.0*self.d/16777216,
+                                                                      16.0*self.q/16777216)
 
     def getsize_pt(self):
         """ return size of font in (PS) points """
@@ -94,10 +94,10 @@ class TeXfont:
             z >>= 1
             shift -= 1
         # length*z is a long integer, but the result will be a regular integer
-        return int(length*long(z) >> shift)
+        return int(length*int(z) >> shift)
 
     def _convert_tfm_to_pt(self, length):
-        return (16*long(round(length*float(self.q)*self.tfmconv))/16777216) * self.pyxconv
+        return (16*int(round(length*float(self.q)*self.tfmconv))/16777216) * self.pyxconv
 
     # routines returning lengths as integers in dvi units
 

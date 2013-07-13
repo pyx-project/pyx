@@ -66,16 +66,16 @@ def test_reproductions(seed, n_tests, xmax, ymax, accuracy): # <<<
             n_failures += 1
 
             if minmaxdist > accuracy:
-                print "%4d Smallest distance is %f" % (cnt, minmaxdist)
+                print("%4d Smallest distance is %f" % (cnt, minmaxdist))
 
             if minindex == -1:
-                print "%4d Failure: no solution found" % (cnt)
+                print("%4d Failure: no solution found" % (cnt))
 
             if minindex > 0:
-                print "%4d Wrong sorting: entry %d is the smallest" % (cnt, minindex)
+                print("%4d Wrong sorting: entry %d is the smallest" % (cnt, minindex))
 
             if minindex >=0 and not (controldistpairs[minindex][0] >= 0 and controldistpairs[minindex][1] >= 0):
-                print "%4d Failure: signs are wrong" % (cnt)
+                print("%4d Failure: signs are wrong" % (cnt))
 
             # selectively draw the curves:
             #if minindex == -1:
@@ -95,7 +95,7 @@ def test_reproductions(seed, n_tests, xmax, ymax, accuracy): # <<<
         else:
             n_successes += 1
 
-    print "failures, successes = ", n_failures, ", ", n_successes
+    print("failures, successes = ", n_failures, ", ", n_successes)
     can.writeEPSfile("test_bezier")
 # >>>
 

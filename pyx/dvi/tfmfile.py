@@ -26,7 +26,7 @@ from pyx import reader
 class char_info_word:
 
     def __init__(self, word):
-        self.width_index  = int((word & 0xFF000000L) >> 24) #make sign-safe
+        self.width_index  = int((word & 0xFF000000) >> 24) #make sign-safe
         self.height_index = (word & 0x00F00000) >> 20
         self.depth_index  = (word & 0x000F0000) >> 16
         self.italic_index = (word & 0x0000FC00) >> 10
@@ -63,7 +63,7 @@ class TFMfile:
             raise RuntimeError("error in TFM pre-header")
 
         if debug:
-            print "lh=%d" % self.lh
+            print("lh=%d" % self.lh)
 
         #
         # read header
@@ -85,9 +85,9 @@ class TFMfile:
             self.fontfamily = None
 
         if debug:
-            print "(FAMILY %s)" % self.fontfamily
-            print "(CODINGSCHEME %s)" % self.charcoding
-            print "(DESINGSIZE R %f)" % (16.0*self.designsize/16777216L)
+            print("(FAMILY %s)" % self.fontfamily)
+            print("(CODINGSCHEME %s)" % self.charcoding)
+            print("(DESINGSIZE R %f)" % (16.0*self.designsize/16777216))
 
         if self.lh > 17:
             self.sevenbitsave = self.file.readuchar()
@@ -126,7 +126,7 @@ class TFMfile:
 
         if self.lh > 18:
             # just ignore the rest
-            print self.file.read((self.lh-18)*4)
+            print(self.file.read((self.lh-18)*4))
 
         #
         # read char_info

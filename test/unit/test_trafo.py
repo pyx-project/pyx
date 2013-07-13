@@ -7,12 +7,12 @@ import unittest
 from pyx import *
 
 def isEqual(trafo1, trafo2):
-    return max(map(abs,[trafo1.matrix[0][0]-trafo2.matrix[0][0],
+    return max(list(map(abs,[trafo1.matrix[0][0]-trafo2.matrix[0][0],
                         trafo1.matrix[0][1]-trafo2.matrix[0][1],
                         trafo1.matrix[1][0]-trafo2.matrix[1][0],
                         trafo1.matrix[1][1]-trafo2.matrix[1][1],
                         trafo1.vector[0]-trafo2.vector[0],
-                        trafo1.vector[1]-trafo2.vector[1]]))<1e-7
+                        trafo1.vector[1]-trafo2.vector[1]])))<1e-7
 
 def correctOnBasis(t, tesx, tesy):
     esx = t.apply(1 * unit.t_cm, 0)
@@ -24,8 +24,8 @@ def correctOnBasis(t, tesx, tesy):
 #    print "  (1,0) => (%f, %f)" % (esx[0], esx[1])
 #    print "  (0,1) => (%f, %f)" % (esy[0], esy[1])
 
-    return max(map(abs,[esx[0]-tesx[0], esx[1]-tesx[1],
-                        esy[0]-tesy[0], esy[1]-tesy[1]]))<1e-7
+    return max(list(map(abs,[esx[0]-tesx[0], esx[1]-tesx[1],
+                        esy[0]-tesy[0], esy[1]-tesy[1]])))<1e-7
 
 
 class TrafoTestCase(unittest.TestCase):

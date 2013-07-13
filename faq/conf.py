@@ -42,8 +42,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'pyxfaq'
-copyright = u'2011, Gert-Ludwig Ingold'
+project = 'pyxfaq'
+copyright = '2011, Gert-Ludwig Ingold'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -182,8 +182,8 @@ latex_paper_size = 'a4'
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'pyxfaq.tex', u'Some frequently and not so frequently asked questions about PyX',
-   u'Gert-Ludwig Ingold', 'manual'),
+  ('index', 'pyxfaq.tex', 'Some frequently and not so frequently asked questions about PyX',
+   'Gert-Ludwig Ingold', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -220,7 +220,7 @@ latex_preamble = r'''
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'pyxfaq', u'pyxfaq Documentation',
-     [u'Gert-Ludwig Ingold'], 1)
+    ('index', 'pyxfaq', 'pyxfaq Documentation',
+     ['Gert-Ludwig Ingold'], 1)
 ]
 

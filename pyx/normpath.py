@@ -22,8 +22,8 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 import math
-import mathutils, path, trafo, unit
-import bbox as bboxmodule
+from . import mathutils, trafo, unit
+from . import bbox as bboxmodule
 
 
 # use new style classes when possible
@@ -289,6 +289,7 @@ class normline_pt(normsubpathitem):
         return arclens_pt[:-1], arclens_pt[-1]
 
     def pathitem(self):
+        from . import path
         return path.lineto_pt(self.x1_pt, self.y1_pt)
 
     def reversed(self):
@@ -449,6 +450,7 @@ class normcurve_pt(normsubpathitem):
         return self.x3_pt, self.y3_pt
 
     def bbox(self):
+        from . import path
         xmin_pt, xmax_pt = path._bezierpolyrange(self.x0_pt, self.x1_pt, self.x2_pt, self.x3_pt)
         ymin_pt, ymax_pt = path._bezierpolyrange(self.y0_pt, self.y1_pt, self.y2_pt, self.y3_pt)
         return bboxmodule.bbox_pt(xmin_pt, ymin_pt, xmax_pt, ymax_pt)
@@ -541,6 +543,7 @@ class normcurve_pt(normsubpathitem):
         return arclens_pt[:-1], arclens_pt[-1]
 
     def pathitem(self):
+        from . import path
         return path.curveto_pt(self.x1_pt, self.y1_pt, self.x2_pt, self.y2_pt, self.x3_pt, self.y3_pt)
 
     def reversed(self):
@@ -894,7 +897,7 @@ class normsubpath:
         if not self.normsubpathitems and self.skippedline:
             return [self.skippedline.atbegin_pt()]*len(params)
         result = [None] * len(params)
-        for normsubpathitemindex, (indices, params) in self._distributeparams(params).items():
+        for normsubpathitemindex, (indices, params) in list(self._distributeparams(params).items()):
             for index, point_pt in zip(indices, self.normsubpathitems[normsubpathitemindex].at_pt(params)):
                 result[index] = point_pt
         return result
@@ -962,7 +965,7 @@ class normsubpath:
         The result contain the invalid instance at positions, where the
         curvature is undefined."""
         result = [None] * len(params)
-        for normsubpathitemindex, (indices, params) in self._distributeparams(params).items():
+        for normsubpathitemindex, (indices, params) in list(self._distributeparams(params).items()):
             for index, curvature_pt in zip(indices, self.normsubpathitems[normsubpathitemindex].curvature_pt(params)):
                 result[index] = curvature_pt
         return result
@@ -974,7 +977,7 @@ class normsubpath:
         curvature is 0, the invalid instance is returned. Note that this radius can be negative
         or positive, depending on the sign of the curvature."""
         result = [None] * len(params)
-        for normsubpathitemindex, (indices, params) in self._distributeparams(params).items():
+        for normsubpathitemindex, (indices, params) in list(self._distributeparams(params).items()):
             for index, radius_pt in zip(indices, self.normsubpathitems[normsubpathitemindex].curveradius_pt(params)):
                 result[index] = radius_pt
         return result
@@ -1020,15 +1023,15 @@ class normsubpath:
 
         # although intersectipns_a are sorted for the different normsubpathitems,
         # within a normsubpathitem, the ordering has to be ensured separately:
-        intersections = zip(intersections_a, intersections_b)
+        intersections = list(zip(intersections_a, intersections_b))
         intersections.sort()
         intersections_a = [a for a, b in intersections]
         intersections_b = [b for a, b in intersections]
 
         # for symmetry reasons we enumerate intersections_a as well, although
         # they are already sorted (note we do not need to sort intersections_a)
-        intersections_a = zip(intersections_a, range(len(intersections_a)))
-        intersections_b = zip(intersections_b, range(len(intersections_b)))
+        intersections_a = list(zip(intersections_a, list(range(len(intersections_a)))))
+        intersections_b = list(zip(intersections_b, list(range(len(intersections_b)))))
         intersections_b.sort()
 
         # now we search for intersections points which are closer together than epsilon
@@ -1097,7 +1100,7 @@ class normsubpath:
 
         # build result
         result = []
-        intersectionpointskeys = intersectionpoints.keys()
+        intersectionpointskeys = list(intersectionpoints.keys())
         intersectionpointskeys.sort()
         for point in intersectionpointskeys:
             for intersection_a, index_a in intersections_a:
@@ -1148,7 +1151,7 @@ class normsubpath:
         totalarclen_pt = 0
         distributeparams = self._distributeparams(params)
         for normsubpathitemindex in range(len(self.normsubpathitems)):
-            if distributeparams.has_key(normsubpathitemindex):
+            if normsubpathitemindex in distributeparams:
                 indices, params = distributeparams[normsubpathitemindex]
                 arclens_pt, normsubpathitemarclen_pt = self.normsubpathitems[normsubpathitemindex]._paramtoarclen_pt(params, self.epsilon)
                 for index, arclen_pt in zip(indices, arclens_pt):
@@ -1160,6 +1163,9 @@ class normsubpath:
 
     def pathitems(self):
         """return list of pathitems"""
+
+        from . import path
+
         if not self.normsubpathitems:
             return []
 
@@ -1186,7 +1192,7 @@ class normsubpath:
     def rotation(self, params):
         """return rotations at params"""
         result = [None] * len(params)
-        for normsubpathitemindex, (indices, params) in self._distributeparams(params).items():
+        for normsubpathitemindex, (indices, params) in list(self._distributeparams(params).items()):
             for index, rotation in zip(indices, self.normsubpathitems[normsubpathitemindex].rotation(params)):
                 result[index] = rotation
         return result
@@ -1270,7 +1276,7 @@ class normsubpath:
     def trafo(self, params):
         """return transformations at params"""
         result = [None] * len(params)
-        for normsubpathitemindex, (indices, params) in self._distributeparams(params).items():
+        for normsubpathitemindex, (indices, params) in list(self._distributeparams(params).items()):
             for index, trafo in zip(indices, self.normsubpathitems[normsubpathitemindex].trafo(params)):
                 result[index] = trafo
         return result
@@ -1480,6 +1486,7 @@ class normpath:
 
     def append(self, item):
         """append a normpath by a normsubpath or a pathitem"""
+        from . import path
         if isinstance(item, normsubpath):
             # the normsubpaths list can be appended by a normsubpath only
             self.normsubpaths.append(item)
@@ -1535,7 +1542,7 @@ class normpath:
     def _at_pt(self, params):
         """return coordinates of normpath in pts at params"""
         result = [None] * len(params)
-        for normsubpathindex, (indices, params) in self._distributeparams(params).items():
+        for normsubpathindex, (indices, params) in list(self._distributeparams(params).items()):
             for index, point_pt in zip(indices, self.normsubpaths[normsubpathindex].at_pt(params)):
                 result[index] = point_pt
         return result
@@ -1602,7 +1609,7 @@ class normpath:
         When the curvature is undefined, the invalid instance is returned."""
 
         result = [None] * len(params)
-        for normsubpathindex, (indices, params) in self._distributeparams(params).items():
+        for normsubpathindex, (indices, params) in list(self._distributeparams(params).items()):
             for index, curvature_pt in zip(indices, self.normsubpaths[normsubpathindex].curvature_pt(params)):
                 result[index] = curvature_pt
         return result
@@ -1616,7 +1623,7 @@ class normpath:
         curvature."""
 
         result = [None] * len(params)
-        for normsubpathindex, (indices, params) in self._distributeparams(params).items():
+        for normsubpathindex, (indices, params) in list(self._distributeparams(params).items()):
             for index, curv_pt in zip(indices, self.normsubpaths[normsubpathindex].curvature_pt(params)):
                 result[index] = curv_pt
         return result
@@ -1630,7 +1637,7 @@ class normpath:
         or positive, depending on the sign of the curvature."""
 
         result = [None] * len(params)
-        for normsubpathindex, (indices, params) in self._distributeparams(params).items():
+        for normsubpathindex, (indices, params) in list(self._distributeparams(params).items()):
             for index, radius_pt in zip(indices, self.normsubpaths[normsubpathindex].curveradius_pt(params)):
                 result[index] = radius_pt
         return result
@@ -1734,7 +1741,7 @@ class normpath:
         totalarclen_pt = 0
         distributeparams = self._distributeparams(params)
         for normsubpathindex in range(max(distributeparams.keys()) + 1):
-            if distributeparams.has_key(normsubpathindex):
+            if normsubpathindex in distributeparams:
                 indices, params = distributeparams[normsubpathindex]
                 arclens_pt, normsubpatharclen_pt = self.normsubpaths[normsubpathindex]._paramtoarclen_pt(params)
                 for index, arclen_pt in zip(indices, arclens_pt):
@@ -1755,6 +1762,7 @@ class normpath:
 
     def path(self):
         """return path corresponding to normpath"""
+        from . import path
         pathitems = []
         for normsubpath in self.normsubpaths:
             pathitems.extend(normsubpath.pathitems())
@@ -1770,7 +1778,7 @@ class normpath:
     def _rotation(self, params):
         """return rotation at params"""
         result = [None] * len(params)
-        for normsubpathindex, (indices, params) in self._distributeparams(params).items():
+        for normsubpathindex, (indices, params) in list(self._distributeparams(params).items()):
             for index, rotation in zip(indices, self.normsubpaths[normsubpathindex].rotation(params)):
                 result[index] = rotation
         return result
@@ -1853,10 +1861,10 @@ class normpath:
         If length_pt in pts is not None, the tangent vector will be scaled to
         the desired length.
         """
-
+        from . import path
         result = [None] * len(params)
         tangenttemplate = path.line_pt(0, 0, length_pt, 0).normpath()
-        for normsubpathindex, (indices, params) in self._distributeparams(params).items():
+        for normsubpathindex, (indices, params) in list(self._distributeparams(params).items()):
             for index, atrafo in zip(indices, self.normsubpaths[normsubpathindex].trafo(params)):
                 if atrafo is invalid:
                     result[index] = invalid
@@ -1885,7 +1893,7 @@ class normpath:
     def _trafo(self, params):
         """return transformation at params"""
         result = [None] * len(params)
-        for normsubpathindex, (indices, params) in self._distributeparams(params).items():
+        for normsubpathindex, (indices, params) in list(self._distributeparams(params).items()):
             for index, trafo in zip(indices, self.normsubpaths[normsubpathindex].trafo(params)):
                 result[index] = trafo
         return result

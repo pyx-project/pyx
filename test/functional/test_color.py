@@ -6,7 +6,7 @@ try:
 except NameError:
     # fallback implementation for Python 2.2 and below
     def enumerate(list):
-        return zip(xrange(len(list)), list)
+        return list(zip(list(range(len(list))), list))
 
 
 c = canvas.canvas()

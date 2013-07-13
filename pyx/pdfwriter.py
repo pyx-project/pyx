@@ -21,14 +21,14 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import cStringIO, copy, warnings, time
+import io, copy, warnings, time
 try:
     import zlib
     haszlib = 1
 except:
     haszlib = 0
 
-import bbox, config, style, unit, version, trafo
+from . import bbox, config, style, unit, version, trafo
 
 
 
@@ -45,7 +45,7 @@ class PDFregistry:
     def add(self, object):
         """ register object, merging it with an already registered object of the same type and id """
         sameobjects = self.types.setdefault(object.type, {})
-        if sameobjects.has_key(object.id):
+        if object.id in sameobjects:
             sameobjects[object.id].merge(object)
         else:
             self.objects.append(object)
@@ -104,11 +104,11 @@ class PDFregistry:
 
     def writeresources(self, file):
         file.write("<<\n")
-        file.write("/ProcSet [ %s ]\n" % " ".join(["/%s" % p for p in self.procsets.keys()]))
+        file.write("/ProcSet [ %s ]\n" % " ".join(["/%s" % p for p in list(self.procsets.keys())]))
         if self.resources:
-            for resourcetype, resources in self.resources.items():
+            for resourcetype, resources in list(self.resources.items()):
                 file.write("/%s <<\n%s\n>>\n" % (resourcetype, "\n".join(["/%s %i 0 R" % (name, self.getrefno(object))
-                                                                          for name, object in resources.items()])))
+                                                                          for name, object in list(resources.items())])))
         file.write(">>\n")
 
 
@@ -261,7 +261,7 @@ class PDFcontent(PDFobject):
 
     def __init__(self, page, writer, registry):
         PDFobject.__init__(self, registry, "content")
-        contentfile = cStringIO.StringIO()
+        contentfile = io.StringIO()
         self.bbox = bbox.empty()
         acontext = context()
         page.processPDF(contentfile, writer, acontext, registry, self.bbox)
@@ -383,14 +383,13 @@ class context:
         self.strokeattr = 1
         self.fillattr = 1
         self.selectedfont = None
-        self.textregion = 0
         self.trafo = trafo.trafo()
         self.fillstyles = []
         self.fillrule = 0
 
     def __call__(self, **kwargs):
         newcontext = copy.copy(self)
-        for key, value in kwargs.items():
+        for key, value in list(kwargs.items()):
             setattr(newcontext, key, value)
         return newcontext
 
