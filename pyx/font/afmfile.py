@@ -1073,7 +1073,7 @@ class AFMfile(metric.metric):
                 return _READ_DIRECTION, direction
             else:
                 raise AFMError("Wrong direction number %d" % direction)
-        elif (key == "UnderLinePosition" or key == "UnderlineThickness" or key == "ItalicAngle" or
+        elif (key == "UnderlinePosition" or key == "UnderlineThickness" or key == "ItalicAngle" or
               key == "Charwidth" or key == "IsFixedPitch"):
             # we implicitly entered a direction section, so we should process the line again
             return self._processline_direction(line, 0)
