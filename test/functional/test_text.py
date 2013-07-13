@@ -104,6 +104,14 @@ c.insert(c.text(15, 0, r"""
 
 c.text(4, 2, r"{\color[cmyk]{0.1,0.2,0.3,0.4}c\color[gray]{0.5}o\color[hsb]{0.2,0.3,0.4}l\color[rgb]{0.2,0.4,0.6}o\color[RGB]{100,200,50}r}s!")
 
+# curved text
+sc = canvas.canvas(attrs=[trafo.mirror()])
+p = path.path(path.moveto(-2, 0), path.curveto(-1, 0, -1, 1, 0, 1), path.curveto(1, 1, 1, 0, 2, 0))
+sc.stroke(p, [deco.curvedtext("\PyX{} is fun!", textattrs=[trafo.mirror(), trafo.scale(0.5)]),
+              deco.curvedtext("left", textattrs=[text.halign.left, text.vshift.mathaxis, trafo.mirror(), color.rgb.red], arclenfrombegin=0.5, exclude=0.1),
+              deco.curvedtext("right", textattrs=[text.halign.right, text.vshift.mathaxis, trafo.mirror(), trafo.scale(1.2)], arclenfromend=0.5, exclude=0.1)])
+c.insert(sc, [trafo.translate(12, 10)])
+
 c.writePDFfile("test_text", paperformat=document.paperformat.A4)
 
 c.insert(c.text(10, 4, r"""%
