@@ -648,7 +648,7 @@ class _readpipe(threading.Thread):
         while len(read):
             # universal EOL handling (convert everything into unix like EOLs)
             # XXX is this necessary on pipes?
-            read = read.replace("\r", "").replace("\n", "") + "\n"
+            read = read.replace(b"\r", b"").replace(b"\n", b"") + b"\n"
             self.gotqueue.put(read) # report, whats read
             if self.expect is not None and read.find(self.expect) != -1:
                 self.gotevent.set() # raise the got event, when the output was expected (XXX: within a single line)
@@ -659,7 +659,7 @@ class _readpipe(threading.Thread):
                 pass
         # EOF reached
         self.pipe.close()
-        if self.expect is not None and self.expect.find("PyXInputMarker") != -1:
+        if self.expect is not None and self.expect.find(b"PyXInputMarker") != -1:
             raise RuntimeError("TeX/LaTeX finished unexpectedly")
         self.quitevent.set()
 
@@ -762,16 +762,25 @@ def _cleantmp(texrunner):
             os.unlink(file)
         except OSError:
             pass
-    if texrunner.texdebug is not None:
-        try:
-            texrunner.texdebug.close()
-            texrunner.texdebug = None
-        except IOError:
-            pass
 
 
 class _unset:
     pass
+
+
+class Tee(object):
+
+    def __init__(self, *files):
+        self.files = files
+
+    def write(self, data):
+        for file in self.files:
+            file.write(data)
+
+    def close(self):
+        for file in self.files:
+            file.close()
+
 
 class texrunner:
     """TeX/LaTeX interface
@@ -798,6 +807,7 @@ class texrunner:
                        lfs="10pt",
                        docclass="article",
                        docopt=None,
+                       texenc="ascii",
                        usefiles=[],
                        waitfortex=config.getint("text", "waitfortex", 60),
                        showwaitfortex=config.getint("text", "showwaitfortex", 5),
@@ -819,17 +829,12 @@ class texrunner:
         self.lfs = lfs
         self.docclass = docclass
         self.docopt = docopt
+        self.texenc = texenc
         self.usefiles = usefiles[:]
         self.waitfortex = waitfortex
         self.showwaitfortex = showwaitfortex
         self.texipc = texipc
-        if texdebug is not None:
-            if texdebug[-4:] == ".tex":
-                self.texdebug = open(texdebug, "w")
-            else:
-                self.texdebug = open("%s.tex" % texdebug, "w")
-        else:
-            self.texdebug = None
+        self.texdebug = texdebug
         self.dvidebug = dvidebug
         self.errordebug = errordebug
         self.pyxgraphics = pyxgraphics
@@ -892,10 +897,6 @@ class texrunner:
         - when self.preamblemode is unset, the expr is passed to \ProcessPyXBox
         - texmessages is a list of texmessage instances"""
         if not self.texruns:
-            if self.texdebug is not None:
-                self.texdebug.write("%% PyX %s texdebug file\n" % version.version)
-                self.texdebug.write("%% mode: %s\n" % self.mode)
-                self.texdebug.write("%% date: %s\n" % time.asctime(time.localtime(time.time())))
             for usefile in self.usefiles:
                 extpos = usefile.rfind(".")
                 try:
@@ -914,6 +915,8 @@ class texrunner:
             except ValueError:
                 # workaround: bufsize = 0 is not supported on MS windows for os.open4 (Python 2.4 and below, i.e. where subprocess is not available)
                 self.texinput, self.texoutput = pycompat.popen4("%s%s %s" % (self.mode, ipcflag, self.texfilename), "t")
+            if self.texdebug:
+                self.texinput = Tee(self.texinput, open(self.texdebug, "wb"))
             atexit.register(_cleantmp, self)
             self.expectqueue = queue.Queue(1)  # allow for a single entry only -> keeps the next InputMarker to be wait for
             self.gotevent = threading.Event()  # keeps the got inputmarker event
@@ -986,7 +989,7 @@ class texrunner:
             self.preamblemode = oldpreamblemode
         self.executeid += 1
         if expr is not None: # TeX/LaTeX should process expr
-            self.expectqueue.put_nowait("PyXInputMarker:executeid=%i:" % self.executeid)
+            self.expectqueue.put_nowait(("PyXInputMarker:executeid=%i:" % self.executeid).encode(self.texenc))
             if self.preamblemode:
                 self.expr = ("%s%%\n" % expr +
                              "\\PyXInput{%i}%%\n" % self.executeid)
@@ -995,14 +998,12 @@ class texrunner:
                 self.expr = ("\\ProcessPyXBox{%s%%\n}{%i}%%\n" % (expr, self.page) +
                              "\\PyXInput{%i}%%\n" % self.executeid)
         else: # TeX/LaTeX should be finished
-            self.expectqueue.put_nowait("Transcript written on %s.log" % self.texfilename)
+            self.expectqueue.put_nowait(("Transcript written on %s.log" % self.texfilename).encode(self.texenc))
             if self.mode == "latex":
                 self.expr = "\\end{document}%\n"
             else:
                 self.expr = "\\end%\n"
-        if self.texdebug is not None:
-            self.texdebug.write(self.expr)
-        self.texinput.write(self.expr)
+        self.texinput.write(self.expr.encode(self.texenc))
         gotevent = self.waitforevent(self.gotevent)
         self.gotevent.clear()
         if expr is None and gotevent: # TeX/LaTeX should have finished
@@ -1013,7 +1014,7 @@ class texrunner:
         try:
             self.texmessage = ""
             while 1:
-                self.texmessage += self.gotqueue.get_nowait()
+                self.texmessage += self.gotqueue.get_nowait().decode(self.texenc)
         except queue.Empty:
             pass
         self.texmessage = self.texmessage.replace("\r\n", "\n").replace("\r", "\n")
@@ -1056,8 +1057,6 @@ class texrunner:
         "resets the tex runner to its initial state (upto its record to old dvi file(s))"
         if self.texruns:
             self.finishdvi()
-        if self.texdebug is not None:
-            self.texdebug.write("%s\n%% preparing restart of %s\n" % ("%"*80, self.mode))
         self.executeid = 0
         self.page = 0
         self.texdone = 0
@@ -1076,6 +1075,7 @@ class texrunner:
                   lfs=_unset,
                   docclass=_unset,
                   docopt=_unset,
+                  texenc=_unset,
                   usefiles=_unset,
                   waitfortex=_unset,
                   showwaitfortex=_unset,
@@ -1107,6 +1107,8 @@ class texrunner:
             self.docclass = docclass
         if docopt is not _unset:
             self.docopt = docopt
+        if texenc is not _unset:
+            self.texenc = texenc
         if usefiles is not _unset:
             self.usefiles = usefiles
         if waitfortex is not _unset:
@@ -1116,12 +1118,7 @@ class texrunner:
         if texipc is not _unset:
             self.texipc = texipc
         if texdebug is not _unset:
-            if self.texdebug is not None:
-                self.texdebug.close()
-            if texdebug[-4:] == ".tex":
-                self.texdebug = open(texdebug, "w")
-            else:
-                self.texdebug = open("%s.tex" % texdebug, "w")
+            self.texdebug = texdebug
         if dvidebug is not _unset:
             self.dvidebug = dvidebug
         if errordebug is not _unset:
