@@ -117,7 +117,8 @@ class DVIfile:
         self.actpage = c
 
     def endsubpage(self):
-        # TODO handle markers
+        for key, value in self.actpage.markers.items():
+            self.actpage.parent.markers[key] = self.actpage.trafo.apply(*value)
         self.actpage = self.actpage.parent
 
     def flushtext(self, fontmap):
