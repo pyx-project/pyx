@@ -23,7 +23,7 @@
 import configparser, os.path, warnings
 import os, io, warnings, pkgutil
 
-from pyx import pycompat
+from . import pycompat
 
 builtinopen = open
 

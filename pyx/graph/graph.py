@@ -23,7 +23,7 @@
 
 
 import math, re, string, warnings
-from pyx import canvas, path, pycompat, trafo, unit
+from pyx import canvas, path, trafo, unit
 from pyx.graph.axis import axis, positioner
 
 
@@ -88,9 +88,9 @@ class plotitem:
         self.privatedatalist = [styledata() for s in self.styles]
 
         # perform setcolumns to all styles
-        self.usedcolumnnames = pycompat.set()
+        self.usedcolumnnames = set()
         for privatedata, s in zip(self.privatedatalist, self.styles):
-            self.usedcolumnnames.update(pycompat.set(s.columnnames(privatedata, self.sharedata, graph, self.data.columnnames, self.dataaxisnames)))
+            self.usedcolumnnames.update(set(s.columnnames(privatedata, self.sharedata, graph, self.data.columnnames, self.dataaxisnames)))
 
     def selectstyles(self, graph, selectindex, selecttotal):
         for privatedata, style in zip(self.privatedatalist, self.styles):

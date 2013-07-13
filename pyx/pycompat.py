@@ -93,26 +93,3 @@ def popen4(cmd, mode="t", bufsize=_marker):
         else:
             return os.popen4(cmd, mode, bufsize)
 
-try:
-    any = any
-except NameError:
-    def any(iterable):
-        for element in iterable:
-            if element:
-                return True
-        return False
-
-try:
-    set = set
-except NameError:
-    # Python 2.3
-    from sets import Set as set
-
-try:
-    sorted = sorted
-except NameError:
-    # Python 2.3
-    def sorted(l):
-        l = list(l)
-        l.sort()
-        return l

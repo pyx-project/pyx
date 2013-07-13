@@ -28,7 +28,7 @@ except ImportError:
     haszlib = 0
 
 
-from pyx import trafo, reader, pycompat
+from pyx import trafo, reader
 from pyx.path import path, moveto_pt, lineto_pt, curveto_pt, closepath
 
 try:
@@ -992,8 +992,8 @@ class T1file:
             glyphs.add(self.encoding[charcode])
 
         # collect information about used glyphs and subrs
-        seacglyphs = pycompat.set()
-        subrs = pycompat.set()
+        seacglyphs = set()
+        subrs = set()
         for glyph in glyphs:
             self.gatherglyphcalls(glyph, seacglyphs, subrs, T1context(self))
         # while we have gathered all subrs for the seacglyphs alreadys, we

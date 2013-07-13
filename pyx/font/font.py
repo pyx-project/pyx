@@ -22,7 +22,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 import warnings
-from pyx import bbox, baseclasses, deco, path, pswriter, pdfwriter, trafo, unit, pycompat
+from pyx import bbox, baseclasses, deco, path, pswriter, pdfwriter, trafo, unit
 from . import t1file, afmfile
 
 
@@ -39,8 +39,8 @@ class PST1file(pswriter.PSresource):
         self.type = "t1file"
         self.t1file = t1file
         self.id = t1file.name
-        self.glyphnames = pycompat.set(glyphnames)
-        self.charcodes = pycompat.set(charcodes)
+        self.glyphnames = set(glyphnames)
+        self.charcodes = set(charcodes)
 
     def merge(self, other):
         self.glyphnames.update(other.glyphnames)
@@ -162,7 +162,7 @@ class PDFfont(pdfwriter.PDFobject):
 
         self.fontname = fontname
         self.basefontname = basefontname
-        self.charcodes = pycompat.set(charcodes)
+        self.charcodes = set(charcodes)
         self.fontdescriptor = fontdescriptor
         self.encoding = encoding
         self.metric = metric
@@ -263,8 +263,8 @@ class PDFfontfile(pdfwriter.PDFobject):
     def __init__(self, t1file, glyphnames, charcodes):
         pdfwriter.PDFobject.__init__(self, "fontfile", t1file.name)
         self.t1file = t1file
-        self.glyphnames = pycompat.set(glyphnames)
-        self.charcodes = pycompat.set(charcodes)
+        self.glyphnames = set(glyphnames)
+        self.charcodes = set(charcodes)
 
     def merge(self, other):
         self.glyphnames.update(other.glyphnames)
@@ -400,7 +400,7 @@ class T1text_pt(text_pt):
         """returns the name of the encoding (in encodings) mapping self.glyphnames to codepoints
         If no such encoding can be found or extended, a new encoding is added to encodings
         """
-        glyphnames = pycompat.set(self.glyphnames)
+        glyphnames = set(self.glyphnames)
         if len(glyphnames) > 256:
             raise ValueError("glyphs do not fit into one single encoding")
         for encodingname, encoding in list(encodings.items()):

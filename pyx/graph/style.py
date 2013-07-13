@@ -23,7 +23,7 @@
 
 
 import math, warnings, io
-from pyx import attr, deco, bitmap, style, color, unit, canvas, path, mesh, pycompat, trafo
+from pyx import attr, deco, bitmap, style, color, unit, canvas, path, mesh, trafo
 from pyx import text as textmodule
 from .graph import registerdefaultprovider, graphx
 from . import axis
@@ -1947,8 +1947,8 @@ class density(_keygraphstyle):
     def donedrawpoints(self, privatedata, sharedata, graph):
         privatedata.keygraph.doaxes()
 
-        values1 = pycompat.sorted(list(sharedata.values1.keys()))
-        values2 = pycompat.sorted(list(sharedata.values2.keys()))
+        values1 = sorted(list(sharedata.values1.keys()))
+        values2 = sorted(list(sharedata.values2.keys()))
         def equidistant(values):
             l = len(values) - 1
             if l < 1:

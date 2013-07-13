@@ -22,7 +22,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 import math, re, configparser, struct, warnings
-from pyx import text, pycompat
+from pyx import text
 from . import style
 builtinlist = list
 
@@ -606,9 +606,9 @@ class join(_data):
 
     def merge_lists(self, lists):
         "merges list items w/o duplications, resulting order is arbitraty"
-        result = pycompat.set()
+        result = set()
         for l in lists:
-            result.update(pycompat.set(l))
+            result.update(set(l))
         return builtinlist(result)
 
     def merge_dicts(self, dicts):
