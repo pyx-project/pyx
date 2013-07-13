@@ -386,6 +386,7 @@ class context:
         self.textregion = 0
         self.trafo = trafo.trafo()
         self.fillstyles = []
+        self.fillrule = 0
 
     def __call__(self, **kwargs):
         newcontext = copy.copy(self)

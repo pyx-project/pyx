@@ -254,6 +254,7 @@ class context:
         self.linewidth_pt = None
         self.colorspace = None
         self.selectedfont = None
+        self.fillrule = 0
 
     def __call__(self, **kwargs):
         newcontext = copy.copy(self)

@@ -44,7 +44,7 @@ class decoratedpath(canvasitem.canvasitem):
 
     def __init__(self, path, strokepath=None, fillpath=None,
                  styles=None, strokestyles=None, fillstyles=None,
-                 ornaments=None, fillrule=style.fillrule.nonzero_winding):
+                 ornaments=None):
 
         self.path = path
 
@@ -61,9 +61,6 @@ class decoratedpath(canvasitem.canvasitem):
             self.ornaments = canvas.canvas()
         else:
             self.ornaments = ornaments
-
-        # the fillrule is either fillrule.nonzero_winding or fillrule.even_odd
-        self.fillrule = fillrule
 
         self.nostrokeranges = None
 
@@ -160,7 +157,7 @@ class decoratedpath(canvasitem.canvasitem):
                 if self.fillstyles:
                     _writestyles(self.fillstyles, context(), registry, bbox)
 
-                if self.fillrule.even_odd:
+                if context.fillrule:
                     file.write("eofill\n")
                 else:
                     file.write("fill\n")
@@ -183,7 +180,7 @@ class decoratedpath(canvasitem.canvasitem):
                     file.write("gsave\n")
                     _writestyles(self.fillstyles, context(), registry, bbox)
 
-                if self.fillrule.even_odd:
+                if context.fillrule:
                     file.write("eofill\n")
                 else:
                     file.write("fill\n")
@@ -264,7 +261,7 @@ class decoratedpath(canvasitem.canvasitem):
                 if self.strokestyles:
                     _writestrokestyles(self.strokestyles, acontext, registry, bbox)
 
-                if self.fillrule.even_odd:
+                if context.fillrule:
                     file.write("B*\n")
                 else:
                     file.write("B\n") # both stroke and fill
@@ -278,7 +275,7 @@ class decoratedpath(canvasitem.canvasitem):
                     file.write("q\n") # gsave
                     _writefillstyles(self.fillstyles, context(), registry, bbox)
 
-                if self.fillrule.even_odd:
+                if context.fillrule:
                     file.write("f*\n")
                 else:
                     file.write("f\n") # fill
