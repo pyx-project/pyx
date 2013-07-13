@@ -41,7 +41,7 @@ def output(boxes, shapes):
             elif mark[:3] == "end":
                 c.fill(path.circle(mx, my+y, 0.05), [color.rgb.green])
             else:
-                raise "other marks in there!"
+                raise ValueError("other marks in there!")
         y -= shape[1] + 3
     c.writeEPSfile("textboxes")
 
