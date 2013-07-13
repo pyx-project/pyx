@@ -1121,7 +1121,7 @@ class T1file:
                  .replace(" ", "")) == "0"*512 + "cleartomark":
             data3 = ""
 
-        data = self.data1 + data2eexec + data3
+        data = self.data1.encode("ascii") + data2eexec + data3.encode("ascii")
         if writer.compress and haszlib:
             data = zlib.compress(data)
 
@@ -1134,7 +1134,7 @@ class T1file:
             file.write("/Filter /FlateDecode\n")
         file.write(">>\n"
                    "stream\n")
-        file.write(data)
+        file.write_bytes(data)
         file.write("\n"
                    "endstream\n")
 

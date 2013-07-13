@@ -185,6 +185,8 @@ class PDFfont(pdfwriter.PDFobject):
         if self.encoding:
             encoding = self.encoding.getvector()
         else:
+            if self.fontdescriptor.fontfile.t1file.encoding is None:
+                self.fontdescriptor.fontfile.t1file._encoding()
             encoding = self.fontdescriptor.fontfile.t1file.encoding
         for i in range(firstchar, lastchar+1):
             if i:
