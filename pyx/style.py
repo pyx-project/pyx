@@ -29,10 +29,13 @@ import bbox as bboxmodule
 # base classes for stroke and fill styles
 #
 
-class strokestyle:
+class style:
     pass
 
-class fillstyle:
+class strokestyle(style):
+    pass
+
+class fillstyle(style):
     pass
 
 #
