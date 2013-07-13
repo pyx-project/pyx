@@ -115,9 +115,8 @@ class canvas(canvasitem.canvasitem):
 
         self.styles = attr.getattrs(attrs, [style.style])
 
-        # We have to reverse the trafos such that the PostScript concat operators
-        # are in the right order. Correspondingly, we below multiply the current self.trafo
-        # from the right.
+        # trafos (and one possible clip operation) are applied from left to
+        # right in the attrs list -> reverse for calculating total trafo
         for aattr in reversed(attr.getattrs(attrs, [trafo.trafo_pt, clip])):
             if isinstance(aattr, trafo.trafo_pt):
                 self.trafo = self.trafo * aattr
