@@ -23,7 +23,6 @@
 
 import math
 import attr, unit
-import bbox as bboxmodule
 
 #
 # base classes for stroke and fill styles
@@ -51,10 +50,10 @@ class linecap(attr.exclusiveattr, strokestyle):
         attr.exclusiveattr.__init__(self, linecap)
         self.value = value
 
-    def processPS(self, file, writer, context, registry, bbox):
+    def processPS(self, file, writer, context, registry):
         file.write("%d setlinecap\n" % self.value)
 
-    def processPDF(self, file, writer, context, registry, bbox):
+    def processPDF(self, file, writer, context, registry):
         file.write("%d J\n" % self.value)
 
 linecap.butt = linecap(0)
@@ -71,10 +70,10 @@ class linejoin(attr.exclusiveattr, strokestyle):
         attr.exclusiveattr.__init__(self, linejoin)
         self.value = value
 
-    def processPS(self, file, writer, context, registry, bbox):
+    def processPS(self, file, writer, context, registry):
         file.write("%d setlinejoin\n" % self.value)
 
-    def processPDF(self, file, writer, context, registry, bbox):
+    def processPDF(self, file, writer, context, registry):
         file.write("%d j\n" % self.value)
 
 linejoin.miter = linejoin(0)
@@ -91,10 +90,10 @@ class miterlimit(attr.exclusiveattr, strokestyle):
         attr.exclusiveattr.__init__(self, miterlimit)
         self.value = value
 
-    def processPS(self, file, writer, context, registry, bbox):
+    def processPS(self, file, writer, context, registry):
         file.write("%f setmiterlimit\n" % self.value)
 
-    def processPDF(self, file, writer, context, registry, bbox):
+    def processPDF(self, file, writer, context, registry):
         file.write("%f M\n" % self.value)
 
 miterlimit.lessthan180deg = miterlimit(1/math.sin(math.pi*180/360))
@@ -122,14 +121,14 @@ class dash(attr.exclusiveattr, strokestyle):
         self.offset = offset
         self.rellengths = rellengths
 
-    def processPS(self, file, writer, context, registry, bbox):
+    def processPS(self, file, writer, context, registry):
         if self.rellengths:
             patternstring = " ".join(["%f" % (element * context.linewidth_pt/_defaultlinewidth_pt) for element in self.pattern])
         else:
             patternstring = " ".join(["%f" % element for element in self.pattern])
         file.write("[%s] %d setdash\n" % (patternstring, self.offset))
 
-    def processPDF(self, file, writer, context, registry, bbox):
+    def processPDF(self, file, writer, context, registry):
         if self.rellengths:
             patternstring = " ".join(["%f" % (element * context.linewidth_pt/_defaultlinewidth_pt) for element in self.pattern])
         else:
@@ -150,13 +149,13 @@ class linestyle(attr.exclusiveattr, strokestyle):
         self.c = c
         self.d = d
 
-    def processPS(self, file, writer, context, registry, bbox):
-        self.c.processPS(file, writer, context, registry, bbox)
-        self.d.processPS(file, writer, context, registry, bbox)
+    def processPS(self, file, writer, context, registry):
+        self.c.processPS(file, writer, context, registry)
+        self.d.processPS(file, writer, context, registry)
 
-    def processPDF(self, file, writer, context, registry, bbox):
-        self.c.processPDF(file, writer, context, registry, bbox)
-        self.d.processPDF(file, writer, context, registry, bbox)
+    def processPDF(self, file, writer, context, registry):
+        self.c.processPDF(file, writer, context, registry)
+        self.d.processPDF(file, writer, context, registry)
 
 linestyle.solid = linestyle(linecap.butt, dash([]))
 linestyle.dashed = linestyle(linecap.butt, dash([2]))
@@ -173,11 +172,11 @@ class linewidth(attr.sortbeforeexclusiveattr, strokestyle):
         attr.sortbeforeexclusiveattr.__init__(self, linewidth, [dash, linestyle])
         self.width = width
 
-    def processPS(self, file, writer, context, registry, bbox):
+    def processPS(self, file, writer, context, registry):
         file.write("%f setlinewidth\n" % unit.topt(self.width))
         context.linewidth_pt = unit.topt(self.width)
 
-    def processPDF(self, file, writer, context, registry, bbox):
+    def processPDF(self, file, writer, context, registry):
         file.write("%f w\n" % unit.topt(self.width))
         context.linewidth_pt = unit.topt(self.width)
 
@@ -204,10 +203,10 @@ class fillrule(attr.exclusiveattr, fillstyle):
         attr.exclusiveattr.__init__(self, fillrule)
         self.even_odd = even_odd
 
-    def processPS(self, file, writer, context, registry, bbox):
+    def processPS(self, file, writer, context, registry):
         context.fillrule = self.even_odd
 
-    def processPDF(self, file, writer, context, registry, bbox):
+    def processPDF(self, file, writer, context, registry):
         context.fillrule = self.even_odd
 
 fillrule.nonzero_winding = fillrule(0)

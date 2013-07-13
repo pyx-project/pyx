@@ -124,13 +124,13 @@ class trafo_pt(deformer.deformer):
                  self.matrix[0][1], self.matrix[1][1],
                  self.vector[0], self.vector[1] )
 
-    def processPS(self, file, writer, context, registry, bbox):
+    def processPS(self, file, writer, context, registry):
         file.write("[%f %f %f %f %f %f] concat\n" % \
                     ( self.matrix[0][0], self.matrix[1][0],
                       self.matrix[0][1], self.matrix[1][1],
                       self.vector[0], self.vector[1] ) )
 
-    def processPDF(self, file, writer, context, registry, bbox):
+    def processPDF(self, file, writer, context, registry):
         file.write("%f %f %f %f %f %f cm\n" % \
                     ( self.matrix[0][0], self.matrix[1][0],
                       self.matrix[0][1], self.matrix[1][1],

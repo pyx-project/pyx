@@ -26,12 +26,7 @@ class canvasitem:
 
     def bbox(self):
         """return bounding box of canvasitem"""
-        # TODO: we either should raise a NotImplementedError here or return
-        # an empty bounding box instance, as adding empty to a bouding box is
-        # allowed. (We could also alter the merging behavior of bboxes to allow
-        # None. Currently, canvasitem instances not overwriting this bbox method
-        # lead to an error.)
-        pass
+        raise NotImplementedError()
 
     def processPS(self, file, writer, context, registry, bbox):
         """process canvasitem by writing the corresponding PS code to file and
@@ -40,8 +35,9 @@ class canvasitem:
         - the PS code corresponding to the canvasitem has to be written in the
           stream file, which provides a write(string) method
         - writer is the PSwriter used for the output
-        - context is an instance of pswriter.context which is used for keeping 
-          track of the graphics state (current linewidth, colorspace and font))
+        - context is an instance of pswriter.context which is used for keeping
+          track of the graphics state (current linewidth, colorspace and font,
+          etc.)
         - registry is used for tracking resources needed by the canvasitem
         - bbox has to be updated to include the bounding box of the canvasitem
         """
@@ -56,7 +52,7 @@ class canvasitem:
         - writer is the PDFwriter used for the output, which contains properties
           like whether streamcompression is used
         - context is an instance of pdfwriter.context which is used for keeping
-          track of the graphics state, in particular for the emulation of PS 
+          track of the graphics state, in particular for the emulation of PS
           behaviour regarding fill and stroke styles, for keeping track of the
           currently selected font as well as of text regions.
         - registry is used for tracking resources needed by the canvasitem
