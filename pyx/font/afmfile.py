@@ -1102,7 +1102,7 @@ class AFMfile(metric.metric):
             key, args = line.split(None, 1)
         except ValueError:
             key = line.rstrip()
-        if key == "UnderLinePosition":
+        if key == "UnderlinePosition":
             self.underlinepositions[direction] = _parseint(args)
         elif key == "UnderlineThickness":
             self.underlinethicknesses[direction] = _parsefloat(args)
