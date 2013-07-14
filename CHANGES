@@ -1,4 +1,5 @@
-0.???? (201?/??/??):
+0.???? (2013/??/??):
+  - Requires at least Python 3.3 
   - filelocator module:
     - cygwin LaTeX with windows python patch (thanks to Sybren A. Stüvel)
   - graph styles:
