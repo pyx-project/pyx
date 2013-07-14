@@ -607,6 +607,6 @@ class DVIfile:
                                 afile.readint32(),
                                 afile.readint32(),
                                 afile.readint32(),
-                                afile.read(afile.readuchar()+afile.readuchar()).decode('ascii'))
+                                afile.read(afile.readuchar()+afile.readuchar()).decode("ascii"))
             else:
                 raise DVIError
