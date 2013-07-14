@@ -55,7 +55,7 @@ def ascii85stream(file, data):
     l = [None, None, None, None]
     for i in range(len(data)):
         c = data[i]
-        l[i%4] = ord(c)
+        l[i%4] = c
         if i%4 == 3:
             if i%60 == 3 and i != 3:
                 file.write("\n")
@@ -68,7 +68,7 @@ def ascii85stream(file, data):
                 l[2], c4 = divmod(256*256*3*l[0]+l[3], 85)
                 l[1], c3 = divmod(l[2], 85)
                 c1  , c2 = divmod(l[1], 85)
-                file.write(struct.pack("BBBBB", c1+33, c2+33, c3+33, c4+33, c5+33))
+                file.write_bytes(struct.pack("BBBBB", c1+33, c2+33, c3+33, c4+33, c5+33))
             else:
                 file.write("z")
     if i%4 != 3:
@@ -78,7 +78,7 @@ def ascii85stream(file, data):
         l[2], c4 = divmod(256*256*3*l[0]+l[3], 85)
         l[1], c3 = divmod(l[2], 85)
         c1  , c2 = divmod(l[1], 85)
-        file.write(struct.pack("BBBB", c1+33, c2+33, c3+33, c4+33)[:(i%4)+2])
+        file.write_bytes(struct.pack("BBBB", c1+33, c2+33, c3+33, c4+33)[:(i%4)+2])
 
 _asciihexlinelength = 64
 def asciihexlines(datalen):
@@ -115,7 +115,7 @@ class image:
                                                              for i in range(width*height)]))
                 for band in range(bands)]
 
-    def tostring(self, *args):
+    def tobytes(self, *args):
         if len(args):
             raise RuntimeError("encoding not supported in this implementation")
         return self.data
@@ -274,7 +274,7 @@ class PDFimage(pdfwriter.PDFobject):
             file.write("/Filter /%sDecode\n" % self.compressmode)
         file.write(">>\n"
                    "stream\n")
-        file.write(self.data)
+        file.write_bytes(self.data)
         file.write("\n"
                    "endstream\n")
 
@@ -330,7 +330,7 @@ class bitmap_trafo(baseclasses.canvasitem):
                 alpha = bands[0]
                 data = image(self.imagewidth, self.imageheight, mode,
                              "".join(["".join(values)
-                                      for values in zip(*[band.tostring()
+                                      for values in zip(*[band.tobytes()
                                                           for band in bands[1:]])]), palette=data.palette)
         if mode.endswith("A"):
             bands = data.split()
@@ -341,13 +341,13 @@ class bitmap_trafo(baseclasses.canvasitem):
                 # TODO: this is slow, but we don't want to depend on PIL or anything ... still, its incredibly slow to do it with lists and joins
                 data = image(self.imagewidth, self.imageheight, "A%s" % mode,
                              "".join(["".join(values)
-                                      for values in zip(*[band.tostring()
+                                      for values in zip(*[band.tobytes()
                                                           for band in bands])]), palette=data.palette)
             else:
                 alpha = bands[0]
                 data = image(self.imagewidth, self.imageheight, mode,
                              "".join(["".join(values)
-                                      for values in zip(*[band.tostring()
+                                      for values in zip(*[band.tobytes()
                                                           for band in bands[1:]])]), palette=data.palette)
 
         if mode == "P":
@@ -369,19 +369,19 @@ class bitmap_trafo(baseclasses.canvasitem):
             mode = "RGB"
 
         if self.compressmode == "Flate":
-            data = zlib.compress(data.tostring(), self.flatecompresslevel)
+            data = zlib.compress(data.tobytes(), self.flatecompresslevel)
         elif self.compressmode == "DCT":
-            data = data.tostring("jpeg", mode, self.dctquality, self.dctoptimize, self.dctprogression)
+            data = data.tobytes("jpeg", mode, self.dctquality, self.dctoptimize, self.dctprogression)
         else:
-            data = data.tostring()
+            data = data.tobytes()
         if alpha and not interleavealpha:
             if self.compressmode == "Flate":
-                alpha = zlib.compress(alpha.tostring(), self.flatecompresslevel)
+                alpha = zlib.compress(alpha.tobytes(), self.flatecompresslevel)
             elif self.compressmode == "DCT":
                 # well, this here is strange, we might want a alphacompressmode ...
-                alpha = alpha.tostring("jpeg", mode, self.dctquality, self.dctoptimize, self.dctprogression)
+                alpha = alpha.tobytes("jpeg", mode, self.dctquality, self.dctoptimize, self.dctprogression)
             else:
-                alpha = alpha.tostring()
+                alpha = alpha.tobytes()
 
         return mode, data, alpha, palettemode, palettedata
 
@@ -405,9 +405,9 @@ class bitmap_trafo(baseclasses.canvasitem):
 
         if self.PSstoreimage and not PSsinglestring:
             registry.add(pswriter.PSdefinition("imagedataaccess",
-                                               "{ /imagedataindex load " # get list index
-                                               "dup 1 add /imagedataindex exch store " # store increased index
-                                               "/imagedataid load exch get }")) # select string from array
+                                               b"{ /imagedataindex load " # get list index
+                                               b"dup 1 add /imagedataindex exch store " # store increased index
+                                               b"/imagedataid load exch get }")) # select string from array
         if self.PSstoreimage:
             registry.add(PSimagedata(PSimagename, data, PSsinglestring, self.PSmaxstrlen))
         bbox += self.bbox()
