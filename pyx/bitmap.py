@@ -68,7 +68,7 @@ def ascii85stream(file, data):
                 l[2], c4 = divmod(256*256*3*l[0]+l[3], 85)
                 l[1], c3 = divmod(l[2], 85)
                 c1  , c2 = divmod(l[1], 85)
-                file.write(struct.pack('BBBBB', c1+33, c2+33, c3+33, c4+33, c5+33))
+                file.write(struct.pack("BBBBB", c1+33, c2+33, c3+33, c4+33, c5+33))
             else:
                 file.write("z")
     if i%4 != 3:
@@ -78,7 +78,7 @@ def ascii85stream(file, data):
         l[2], c4 = divmod(256*256*3*l[0]+l[3], 85)
         l[1], c3 = divmod(l[2], 85)
         c1  , c2 = divmod(l[1], 85)
-        file.write(struct.pack('BBBB', c1+33, c2+33, c3+33, c4+33)[:(i%4)+2])
+        file.write(struct.pack("BBBB", c1+33, c2+33, c3+33, c4+33)[:(i%4)+2])
 
 _asciihexlinelength = 64
 def asciihexlines(datalen):
