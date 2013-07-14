@@ -197,7 +197,7 @@ class canvas(baseclasses.canvasitem):
             nbbox = bboxmodule.empty()
             for item in self.items:
                 if not writer.text_as_path:
-                    if item.requiretextregion:
+                    if item.requiretextregion():
                         if not textregion:
                             file.write("BT\n")
                             textregion = True
