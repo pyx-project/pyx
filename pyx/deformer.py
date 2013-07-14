@@ -20,7 +20,7 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import math, warnings
+import functools, math, warnings
 from . import attr, baseclasses, mathutils, path, normpath, unit, color
 
 # specific exception for an invalid parameterization point
@@ -262,7 +262,7 @@ def controldists_from_endgeometry_pt(A, B, tangA, tangB, curvA, curvB, allownega
             if (t > 0 and t < x[0] and s > 0 and s < x[1]):
                 if (t > 0 and t < y[0] and s > 0 and s < y[1]):
                     # use the shorter one
-                    return cmp(errx, erry)
+                    return (errx > erry) - (errx < erry)
                 else:
                     # use the longer one
                     return -1
@@ -272,12 +272,12 @@ def controldists_from_endgeometry_pt(A, B, tangA, tangB, curvA, curvB, allownega
                     return 1
                 else:
                     # use the shorter one
-                    return cmp(errx, erry)
+                    return (errx > erry) - (errx < erry)
             #return cmp(x[0]**2 + x[1]**2, y[0]**2 + y[1]**2)
         else:
-            return cmp(sy, sx)
+            return (sy > sx) - (sy < sx)
     # >>>
-    solutions.sort(mycmp)
+    solutions.sort(key=functools.cmp_to_key(mycmp))
 
     return solutions
 # >>>
@@ -1388,7 +1388,7 @@ class linesmoothed(baseclasses.deformer): # <<<
         return newnp
 
     def deformsubpath(self, nsp):
-        from metapost import path as mppath
+        from .metapost import path as mppath
         """Returns a path/normpath from the points in the given normsubpath"""
         # TODO: epsilon ?
         knots = []
