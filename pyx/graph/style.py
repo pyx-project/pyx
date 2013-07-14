@@ -1978,8 +1978,8 @@ class density(_keygraphstyle):
                 "/DeviceCMYK": "CMYK"}[self.gradient.getcolor(0).colorspacestring()]
         if needalpha:
             mode = "A" + mode
-        empty = "\0"*len(mode)
-        data = io.StringIO()
+        empty = b"\0"*len(mode)
+        data = io.BytesIO()
         for value2 in values2:
             for value1 in values1:
                 try:
@@ -1993,8 +1993,8 @@ class density(_keygraphstyle):
                 c = privatedata.colors[value1][value2]
                 c = self.color(privatedata, c)
                 if needalpha:
-                    data.write(chr(255))
-                data.write(c.to8bitstring())
+                    data.write(bytes((255,)))
+                data.write(c.to8bitbytes())
         i = bitmap.image(len(values1), len(values2), mode, data.getvalue())
 
         v1enlargement = (values1[-1]-values1[0])*0.5/len(values1)
@@ -2081,10 +2081,10 @@ class gradient(_style):
         mode = {"/DeviceGray": "L",
                 "/DeviceRGB": "RGB",
                 "/DeviceCMYK": "CMYK"}[self.gradient.getcolor(0).colorspacestring()]
-        data = io.StringIO()
+        data = io.BytesIO()
         for i in builtinrange(self.resolution):
             c = self.gradient.getcolor(i*1.0/self.resolution)
-            data.write(c.to8bitstring())
+            data.write(c.to8bitbytes())
         i = bitmap.image(self.resolution, 1, mode, data.getvalue())
 
         llx_pt, lly_pt = graph.vpos_pt(0)
