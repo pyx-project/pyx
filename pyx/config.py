@@ -201,10 +201,10 @@ class kpsewhich:
                 break
         else:
             return []
-        full_filename = full_filenames.decode('ascii').split("\n")[0].rstrip("\r")
+        full_filename = full_filenames.decode("ascii").split("\n")[0].rstrip("\r")
 
         # Detect Cygwin kpsewhich on Windows Python
-        if os.name == 'nt' and full_filename.startswith('/'):
+        if os.name == "nt" and full_filename.startswith("/"):
             full_filename = pycompat.popen('cygpath -w "%s"' % full_filename).read().strip()
 
         def _opener():
@@ -294,7 +294,7 @@ def getlist(section, option, default=_marker):
         except configparser.Error:
             return default
     if space:
-        l = [item.replace(space, ' ') for item in l]
+        l = [item.replace(space, " ") for item in l]
     return l
 
 

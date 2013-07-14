@@ -27,7 +27,7 @@ from pyx.dvi import dvifile
 from . import bbox as bboxmodule
 
 class PyXTeXWarning(UserWarning): pass
-warnings.filterwarnings('always', category=PyXTeXWarning)
+warnings.filterwarnings("always", category=PyXTeXWarning)
 
 ###############################################################################
 # texmessages
@@ -1297,8 +1297,8 @@ class texrunner:
                     pass
                 else:
                     # we have to append the breaking of the previous paragraph
-                    oldparshape = " ".join(parshapes[-1].split(' ')[2:2+2*lastprevgraf])
-                    oldparshape = oldparshape.split('}')[0]
+                    oldparshape = " ".join(parshapes[-1].split(" ")[2:2+2*lastprevgraf])
+                    oldparshape = oldparshape.split("}")[0]
                     if len(parshape):
                         oldparshape = " " + oldparshape
                     parshape = " 0pt ".join(["%.5ftruept" % width for i in range(prevgraf - lastprevgraf)])

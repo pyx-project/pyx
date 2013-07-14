@@ -769,7 +769,7 @@ class T1file:
         token = c.gettoken(); assert token == b"begin"
         first = 1
         while 1:
-            chartoken = c.gettoken().decode('ascii')
+            chartoken = c.gettoken().decode("ascii")
             if chartoken == "end":
                 break
             assert chartoken[0] == "/"
@@ -1168,9 +1168,9 @@ def from_PFA_bytes(bytes):
     except ValueError:
        raise FontFormatError
 
-    data1 = bytes[:m1].decode('ascii')
+    data1 = bytes[:m1].decode("ascii")
     data2eexec = binascii.a2b_hex(bytes[m1: m2].replace(" ", "").replace("\r", "").replace("\n", ""))
-    data3 = bytes[m2:].decode('ascii')
+    data3 = bytes[m2:].decode("ascii")
     return T1file(data1, data2eexec, data3)
 
 def from_PFA_filename(filename):
@@ -1203,7 +1203,7 @@ def from_PFB_bytes(bytes):
     mark = consume(2)
     if mark != b"\200\1":
         raise FontFormatError
-    data1 = consume(pfblength(consume(4))).decode('ascii')
+    data1 = consume(pfblength(consume(4))).decode("ascii")
     mark = consume(2)
     if mark != b"\200\2":
         raise FontFormatError
@@ -1213,7 +1213,7 @@ def from_PFB_bytes(bytes):
         mark = consume(2)
     if mark != b"\200\1":
         raise FontFormatError
-    data3 = consume(pfblength(consume(4))).decode('ascii')
+    data3 = consume(pfblength(consume(4))).decode("ascii")
     mark = consume(2)
     if mark != b"\200\3":
         raise FontFormatError
