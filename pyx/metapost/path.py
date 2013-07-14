@@ -77,10 +77,10 @@ class _knot:
     def linked_len(self):
         """returns the length of a circularly linked list of knots"""
         n = 1
-        p = self.__next__
+        p = self.next
         while not p is self:
             n += 1
-            p = p.__next__
+            p = p.next
         return n
 
     def __repr__(self):
