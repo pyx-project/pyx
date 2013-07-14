@@ -24,9 +24,9 @@
 import io, copy, warnings, time
 try:
     import zlib
-    haszlib = 1
+    haszlib = True
 except:
-    haszlib = 0
+    haszlib = False
 
 from . import bbox, config, style, unit, version, trafo, writer
 

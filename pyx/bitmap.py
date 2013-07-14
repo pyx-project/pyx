@@ -23,9 +23,9 @@
 import struct, warnings, binascii
 try:
     import zlib
-    haszlib = 1
+    haszlib = True
 except:
-    haszlib = 0
+    haszlib = False
 
 from . import bbox, baseclasses, pswriter, pdfwriter, trafo, unit
 
@@ -134,7 +134,7 @@ class jpegimage(image):
         pos = 0
         nestinglevel = 0
         try:
-            while 1:
+            while True:
                 if data[pos] == "\377" and data[pos+1] not in ["\0", "\377"]:
                     # print "marker: 0x%02x \\%03o" % (ord(data[pos+1]), ord(data[pos+1]))
                     if data[pos+1] == "\330":

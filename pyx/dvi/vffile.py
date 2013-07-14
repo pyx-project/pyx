@@ -52,7 +52,7 @@ class vffile:
         else:
             raise VFError
 
-        while 1:
+        while True:
             cmd = afile.readuchar()
             if cmd >= _VF_FNTDEF1234 and cmd < _VF_FNTDEF1234 + 4:
                 # font definition

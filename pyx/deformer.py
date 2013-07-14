@@ -1278,7 +1278,7 @@ class parallel(baseclasses.deformer): # <<<
             currentp = allparams[allparamindices[id(startp)] + 1]
             result = []
 
-            while 1:
+            while True:
                 if currentp is startp:
                     result.append((lastp, currentp))
                     return result

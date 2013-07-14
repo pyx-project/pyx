@@ -23,9 +23,9 @@
 import array, binascii, io, math, re, warnings
 try:
     import zlib
-    haszlib = 1
+    haszlib = True
 except ImportError:
-    haszlib = 0
+    haszlib = False
 
 
 from pyx import trafo, reader, writer
@@ -686,11 +686,11 @@ class T1file:
             self.encoding = adobestandardencoding
         else:
             self.encoding = [None]*256
-            while 1:
+            while True:
                 self.encodingstart = c.pos
                 if c.gettoken() == "dup":
                     break
-            while 1:
+            while True:
                 i = c.getint()
                 glyph = c.gettoken()
                 if 0 <= i < 256:
@@ -766,8 +766,8 @@ class T1file:
         token = c.gettoken(); assert token == b"dict"
         token = c.gettoken(); assert token == b"dup"
         token = c.gettoken(); assert token == b"begin"
-        first = 1
-        while 1:
+        first = True
+        while True:
             chartoken = c.gettoken().decode("ascii")
             if chartoken == "end":
                 break
@@ -783,7 +783,7 @@ class T1file:
                 self.glyphndtoken = c.gettoken()
             else:
                 token = c.gettoken(); assert token == self.glyphndtoken
-            first = 0
+            first = False
         self.charstringsend = c.pos
         assert not self.subrs or self.subrrdtoken == self.glyphrdtoken
 

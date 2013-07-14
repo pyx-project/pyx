@@ -112,7 +112,7 @@ class linefilereader:
         an IOError with the EOFmsg message. When EOFmsg is None, an empty
         string is returned when reading beyond the end of the file."""
         EOF = 0
-        while 1:
+        while True:
             crpos = self.buffer.find(b"\r")
             nlpos = self.buffer.find(b"\n")
             if nlpos == -1 and (crpos == -1 or crpos == len(self.buffer) - 1) and not EOF:
@@ -147,7 +147,7 @@ def _readbbox(file):
 
     bboxatend = 0
     # parse the header (use the first BoundingBox)
-    while 1:
+    while True:
         line = file.readline()
         if not line:
             break
@@ -168,7 +168,7 @@ def _readbbox(file):
 
     # parse the body
     nesting = 0 # allow for nested documents
-    while 1:
+    while True:
         line = file.readline()
         if line.startswith(b"%%BeginData:"):
             values = line.split(":", 1)[1].split()

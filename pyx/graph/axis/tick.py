@@ -247,7 +247,7 @@ def mergeticklists(list1, list2, mergeequal=1):
     i = 0
     j = 0
     try:
-        while 1: # we keep on going until we reach an index error
+        while True: # we keep on going until we reach an index error
             while list2[j] < list1[i]: # insert tick
                list1.insert(i, list2[j])
                i += 1

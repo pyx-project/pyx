@@ -261,9 +261,9 @@ class _texmessageload(texmessage):
         for i, c in enumerate(s):
             if quotes and level <= maxlevel:
                 if not inquote and c == quotes[0] and i and s[i-1] == brackets[0]:
-                    inquote = 1
+                    inquote = True
                 elif inquote and c == quotes[1]:
-                    inquote = 0
+                    inquote = False
             if inquote:
                 res += c
             else:
@@ -634,7 +634,7 @@ class _readpipe(threading.Thread):
         """thread routine"""
         def _read():
             # catch interupted system call errors while reading
-            while 1:
+            while True:
                 try:
                     return self.pipe.readline()
                 except IOError as e:
@@ -686,7 +686,7 @@ class textbox(box.rect, canvas.canvas):
         canvas.canvas.__init__(self, attrs)
         self.finishdvi = finishdvi
         self.dvicanvas = None
-        self.insertdvicanvas = 0
+        self.insertdvicanvas = False
 
     def transform(self, *trafos):
         if self.insertdvicanvas:
@@ -706,7 +706,7 @@ class textbox(box.rect, canvas.canvas):
             assert self.dvicanvas is not None, "finishdvi is broken"
         if not self.insertdvicanvas:
             self.insert(self.dvicanvas, [self.texttrafo])
-            self.insertdvicanvas = 1
+            self.insertdvicanvas = True
 
     def marker(self, marker):
         self.ensuredvicanvas()
@@ -750,7 +750,7 @@ def _cleantmp(texrunner):
         if not texrunner.waitforevent(texrunner.quitevent): # wait for finish of the output
             return                                          # didn't got a quit from TeX -> we can't do much more
         texrunner.texruns = 0
-        texrunner.texdone = 1
+        texrunner.texdone = True
     for usefile in texrunner.usefiles:
         extpos = usefile.rfind(".")
         try:
@@ -846,8 +846,8 @@ class texrunner:
         self.texmessagesdefaultrun = texmessagesdefaultrun[:]
 
         self.texruns = 0
-        self.texdone = 0
-        self.preamblemode = 1
+        self.texdone = False
+        self.preamblemode = True
         self.executeid = 0
         self.page = 0
         self.preambles = []
@@ -925,7 +925,7 @@ class texrunner:
             self.readoutput = _readpipe(self.texoutput, self.expectqueue, self.gotevent, self.gotqueue, self.quitevent)
             self.texruns = 1
             oldpreamblemode = self.preamblemode
-            self.preamblemode = 1
+            self.preamblemode = True
             self.readoutput.start()
             self.execute("\\scrollmode\n\\raiseerror%\n" # switch to and check scrollmode
                          "\\def\\PyX{P\\kern-.3em\\lower.5ex\hbox{Y}\kern-.18em X}%\n" # just the PyX Logo
@@ -1008,12 +1008,12 @@ class texrunner:
         self.gotevent.clear()
         if expr is None and gotevent: # TeX/LaTeX should have finished
             self.texruns = 0
-            self.texdone = 1
+            self.texdone = True
             self.texinput.close()                        # close the input queue and
             gotevent = self.waitforevent(self.quitevent) # wait for finish of the output
         try:
             self.texmessage = ""
-            while 1:
+            while True:
                 self.texmessage += self.gotqueue.get_nowait().decode(self.texenc)
         except queue.Empty:
             pass
@@ -1059,17 +1059,17 @@ class texrunner:
             self.finishdvi()
         self.executeid = 0
         self.page = 0
-        self.texdone = 0
+        self.texdone = False
         if reinit:
-            self.preamblemode = 1
+            self.preamblemode = True
             for expr, texmessages in self.preambles:
                 self.execute(expr, texmessages)
             if self.mode == "latex":
                 self.execute("\\begin{document}", self.defaulttexmessagesbegindoc + self.texmessagesbegindoc)
-            self.preamblemode = 0
+            self.preamblemode = False
         else:
             self.preambles = []
-            self.preamblemode = 1
+            self.preamblemode = True
 
     def set(self, mode=_unset,
                   lfs=_unset,
@@ -1172,12 +1172,12 @@ class texrunner:
             raise ValueError("None expression is invalid")
         if self.texdone:
             self.reset(reinit=1)
-        first = 0
+        first = False
         if self.preamblemode:
             if self.mode == "latex":
                 self.execute("\\begin{document}", self.defaulttexmessagesbegindoc + self.texmessagesbegindoc)
-            self.preamblemode = 0
-            first = 1
+            self.preamblemode = False
+            first = True
         textattrs = attr.mergeattrs(textattrs) # perform cleans
         attr.checkattrs(textattrs, [textattr, trafo.trafo_pt, style.fillstyle])
         trafos = attr.getattrs(textattrs, [trafo.trafo_pt])
@@ -1227,7 +1227,7 @@ class texrunner:
         # first we load sev.tex
         if not self.textboxesincluded:
             self.execute(r"\input textboxes.tex", [texmessage.load])
-            self.textboxesincluded = 1
+            self.textboxesincluded = True
         # define page shapes
         pageshapes_str = "\\hsize=%.5ftruept%%\n\\vsize=%.5ftruept%%\n" % (72.27/72*unit.topt(pageshapes[0][0]), 72.27/72*unit.topt(pageshapes[0][1]))
         pageshapes_str += "\\lohsizes={%\n"
@@ -1242,7 +1242,7 @@ class texrunner:
         parnos = []
         parshapes = []
         loop = 0
-        while 1:
+        while True:
             self.execute(pageshapes_str, [])
             parnos_str = "}{".join(parnos)
             if parnos_str:

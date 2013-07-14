@@ -99,12 +99,12 @@ class sortbeforeattr(attr):
         self.beforetheclasses = tuple(beforetheclasses)
 
     def merge(self, attrs):
-        first = 1
+        first = True
         result = []
         for attr in attrs:
             if first and isinstance(attr, self.beforetheclasses):
                 result.append(self)
-                first = 0
+                first = False
             result.append(attr)
         if first:
             result.append(self)

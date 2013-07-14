@@ -917,9 +917,9 @@ def _parsestr(s):
 def _parsebool(s):
     s = s.rstrip()
     if s == "true":
-       return 1
+       return True
     elif s == "false":
-       return 0
+       return False
     else:
         raise AFMError("Expecting boolean, got '%s'" % s)
 
@@ -979,7 +979,7 @@ class AFMfile(metric.metric):
        self.escchar = None                      # int, required if mappingscheme == 3
        self.characterset = None                 # str, optional
        self.characters = None                   # int, optional
-       self.isbasefont = 1                      # bool, optional
+       self.isbasefont = True                   # bool, optional
        self.vvector = None                      # 2 floats, required if metricssets == 2
        self.isfixedv = None                     # bool, default: true if vvector present, false otherwise
        self.capheight = None                    # float, optional

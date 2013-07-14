@@ -357,7 +357,7 @@ class DVIfile:
 
     def _read_pre(self):
         afile = self.file
-        while 1:
+        while True:
             self.filepos = afile.tell()
             cmd = afile.readuchar()
             if cmd == _DVI_NOP:
@@ -405,7 +405,7 @@ class DVIfile:
 
         self.singlecharmode = singlecharmode
 
-        while 1:
+        while True:
             self.filepos = self.file.tell()
             cmd = self.file.readuchar()
             if cmd == _DVI_NOP:
@@ -431,7 +431,7 @@ class DVIfile:
         # tuple (hpos, vpos, codepoints) to be output, or None if no output is pending
         self.activetext = None
 
-        while 1:
+        while True:
             afile = self.file
             self.filepos = afile.tell()
             try:
