@@ -75,7 +75,7 @@ class linefilereader:
         #       linebreak characters. However, we also handle
         #       lines longer than that.
         self.file = file
-        self.buffer = ""
+        self.buffer = b""
         self.typicallinelen = typicallinelen
 
     def read(self, count=None, EOFmsg="unexpected end of file"):
@@ -113,8 +113,8 @@ class linefilereader:
         string is returned when reading beyond the end of the file."""
         EOF = 0
         while 1:
-            crpos = self.buffer.find("\r")
-            nlpos = self.buffer.find("\n")
+            crpos = self.buffer.find(b"\r")
+            nlpos = self.buffer.find(b"\n")
             if nlpos == -1 and (crpos == -1 or crpos == len(self.buffer) - 1) and not EOF:
                 newbuffer = self.file.read(self.typicallinelen)
                 if not len(newbuffer):
@@ -133,7 +133,6 @@ class linefilereader:
                 return result
 
     def close(self):
-        "closes the file"
         self.file.close()
 
 
@@ -152,15 +151,15 @@ def _readbbox(file):
         line = file.readline()
         if not line:
             break
-        if line.startswith("%%BoundingBox:") and not bboxatend:
-            values = line.split(":", 1)[1].split()
+        if line.startswith(b"%%BoundingBox:") and not bboxatend:
+            values = line.split(b":", 1)[1].split()
             if values == ["(atend)"]:
                 bboxatend = 1
             else:
                 if len(values) != 4:
                     raise IOError("invalid number of bounding box values")
                 return bbox.bbox_pt(*list(map(int, values)))
-        elif (line.rstrip() == "%%EndComments" or
+        elif (line.rstrip() == b"%%EndComments" or
               (len(line) >= 2 and line[0] != "%" and line[1] not in string.whitespace)):
             # implicit end of comments section
             break
@@ -171,15 +170,15 @@ def _readbbox(file):
     nesting = 0 # allow for nested documents
     while 1:
         line = file.readline()
-        if line.startswith("%%BeginData:"):
+        if line.startswith(b"%%BeginData:"):
             values = line.split(":", 1)[1].split()
             if len(values) > 3:
                 raise IOError("invalid number of arguments")
             if len(values) == 3:
-                if values[2] == "Lines":
+                if values[2] == b"Lines":
                     for i in range(int(values[0])):
                         file.readline()
-                elif values[2] != "Bytes":
+                elif values[2] != b"Bytes":
                     raise IOError("invalid bytesorlines-value")
                 else:
                     file.read(int(values[0]))
@@ -189,23 +188,23 @@ def _readbbox(file):
             # ignore tailing whitespace/newline for binary data
             if (len(values) < 3 or values[2] != "Lines") and not len(line.strip()):
                 line = file.readline()
-            if line.rstrip() != "%%EndData":
+            if line.rstrip() != b"%%EndData":
                 raise IOError("missing EndData")
-        elif line.startswith("%%BeginBinary:"):
+        elif line.startswith(b"%%BeginBinary:"):
             file.read(int(line.split(":", 1)[1]))
             line = file.readline()
             # ignore tailing whitespace/newline
             if not len(line.strip()):
                 line = file.readline()
-            if line.rstrip() != "%%EndBinary":
+            if line.rstrip() != b"%%EndBinary":
                 raise IOError("missing EndBinary")
-        elif line.startswith("%%BeginDocument:"):
+        elif line.startswith(b"%%BeginDocument:"):
             nesting += 1
-        elif line.rstrip() == "%%EndDocument":
+        elif line.rstrip() == b"%%EndDocument":
             if nesting < 1:
                 raise IOError("unmatched EndDocument")
             nesting -= 1
-        elif not nesting and line.rstrip() == "%%Trailer":
+        elif not nesting and line.rstrip() == b"%%Trailer":
             break
 
     usebbox = None
@@ -214,7 +213,7 @@ def _readbbox(file):
     while line:
         line = file.readline(EOFmsg=None)
         if line.startswith("%%BoundingBox:"):
-            values = line.split(":", 1)[1].split()
+            values = line.split(b":", 1)[1].split()
             if len(values) != 4:
                 raise IOError("invalid number of bounding box values")
             usebbox = bbox.bbox_pt(*list(map(int, values)))
