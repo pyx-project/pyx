@@ -1593,7 +1593,7 @@ class bar(_style):
             raise TypeError("bar style restricted to two- and three dimensional graphs")
 
     def donedrawpoints(self, privatedata, sharedata, graph):
-        privatedata.todraw.sort()
+        privatedata.todraw.sort(key=lambda x: x[0])
         for vzindex, p, a in privatedata.todraw:
             privatedata.barcanvas.fill(p, a)
 
