@@ -22,12 +22,13 @@
 
 class writer:
 
-    def __init__(self, file, encoding="ascii"):
+    def __init__(self, file, encoding="ascii", errors="surrogateescape"):
         self.file = file
         self.encoding = encoding
+        self.errors = errors
 
     def write(self, s):
-        self.file.write(s.encode(self.encoding))
+        self.file.write(s.encode(self.encoding, errors=self.errors))
 
     def write_bytes(self, b):
         self.file.write(b)

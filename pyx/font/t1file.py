@@ -1138,7 +1138,7 @@ class T1file:
                  .replace(" ", "")) == "0"*512 + "cleartomark":
             data3 = ""
 
-        data = self.data1.encode("ascii") + data2eexec + data3.encode("ascii")
+        data = self.data1.encode("ascii", errors="surrogateescape") + data2eexec + data3.encode("ascii", errors="surrogateescape")
         if writer.compress and haszlib:
             data = zlib.compress(data)
 
@@ -1168,9 +1168,9 @@ def from_PFA_bytes(bytes):
     except ValueError:
        raise FontFormatError
 
-    data1 = bytes[:m1].decode("ascii")
+    data1 = bytes[:m1].decode("ascii", errors="surrogateescape")
     data2eexec = binascii.a2b_hex(bytes[m1: m2].replace(" ", "").replace("\r", "").replace("\n", ""))
-    data3 = bytes[m2:].decode("ascii")
+    data3 = bytes[m2:].decode("ascii", errors="surrogateescape")
     return T1file(data1, data2eexec, data3)
 
 def from_PFA_filename(filename):
@@ -1203,7 +1203,7 @@ def from_PFB_bytes(bytes):
     mark = consume(2)
     if mark != b"\200\1":
         raise FontFormatError
-    data1 = consume(pfblength(consume(4))).decode("ascii")
+    data1 = consume(pfblength(consume(4))).decode("ascii", errors="surrogateescape")
     mark = consume(2)
     if mark != b"\200\2":
         raise FontFormatError
@@ -1213,7 +1213,7 @@ def from_PFB_bytes(bytes):
         mark = consume(2)
     if mark != b"\200\1":
         raise FontFormatError
-    data3 = consume(pfblength(consume(4))).decode("ascii")
+    data3 = consume(pfblength(consume(4))).decode("ascii", errors="surrogateescape")
     mark = consume(2)
     if mark != b"\200\3":
         raise FontFormatError
