@@ -317,7 +317,7 @@ class PDFwriter:
         registry.add(catalog)
 
         file = writer.writer(file)
-        file.write_bytes(b"%%PDF-1.4\n%%\xc3\xb6\xc3\xa9\n")
+        file.write_bytes(b"%PDF-1.4\n%\xc3\xb6\xc3\xa9\n")
         registry.write(file, self, catalog)
         file.close()
 
