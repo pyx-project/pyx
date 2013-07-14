@@ -49,8 +49,8 @@ locator_classes = {}
 class local:
     """locates files in the current directory"""
 
-    def openers(self, filename, names, extensions, mode):
-        return [lambda: builtinopen(filename+extension, mode) for extension in extensions]
+    def openers(self, filename, names, extensions):
+        return [lambda: builtinopen(filename+extension, "rb") for extension in extensions]
 
 locator_classes["local"] = local
 
@@ -58,7 +58,7 @@ locator_classes["local"] = local
 class internal_pkgutil:
     """locates files within the PyX data tree (via pkgutil)"""
 
-    def openers(self, filename, names, extensions, mode):
+    def openers(self, filename, names, extensions):
         for extension in extensions:
             full_filename = filename+extension
             dir = os.path.splitext(full_filename)[1][1:]
@@ -68,19 +68,18 @@ class internal_pkgutil:
                 pass
             else:
                 if data:
-                    # ignoring mode?!
                     return [lambda: io.BytesIO(data)]
         return []
 
 class internal_open:
     """locates files within the PyX data tree (via an open relative to the path of this file)"""
 
-    def openers(self, filename, names, extensions, mode):
+    def openers(self, filename, names, extensions):
         result = []
         for extension in extensions:
             full_filename = filename+extension
             dir = os.path.splitext(full_filename)[1][1:]
-            result.append(lambda: builtinopen(os.path.join(os.path.dirname(__file__), "data", dir, full_filename), mode))
+            result.append(lambda: builtinopen(os.path.join(os.path.dirname(__file__), "data", dir, full_filename), "rb"))
         return result
 
 try:
@@ -98,10 +97,10 @@ class recursivedir:
         self.dirs = getlist("locator", "recursivedir")
         self.full_filenames = {}
 
-    def openers(self, filename, names, extensions, mode):
+    def openers(self, filename, names, extensions):
         for extension in extensions:
             if filename+extension in self.full_filenames:
-                return [lambda: builtinopen(self.full_filenames[filename], mode)]
+                return [lambda: builtinopen(self.full_filenames[filename], "rb")]
         while self.dirs:
             dir = self.dirs.pop(0)
             for item in os.listdir(dir):
@@ -112,7 +111,7 @@ class recursivedir:
                     self.full_filenames[item] = full_item
             for extension in extensions:
                 if filename+extension in self.full_filenames:
-                    return [lambda: builtinopen(self.full_filenames[filename], mode)]
+                    return [lambda: builtinopen(self.full_filenames[filename], "rb")]
         return []
 
 locator_classes["recursivedir"] = recursivedir
@@ -125,13 +124,13 @@ class ls_R:
         self.ls_Rs = getlist("locator", "ls-R")
         self.full_filenames = {}
 
-    def openers(self, filename, names, extensions, mode):
+    def openers(self, filename, names, extensions):
         while self.ls_Rs and not any([filename+extension in self.full_filenames for extension in extensions]):
             lsr = self.ls_Rs.pop(0)
             base_dir = os.path.dirname(lsr)
             dir = None
             first = True
-            for line in builtinopen(lsr):
+            for line in builtinopen(lsr, "r", encoding="ascii", errors="surrogateescape"):
                 line = line.rstrip()
                 if first and line.startswith("%"):
                     continue
@@ -144,7 +143,7 @@ class ls_R:
             if filename+extension in self.full_filenames:
                 def _opener():
                     try:
-                        return builtinopen(self.full_filenames[filename+extension], mode)
+                        return builtinopen(self.full_filenames[filename+extension], "rb")
                     except IOError:
                         warnings.warn("'%s' should be available at '%s' according to the ls-R file, "
                                       "but the file is not available at this location; "
@@ -158,7 +157,7 @@ locator_classes["ls-R"] = ls_R
 class pykpathsea:
     """locate files by pykpathsea (a C extension module wrapping libkpathsea)"""
 
-    def openers(self, filename, names, extensions, mode):
+    def openers(self, filename, names, extensions):
         if not has_pykpathsea:
             return []
         for name in names:
@@ -169,7 +168,7 @@ class pykpathsea:
             return []
         def _opener():
             try:
-                return builtinopen(full_filename, mode)
+                return builtinopen(full_filename, "rb")
             except IOError:
                 warnings.warn("'%s' should be available at '%s' according to libkpathsea, "
                               "but the file is not available at this location; "
@@ -182,7 +181,7 @@ locator_classes["pykpathsea"] = pykpathsea
 # class libkpathsea:
 #     """locate files by libkpathsea using ctypes"""
 # 
-#     def openers(self, filename, names, extensions, mode):
+#     def openers(self, filename, names, extensions):
 #         raise NotImplemented
 # 
 # locator_classes["libpathsea"] = libkpathsea
@@ -191,7 +190,7 @@ locator_classes["pykpathsea"] = pykpathsea
 class kpsewhich:
     """locate files using the kpsewhich executable"""
 
-    def openers(self, filename, names, extensions, mode):
+    def openers(self, filename, names, extensions):
         for name in names:
             try:
                 full_filenames = pycompat.popen('kpsewhich --format="%s" "%s"' % (name, filename)).read()
@@ -209,7 +208,7 @@ class kpsewhich:
 
         def _opener():
             try:
-                return builtinopen(full_filename, mode)
+                return builtinopen(full_filename, "rb")
             except IOError:
                 warnings.warn("'%s' should be available at '%s' according to kpsewhich, "
                               "but the file is not available at this location; "
@@ -222,7 +221,7 @@ locator_classes["kpsewhich"] = kpsewhich
 class locate:
     """locate files using a locate executable"""
 
-    def openers(self, filename, names, extensions, mode):
+    def openers(self, filename, names, extensions):
         for extension in extensions:
             full_filenames = pycompat.popen("locate \"%s\"" % (filename+extension)).read()
             if full_filenames:
@@ -232,7 +231,7 @@ class locate:
         full_filename = full_filenames.split("\n")[0].rstrip("\r")
         def _opener():
             try:
-                return builtinopen(full_filenames, mode)
+                return builtinopen(full_filenames, "rb")
             except IOError:
                 warnings.warn("'%s' should be available at '%s' according to the locate, "
                               "but the file is not available at this location; "
@@ -246,7 +245,7 @@ locator_classes["locate"] = locate
 class _marker: pass
 
 config = configparser.ConfigParser()
-config.read_string(locator_classes["internal"]().openers("pyxrc", [], [""], "r")[0]().read().decode("utf-8"), source="(internal pyxrc)")
+config.read_string(locator_classes["internal"]().openers("pyxrc", [], [""])[0]().read().decode("utf-8"), source="(internal pyxrc)")
 config.read(os.path.expanduser("~/.pyxrc"), encoding="utf-8")
 
 def get(section, option, default=_marker):
@@ -316,7 +315,7 @@ methods = [locator_classes[method]()
 opener_cache = {}
 
 
-def open(filename, formats, mode="r"):
+def open(filename, formats):
     """returns an open file searched according the list of formats"""
 
     # When using an empty list of formats, the names list is empty
@@ -334,7 +333,7 @@ def open(filename, formats, mode="r"):
     if (filename, names) in opener_cache:
         return opener_cache[(filename, names)]()
     for method in methods:
-        openers = method.openers(filename, names, extensions, mode)
+        openers = method.openers(filename, names, extensions)
         for opener in openers:
             try:
                 file = opener()
