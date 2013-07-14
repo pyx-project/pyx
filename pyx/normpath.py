@@ -1402,6 +1402,7 @@ def _valueorlistmethod(method):
     returns a single value or a list out of method, which always
     works on lists."""
 
+    @functools.wraps(method)
     def wrappedmethod(self, valueorlist, *args, **kwargs):
         try:
             for item in valueorlist:
@@ -1533,15 +1534,12 @@ class normpath:
 
         return results
 
-    def arclentoparam_pt(self, lengths_pt):
-        """return the param(s) matching the given length(s)_pt in pts"""
-        pass
     arclentoparam_pt = _valueorlistmethod(_arclentoparam_pt)
 
+    @_valueorlistmethod
     def arclentoparam(self, lengths):
         """return the param(s) matching the given length(s)"""
         return self._arclentoparam_pt([unit.topt(l) for l in lengths])
-    arclentoparam = _valueorlistmethod(arclentoparam)
 
     def _at_pt(self, params):
         """return coordinates of normpath in pts at params"""
@@ -1551,16 +1549,16 @@ class normpath:
                 result[index] = point_pt
         return result
 
+    @_valueorlistmethod
     def at_pt(self, params):
         """return coordinates of normpath in pts at param(s) or lengths in pts"""
         return self._at_pt(self._convertparams(params, self.arclentoparam_pt))
-    at_pt = _valueorlistmethod(at_pt)
 
+    @_valueorlistmethod
     def at(self, params):
         """return coordinates of normpath at param(s) or arc lengths"""
         return [(x_pt * unit.t_pt, y_pt * unit.t_pt)
                 for x_pt, y_pt in self._at_pt(self._convertparams(params, self.arclentoparam))]
-    at = _valueorlistmethod(at)
 
     def atbegin_pt(self):
         """return coordinates of the beginning of first subpath in normpath in pts"""
@@ -1618,6 +1616,7 @@ class normpath:
                 result[index] = curvature_pt
         return result
 
+    @_valueorlistmethod
     def curvature_pt(self, params):
         """return the curvature in 1/pt at params
 
@@ -1631,7 +1630,6 @@ class normpath:
             for index, curv_pt in zip(indices, self.normsubpaths[normsubpathindex].curvature_pt(params)):
                 result[index] = curv_pt
         return result
-    curvature_pt = _valueorlistmethod(curvature_pt)
 
     def _curveradius_pt(self, params):
         """return the curvature radius at params in pts
@@ -1646,6 +1644,7 @@ class normpath:
                 result[index] = radius_pt
         return result
 
+    @_valueorlistmethod
     def curveradius_pt(self, params):
         """return the curvature radius in pts at param(s) or arc length(s) in pts
 
@@ -1654,8 +1653,8 @@ class normpath:
         or positive, depending on the sign of the curvature."""
 
         return self._curveradius_pt(self._convertparams(params, self.arclentoparam_pt))
-    curveradius_pt = _valueorlistmethod(curveradius_pt)
 
+    @_valueorlistmethod
     def curveradius(self, params):
         """return the curvature radius at param(s) or arc length(s)
 
@@ -1670,7 +1669,6 @@ class normpath:
             else:
                 result.append(invalid)
         return result
-    curveradius = _valueorlistmethod(curveradius)
 
     def end(self):
         """return param corresponding of the end of the path"""
@@ -1755,14 +1753,12 @@ class normpath:
                 totalarclen_pt += self.normsubpaths[normsubpathindex].arclen_pt()
         return result
 
-    def paramtoarclen_pt(self, params):
-        """return arc length(s) in pts matching the given param(s)"""
     paramtoarclen_pt = _valueorlistmethod(_paramtoarclen_pt)
 
+    @_valueorlistmethod
     def paramtoarclen(self, params):
         """return arc length(s) matching the given param(s)"""
         return [arclen_pt * unit.t_pt for arclen_pt in self._paramtoarclen_pt(params)]
-    paramtoarclen = _valueorlistmethod(paramtoarclen)
 
     def path(self):
         """return path corresponding to normpath"""
@@ -1787,15 +1783,15 @@ class normpath:
                 result[index] = rotation
         return result
 
+    @_valueorlistmethod
     def rotation_pt(self, params):
         """return rotation at param(s) or arc length(s) in pts"""
         return self._rotation(self._convertparams(params, self.arclentoparam_pt))
-    rotation_pt = _valueorlistmethod(rotation_pt)
 
+    @_valueorlistmethod
     def rotation(self, params):
         """return rotation at param(s) or arc length(s)"""
         return self._rotation(self._convertparams(params, self.arclentoparam))
-    rotation = _valueorlistmethod(rotation)
 
     def _split_pt(self, params):
         """split path at params and return list of normpaths"""
@@ -1876,6 +1872,7 @@ class normpath:
                     result[index] = tangenttemplate.transformed(atrafo)
         return result
 
+    @_valueorlistmethod
     def tangent_pt(self, params, length_pt):
         """return tangent vector of path at param(s) or arc length(s) in pts
 
@@ -1883,8 +1880,8 @@ class normpath:
         the desired length.
         """
         return self._tangent(self._convertparams(params, self.arclentoparam_pt), length_pt)
-    tangent_pt = _valueorlistmethod(tangent_pt)
 
+    @_valueorlistmethod
     def tangent(self, params, length=1):
         """return tangent vector of path at param(s) or arc length(s)
 
@@ -1892,7 +1889,6 @@ class normpath:
         the desired length.
         """
         return self._tangent(self._convertparams(params, self.arclentoparam), unit.topt(length))
-    tangent = _valueorlistmethod(tangent)
 
     def _trafo(self, params):
         """return transformation at params"""
@@ -1902,15 +1898,15 @@ class normpath:
                 result[index] = trafo
         return result
 
+    @_valueorlistmethod
     def trafo_pt(self, params):
         """return transformation at param(s) or arc length(s) in pts"""
         return self._trafo(self._convertparams(params, self.arclentoparam_pt))
-    trafo_pt = _valueorlistmethod(trafo_pt)
 
+    @_valueorlistmethod
     def trafo(self, params):
         """return transformation at param(s) or arc length(s)"""
         return self._trafo(self._convertparams(params, self.arclentoparam))
-    trafo = _valueorlistmethod(trafo)
 
     def transformed(self, trafo):
         """return transformed normpath"""
