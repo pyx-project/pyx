@@ -85,7 +85,8 @@ class PSdefinition(PSresource):
 
     def output(self, file, writer, registry):
         file.write("%%%%BeginResource: %s\n" % self.id)
-        file.write("%(body)s /%(id)s exch def\n" % self.__dict__)
+        file.write_bytes(self.body)
+        file.write(" /%s exch def\n" % self.id)
         file.write("%%EndResource\n")
 
 #

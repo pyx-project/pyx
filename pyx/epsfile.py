@@ -27,7 +27,7 @@ from . import baseclasses, bbox, config, unit, trafo, pswriter
 # with important correction in EndEPSF:
 #   end operator is missing in the spec!
 
-_BeginEPSF = pswriter.PSdefinition("BeginEPSF", """{
+_BeginEPSF = pswriter.PSdefinition("BeginEPSF", b"""{
   /b4_Inc_state save def
   /dict_count countdictstack def
   /op_count count 1 sub def
@@ -44,7 +44,7 @@ _BeginEPSF = pswriter.PSdefinition("BeginEPSF", """{
   } if
 } bind""")
 
-_EndEPSF = pswriter.PSdefinition("EndEPSF", """{
+_EndEPSF = pswriter.PSdefinition("EndEPSF", b"""{
   end
   count op_count sub {pop} repeat
   countdictstack dict_count sub {end} repeat
@@ -143,7 +143,7 @@ def _readbbox(file):
     file = linefilereader(file)
 
     # check the %! header comment
-    if not file.readline().startswith("%!"):
+    if not file.readline().startswith(b"%!"):
         raise IOError("file doesn't start with a '%!' header comment")
 
     bboxatend = 0

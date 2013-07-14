@@ -22,6 +22,7 @@
 
 import io, math, warnings
 from . import attr, canvas, path, pdfwriter, pswriter, style, unit, trafo
+from . import writer as writermodule
 from . import bbox as bboxmodule
 
 class _marker: pass
@@ -68,10 +69,10 @@ class pattern(canvas.canvas, attr.exclusiveattr, style.fillstyle):
 
     def processPS(self, file, writer, context, registry):
         # process pattern, letting it register its resources and calculate the bbox of the pattern
-        patternfile = io.StringIO()
+        patternfile = writermodule.writer(io.BytesIO())
         realpatternbbox = bboxmodule.empty()
         canvas.canvas.processPS(self, patternfile, writer, pswriter.context(), registry, realpatternbbox)
-        patternproc = patternfile.getvalue()
+        patternproc = patternfile.file.getvalue()
         patternfile.close()
 
         if self.xstep is None:
@@ -99,7 +100,7 @@ class pattern(canvas.canvas, attr.exclusiveattr, style.fillstyle):
         patterntrafostring = self.patterntrafo is None and "matrix" or str(self.patterntrafo)
         patternsuffix = "end\n} bind\n>>\n%s\nmakepattern" % patterntrafostring
 
-        registry.add(pswriter.PSdefinition(self.id, "".join((patternprefix, patternproc, patternsuffix))))
+        registry.add(pswriter.PSdefinition(self.id, patternprefix.encode("ascii") + patternproc + patternsuffix.encode("ascii")))
 
         # activate pattern
         file.write("%s setpattern\n" % self.id)
@@ -109,10 +110,10 @@ class pattern(canvas.canvas, attr.exclusiveattr, style.fillstyle):
         # we create our own registry, which we merge immediately in the main registry
         patternregistry = pdfwriter.PDFregistry()
 
-        patternfile = io.StringIO()
+        patternfile = writermodule.writer(io.BytesIO())
         realpatternbbox = bboxmodule.empty()
         canvas.canvas.processPDF(self, patternfile, writer, pdfwriter.context(), patternregistry, realpatternbbox)
-        patternproc = patternfile.getvalue()
+        patternproc = patternfile.file.getvalue()
         patternfile.close()
 
         registry.mergeregistry(patternregistry)
@@ -324,5 +325,5 @@ class PDFpattern(pdfwriter.PDFobject):
             file.write("/Filter /FlateDecode\n")
         file.write(">>\n"
                    "stream\n")
-        file.write(content)
+        file.write_bytes(content)
         file.write("endstream\n")

@@ -59,7 +59,7 @@ class PST1file(pswriter.PSresource):
         file.write("\n%%EndFont\n")
 
 
-_ReEncodeFont = pswriter.PSdefinition("ReEncodeFont", """{
+_ReEncodeFont = pswriter.PSdefinition("ReEncodeFont", b"""{
   5 dict
   begin
     /newencoding exch def
@@ -110,7 +110,7 @@ class PSreencodefont(pswriter.PSresource):
         file.write("%%EndResource\n")
 
 
-_ChangeFontMatrix = pswriter.PSdefinition("ChangeFontMatrix", """{
+_ChangeFontMatrix = pswriter.PSdefinition("ChangeFontMatrix", b"""{
   5 dict
   begin
     /newfontmatrix exch def
