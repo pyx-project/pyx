@@ -60,12 +60,10 @@ class reader:
         return struct.unpack(">L", self.file.read(4))[0]
 
     def readint24(self):
-        # XXX: checkme
-        return struct.unpack(">l", "\0"+self.file.read(3))[0]
+        return struct.unpack(">l", b"\0"+self.file.read(3))[0]
 
     def readuint24(self):
-        # XXX: checkme
-        return struct.unpack(">L", "\0"+self.file.read(3))[0]
+        return struct.unpack(">L", b"\0"+self.file.read(3))[0]
 
     def readint16(self):
         return struct.unpack(">h", self.file.read(2))[0]

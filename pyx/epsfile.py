@@ -313,7 +313,7 @@ class epsfile(baseclasses.canvasitem):
 
     def open(self):
         if self.kpsearch:
-            return config.open(self.filename, [config.format.pict], "rb")
+            return config.open(self.filename, [config.format.pict])
         else:
             return open(self.filename, "rb")
 
@@ -336,7 +336,7 @@ class epsfile(baseclasses.canvasitem):
         file.write("%%%%BeginDocument: %s\n" % self.filename)
 
         epsfile = self.open()
-        file.write(epsfile.read())
+        file.write_bytes(epsfile.read())
         epsfile.close()
 
         file.write("%%EndDocument\n")

@@ -21,7 +21,7 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import io, math, re, string, struct, sys, warnings
+import io, math, re, struct, sys, warnings
 from pyx import  bbox, canvas, color, epsfile, config, path, reader, trafo, unit
 from . import texfont, tfmfile
 
@@ -200,7 +200,7 @@ class DVIfile:
 
         # check whether it's a virtual font by trying to open it. if this fails, it is an ordinary TeX font
         try:
-            fontfile = config.open(fontname, [config.format.vf], mode="rb")
+            fontfile = config.open(fontname, [config.format.vf])
         except IOError:
             afont = texfont.TeXfont(fontname, c, q/self.tfmconv, d/self.tfmconv, self.tfmconv, self.pyxconv, self.debug>1)
         else:
@@ -307,7 +307,7 @@ class DVIfile:
             if len(args) != 1:
                 raise RuntimeError("marker contains spaces")
             for c in args[0]:
-                if c not in string.digits + string.letters + "@":
+                if c not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@":
                     raise RuntimeError("marker contains invalid characters")
             if args[0] in self.actpage.markers:
                 raise RuntimeError("marker name occurred several times")
@@ -591,7 +591,7 @@ class DVIfile:
                 fntnum = afile.readint(cmd - _DVI_FNT1234 + 1, cmd == _DVI_FNT1234 + 3)
                 self.usefont(fntnum, cmd-_DVI_FNT1234+1, fontmap)
             elif cmd >= _DVI_SPECIAL1234 and cmd < _DVI_SPECIAL1234 + 4:
-                self.special(afile.read(afile.readint(cmd - _DVI_SPECIAL1234 + 1)), fontmap)
+                self.special(afile.read(afile.readint(cmd - _DVI_SPECIAL1234 + 1)).decode("ascii"), fontmap)
             elif cmd >= _DVI_FNTDEF1234 and cmd < _DVI_FNTDEF1234 + 4:
                 if cmd == _DVI_FNTDEF1234:
                     num = afile.readuchar()

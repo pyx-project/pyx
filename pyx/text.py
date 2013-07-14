@@ -957,7 +957,7 @@ class texrunner:
                 if self.lfs:
                     if not self.lfs.endswith(".lfs"):
                         self.lfs = "%s.lfs" % self.lfs
-                    lfsfile = config.open(self.lfs, [], "r")
+                    lfsfile = config.open(self.lfs, [])
                     lfsdef = lfsfile.read().decode("ascii")
                     lfsfile.close()
                     self.execute(lfsdef, [])
@@ -965,7 +965,7 @@ class texrunner:
                 self.execute("\\newdimen\\linewidth\\newdimen\\textwidth%\n", [])
             elif self.mode == "latex":
                 if self.pyxgraphics:
-                    pyxdef = config.open("pyx.def", [], "rb")
+                    pyxdef = config.open("pyx.def", [])
                     pyxdef_filename = self.texfilename + ".pyx.def"
                     pyxdef_file = open(pyxdef_filename, "wb")
                     pyxdef_file.write(pyxdef.read())

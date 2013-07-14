@@ -20,7 +20,7 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import os.path, re, warnings
+import io, os.path, re, warnings
 from pyx import font, config
 from pyx.font import t1file, afmfile, pfmfile
 from pyx.dvi import encfile
@@ -121,12 +121,13 @@ class MAPline:
     def getfont(self):
         if self._font is None:
             if self.fontfilename is not None:
-                fontfile = config.open(self.fontfilename, [config.format.type1], "rb")
+                fontfile = config.open(self.fontfilename, [config.format.type1])
                 t1font = t1file.from_PF_bytes(fontfile.read())
                 fontfile.close()
                 assert self.basepsname == t1font.name, "corrupt MAP file"
                 try:
-                    metricfile = config.open(os.path.splitext(self.fontfilename)[0], [config.format.afm])
+                    metricfilebytes = config.open(os.path.splitext(self.fontfilename)[0], [config.format.afm])
+                    metricfile = io.TextIOWrapper(metricfilebytes, encoding="ascii", errors="surrogateescape")
                 except IOError:
                     try:
                         # fallback by using the pfm instead of the afm font metric
@@ -142,7 +143,9 @@ class MAPline:
                     self._font = font.T1font(t1font, afmfile.AFMfile(metricfile))
                     metricfile.close()
             else:
-                metricfile = config.open(self.basepsname, [config.format.afm])
+                # builtin font
+                metricfilebytes = config.open(self.basepsname, [config.format.afm])
+                metricfile = io.TextIOWrapper(metricfilebytes, encoding="ascii", errors="surrogateescape")
                 self._font = font.T1builtinfont(self.basepsname, afmfile.AFMfile(metricfile))
                 metricfile.close()
         return self._font
@@ -150,8 +153,8 @@ class MAPline:
     def getencoding(self):
         if self._encoding is _marker:
             if self.encodingfilename is not None:
-                encodingfile = config.open(self.encodingfilename, [config.format.tex_ps_header], "rb")
-                ef = encfile.ENCfile(encodingfile.read())
+                encodingfile = config.open(self.encodingfilename, [config.format.tex_ps_header])
+                ef = encfile.ENCfile(encodingfile.read().decode("ascii", errors="surrogateescape"))
                 encodingfile.close()
                 assert ef.name == "/%s" % self.reencodefont
                 self._encoding = ef.vector
@@ -170,7 +173,8 @@ def readfontmap(filenames):
     """ read font map from filename (without path) """
     fontmap = {}
     for filename in filenames:
-        mapfile = config.open(filename, [config.format.fontmap, config.format.dvips_config], mode="rU")
+        mapfilebytes = config.open(filename, [config.format.fontmap, config.format.dvips_config])
+        mapfile = io.TextIOWrapper(mapfilebytes, encoding="ascii", errors="surrogateescape")
         lineno = 0
         for line in mapfile.readlines():
             lineno += 1

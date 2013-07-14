@@ -133,7 +133,7 @@ class EPSwriter(_PSwriter):
         page = document.pages[0]
         canvas = page.canvas
 
-        pagefile = io.StringIO()
+        pagefile = writer.writer(io.BytesIO())
         registry = PSregistry()
         acontext = context()
         pagebbox = bbox.empty()
@@ -151,7 +151,7 @@ class EPSwriter(_PSwriter):
         registry.output(file, self)
         file.write("%%EndProlog\n")
 
-        file.write(pagefile.getvalue())
+        file.write_bytes(pagefile.file.getvalue())
         pagefile.close()
 
         file.write("showpage\n")
@@ -168,7 +168,7 @@ class PSwriter(_PSwriter):
         # We first have to process the content of the pages, writing them into the stream pagesfile
         # Doing so, we fill the registry and also calculate the page bounding boxes, which are
         # stored in page._bbox for every page
-        pagesfile = io.StringIO()
+        pagesfile = writer.writer(io.BytesIO())
         registry = PSregistry()
 
         # calculated bounding boxes of the whole document
@@ -176,7 +176,7 @@ class PSwriter(_PSwriter):
 
         for nr, page in enumerate(document.pages):
             # process contents of page
-            pagefile = io.StringIO()
+            pagefile = writer.writer(io.BytesIO())
             acontext = context()
             pagebbox = bbox.empty()
             page.processPS(pagefile, self, acontext, registry, pagebbox)
@@ -195,7 +195,7 @@ class PSwriter(_PSwriter):
             pagesfile.write("/pgsave save def\n")
 
             pagesfile.write("%%EndPageSetup\n")
-            pagesfile.write(pagefile.getvalue())
+            pagesfile.write_bytes(pagefile.file.getvalue())
             pagefile.close()
             pagesfile.write("pgsave restore\n")
             pagesfile.write("showpage\n")
@@ -243,7 +243,7 @@ class PSwriter(_PSwriter):
         #file.write("%%BeginSetup\n")
         #file.write("%%EndSetup\n")
 
-        file.write(pagesfile.getvalue())
+        file.write_bytes(pagesfile.file.getvalue())
         pagesfile.close()
 
         file.write("%%Trailer\n")

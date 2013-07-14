@@ -34,7 +34,7 @@ class TeXfont:
         self.d = d                  # design size of font (fix_word) in TeX points
         self.tfmconv = tfmconv      # conversion factor from tfm units to dvi units
         self.pyxconv = pyxconv      # conversion factor from dvi units to PostScript points
-        file = config.open(self.name, [config.format.tfm], "rb")
+        file = config.open(self.name, [config.format.tfm])
         self.TFMfile = tfmfile.TFMfile(file, debug)
         file.close()
 

@@ -67,7 +67,7 @@ class vffile:
                 c = afile.readint32()
                 s = afile.readint32()     # relative scaling used for font (fix_word)
                 d = afile.readint32()     # design size of font
-                fontname = afile.read(afile.readuchar() + afile.readuchar())
+                fontname = afile.read(afile.readuchar() + afile.readuchar()).decode("ascii")
 
                 # rescaled size of font: s is relative to the scaling
                 # of the virtual font itself.  Note that realscale has
