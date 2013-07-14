@@ -21,7 +21,7 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import errno, glob, os, threading, queue, re, tempfile, atexit, time, warnings
+import errno, functools, glob, os, threading, queue, re, tempfile, atexit, time, warnings
 from . import config, unit, box, canvas, trafo, version, attr, style, pycompat, path
 from pyx.dvi import dvifile
 from . import bbox as bboxmodule
@@ -66,7 +66,7 @@ class TexResultError(RuntimeError):
                                 "The expression passed to TeX was:\n"
                                 "  %s\n" % texrunner.expr.replace("\n", "\n  ").rstrip() +
                                 "After parsing the return message from TeX, the following was left:\n" +
-                                reduce(lambda x, y: "%s  %s\n" % (x,y), firstlines, "").rstrip())
+                                functools.reduce(lambda x, y: "%s  %s\n" % (x,y), firstlines, "").rstrip())
         else:
             self.description = description
 
