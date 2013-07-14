@@ -35,7 +35,7 @@ class timeaxis(axis.linear):
     # TODO: how to deal with reversed timeaxis?
 
     def __init__(self, parter=None, rater=rater.linear(), **args):
-        axis._regularaxis.__init__(self, divisor=None, **args)
+        super().__init__(self, divisor=None, **args)
         self.parter = parter
         self.rater = rater
 
@@ -54,8 +54,13 @@ class timeaxis(axis.linear):
 
 class timetick(datetime.datetime):
 
+    # TODO: http://stackoverflow.com/questions/399022/why-cant-i-subclass-datetime-date
+    # possible fix: make the datetime an attribute of the tick
+
+    def __new__(cls, year, month, day, ticklevel=0, labellevel=0, label=None, labelattrs=[], **kwargs):
+        return datetime.datetime.__new__(cls, year, month, day, **kwargs)
+
     def __init__(self, year, month, day, ticklevel=0, labellevel=0, label=None, labelattrs=[], **kwargs):
-        datetime.datetime.__init__(self, year, month, day, **kwargs)
         self.ticklevel = ticklevel
         self.labellevel = labellevel
         self.label = label
