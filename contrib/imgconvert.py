@@ -37,10 +37,7 @@ if len(args) != 1:
 try:
     im = bitmap.jpegimage(args[0])
 except ValueError:
-    try:
-        from PIL import Image
-    except ImportError:
-        import Image
+    from PIL import Image
     im = Image.open(args[0])
     compressmode = "Flate"
 else:

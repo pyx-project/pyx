@@ -23,10 +23,7 @@
 
 
 import getopt, sys, os, io, re, math
-try:
-    from PIL import Image
-except ImportError:
-    import Image
+from PIL import Image
 
 
 progname = "epstopng v0.1: eps to transparent antialiased png converter"

@@ -110,10 +110,7 @@ class mesh(baseclasses.canvasitem):
     def processPS(self, file, writer, context, registry, bbox):
         if writer.mesh_as_bitmap:
             from pyx import bitmap, canvas
-            try:
-                from PIL import Image
-            except ImportError:
-                import Image
+            from PIL import Image
             c = canvas.canvas()
             c.insert(self)
             i = Image.open(c.pipeGS("pngalpha", resolution=writer.mesh_as_bitmap_resolution, seekable=True))
@@ -143,10 +140,7 @@ class mesh(baseclasses.canvasitem):
     def processPDF(self, file, writer, context, registry, bbox):
         if writer.mesh_as_bitmap:
             from pyx import bitmap, canvas
-            try:
-                from PIL import Image
-            except ImportError:
-                import Image
+            from PIL import Image
             c = canvas.canvas()
             c.insert(self)
             i = Image.open(c.pipeGS("pngalpha", resolution=writer.mesh_as_bitmap_resolution, seekable=True))
