@@ -69,7 +69,7 @@ class internal_pkgutil:
             else:
                 if data:
                     # ignoring mode?!
-                    return [lambda: io.StringIO(data.decode('utf-8'))]
+                    return [lambda: io.BytesIO(data)]
         return []
 
 class internal_open:
@@ -201,7 +201,7 @@ class kpsewhich:
                 break
         else:
             return []
-        full_filename = full_filenames.decode('latin1').split("\n")[0].rstrip("\r")
+        full_filename = full_filenames.decode('ascii').split("\n")[0].rstrip("\r")
 
         # Detect Cygwin kpsewhich on Windows Python
         if os.name == 'nt' and full_filename.startswith('/'):
@@ -246,8 +246,8 @@ locator_classes["locate"] = locate
 class _marker: pass
 
 config = configparser.ConfigParser()
-config.readfp(locator_classes["internal"]().openers("pyxrc", [], [""], "r")[0]())
-config.read(os.path.expanduser("~/.pyxrc"))
+config.read_string(locator_classes["internal"]().openers("pyxrc", [], [""], "r")[0]().read().decode("utf-8"), source="(internal pyxrc)")
+config.read(os.path.expanduser("~/.pyxrc"), encoding="utf-8")
 
 def get(section, option, default=_marker):
     if default is _marker:

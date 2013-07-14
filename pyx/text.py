@@ -958,7 +958,7 @@ class texrunner:
                     if not self.lfs.endswith(".lfs"):
                         self.lfs = "%s.lfs" % self.lfs
                     lfsfile = config.open(self.lfs, [], "r")
-                    lfsdef = lfsfile.read()
+                    lfsdef = lfsfile.read().decode("ascii")
                     lfsfile.close()
                     self.execute(lfsdef, [])
                     self.execute("\\normalsize%\n", [])
