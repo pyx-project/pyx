@@ -8,7 +8,7 @@ all:
 	make eps
 
 clean:
-	-rm -f *.eps eps/*.eps
+	-rm -f *.eps eps/*.eps *.pdf
 
 eps: $(epsfiles)
 
