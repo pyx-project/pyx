@@ -702,7 +702,7 @@ class T1file:
                     break
                 assert token == "dup"
 
-    lenIVpattern = re.compile("/lenIV\s+(\d+)\s+def\s+")
+    lenIVpattern = re.compile(b"/lenIV\s+(\d+)\s+def\s+")
     flexhintsubrs = [[3, 0, T1callothersubr, T1pop, T1pop, T1setcurrentpoint, T1return],
                      [0, 1, T1callothersubr, T1return],
                      [0, 2, T1callothersubr, T1return],
@@ -716,14 +716,13 @@ class T1file:
         start and end positions for later use."""
         self._data2 = self._eexecdecode(self._data2eexec)
 
-        # m = self.lenIVpattern.search(self._data2)
-        # if m:
-        #     self.lenIV = int(m.group(1))
-        # else:
-        #     self.lenIV = 4
-        self.lenIV = 4 # TODO!!!
+        m = self.lenIVpattern.search(self._data2)
+        if m:
+            self.lenIV = int(m.group(1))
+        else:
+            self.lenIV = 4
 
-        self.emptysubr = self._charstringencode(b"\x0b") # 11
+        self.emptysubr = self._charstringencode(b"\x0b") # 11, i.e. return
 
         # extract Subrs
         c = reader.PSbytes_tokenizer(self._data2, b"/Subrs")
@@ -994,7 +993,8 @@ class T1file:
         return self._eexecencode(self.getdata2())
 
     newlinepattern = re.compile("\s*[\r\n]\s*")
-    uniqueidpattern = re.compile("%?/UniqueID\s+\d+\s+def\s+")
+    uniqueidstrpattern = re.compile("%?/UniqueID\s+\d+\s+def\s+")
+    uniqueidbytespattern = re.compile(b"%?/UniqueID\s+\d+\s+def\s+")
         # when UniqueID is commented out (as in modern latin), prepare to remove the comment character as well
 
     def getstrippedfont(self, glyphs, charcodes):
@@ -1027,11 +1027,10 @@ class T1file:
                     encodingstrings.append("dup %i /%s put\n" % (char, glyph))
             data1 = self.data1[:self.encodingstart] + "\n" + "".join(encodingstrings) + self.data1[self.encodingend:]
         data1 = self.newlinepattern.subn("\n", data1)[0]
-        data1 = self.uniqueidpattern.subn("", data1)[0]
+        data1 = self.uniqueidstrpattern.subn("", data1)[0]
 
         # strip data2
-        # data2 = self.uniqueidpattern.subn("", self.getdata2(subrs, glyphs))[0] # TODO!!!
-        data2 = self.getdata2(subrs, glyphs)
+        data2 = self.uniqueidbytespattern.subn(b"", self.getdata2(subrs, glyphs))[0]
 
         # strip data3
         data3 = self.newlinepattern.subn("\n", self.data3)[0]
