@@ -147,11 +147,6 @@ class points(_data):
         self.title = title
 
 
-def list(*args, **kwargs):
-    warnings.warn("graph.data.list is deprecated. Use graph.data.points instead.")
-    return points(*args, **kwargs)
-
-
 class _notitle:
     pass
 

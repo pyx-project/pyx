@@ -99,7 +99,7 @@ class key:
         "creates the layout of the key"
         columndist_pt = unit.topt(self.columndist)
         c = canvas.canvas()
-        itemspercolumn = (len(plotitems) + self.columns - 1) / self.columns # integer division
+        itemspercolumn = (len(plotitems) + self.columns - 1) // self.columns
         x_pt = 0
         while plotitems:
             subc = self.paintcolumn(plotitems[:itemspercolumn])

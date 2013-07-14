@@ -22,7 +22,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 
-import sys
+import sys, functools
 
 # test automatic long conversion
 try:
@@ -32,6 +32,7 @@ except OverflowError:
     autolong = 0
 
 
+@functools.total_ordering
 class rational:
     """rational class performing some basic rational arithmetics
     the axis partitioning uses rational arithmetics (with infinite accuracy)
@@ -156,11 +157,17 @@ class rational:
                 self.num = int(self.num) ** power
                 self.denom = int(self.denom) ** power
 
-    def __cmp__(self, other):
+    def __lt__(self, other):
         try:
-            return cmp(self.num * other.denom, other.num * self.denom)
+            return self.num * other.denom < other.num * self.denom
         except:
-            return cmp(float(self), other)
+            return float(self) < other
+
+    def __eq__(self, other):
+        try:
+            return self.num * other.denom == other.num * self.denom
+        except:
+            return float(self) == other
 
     def __abs__(self):
         return rational((abs(self.num), abs(self.denom)))

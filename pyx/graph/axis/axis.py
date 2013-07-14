@@ -21,7 +21,7 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import math, warnings
+import functools, math, warnings
 from pyx import attr, unit, text
 from pyx.graph.axis import painter, parter, positioner, rater, texter, tick
 
@@ -146,6 +146,7 @@ class _regularaxis(_axis):
             return layout(data)
 
         # a variant is a data copy with local modifications to test several partitions
+        @functools.total_ordering
         class variant:
             def __init__(self, data, **kwargs):
                 self.data = data
@@ -155,9 +156,13 @@ class _regularaxis(_axis):
             def __getattr__(self, key):
                 return getattr(data, key)
 
-            def __cmp__(self, other):
+            def __lt__(self, other):
                 # we can also sort variants by their rate
-                return cmp(self.rate, other.rate)
+                return self.rate < other.rate
+
+            def __eq__(self, other):
+                # we can also sort variants by their rate
+                return self.rate == other.rate
 
         # build a list of variants
         bestrate = None

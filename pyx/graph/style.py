@@ -228,7 +228,7 @@ class pos(_style):
                 sharedata.vposavailable = sharedata.vposvalid = 0
                 sharedata.vpos[index] = None
             else:
-                if v < -self.epsilon or v > 1+self.epsilon:
+                if v is None or v < -self.epsilon or v > 1+self.epsilon:
                     sharedata.vposvalid = 0
                 sharedata.vpos[index] = v
 
@@ -359,7 +359,7 @@ class range(_style):
                         del d[k]
 
     def initdrawpoints(self, privatedata, sharedata, graph):
-        sharedata.vrange = [[None for x in range(2)] for y in privatedata.rangeposcolumns + sharedata.vrangemissing]
+        sharedata.vrange = [[None for x in builtinrange(2)] for y in privatedata.rangeposcolumns + sharedata.vrangemissing]
         privatedata.rangepostmplist = [[usename, mask, index, graph.axes[axisname]] # temporarily used by drawpoint only
                                        for index, (axisname, usename, mask) in enumerate(privatedata.rangeposcolumns)]
         for missing in sharedata.vrangemissing:
@@ -762,7 +762,7 @@ class errorbar(_style):
     def initdrawpoints(self, privatedata, sharedata, graph):
         if privatedata.errorbarattrs is not None:
             privatedata.errorbarcanvas = canvas.canvas(privatedata.errorbarattrs)
-            privatedata.dimensionlist = list(range(len(sharedata.vpos)))
+            privatedata.dimensionlist = list(builtinrange(len(sharedata.vpos)))
 
     def drawpoint(self, privatedata, sharedata, graph, point):
         if privatedata.errorbarattrs is not None:
@@ -1399,7 +1399,7 @@ class barpos(_style):
 
     def initdrawpoints(self, privatedata, sharedata, graph):
         sharedata.vpos = [None]*(len(sharedata.barposcolumnnames))
-        sharedata.vbarrange = [[None for i in range(2)] for x in sharedata.barposcolumnnames]
+        sharedata.vbarrange = [[None for i in builtinrange(2)] for x in sharedata.barposcolumnnames]
         sharedata.stackedbar = sharedata.stackedbardraw = 0
 
         if self.fromvalue is not None:
@@ -1425,7 +1425,7 @@ class barpos(_style):
                 except (ArithmeticError, ValueError, TypeError):
                     sharedata.vpos[i] = sharedata.vbarrange[i][1] = None
             else:
-                for j in range(2):
+                for j in builtinrange(2):
                     try:
                         sharedata.vbarrange[i][j] = graph.axes[barname[:-4]].convert(self.addsubvalue(point[barname], j))
                     except (ArithmeticError, ValueError, TypeError):
