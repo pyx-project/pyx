@@ -170,13 +170,13 @@ class document:
             f.close()
 
     def writePSfile(self, file=None, **kwargs):
-        f, close = _outputstream(file, "eps")
+        f, close = _outputstream(file, "ps")
         pswriter.PSwriter(self, f, **kwargs)
         if close:
             f.close()
 
     def writePDFfile(self, file=None, **kwargs):
-        f, close = _outputstream(file, "eps")
+        f, close = _outputstream(file, "pdf")
         pdfwriter.PDFwriter(self, f, **kwargs)
         if close:
             f.close()
