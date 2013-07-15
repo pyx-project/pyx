@@ -8,6 +8,18 @@ combines an abstraction of the PostScript drawing model with a TeX/LaTeX
 interface. Complex tasks like 2d and 3d plots in publication-ready quality are
 built out of these primitives."""
 
+import sys
+
+if sys.version_info[0] == 2:
+    print("""*** Sorry, this version of PyX runs on Python 3 only. ***
+If you want to use PyX on Python 2, please use one of our
+old releases up to PyX 0.12.x, i.e. execute something like:
+
+   pip install pyx==0.12.1
+""")
+    exit()
+
+
 import configparser
 import pyx.version
 
@@ -64,7 +76,7 @@ setup(name="PyX",
                    "Intended Audience :: End Users/Desktop",
                    "License :: OSI Approved :: GNU General Public License (GPL)",
                    "Operating System :: OS Independent",
-                   "Programming Language :: Python",
+                   "Programming Language :: Python :: 3",
                    "Topic :: Multimedia :: Graphics",
                    "Topic :: Scientific/Engineering :: Visualization",
                    "Topic :: Software Development :: Libraries :: Python Modules"],
