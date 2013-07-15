@@ -35,6 +35,6 @@ sc = c.insert(canvas.canvas([trafo.translate(0, 0)]))
 drawexample(sc, 1, 0)
 sc = c.insert(canvas.canvas([trafo.translate(6, 0)]))
 drawexample(sc, 1, 1)
-c.writeEPSfile("test_box", paperformat=document.paperformat.A4)
-c.writePDFfile("test_box", paperformat=document.paperformat.A4)
+c.writeEPSfile("test_box", page_paperformat=document.paperformat.A4)
+c.writePDFfile("test_box", page_paperformat=document.paperformat.A4)
 

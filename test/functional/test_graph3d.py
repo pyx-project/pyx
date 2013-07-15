@@ -33,6 +33,6 @@ test_grid(c, 8, 0)
 test_surface(c, 8, -8)
 test_surface2d(c, -3, -20)
 
-c.writeEPSfile("test_graph3d", paperformat=document.paperformat.A4)
-c.writePDFfile("test_graph3d", paperformat=document.paperformat.A4)
+c.writeEPSfile("test_graph3d", page_paperformat=document.paperformat.A4)
+c.writePDFfile("test_graph3d", page_paperformat=document.paperformat.A4)
 

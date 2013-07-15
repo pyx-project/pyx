@@ -30,6 +30,6 @@ c.insert(bitmap_bw_storearray)
 c.insert(bitmap_rgb_storearray)
 if paletteimage:
     c.insert(bitmap.bitmap(6, 0, paletteimage, height=1.8))
-c.writeEPSfile("test_bitmap", paperformat=document.paperformat.A4)
-c.writePDFfile("test_bitmap", paperformat=document.paperformat.A4)
+c.writeEPSfile("test_bitmap", page_paperformat=document.paperformat.A4)
+c.writePDFfile("test_bitmap", page_paperformat=document.paperformat.A4)
 

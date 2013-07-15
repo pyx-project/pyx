@@ -9,7 +9,7 @@ c.stroke(path.line(10*unit.u_pt, 10*unit.u_pt, 40*unit.u_pt, 40*unit.u_pt)+
          path.line(10*unit.u_pt, 40*unit.u_pt, 40*unit.u_pt, 10*unit.u_pt))
 #         path.rect(10*unit.u_pt, 10*unit.u_pt, 30*unit.u_pt, 30*unit.u_pt))
 
-c.writeEPSfile("cross", bboxenlarge=0)
+c.writeEPSfile("cross", page_bboxenlarge=0)
 
 c = canvas.canvas()
 

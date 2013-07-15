@@ -13,5 +13,5 @@ clean:
 eps: $(epsfiles)
 
 %.eps: %.py
-	export PYTHONPATH=$(CURDIR)/../..; cd $(dir $^) ; $(PYTHON) $(notdir $^)
+	export PYTHONPATH=$(CURDIR)/../..; cd $(dir $^) ; $(PYTHON) -W default $(notdir $^)
 

@@ -257,6 +257,6 @@ dotest(c, 20, 0, "testcornersmoothed")
 dotest(c, 0, 0, "testparallel_1")
 dotest(c, 6, 13, "testparallel_2")
 dotest(c, 0, 20, "testlinesmoothed")
-c.writeEPSfile("test_deformer", paperformat=document.paperformat.A4, rotated=1, fittosize=1)
+c.writeEPSfile("test_deformer", page_paperformat=document.paperformat.A4, page_rotated=1, page_fittosize=1)
 c.writePDFfile("test_deformer")
 

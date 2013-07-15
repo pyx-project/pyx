@@ -121,6 +121,6 @@ c = canvas.canvas()
 testarrow(c)
 linehatched(c)
 testbrace(c)
-c.writeEPSfile("test_arrow", paperformat=document.paperformat.A4, rotated=0, fittosize=1)
-c.writePDFfile("test_arrow", paperformat=document.paperformat.A4)
+c.writeEPSfile("test_arrow", page_paperformat=document.paperformat.A4, page_rotated=0, page_fittosize=1)
+c.writePDFfile("test_arrow", page_paperformat=document.paperformat.A4)
 

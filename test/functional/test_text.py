@@ -112,7 +112,7 @@ sc.stroke(p, [deco.curvedtext("\PyX{} is fun!", textattrs=[trafo.mirror(), trafo
               deco.curvedtext("right", textattrs=[text.halign.right, text.vshift.mathaxis, trafo.mirror(), trafo.scale(1.2)], arclenfromend=0.5, exclude=0.1)])
 c.insert(sc, [trafo.translate(12, 12)])
 
-c.writePDFfile("test_text", paperformat=document.paperformat.A4)
+c.writePDFfile("test_text", page_paperformat=document.paperformat.A4)
 
 c.insert(c.text(10, 4, r"""%
     \fbox{\includegraphics[%
@@ -134,4 +134,4 @@ c.insert(c.text(10, 4, r"""%
     %draft=,               %% do not print anything,
     clip=]%                %! directly in dvi
     {sample}}"""))
-c.writeEPSfile("test_text", paperformat=document.paperformat.A4)
+c.writeEPSfile("test_text", page_paperformat=document.paperformat.A4)

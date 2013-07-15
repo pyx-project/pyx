@@ -9,6 +9,6 @@ c.fill(p)
 
 c.fill(p, [trafo.translate(4, 0), style.fillrule.even_odd])
 
-c.writeEPSfile(paperformat=document.paperformat.A4, fittosize=1)
-c.writePDFfile(paperformat=document.paperformat.A4, fittosize=1)
+c.writeEPSfile(page_paperformat=document.paperformat.A4, page_fittosize=1)
+c.writePDFfile(page_paperformat=document.paperformat.A4, page_fittosize=1)
 

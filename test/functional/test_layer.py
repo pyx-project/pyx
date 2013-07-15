@@ -13,6 +13,6 @@ l2.text(0.5, 0, "2", [color.rgb.green, text.halign.center, text.vshift.mathaxis]
 l1a.text(0.75, 0, "1a", [color.rgb.blue, text.halign.center, text.vshift.mathaxis])
 l1a.stroke(path.line(0.25, -0.25, 0.25, 0.25), [color.rgb.blue])
 
-c.writeEPSfile("test_layer", paperformat=document.paperformat.A4, fittosize=1)
-c.writePDFfile("test_layer", paperformat=document.paperformat.A4, fittosize=1)
+c.writeEPSfile("test_layer", page_paperformat=document.paperformat.A4, page_fittosize=1)
+c.writePDFfile("test_layer", page_paperformat=document.paperformat.A4, page_fittosize=1)
 
