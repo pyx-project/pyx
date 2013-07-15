@@ -110,8 +110,9 @@ class decimal:
                     if not ((tick.temp_decprecision - 1) % 3) and tick.temp_decprecision > 1:
                         tick.label += self.thousandthpartsep
                     tick.label += str(quotient)
-                if maxdecprecision < tick.temp_decprecision:
-                    maxdecprecision = tick.temp_decprecision
+                else:
+                    if maxdecprecision < tick.temp_decprecision:
+                        maxdecprecision = tick.temp_decprecision
         if self.equalprecision:
             for tick in labeledticks:
                 if tick.temp_decprecision is not None:
