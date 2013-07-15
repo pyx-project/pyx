@@ -228,7 +228,7 @@ class pos(_style):
                 sharedata.vposavailable = sharedata.vposvalid = 0
                 sharedata.vpos[index] = None
             else:
-                if v is None or v < -self.epsilon or v > 1+self.epsilon:
+                if v < -self.epsilon or v > 1+self.epsilon:
                     sharedata.vposvalid = 0
                 sharedata.vpos[index] = v
 

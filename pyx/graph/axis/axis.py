@@ -389,7 +389,7 @@ class bar(_axis):
 
     def convert(self, data, value):
         if value[0] is None:
-            return None
+            raise ValueError
         axis = data.subaxes[value[0]]
         vmin = axis.vmin
         vmax = axis.vmax
