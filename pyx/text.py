@@ -743,9 +743,9 @@ def _cleantmp(texrunner):
     if texrunner.texruns: # cleanup while TeX is still running?
         texrunner.expectqueue.put_nowait(None)              # do not expect any output anymore
         if texrunner.mode == "latex":                       # try to immediately quit from TeX or LaTeX
-            texrunner.texinput.write("\n\\catcode`\\@11\\relax\\@@end\n")
+            texrunner.texinput.write(b"\n\\catcode`\\@11\\relax\\@@end\n")
         else:
-            texrunner.texinput.write("\n\\end\n")
+            texrunner.texinput.write(b"\n\\end\n")
         texrunner.texinput.close()                          # close the input queue and
         if not texrunner.waitforevent(texrunner.quitevent): # wait for finish of the output
             return                                          # didn't got a quit from TeX -> we can't do much more
