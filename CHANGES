@@ -1,5 +1,5 @@
 0.???? (2013/??/??):
-  - Requires at least Python 3.3
+  - Requires at least Python 3.2
   - filelocator module:
     - cygwin LaTeX with windows python patch (thanks to Sybren A. Stüvel)
   - graph styles:
