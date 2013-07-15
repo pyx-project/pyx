@@ -1,7 +1,8 @@
 # Makefile for Sphinx documentation
 #
 
-PYTHON ?= python
+PYTHON ?= python3
+GS ?= gs
 
 # You can set these variables from the command line.
 SPHINXOPTS    =
@@ -34,6 +35,8 @@ latexpdf: figs
 
 figs: $(patsubst %.py, %.png, $(filter-out conf.py,$(wildcard *.py)))
 
-%.png: %.py
+%.pdf: %.py
 	export PYTHONPATH=$(CURDIR)/.. ; $(PYTHON) $^
-	$(PYTHON) ../contrib/epstopng.py -o $@ $*.pdf
+
+%.png: %.pdf
+	$(GS) -r100 -dNOPAUSE -dQUIET -dBATCH -sDEVICE=pngalpha -dTextAlphaBits=4 -dGraphicsAlphaBits=4 -sOutputFile=$@ $^

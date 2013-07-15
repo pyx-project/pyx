@@ -1,4 +1,4 @@
-PYTHON ?= python
+PYTHON ?= python3
 GS ?= gs
 
 files = $(foreach item, $(shell grep -v / INDEX), $(item)) $(foreach item, $(shell grep / INDEX), $(addprefix $(item), $(shell cat $(item)INDEX)))
@@ -19,7 +19,7 @@ all:
 	make png
 
 %.eps: %.py
-	cd $(dir $^); PYTHONPATH=$(CURDIR)/.. $(PYTHON) $(notdir $^)
+	cd $(dir $^); PYTHONPATH=$(CURDIR)/.. $(PYTHON) -W default $(notdir $^)
 
 misc/pattern.png: misc/pattern.eps
 	$(GS) -r400 -dEPSCrop -dNOPAUSE -dQUIET -dBATCH -sDEVICE=pnm -sOutputFile=- $^|pnmscale 0.25|pnmtopng -transparent 'rgb:ff/ff/ff' > $@
