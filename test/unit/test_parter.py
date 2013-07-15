@@ -12,12 +12,12 @@ from pyx.graph.axis.parter import lin, log, preexp
 class ParterTestCase(unittest.TestCase):
 
     def PartEqual(self, part1, part2):
-        self.failUnlessEqual(len(part1), len(part2))
+        self.assertEqual(len(part1), len(part2))
         for tick1, tick2 in zip(part1, part2):
-            self.failUnlessEqual(tick1, tick2)
-            self.failUnlessEqual(tick1.ticklevel, tick2.ticklevel)
-            self.failUnlessEqual(tick1.labellevel, tick2.labellevel)
-            self.failUnlessEqual(tick1.label, tick2.label)
+            self.assertEqual(tick1, tick2)
+            self.assertEqual(tick1.ticklevel, tick2.ticklevel)
+            self.assertEqual(tick1.labellevel, tick2.labellevel)
+            self.assertEqual(tick1.label, tick2.label)
 
     def testLinParter(self):
         self.PartEqual(lin(tickdists=["10"], labeldists=[]).partfunctions(0, 1, 1, 1)[0](),

@@ -10,7 +10,7 @@ from pyx import text, unit
 
 class MessageParserTestCase(unittest.TestCase):
 
-    def failUnlessRaisesUserWarning(self, texexpression, warningmessage, textattrs=[], texmessages=[]):
+    def assertRaisesUserWarning(self, texexpression, warningmessage, textattrs=[], texmessages=[]):
         try:
             warnings.resetwarnings()
             warnings.filterwarnings(action="error")
@@ -28,7 +28,7 @@ class MessageParserTestCase(unittest.TestCase):
                 raise
 
     def testWarnings(self):
-        self.failUnlessRaisesUserWarning(r"\some \badly \broken \TeX", r"""ignoring all warnings:
+        self.assertRaisesUserWarning(r"\some \badly \broken \TeX", r"""ignoring all warnings:
 *
 *! Undefined control sequence.
 <argument> \some 
@@ -50,18 +50,18 @@ class MessageParserTestCase(unittest.TestCase):
 *
 
 """, texmessages=[text.texmessage.allwarning])
-        self.failUnlessRaisesUserWarning(r"\fontseries{invalid}\selectfont{}hello, world", r"""ignoring font warning:
+        self.assertRaisesUserWarning(r"\fontseries{invalid}\selectfont{}hello, world", r"""ignoring font warning:
 LaTeX Font Warning: Font shape `OT1/cmr/invalid/n' undefined
 (Font)              using `OT1/cmr/m/n' instead on input line 0.""", texmessages=[text.texmessage.fontwarning])
-        self.failUnlessRaisesUserWarning(r"hello, world", r"""ignoring overfull/underfull box warning:
+        self.assertRaisesUserWarning(r"hello, world", r"""ignoring overfull/underfull box warning:
 Overfull \hbox (8.22089pt too wide) detected at line 0
 []\OT1/cmr/m/n/10 hello,""", textattrs=[text.parbox(30*unit.u_pt)])
-        self.failUnlessRaisesUserWarning(r"\hbadness=0hello, world, hello", r"""ignoring overfull/underfull box warning:
+        self.assertRaisesUserWarning(r"\hbadness=0hello, world, hello", r"""ignoring overfull/underfull box warning:
 Underfull \hbox (badness 171) detected at line 0
 []\OT1/cmr/m/n/10 hello, world,""", textattrs=[text.parbox(2.5)])
-        self.failUnlessRaisesUserWarning(r"\parindent=0pt\vbox to 1cm {hello, world, hello, world, hello, world}", r"""ignoring overfull/underfull box warning:
+        self.assertRaisesUserWarning(r"\parindent=0pt\vbox to 1cm {hello, world, hello, world, hello, world}", r"""ignoring overfull/underfull box warning:
 Overfull \vbox (2.4917pt too high) detected at line 0""", textattrs=[text.parbox(1.9)])
-        self.failUnlessRaisesUserWarning(r"\parindent=0pt\vbox to 1cm {hello, world, hello, world}", r"""ignoring overfull/underfull box warning:
+        self.assertRaisesUserWarning(r"\parindent=0pt\vbox to 1cm {hello, world, hello, world}", r"""ignoring overfull/underfull box warning:
 Underfull \vbox (badness 10000) detected at line 0""", textattrs=[text.parbox(1.9)])
 
     def testLoadLongFileNames(self):

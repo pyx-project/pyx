@@ -29,9 +29,9 @@ class PolynomTestCase(unittest.TestCase):
                 del found[i]
             else:
                 i += 1
-        self.failUnlessEqual(len(found), len(should))
+        self.assertEqual(len(found), len(should))
         for r1, r2 in zip(found, should):
-            self.failUnlessAlmostEqual(r1, r2)
+            self.assertAlmostEqual(r1, r2)
 
     def testConstant(self):
         self.compareRoots(mathutils.realpolyroots(1), [])

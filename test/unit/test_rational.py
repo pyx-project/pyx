@@ -11,7 +11,7 @@ from pyx.graph.axis.tick import rational
 class RationalTestCase(unittest.TestCase):
 
     def RationalEqual(self, num, denom, r):
-        self.failUnlessEqual(num*r.denom, r.num*denom)
+        self.assertEqual(num*r.denom, r.num*denom)
 
     def testRationalInitSeq(self):
         self.RationalEqual(1, 1, rational((2, 2)))
@@ -39,29 +39,29 @@ class RationalTestCase(unittest.TestCase):
         self.RationalEqual(-1, 100000000000000000000, rational("-1e-20"))
 
         self.RationalEqual(1234, 1, rational(" 1234"))
-        self.failUnlessRaises(ValueError, rational, "12 34")
-        self.failUnlessRaises(ValueError, rational, "1 2.34")
-        self.failUnlessRaises(ValueError, rational, "12 .34")
-        self.failUnlessRaises(ValueError, rational, "12. 34")
-        self.failUnlessRaises(ValueError, rational, "12.3 4")
+        self.assertRaises(ValueError, rational, "12 34")
+        self.assertRaises(ValueError, rational, "1 2.34")
+        self.assertRaises(ValueError, rational, "12 .34")
+        self.assertRaises(ValueError, rational, "12. 34")
+        self.assertRaises(ValueError, rational, "12.3 4")
         self.RationalEqual(1234, 100, rational("12.34 "))
         self.RationalEqual(1234, 1, rational(" +1234"))
         self.RationalEqual(-1234, 1, rational(" -1234"))
-        self.failUnlessRaises(ValueError, rational, " + 1234")
-        self.failUnlessRaises(ValueError, rational, " - 1234")
-        self.failUnlessRaises(ValueError, rational, "12.34 e0")
-        self.failUnlessRaises(ValueError, rational, "12.34e 0")
+        self.assertRaises(ValueError, rational, " + 1234")
+        self.assertRaises(ValueError, rational, " - 1234")
+        self.assertRaises(ValueError, rational, "12.34 e0")
+        self.assertRaises(ValueError, rational, "12.34e 0")
         self.RationalEqual(1234, 10000, rational("12.34e-2"))
         self.RationalEqual(1234, 1000, rational("12.34E-1"))
         self.RationalEqual(1234, 100, rational("12.34e0 "))
         self.RationalEqual(1234, 10, rational("12.34E+1"))
         self.RationalEqual(1234, 1, rational("12.34e+2"))
-        self.failUnlessRaises(ValueError, rational, "12.34e -0")
-        self.failUnlessRaises(ValueError, rational, "12.34e+ 0")
-        self.failUnlessRaises(ValueError, rational, "12.34e- 0")
-        self.failUnlessRaises(ValueError, rational, "12.34e +0")
-        self.failUnlessRaises(ValueError, rational, "12.34.56")
-        self.failUnlessRaises(ValueError, rational, "12e34.56")
+        self.assertRaises(ValueError, rational, "12.34e -0")
+        self.assertRaises(ValueError, rational, "12.34e+ 0")
+        self.assertRaises(ValueError, rational, "12.34e- 0")
+        self.assertRaises(ValueError, rational, "12.34e +0")
+        self.assertRaises(ValueError, rational, "12.34.56")
+        self.assertRaises(ValueError, rational, "12e34.56")
 
     def testRationalInitStrings(self):
         self.RationalEqual(1, 2, rational("1/2"))
