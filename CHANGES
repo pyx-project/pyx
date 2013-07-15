@@ -23,7 +23,7 @@
   - text module:
     - new texenc setting (TODO documentation)
   - font/afmfile module:
-    - Parse more AFM files, also some with common inconsistencies (thanks to
+    - parse more AFM files, also some with common inconsistencies (thanks to
       Markus Schwienbacher for reporting these issues)
 
 0.12.1 (2012/10/26):
