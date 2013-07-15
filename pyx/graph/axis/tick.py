@@ -194,6 +194,8 @@ class rational:
         self.denom *= other.num
         return self
 
+    __itruediv__ = __idiv__
+
     def __float__(self):
         "caution: avoid final precision of floats"
         return float(self.num) / self.denom
