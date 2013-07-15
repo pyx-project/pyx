@@ -94,7 +94,7 @@ class recursivedir:
     """locates files by searching recursively in a list of directories"""
 
     def __init__(self):
-        self.dirs = getlist("locator", "recursivedir")
+        self.dirs = getlist("filelocator", "recursivedir")
         self.full_filenames = {}
 
     def openers(self, filename, names, extensions):
@@ -121,7 +121,7 @@ class ls_R:
     """locates files by searching a list of ls-R files"""
 
     def __init__(self):
-        self.ls_Rs = getlist("locator", "ls-R")
+        self.ls_Rs = getlist("filelocator", "ls-R")
         self.full_filenames = {}
 
     def openers(self, filename, names, extensions):
@@ -130,7 +130,8 @@ class ls_R:
             base_dir = os.path.dirname(lsr)
             dir = None
             first = True
-            for line in builtinopen(lsr, "r", encoding="ascii", errors="surrogateescape"):
+            lsrfile = builtinopen(lsr, "r", encoding="ascii", errors="surrogateescape")
+            for line in lsrfile:
                 line = line.rstrip()
                 if first and line.startswith("%"):
                     continue
@@ -139,6 +140,7 @@ class ls_R:
                     dir = os.path.join(base_dir, line[:-1])
                 elif line:
                     self.full_filenames[line] = os.path.join(dir, line)
+            lsrfile.close()
         for extension in extensions:
             if filename+extension in self.full_filenames:
                 def _opener():
