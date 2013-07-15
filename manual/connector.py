@@ -1,7 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: ISO-8859-15 -*-
-import sys
-sys.path.insert(0, "..")
 from math import *
 from pyx import *
 try:

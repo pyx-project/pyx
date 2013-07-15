@@ -1,6 +1,3 @@
-#!/usr/bin/env python
-import sys
-sys.path[:0] = [".."]
 from pyx import *
 
 c = canvas.canvas()
