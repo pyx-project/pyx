@@ -2,7 +2,7 @@ import sys, os, os.path, cgi, io, codecs, glob, re, warnings
 import keyword, token, tokenize
 import xml.dom.minidom
 from zope.pagetemplate.pagetemplate import PageTemplate
-import Image
+from PIL import Image
 
 sys.path[:0]=[".."]
 import pyx
@@ -29,7 +29,8 @@ class MakeHtml:
         self.col = 0
         self.tokclass = None
         self.output.write("<pre id=python>")
-        tokenize.tokenize(input.readline, self.tokeneater)
+        for token in tokenize.generate_tokens(input.readline):
+            self.tokeneater(*token)
         if self.tokclass is not None:
             self.output.write('</span>')
         self.output.write("</pre>\n")

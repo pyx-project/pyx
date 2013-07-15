@@ -6,12 +6,8 @@ path which has always constant (signed) distance to an original path. ...
 The correct geometrical solution to the "constant distance" problem is that a
 corner of the original curve gets surrounded by an arc. As an alternative, you
 can make the deformer deviate from the strict geometrical interpretation with
-the argument
-
-    `sharpoutercorners=1`
-
-The resulting parallel path will then exhibit corners with the same angle as
-the original path does.
+the argument `sharpoutercorners=1`. The resulting parallel path will then
+exhibit corners with the same angle as the original path does.
 
 !! The parallel deformer tries to find the parallel path which consists of as
 few path elements as possible. This is a striking feature of the parallel
