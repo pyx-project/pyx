@@ -182,14 +182,6 @@ class graph(canvas.canvas):
         return canvas.canvas.bbox(self)
 
 
-    def registerPS(self, registry):
-        self.finish()
-        canvas.canvas.registerPS(self, registry)
-
-    def registerPDF(self, registry):
-        self.finish()
-        canvas.canvas.registerPDF(self, registry)
-
     def processPS(self, file, writer, context, registry, bbox):
         self.finish()
         canvas.canvas.processPS(self, file, writer, context, registry, bbox)
