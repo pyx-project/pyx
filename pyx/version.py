@@ -22,5 +22,5 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 
-version = "0.12.1"
-date = "2012/10/26"
+version = "0.12+"
+date = "2013/??/??"
