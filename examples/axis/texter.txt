@@ -1,0 +1,22 @@
+Texter: Controlling the formatting of tick labels
+
+Texters do the formatting of the tick labels: They create the strings which are
+then passed to the painter. You can choose between fractions and decimal
+numbers with/without an exponential part. ... The `texter` should not be mixed
+up with the `painter`: The `painter` is afterwards doing the TeXing and finally
+creates the labels -- the `texter` prepares the string that is to be processed
+by TeX.
+
+The first example shows the default behavior, which chooses either decimal and
+exponential formatting.
+
+The second example is for special purpose only (because it is ugly), in case
+that it is strictly necessary to have the same width of all labels.
+
+The third example shows how to create fractions instead of decimal numbers.
+
+! At the rightmost axis we also show how to create a special piaxis. Here, some
+axis parameters are altered to fit an pi-scaled axis nicely. Futhermore,
+instead of just creating a special axis instance by setting the divisor and
+texter parameters, a `piaxis` class is created which just alters the defaults
+of the linear axis it is based at.

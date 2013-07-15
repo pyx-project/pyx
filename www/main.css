@@ -1,0 +1,275 @@
+body {
+        margin: 0px;
+        padding: 0px;
+        color: #333;
+        background-color: #ffe;
+        font: 11pt verdana,helvetica,sans-serif;
+}
+
+img {
+        border-width: 0px;
+}
+
+a {
+        color:#a33;
+        text-decoration: None;
+}
+
+a:hover {
+        text-decoration: underline;
+}
+
+/* page layout */
+
+/* background needed when neither navigation nor content fill the available
+ * vertical space (it's a workaround for browsers which do not support
+ * min-height properly) */
+#background {
+        position: absolute;
+        top: 0px;
+        left: 0px;
+        width: 200px;
+        height: 100%;
+        border-right: 1px solid #88a;
+        background-color: #eed;
+        z-index: 1;
+}
+
+#navigation {
+        position: absolute;
+        top: 0px;
+        left: 0px;
+        width: 200px;
+        border-right: 1px solid #88a;
+        background-color: #eed;
+        z-index: 3;
+}
+
+/* the content is placed into a wrapper to enlarge
+   the navigation area to the size of the content */
+
+#contentwrapper {
+        min-width: 700px;
+        top: 0px;
+        left: 0px;
+        border-left: 200px solid #eed;
+        z-index: 2;
+}
+
+#content {
+        padding-left: 25px;
+        padding-right: 25px;
+        border-left: 1px solid #88a;
+}
+
+/* navigation elements */
+
+#navigation .logo {
+        margin-top: 20px;
+        margin-left: 39px;
+}
+
+#navigation .box {
+        width: 140px;
+        margin-top: 20px;
+        margin-left: 19px;
+        padding: 10px;
+        border: 1px dashed #88a;
+        background-color: #dcf;
+}
+
+#navigation .title {
+        margin-bottom: 10px;
+        border-bottom: 1px solid #88a;
+        font-size: 13pt;
+        font-weight: bolder;
+}
+
+#navigation .link {
+        font-size: 10pt;
+}
+
+#navigation .sublink {
+        margin-left: 10px;
+        font-size: 10pt;
+}
+
+#navigation .sflink {
+        padding-top: 60px;
+        padding-left: 56px;
+        padding-bottom: 20px;
+}
+
+#navigation .w3clink {
+        padding-left: 58px;
+        padding-bottom: 20px;
+}
+
+/* content elements */
+
+#content h1 {
+        padding: 0px;
+        margin: 0px;
+        margin-top: 15px;
+        margin-bottom: 15px;
+        padding-bottom: 3px;
+        border-bottom: 1px solid #88a;
+        font-size: 18pt;
+        font-weight: bolder;
+}
+
+#content h2 {
+        padding: 0px;
+        margin: 0px;
+        padding-bottom: 10px;
+        font-size: 14pt;
+        font-weight: bolder;
+}
+
+#content h3 {
+        padding: 0px;
+        margin: 0px;
+        padding-bottom: 10px;
+        font-size: 12pt;
+        font-weight: bold;
+}
+
+#content .image {
+        margin-left: 10px;
+        margin-bottom: 10px;
+        padding: 10px;
+        border: 1px dashed #88a;
+        background-color: #eed;
+        float:right;
+        font-size: 9pt;
+        text-align: center;
+        font-style: italic;
+}
+
+#content p {
+        padding: 0px;
+        margin: 0px;
+        padding-bottom: 10pt;
+}
+
+#content dl {
+        padding: 0px;
+        margin: 0px;
+}
+
+#content dt {
+        padding: 0px;
+        margin: 0px;
+        padding-bottom: 5pt;
+        font-weight: bold;
+}
+
+#content dd {
+        padding: 0px;
+        margin: 0px;
+        padding-left: 25px;
+        padding-bottom: 15pt;
+}
+
+#content ul {
+        padding: 0px;
+        margin: 0px;
+        padding-left: 25px;
+        padding-bottom: 15pt;
+}
+
+#content li {
+        padding: 0px;
+        margin: 0px;
+}
+
+#content .tablepar {
+        padding: 0px;
+        margin: 0px;
+        padding-bottom: 15pt;
+}
+
+#content .tablehead {
+        background-color: #dcf;
+}
+
+#content .examplenavigations {
+        float: right;
+}
+
+#content .examplenavigation {
+        margin-left: 15px;
+}
+
+#content .exampleseparator {
+        margin-bottom: 15px;
+        border-bottom: 1px solid #88a;
+        clear: both;
+}
+
+#content .exampledownloads {
+        float: right;
+}
+
+#content .exampledownload {
+        margin-left: 10px;
+        text-align: center;
+        float: left;
+}
+
+#content .exampledownloadsize {
+        font-size: 8pt;
+}
+
+#content .examplethumbnail {
+        padding-left: 15px;
+        padding-bottom: 15px;
+        text-align: center;
+        float: right;
+}
+
+#content .examplebend {
+        padding-right: 5px;
+        float: left;
+}
+
+#content .exampleimage {
+        padding-bottom: 15px;
+        text-align: center;
+        clear: both;
+}
+
+#content .examplecode {
+        padding-bottom: 15px;
+}
+
+#content .codeindent {
+        padding-left: 50px;
+}
+
+/* python syntax */
+
+#python .number {
+        color: #08c;
+}
+
+#python .op {
+        color: #00c;
+}
+
+#python .string {
+        color: #048;
+}
+
+#python .comment {
+        color: #080;
+}
+
+#python .name {
+        color: #000;
+}
+
+#python .keyword {
+        color: #c00;
+}
+

@@ -1,0 +1,29 @@
+* ticks bleiben immer Striche
+  --> kriegen einen Vektor fuer die Richtung in 3D
+
+* 4 feste Achsen pro Dimension (x ist immer an derselben stelle)
+
+* trafo3D: modul fuer 3D->2D projektoren
+
+* Geometrie:
+  Es wird eine minimale Geschw. delta im normpath eingefuehrt.
+  delta != epsilon
+
+  1 Randfaelle: v am Rand < delta:
+     Bestimme den Parameter, an dem v == delta (Gl. 4.Grades)
+     --> Tangente bekannt
+     Setze den ersten Kontrollpunkt in Richtung der Tangente so, dass
+     v = delta wird.
+  2. Suche Parameter minimaler Geschw. (Gl. 3.Grades)
+     Wenn v < delta:
+       teile an dieser Stelle.
+
+
+  Append wird kompliziert: Stelle sicher, dass die endgueltig eingefuegte Kurve kein v < delta hat.
+    --> zuerst Skippedline anwenden
+    --> dann delta-Test machen
+
+  Wert von delta:
+    Eine Linie der Laenge 10m hat Geschw. v = 3.5e-5 1/pt
+    also delta = 1e-5 sinnvoll.
+

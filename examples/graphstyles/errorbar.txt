@@ -1,0 +1,32 @@
+Combining several graph styles
+
+In this example several graph styles are applied one after the other to stroke
+symbols and errorbars for the given data. This can be achieved by passing a
+list of graph styles as the second parameter to the graph style. ...
+
+When you do set the second argument in the graphs plot command, default graph
+styles are used to plot the data. The default for the graph styles depend is a
+property of the data instance passed in the first argument of the plot command.
+While the list and file data instances use a `graph.style.symbol` instance by
+default, for functions and parametric functions a `graph.style.line` instance
+is used.
+
+The style instances parse the column names for appropriate entries to generate
+the corresponding output. In this case, the `x` and `y` values are used by
+both, the symbol and the errorbar style, whereas `dy` is used by the
+`errorbar` style only.
+
+! You could also provide data for `ymin` and `ymax` to the errorbar style
+instead of `dy`. The errorbar style can also draw errorbars in x-direction
+using `dx` or `xmin` and `xmax`. You can add errorbars in both graph directions
+at the same time.
+
+!! The `x` and `y` data is not used by the symbol style nor the errorbar style
+directly (except for calculating the minimal and maximal value in y-direction
+by the errorbar due to the parametrization by `y` and `dy`). Instead a
+positioning style is inserted implicitly (a instance of graph.style.pos) as a
+position information is needed by the symbol and errorbar styles. By that the
+styles don't need to perform certain operations several times. Additionally the
+styles can also be used on graphs, which behave different in their positioning
+properties like bar graphs where you can use the same styles by just using a
+different positioning style.

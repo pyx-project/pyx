@@ -1,0 +1,16 @@
+Drawing a density plot
+
+2 dimensional plots where the value of each point is represented by a color can
+be created by the density style. ... The data points have to be spaced
+equidistantly in each dimension with the possible exception of missing data.
+
+For data which is not equidistantly spaced but still arranged in a grid,
+`graph.style.surface` can be used, which also provides a smooth representation
+by means of a color interpolation between the mesh moints. Finally, for
+completely unstructured data, `graph.style.rect` can be used.
+
+!The plot is encoded in an efficient way using a bitmap. Unfortunately, this
+means, that the HSB color space cannot be used (due to limitations of the
+bitmap color spaces in PostScript and PDF). Some of the predefined gradients in
+PyX, e.g. `color.gradient.Rainbow`, cannot be used here. As a workaround, PyX
+provides those gradients in other color spaces as shown in the example.

@@ -1,0 +1,325 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{array}
+\usepackage{graphicx}
+\newcommand{\sign}{\operatorname{sign}}
+
+\begin{document}
+
+\section{B\'ezier curves with prescribed tangent directions and curvatures at the endpoints}
+
+% <<<
+Parameterization of the B\'ezier curve, for $x(t)$ and $y(t)$ equivalently,
+%
+\begin{align}
+  x(t) &= x_0(1-t)^3 + 3x_1t(1-t)^2 + 3x_2t^2(1-t) + x_3 t^3\\
+  \dot x(t) &= 3(x_1-x_0)(1-t)^2 + 3(x_3-x_2)t^2 + 6(x_2-x_1)t(1-t) \\
+  \ddot x(t) &= 6(x_0 - 2x_1 + x_2)(1-t) + 6(x_1-2x_2+x_3) t \\
+  \dddot x(t) &= 6(x_3-x_0) + 18(x_1-x_2)
+\end{align}
+%
+The curvature is
+\begin{equation}
+  \kappa(t) = \frac{\dot x\ddot y - \ddot x\dot y}{[\dot x^2 + \dot y^2]^{3/2}}
+\end{equation}
+%
+with the sign
+%
+\begin{equation}
+  \begin{aligned}
+    \sign\kappa &> 0 \quad\text{for left bendings}\\
+    \sign\kappa &< 0 \quad\text{for right bendings.}
+  \end{aligned}
+\end{equation}
+%
+At the endpoints we can summarize:
+%
+\begin{align}
+  \dot x(0)  &= 3(x_1 - x_0) \\
+  \dot x(1)  &= 3(x_3 - x_2) \\
+  \ddot x(0) &= 6(x_0 - 2x_1 + x_2) = -4\dot x(0) - 2\dot x(1) + 6(x_3 - x_0) \\
+  \ddot x(1) &= 6(x_1 - 2x_2 + x_3) = +4\dot x(1) + 2\dot x(0) - 6(x_3 - x_0)
+\end{align}
+%
+and the same for the $y$ coordinates.
+The equations for the $\ddot x$ contain a convenient parameterization for this
+problem, with given endpoints and tangent directions. We now introduce two
+parameters for the distances between the first and the last pair of control
+points:
+%
+\begingroup
+\arraycolsep=0pt
+\begin{align}
+  \left(\begin{array}{cc}
+    x_1-x_0 \\ y_1-y_0
+  \end{array}\right)
+  &= \frac{1}{3}
+  \left(\begin{array}{cc}
+    \dot x(0) \\ \dot y(0)
+  \end{array}\right)
+  =: \alpha
+  \left(\begin{array}{cc}
+    t_x(0) \\ t_y(0)
+  \end{array}\right) \\
+  \left(\begin{array}{cc}
+    x_3-x_2 \\ y_3-y_2
+  \end{array}\right)
+  &= \frac{1}{3}
+  \left(\begin{array}{cc}
+    \dot x(1) \\ \dot y(1)
+  \end{array}\right)
+  =: \beta
+  \left(\begin{array}{cc}
+    t_x(1) \\ t_y(1)
+  \end{array}\right) \qquad
+\end{align}
+\endgroup
+%
+Here, the externally prescribed tangent vectors are expected to be parallel to
+the tangent vectors of the parameterization and normalized to 1. This implies
+$\alpha>0$ and $\beta>0$ are the distances between the endpoints and their
+corresponding control points.
+
+The problem to now to find proper parameters $\alpha>0$ and $\beta>0$ for a given set of
+endpoints $(x_0,y_0)$, $(x_3, y_3)$,
+normalized tangent vectors $\mathbf{t}(0)$, $\mathbf{t}(1)$ and of
+curvatures $\kappa(0), \kappa(1)$.
+The rest of the control points is then given by
+%
+\begin{equation}
+  x_1 = x_0 + \alpha t_x(0) \quad\text{and}\quad
+  x_2 = x_3 - \beta  t_x(1).
+\end{equation}
+%
+For the curvatures at the endpoints we get a nonlinear equation,
+%
+\begin{align}
+  \kappa(0) (\dot x^2(0) + \dot y^2(0))^{3/2}
+  &= \dot x(0) \ddot y(0) - \ddot x(0) \dot y(0) \\
+  = 27 \kappa(0) |\alpha|^3
+  &= \begin{aligned}[t]
+      &+\dot x(0) \bigl[- 4\dot y(0) - 2\dot y(1) + 6(y_3-y_0)\bigr] \\
+      &-\dot y(0) \bigl[- 4\dot x(0) - 2\dot x(1) + 6(x_3-x_0)\bigr]
+     \end{aligned}\\
+  &= \begin{aligned}[t]
+      &-2 \bigl[\dot x(0) \dot y(1) - \dot y(0)\dot x(1)\bigr] \\
+      &+6 \bigl[\dot x(0) (y_3-y_0) - \dot y(0) (x_3-x_0)\bigr]
+     \end{aligned}\\
+  &= \begin{aligned}[t]
+      &-18 \alpha\beta \bigl[t_x(0)t_y(1) - t_y(0)t_x(1)\bigr] \\
+      &+18 \alpha \bigl[t_x(0) (y_3-y_0) - t_y(0) (x_3-x_0)\bigr]
+     \end{aligned}
+\end{align}
+%
+And short,
+%
+\begin{equation}
+  0 = \frac{3}{2}\kappa(0) \alpha^2 \sign(\alpha)
+    + \beta \bigl[t_x(0)t_y(1) - t_y(0)t_x(1)\bigr]
+    - \bigl[t_x(0) (y_3-y_0) - t_y(0) (x_3-x_0)\bigr]
+\end{equation}
+%
+A similar calculation can be done for the end curvature,
+%
+\begin{align}
+  \kappa(1) (\dot x^2(1) + \dot y^2(1))^{3/2}
+  &= \dot x(1) \ddot y(1) - \ddot x(1) \dot y(1) \\
+  = 27 \kappa(1) |\beta|^3
+  &= \begin{aligned}[t]
+       &+\dot x(1) \bigl[ 4\dot y(1) + 2\dot y(0) - 6(y_3-y_0)\bigr] \\
+       &-\dot y(1) \bigl[ 4\dot x(1) + 2\dot x(0) - 6(x_3-x_0)\bigr]
+     \end{aligned}\\
+  &= \begin{aligned}[t]
+       &-2 \bigl[\dot x(0) \dot y(1) - \dot y(0)\dot x(1)\bigr] \\
+       &-6 \bigl[\dot x(1) (y_3-y_0) - \dot y(1) (x_3-x_0)\bigr]
+     \end{aligned}\\
+  &= \begin{aligned}[t]
+       &-18 \alpha\beta \bigl[t_x(0)t_y(1) - t_y(0)t_x(1)\bigr] \\
+       &-18 \beta \bigl[t_x(1) (y_3-y_0) - t_y(1) (x_3-x_0)\bigr]
+     \end{aligned}
+\end{align}
+\begin{equation}
+  0 = \frac{3}{2}\kappa(1) \beta^2 \sign(\beta)
+    + \alpha \bigl[t_x(0)t_y(1) - t_y(0)t_x(1)\bigr]
+    + \bigl[t_x(1) (y_3-y_0) - t_y(1) (x_3-x_0)\bigr]
+\end{equation}
+%
+Alltogether, we find the system of equations that is to be solved.
+%
+\begin{gather}
+  \begin{aligned}
+    0 &= \frac{3}{2} \kappa(0) \alpha^2 \sign(\alpha) + \beta T - D \\
+    0 &= \frac{3}{2} \kappa(1) \beta^2 \sign(\beta) + \alpha T - E
+  \end{aligned}\\[\medskipamount]
+  \begin{aligned}
+    T &:= t_x(0)t_y(1) - t_y(0)t_x(1) \\
+    D &:= \bigl[t_x(0) (y_3-y_0) - t_y(0) (x_3-x_0)\bigr]\\
+    E &:= \bigl[t_x(1) (y_0-y_3) - t_y(1) (x_0-x_3)\bigr]
+  \end{aligned}
+\end{gather}
+%
+Decoupling the two equations causes problems with the absolute values,
+%
+\begin{align}
+  \alpha = \frac{1}{T}\left(E - \frac{3}{2}\kappa(1)\beta |\beta |\right)\quad\text{and}\quad
+  \beta  = \frac{1}{T}\left(D - \frac{3}{2}\kappa(0)\alpha|\alpha|\right)
+\end{align}
+%
+Thus, for $\alpha>0$ and $\beta>0$ we need also
+%
+\begin{align}
+  \frac{1}{T}\left(E - \frac{3}{2}\kappa(1)\beta |\beta |\right) > 0\quad\text{and}\quad
+  \frac{1}{T}\left(D - \frac{3}{2}\kappa(0)\alpha|\alpha|\right) > 0
+\end{align}
+%
+which is not always guaranteed. E.g. the combination
+%
+\begin{equation}
+  T>0,\quad E<0\quad\text{and}\quad \kappa(1)>0
+\end{equation}
+%
+is not compatible with a positive value of $\beta$. Under what circumstances do
+we get such geometrically invalid results? Tests show that even allowing
+arbitrary signs of the curvatures $\kappa(0)$~and $\kappa(1)$ does not help in
+all cases.
+
+The decoupled equations can be constructed by inserting $\alpha$~and $\beta$
+into the equations for the curvatures. This reads
+\begin{align}
+  0 &= \frac{3}{2}\kappa(0)\sign(\alpha)
+       \left(E - \frac{3}{2}\kappa(1)\beta |\beta |\right)^2
+     + \beta T^3 - D T^2 \\
+    &= \begin{aligned}[t]
+         \frac{27}{8} \kappa(0) \kappa^2(1) \sign(\alpha) \beta^4
+       - \frac{9}{2} E \kappa(0) \kappa(1) \sign(\alpha)\sign(\beta) \beta^2
+       + \beta T^3 \\
+     {}+ \frac{3}{2} \kappa(0) \sign(\alpha) E^2 - D T^2
+       \end{aligned}\\
+  0 &= \begin{aligned}[t]
+         \frac{27}{8} \kappa^2(0) \kappa(1) \sign(\beta) \alpha^4
+       - \frac{9}{2} D \kappa(0) \kappa(1) \sign(\alpha)\sign(\beta) \alpha^2
+       + \alpha T^3 \\
+     {}+ \frac{3}{2} \kappa(1) \sign(\beta) D^2 - E T^2
+       \end{aligned}
+\end{align}
+%
+% >>>
+
+\section{Bounding boxes for B\'ezier curves}
+
+% <<<
+The bounding box is defined by the minimal and maximal values of a
+curve. Hence the problem decouples for the two coordintes $x$ and $y$.
+We can search for the minima and maxima within the valid range for the
+parameter $t$ together with taking into account the values at the
+boundaries at $t=0$ and $t=1$.
+
+For the $x$ coordinate we have:
+\begin{align}
+  x(t) & = x_0(1-t)^3 + 3x_1t(1-t)^2 + 3x_2t^2(1-t) + x_3 t^3\\
+       & = (x_3-3x_2+3x_1-x_0)t^3 + (3x_0-6x_1+3x_2)t^2 + (3x_1-3x_0)t + x_0\\
+       & = a\,t^3 + \frac{3}{2}\,b\,t^2 + 3\,c\,t + x_0
+\end{align}
+%
+The constants $a$, $b$, and $c$ are
+%
+\begin{align}
+  a & = x_3-3x_2+3x_1-x_0 \\
+  b & = 2x_0-4x_1+2x_2 \\
+  c & = x_1-x_0
+\end{align}
+%
+Now $\dot x(t)$ is
+%
+\begin{equation}
+  \dot x(t) = 3\left[\,a\,t^2 + b\,t + c\,\right]
+\end{equation}
+%
+For a numerically stable calculation of the roots of the function, we
+first compute
+%
+\begin{equation}
+  q = -\frac{1}{2}\left[\,b+\mathrm{sgn}(b)\sqrt{b^2-4ac}\right]\, .
+\end{equation}
+%
+In case the square root is negative, we only need to take into account
+the values at the boundaries. Otherwise we need to take into account
+the two solutions
+%
+\begin{equation}
+  t_1 = \frac{q}{a} \quad\text{and}\quad t_2 = \frac{c}{q}
+\end{equation}
+%
+Again, for numerical failures (divisions by zero), we just need to skip
+the particular solution. The minima and maxima for $x(t)$ can now
+occur at $t=0$, $t=t_1$, $t=t_2$ and $t=1$.
+
+% >>>
+
+\section{Replacing B\'ezier curves by straight lines}
+
+% <<<
+\begin{figure}
+\centerline{\includegraphics{beziertoline}}
+\caption{Example for a replacement of a B\'ezier curve by a straight
+line.}
+\label{fig:beziertoline}
+\end{figure}
+
+To solve certain geometrical tasks like measuring the length of a
+path or finding intersection points between paths, B\'ezier curves
+are recusively reduced to smaller B\'ezier curves by splitting the
+curves at the parameter value 0.5 until the parts become almost
+straight. Using the notation shown in fig.~\ref{fig:beziertoline} the
+straightness is expressed by a length measurement summing up the
+distances $\overline{AB}=l_1$, $\overline{BC}=l_2$ and
+$\overline{CD}=l_3$ and comparing this to the direct connection
+$\overline{AD}$. When the difference becomes smaller than a threshold
+$\epsilon$, the curve is adequately expressed by a straight line
+either because the curve is almost straight or it is very short.
+
+However, although the geometric changes are limited to distances of
+$\epsilon$, the parametrization $t$ of the B\'ezier curve might be
+mistakenly represented by the straight line on a much larger scale.
+In the shown example, the point $X$ on the B\'ezier curve and $Y$ on
+the straight line are both taken at the parameter value $t=0.5$, but
+clearly are more separated from each other than one would expect from
+the geometric distance of the two paths. While the parametrization on
+a line is proportional to the arc length, a non-linear behaviour is
+found on a B\'ezier curve. This non-linearity is originated in
+considerably different lengths $l_1$, $l_2$ and $l_3$ and the mapping
+of the non-linear parameter to a linear parametrization (in terms of
+the arc length) can be reduced to a one-dimensional problem upon an
+error $\epsilon$:
+%
+\begin{equation}
+  x_0(1-t')+x_3t' = x_0(1-t)^3 + 3x_1t(1-t)^2 + 3x_2t^2(1-t) + x_3 t^3\,.
+\end{equation}
+%
+In this one-dimensional approximation the parameter $t'$ performs a
+linear mapping as for any straight line while $t$ represents the usual
+B\'ezier curve parametrization. It now becomes a matter of expressing
+$t$ by $t'$. The polynomial in $t$ to be solved is:
+%
+\begin{equation}
+  0 = at^3+bt^2+ct+d
+\end{equation}
+%
+with
+%
+\begin{align}
+  a & = x_3-3x_2+3x_1-x_0 = l_1-2l_2+l_3 \\
+  b & = 3x_0-6x_1+3x_2 = -3l_1+3l_2 \\
+  c & = 3x_1-3x_0 = 3l_1 \\
+  d & = t'(x_0-x_3) = -t'(l_1+l_2+l_3)\,.
+\end{align}
+%
+For $0\le t'\le1$ there will be at least one solution $0\le t\le1$.
+Several solutions are possible as well, although they should be close
+to each other since otherwise the straight line approximation would
+not be valid at all.
+% >>>
+
+\end{document}
+
+% vim:foldmethod=marker:foldmarker=<<<,>>>

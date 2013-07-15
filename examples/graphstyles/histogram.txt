@@ -1,0 +1,14 @@
+Creating a histogram
+
+Styles can alter the way data is presented in arbitrary ways. Here the
+histogram style is used to generate a histogram. ... By default the histogram
+draws a box for each histogram value, but you can set the `step` parameter of
+the histogram style to use steps instead.
+
+! In this basic use-case the histogram is calculated out of equal-spaced
+x-values automatically. You can also use errorbar like data in one graph
+dimension to generate histograms with different widths of the histogram boxes.
+
+! Note that a histogram is very different from a bar graph in that it uses
+regular axes (like the default linear axes in this example) in both graph
+dimensions. Instead, bar graphs use a discrete axis.

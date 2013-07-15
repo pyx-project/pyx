@@ -1,0 +1,147 @@
+Attributes. Design summary.
+===========================
+
+
+What are attributes?
+--------------------
+
+Attributes define properties of a given object when it is being used.
+They are instances derived from the class attr.attr. Typically, there
+are different kind of attributes which are usually orthogonal to each
+other, while for one attribute kind, several choices are possible.
+
+    Example:
+
+    When stroking a path, the linewidth and the linestyle are
+    different kind of attributes. The linewidth might be normal, thin,
+    thick, or whatever else. The linestyle might be solid, dashed etc.
+
+
+Where are attributes used?
+--------------------------
+
+Typically, attributes occur in lists passed as an optional keyword argument to
+a method or a function. The object the attributes are refering to is usually
+the first argument (not taking into account the self argument) of the method,
+like in
+
+    canvas.stroke(path, [attr1, attr2, attr3])
+
+
+Attribute categories
+--------------------
+
+There are different categories of attributes. We give a (not yet?)
+complete list here:
+
+    - stroke attributes, aka strokestyles (style module)
+      inherited from style.strokestyle
+    - fill attributes, aka fillstyles
+      inherited from style.fillstyle
+    - text attributes, aka textattrs (text module)
+      inherited from style.textattr
+    - decorators (deco module)
+      inherited from deco.deco
+    - transformations (trafo module)
+    - clippings?
+      (AW: might go away; boxes could do that)
+
+Operations usually allow for certain attibute categories only. For example when
+stroking a path, text attributes are not allowed, while stroke attributes and
+decoraters are. Some attributes might belong to several attribute categories
+like colors, which are both, stroke and fill attributes. This is described by
+multiple inheritance and the attribute categories can be queried using the
+builtin isinstance method.
+
+
+Attribute instances as member variables
+---------------------------------------
+
+Usable attributes are always instances. For simple attributes, we
+have the following technology:
+
+    class linewidth(strokestyle):
+
+        def __init__(...):
+        etc.
+
+    linewidth.normal = linewidth("0.2 mm")
+    linewidth.thick = linewidth("0.2828 mm")
+    etc.
+
+Thus there are different possibilities to get a linewidth: by
+linewidth("0.25 mm") and by linewidth.normal (and the like).
+Note that attribute classes usually contain a set of special
+attribute values as member variables. This is done in order
+to group the attributes in a nice way.
+
+
+Specializing attribute instances
+--------------------------------
+
+There might be more complicated attributes, where it is more
+questionable, how attribute instances should be used. An easy, yet not
+striking, example would be changes in some color parameters of a color
+attribute. Consider a CMYK color, where only the blackness should be
+changed. Thus we need to have a syntax for further specializing an
+already existing attribute instance. This could be done by __call__
+(or some arbitrary other named method --- the latter would not really
+be helpfull in the authors eyes). The code would look like:
+
+    some_cmyk_color = color.cmyk(0.1, 0.2, 0.3, 0.4)
+    darker_version = some_cmyk_color(b=1)
+
+Both, some_cmyk_color and darker_version are instances of color.cmyk.
+Since usually some parameters are to be changed only, the parameters
+should be accessable by keyword arguments. Attribute lists in keyword
+arguments could gain from the attribute replacement and clearing
+functionality described below. Basically, the specialization (__call__
+method) should take exactly the same arguments like the constructor
+(__init__ method). It might be consistent to provide the
+specialization possibility for all attribute instances.
+
+
+Merging attribute lists
+-----------------------
+
+Attributes allow for exclusion, overwriting each other and ordering.
+This process is called merging of attributes and it is performed by
+the function merge from attr.py.
+
+The merging process might take into account some default attributes.
+They are passed in a special keyword argument.
+
+    Example:
+
+    use_attr_list = attr.mergeattrs(original_attr_list)
+
+There are special clearing attributes, which overwrite other attributes and do
+not add themself when merging an attribute list. By that it is possible to
+change certain or all default attributes. To construct an instance of a
+clearing attributes which removes all preceding attributes of a certain
+class c use attr.clearclass(c). The attr module also contains a predefined
+instance attr.clear which clears all preceding attributes.
+
+
+Changeable attributes
+---------------------
+
+Changeable attributes are instances derived from attr.changeattr. They
+provide a select method with the following prototype:
+
+    select(self, index, total)
+
+The index is an unsigned integer and the total is a positive integer.
+The select method might raise an ValueError, when the select method is
+called for parameters, it doesn't allow for. An example would be a
+color change from a starting color to an end color. Such a changeable
+attribute would not allow for a total equals to 1.
+
+The select function from attr.py returns a list of attributes out of a
+list of attributes and changeable attributes. The prototype uses the
+same index and total arguments, as described above:
+
+    select(attr_list, index, total)
+
+When changeable attributes are used, the select process must be
+performed previous to the merging.

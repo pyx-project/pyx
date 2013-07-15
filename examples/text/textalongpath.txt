@@ -1,0 +1,12 @@
+Text along path
+
+In order to set text along a given path, you can use the `curvedtext()`
+decorator. The example shows a few useful parameter settings for this
+decorator.
+
+! To output just the curved text, but not the path, you can use the
+draw method of the canvas instead of the stroke method. By that the
+path is omitted in the output completely. In contrast, if you set the
+linewidth to zero instead, the path will still be visible, as those
+lines will be rendered as the thinnest available linewidth on the
+output device according to the PostScript and PDF specification.

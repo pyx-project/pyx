@@ -1,0 +1,10 @@
+Bar graphs
+
+In this section we show you the basic features of bar graphs in PyX. All
+examples shown here use the same data from `minimal.dat` available for download
+at the first [minimal bar-graph example minimal.html].
+
+Note that bar graphs differ from other xy-graphs in that they use ''discrete
+axes'' for one graph dimension. However, the only affected components of this
+fundamental change are one of the axes, which needs to be come a discrete one,
+i.e. a bar axis, and the usage of appropriate graph styles.

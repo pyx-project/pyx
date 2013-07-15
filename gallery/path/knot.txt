@@ -1,0 +1,18 @@
+Paths with constant distance
+
+The example shows how to create paths with constant distance. This is achieved
+with the aid of `deformer.parallel`, which has already been used in the above
+example. ...
+
+The first part of the example code is only for creating the middle line of the
+knot. In order to obtain a nicely curved rope, we smooth the such defined curve
+a bit.
+
+The individual parts of the knot must be stroked in a very specific way in
+order to achieve the correct overlapping of the knot. To this end, we split the
+base curve into five pieces.
+
+The key element of the example is the use of `deformer.parallel` which creates
+the curves with constant distance from the base curve. We apply the deformer
+four times, thus creating the outline path of two individual ropes, which
+parallel follow the shape of the knot.

@@ -1,0 +1,9 @@
+Skipping the first bar in a stacked bargraph
+
+This example shows a bar graph, which starts with a stacked bar skipping to
+plot the original bar. ... This is done by using stackedbarpos before plotting
+a bar with the bar style. However you can still add errorbars, even to the
+lower bound of the bar.
+
+!! This example also shows how to handle several errorbars in one plot command
+by the usenames argument of the range style.

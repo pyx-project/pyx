@@ -1,0 +1,5 @@
+Path features
+
+In this section we demonstrate the capabilities of paths in PyX. The goal is to
+give an overview of those operations that are intrinsic to paths and do not
+affect their drawing on a canvas.

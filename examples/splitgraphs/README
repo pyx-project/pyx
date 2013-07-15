@@ -1,0 +1,12 @@
+Split axes
+
+Split axes can be used to build axes containing axis breaks. While split axes
+work exactly like bar axes (they even share the same code except for the
+painter), their usage differs. A split axes has a tuple as its data value. The
+first value of the tuple identifies a sub-axis (for example by a unique
+integer) and the second is the value to be passed to the sub-axis. (For a bar
+axis, internally this is basically the same, but there the styles take care of
+the wrapping of the data into those tuples.)
+
+!! Note: Currently the graph styles are not aware of axis breaks. A generic
+notification mechanism for graph styles should be added at a later point.
