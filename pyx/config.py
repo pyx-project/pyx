@@ -193,7 +193,9 @@ class kpsewhich:
     def openers(self, filename, names, extensions):
         for name in names:
             try:
-                full_filenames = pycompat.popen('kpsewhich --format="%s" "%s"' % (name, filename)).read()
+                output = pycompat.popen('kpsewhich --format="%s" "%s"' % (name, filename))
+                full_filenames = output.read()
+                output.close()
             except OSError:
                 return []
             if full_filenames:

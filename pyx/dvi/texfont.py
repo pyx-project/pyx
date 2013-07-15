@@ -141,6 +141,7 @@ class virtualfont(TeXfont):
     def __init__(self, name, file, c, q, d, tfmconv, pyxconv, debug=0):
         TeXfont.__init__(self, name, c, q, d, tfmconv, pyxconv, debug)
         self.vffile = vffile.vffile(file, 1.0*q/d, tfmconv, pyxconv, debug > 1)
+        file.close()
 
     def getfonts(self):
         """ return fonts used in virtual font itself """
