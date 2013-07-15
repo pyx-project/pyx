@@ -344,9 +344,9 @@ class conffile(data):
           keyword arguments data and titles excluded"""
 
         def readfile(file, title):
-            config = configparser.ConfigParser()
+            config = configparser.ConfigParser(strict=False)
             config.optionxform = str
-            config.readfp(file)
+            config.read_file(file)
             sections = config.sections()
             sections.sort()
             columndata = [None]*len(sections)
