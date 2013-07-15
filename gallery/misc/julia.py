@@ -1,6 +1,6 @@
 # contributed by Stefan Schenk
 
-from io import StringIO
+from io import BytesIO
 from math import sqrt
 from pyx import *
 
@@ -13,9 +13,9 @@ c = 0.41 + 0.3j
 p = color.gradient.RedBlue
 
 def rgbcolortostring(c):
-    return "".join([chr(int(255*c.color[name])) for name in "rgb"])
+    return bytes([int(255*c.color[name]) for name in "rgb"])
 
-data = StringIO()
+data = BytesIO()
 
 # compute fractal
 for y in range(yiterations):
@@ -30,7 +30,7 @@ for y in range(yiterations):
                 data.write(rgbcolortostring(p.getcolor(1.0/sqrt(k+1))))
                 break
         else:
-            data.write("\0\0\0")
+            data.write(b"\0\0\0")
 
 # generate image from data
 julia = bitmap.image(xiterations, yiterations, "RGB", data.getvalue())
