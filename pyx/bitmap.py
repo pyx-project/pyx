@@ -135,20 +135,20 @@ class jpegimage(image):
         nestinglevel = 0
         try:
             while True:
-                if data[pos] == "\377" and data[pos+1] not in ["\0", "\377"]:
-                    # print "marker: 0x%02x \\%03o" % (ord(data[pos+1]), ord(data[pos+1]))
-                    if data[pos+1] == "\330":
+                if data[pos] == 0o377 and data[pos+1] not in [0, 0o377]:
+                    # print("marker: 0x%02x \\%03o" % (data[pos+1], data[pos+1]))
+                    if data[pos+1] == 0o330:
                         if not nestinglevel:
                             begin = pos
                         nestinglevel += 1
                     elif not nestinglevel:
                         raise ValueError("begin marker expected")
-                    elif data[pos+1] == "\331":
+                    elif data[pos+1] == 0o331:
                         nestinglevel -= 1
                         if not nestinglevel:
                             end = pos + 2
                             break
-                    elif data[pos+1] in ["\300", "\301"]:
+                    elif data[pos+1] in [0o300, 0o301]:
                         l, bits, height, width, components = struct.unpack(">HBHHB", data[pos+2:pos+10])
                         if bits != 8:
                             raise ValueError("implementation limited to 8 bit per component only")
@@ -157,7 +157,7 @@ class jpegimage(image):
                         except KeyError:
                             raise ValueError("invalid number of components")
                         pos += l+1
-                    elif data[pos+1] == "\340":
+                    elif data[pos+1] == 0o340:
                         l, id, major, minor, dpikind, xdpi, ydpi = struct.unpack(">H5sBBBHH", data[pos+2:pos+16])
                         if dpikind == 1:
                             self.info = {"dpi": (xdpi, ydpi)}
