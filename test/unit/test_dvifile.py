@@ -12,6 +12,7 @@ class DvifileTestCase(unittest.TestCase):
     def dvitypetester(self, advifile):
         dvitypefile = os.popen("dvitype %s" % advifile)
         dvitypelines = dvitypefile.readlines()
+        dvitypefile.close()
         dvitypelineno = dvitypelines.index(" \n") + 1
 
         pyxdvifile = io.StringIO()
