@@ -966,6 +966,7 @@ class AFMcomposite:
 class AFMfile(metric.metric):
 
     def __init__(self, file):
+       self.afmversion = None                   # version, required
        self.metricssets = 0                     # int, optional
        self.fontname = None                     # str, required
        self.fullname = None                     # str, optional
@@ -993,6 +994,7 @@ class AFMfile(metric.metric):
        self.italicangles = [None] * 2           # float, optional (for each direction)
        self.charwidths = [None] * 2             # 2 floats, optional (for each direction)
        self.isfixedpitchs = [None] * 2          # bool, optional (for each direction)
+       self.expected_entries = None             # if set, internal variable to verify number of expected entries in a section
        self.charmetrics = None                  # list of character metrics information, optional
        self.charmetricsdict = {}                # helper dictionary mapping glyph names to character metrics information
        self.trackkerns = None                   # list of track kernings, optional
@@ -1011,13 +1013,15 @@ class AFMfile(metric.metric):
         key, args = line.split(None, 1)
         if key != "StartFontMetrics":
             raise AFMError("Expecting StartFontMetrics, no found")
+        self.afmversion = tuple(map(int, args.split(".")))
         return _READ_MAIN, None
 
     def _processline_main(self, line):
         try:
             key, args = line.split(None, 1)
         except ValueError:
-            key = line.rstrip()
+            key = line
+            args = None
         if key == "Comment":
             return _READ_MAIN, None
         elif key == "MetricsSets":
@@ -1035,7 +1039,8 @@ class AFMfile(metric.metric):
         elif key == "FontBBox":
             self.fontbbox = _parsefloats(args, 4)
         elif key == "Version":
-            self.version = _parsestr(args)
+            if args is not None:
+                self.version = _parsestr(args)
         elif key == "Notice":
             self.notice = _parsestr(args)
         elif key == "EncodingScheme":
@@ -1079,14 +1084,22 @@ class AFMfile(metric.metric):
         elif key == "StartCharMetrics":
             if self.charmetrics is not None:
                 raise AFMError("Multiple character metrics sections")
-            self.charmetrics = [None] * _parseint(args)
+            if self.afmversion >= (2, 0):
+                self.expected_entries = _parseint(args)
+            else:
+                self.expected_entries = None
+            self.charmetrics = []
             return _READ_CHARMETRICS, 0
         elif key == "StartKernData":
             return _READ_KERNDATA, None
         elif key == "StartComposites":
             if self.composites is not None:
                 raise AFMError("Multiple composite character data sections")
-            self.composites = [None] * _parseint(args)
+            if args is not None:
+                self.expected_entries = _parseint(args)
+            else:
+                self.expected_entries = None
+            self.composites = []
             return _READ_COMPOSITES, 0
         elif key == "EndFontMetrics":
             return _READ_END, None
@@ -1094,16 +1107,17 @@ class AFMfile(metric.metric):
             # ignoring private commands
             pass
         else:
-            raise AFMError("Unknown AFM key '%s'" % key)
+            # and according to the AFM specs also all other unknown keys
+            pass
         return _READ_MAIN, None
 
     def _processline_direction(self, line, direction):
         try:
             key, args = line.split(None, 1)
         except ValueError:
-            key = line.rstrip()
+            key = line.strip()
         if key == "UnderlinePosition":
-            self.underlinepositions[direction] = _parseint(args)
+            self.underlinepositions[direction] = _parsefloat(args)
         elif key == "UnderlineThickness":
             self.underlinethicknesses[direction] = _parsefloat(args)
         elif key == "ItalicAngle":
@@ -1122,11 +1136,12 @@ class AFMfile(metric.metric):
 
     def _processline_charmetrics(self, line, charno):
         if line.rstrip() == "EndCharMetrics":
-            if charno != len(self.charmetrics):
-                raise AFMError("Fewer character metrics than expected")
+            if self.expected_entries is not None and charno != self.expected_entries:
+                # This seems to be a rather common error in AFM files, so we do not raise
+                # an exception here, but just graticiously accept the file
+                pass
+                # raise AFMError("Fewer character metrics than expected")
             return _READ_MAIN, None
-        if charno >= len(self.charmetrics):
-            raise AFMError("More character metrics than expected")
 
         has_name = False
         char = None
@@ -1171,7 +1186,7 @@ class AFMfile(metric.metric):
         if char is None:
             raise AFMError("Character metrics not defined")
 
-        self.charmetrics[charno] = char
+        self.charmetrics.append(char)
         if has_name:
             self.charmetricsdict[char.name] = char
         return _READ_CHARMETRICS, charno+1
@@ -1180,7 +1195,8 @@ class AFMfile(metric.metric):
         try:
             key, args = line.split(None, 1)
         except ValueError:
-            key = line.rstrip()
+            key = line
+            args = None
         if key == "Comment":
             return _READ_KERNDATA, None
         if key == "StartTrackKern":
@@ -1191,12 +1207,17 @@ class AFMfile(metric.metric):
         elif key == "StartKernPairs" or key == "StartKernPairs0":
             if self.kernpairs[0] is not None:
                 raise AFMError("Multiple kerning pairs data sections for direction 0")
-            self.kernpairs[0] = [None] * _parseint(args)
+            if args is not None:
+                self.expected_entries = _parseint(args)
+            else:
+                self.expected_entries = None
+            self.kernpairs[0] = []
             return _READ_KERNPAIRS, (0, 0)
         elif key == "StartKernPairs1":
             if self.kernpairs[1] is not None:
                 raise AFMError("Multiple kerning pairs data sections for direction 1")
-            self.kernpairs[1] = [None] * _parseint(args)
+            self.expected_entries = _parseint(args)
+            self.kernpairs[1] = []
             return _READ_KERNPAIRS, (1, 0)
         elif key == "EndKernData":
             return _READ_MAIN, None
@@ -1207,7 +1228,7 @@ class AFMfile(metric.metric):
         try:
             key, args = line.split(None, 1)
         except ValueError:
-            key = line.rstrip()
+            key = line
         if key == "Comment":
             return _READ_TRACKKERN, i
         elif key == "TrackKern":
@@ -1228,16 +1249,17 @@ class AFMfile(metric.metric):
         try:
             key, args = line.split(None, 1)
         except ValueError:
-            key = line.rstrip()
+            key = line
         if key == "Comment":
             return _READ_KERNPAIRS, (direction, i)
         elif key == "EndKernPairs":
-            if i < len(self.kernpairs[direction]):
-                raise AFMError("Fewer kerning pairs than expected")
+            if i != self.expected_entries:
+                # This seems to be a rather common error in AFM files, so we do not raise
+                # an exception here, but just graticiously accept the file
+                pass
+                # raise AFMError("Fewer kerning pairs than expected")
             return _READ_KERNDATA, None
         else:
-            if i >= len(self.kernpairs[direction]):
-                raise AFMError("More kerning pairs than expected")
             if key == "KP":
                 try:
                     name1, name2, x, y = args.split()
@@ -1261,7 +1283,6 @@ class AFMfile(metric.metric):
                     raise AFMError("Expecting name1, name2, x, got '%s'" % args)
                 x = _parsefloat(x)
                 y = 0
-                self.kernpairs[direction][i] = AFMkernpair(name1, name2, _parsefloat(x), 0)
             elif key == "KPY":
                 try:
                     name1, name2, y = args.split()
@@ -1269,11 +1290,10 @@ class AFMfile(metric.metric):
                     raise AFMError("Expecting name1, name2, y, got '%s'" % args)
                 x = 0
                 y = _parsefloat(y)
-                self.kernpairs[direction][i] = AFMkernpair(name1, name2, 0, _parsefloat(y))
             else:
                 raise AFMError("Unknown key '%s' in kern pair section" % key)
             kernpair = AFMkernpair(name1, name2, x, y)
-            self.kernpairs[direction][i] = kernpair
+            self.kernpairs[direction].append(kernpair)
             if direction:
                 self.kernpairsdict1[name1, name2] = kernpair
             else:
@@ -1281,12 +1301,10 @@ class AFMfile(metric.metric):
             return _READ_KERNPAIRS, (direction, i+1)
 
     def _processline_composites(self, line, i):
-        if line.rstrip() == "EndComposites":
-            if i < len(self.composites):
-                raise AFMError("Fewer composite character data sets than expected")
+        if line == "EndComposites":
+            if self.expected_entries is not None and i != self.expected_entries:
+                raise AFMError("Fewer composites than expected")
             return _READ_MAIN, None
-        if i >= len(self.composites):
-            raise AFMError("More composite character data sets than expected")
 
         name = None
         no = None
@@ -1324,13 +1342,13 @@ class AFMfile(metric.metric):
          # without a corresponding StartDirection section and we thus
          # may need to reprocess a line in the context of the new state
          for line in f:
-            line = line[:-1]
+            line = line[:-1].strip()
             mstate, sstate = state
             if mstate == _READ_START:
                 state = self._processline_start(line)
             else: 
                 # except for the first line, any empty will be ignored
-                if not line.strip():
+                if not line:
                    continue
                 if mstate == _READ_MAIN:
                     state = self._processline_main(line)
@@ -1432,10 +1450,3 @@ class AFMfile(metric.metric):
         else:
             stemv = 70 # guessed default
         file.write("/StemV %d\n" % stemv)
-
-
-if __name__ == "__main__":
-    a = AFMfile("/opt/local/share/texmf-dist/fonts/afm/yandy/lucida/lbc.afm")
-    print(a.charmetrics[0].name)
-    a = AFMfile("/usr/share/enscript/hv.afm")
-    print(a.charmetrics[32].name)
