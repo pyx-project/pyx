@@ -25,7 +25,7 @@ def decoder(code, r, n):
     for x in array.array("B", code):
         data.append(x ^ (r >> 8))
         r = ((x + r) * c1 + c2) & 0xffff
-    return data.tostring()[n:]
+    return data.tobytes()[n:]
 
 */
 
@@ -67,7 +67,7 @@ def encoder(data, r, random):
     for x in array.array("B", random+data):
         code.append(x ^ (r >> 8))
         r = ((code[-1] + r) * c1 + c2) & 0xffff;
-    return code.tostring()
+    return code.tobytes()
 */
 
 static PyObject *py_encoder(PyObject *self, PyObject *args)

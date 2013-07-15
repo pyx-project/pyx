@@ -841,7 +841,7 @@ class T1file:
                     code.append(x2)
                     code.append(x3)
                     code.append(x4)
-        return self._charstringencode(code.tostring())
+        return self._charstringencode(code.tobytes())
 
     def getsubrcmds(self, subr):
         """return a list of T1cmd's for subr subr"""
