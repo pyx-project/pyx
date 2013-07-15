@@ -236,7 +236,7 @@ class canvas(baseclasses.canvasitem):
             group, layer = name.split(".", 1)
         except ValueError:
             if name in self.layers:
-                if above is not None and below is not None:
+                if above is not None or below is not None:
                     # remove for repositioning
                     self.items.remove(self.layers[name])
             else:
