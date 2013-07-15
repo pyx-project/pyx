@@ -1,4 +1,5 @@
-PYTHON ?= python
+PYTHON ?= python3
+GS ?= gs
 
 pngfiles = example.png bend.png pyxlogo.png
 
@@ -9,5 +10,5 @@ clean:
 
 %.png: %.py
 	export PYTHONPATH=$(CURDIR)/../.. ; cd $(dir $^) ; $(PYTHON) $(notdir $^)
-	$(PYTHON) ../../contrib/epstopng.py -o $@ $*.eps
+	$(GS) -r100 -dEPSCrop -dNOPAUSE -dQUIET -dBATCH -sDEVICE=pngalpha -dTextAlphaBits=4 -dGraphicsAlphaBits=4 -sOutputFile=$@ $*.eps
 	rm $*.eps
