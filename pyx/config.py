@@ -319,7 +319,7 @@ methods = [locator_classes[method]()
 opener_cache = {}
 
 
-def open(filename, formats):
+def open(filename, formats, ascii=False):
     """returns an open file searched according the list of formats"""
 
     # When using an empty list of formats, the names list is empty
@@ -345,7 +345,10 @@ def open(filename, formats):
                 file = None
             if file:
                 opener_cache[(filename, names)] = opener
-                return file
+                if ascii:
+                    return io.TextIOWrapper(file, encoding="ascii", errors="surrogateescape")
+                else:
+                    return file
     raise IOError("Could not locate the file '%s'." % filename)
 
 

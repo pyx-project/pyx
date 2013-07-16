@@ -126,8 +126,7 @@ class MAPline:
                 fontfile.close()
                 assert self.basepsname == t1font.name, "corrupt MAP file"
                 try:
-                    metricfilebytes = config.open(os.path.splitext(self.fontfilename)[0], [config.format.afm])
-                    metricfile = io.TextIOWrapper(metricfilebytes, encoding="ascii", errors="surrogateescape")
+                    metricfile = config.open(os.path.splitext(self.fontfilename)[0], [config.format.afm], ascii=True)
                 except IOError:
                     try:
                         # fallback by using the pfm instead of the afm font metric
@@ -144,8 +143,7 @@ class MAPline:
                     metricfile.close()
             else:
                 # builtin font
-                metricfilebytes = config.open(self.basepsname, [config.format.afm])
-                metricfile = io.TextIOWrapper(metricfilebytes, encoding="ascii", errors="surrogateescape")
+                metricfile = config.open(self.basepsname, [config.format.afm], ascii=True)
                 self._font = font.T1builtinfont(self.basepsname, afmfile.AFMfile(metricfile))
                 metricfile.close()
         return self._font
@@ -173,8 +171,7 @@ def readfontmap(filenames):
     """ read font map from filename (without path) """
     fontmap = {}
     for filename in filenames:
-        mapfilebytes = config.open(filename, [config.format.fontmap, config.format.dvips_config])
-        mapfile = io.TextIOWrapper(mapfilebytes, encoding="ascii", errors="surrogateescape")
+        mapfile = config.open(filename, [config.format.fontmap, config.format.dvips_config], ascii=True)
         lineno = 0
         for line in mapfile.readlines():
             lineno += 1
