@@ -368,7 +368,7 @@ class canvas(baseclasses.canvasitem):
                textalphabits=4, graphicsalphabits=4, ciecolor=False, **kwargs):
 
         allowed_chars = string.ascii_letters + string.digits + "_-./"
-        if filename.translate(string.maketrans("", ""), allowed_chars):
+        if filename.translate(str.maketrans({allowed_char: None for allowed_char in allowed_chars})):
             raise ValueError("for security reasons, only characters, digits and the characters '_-./' are allowed in filenames")
 
         gscmd += " -dEPSCrop -dNOPAUSE -dQUIET -dBATCH -r%i -sDEVICE=%s -sOutputFile=%s" % (resolution, device, filename)
