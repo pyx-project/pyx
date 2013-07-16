@@ -130,17 +130,16 @@ class ls_R:
             base_dir = os.path.dirname(lsr)
             dir = None
             first = True
-            lsrfile = builtinopen(lsr, "r", encoding="ascii", errors="surrogateescape")
-            for line in lsrfile:
-                line = line.rstrip()
-                if first and line.startswith("%"):
-                    continue
-                first = False
-                if line.endswith(":"):
-                    dir = os.path.join(base_dir, line[:-1])
-                elif line:
-                    self.full_filenames[line] = os.path.join(dir, line)
-            lsrfile.close()
+            with builtinopen(lsr, "r", encoding="ascii", errors="surrogateescape") as lsrfile:
+                for line in lsrfile:
+                    line = line.rstrip()
+                    if first and line.startswith("%"):
+                        continue
+                    first = False
+                    if line.endswith(":"):
+                        dir = os.path.join(base_dir, line[:-1])
+                    elif line:
+                        self.full_filenames[line] = os.path.join(dir, line)
         for extension in extensions:
             if filename+extension in self.full_filenames:
                 def _opener():
@@ -195,9 +194,8 @@ class kpsewhich:
     def openers(self, filename, names, extensions):
         for name in names:
             try:
-                output = pycompat.popen('kpsewhich --format="%s" "%s"' % (name, filename))
-                full_filenames = output.read()
-                output.close()
+                with pycompat.popen('kpsewhich --format="%s" "%s"' % (name, filename)) as output:
+                    full_filenames = output.read()
             except OSError:
                 return []
             if full_filenames:
@@ -335,21 +333,28 @@ def open(filename, formats, ascii=False):
             extensions.add(extension)
     names = tuple([format.name for format in formats])
     if (filename, names) in opener_cache:
-        return opener_cache[(filename, names)]()
-    for method in methods:
-        openers = method.openers(filename, names, extensions)
-        for opener in openers:
-            try:
-                file = opener()
-            except IOError:
-                file = None
-            if file:
-                opener_cache[(filename, names)] = opener
-                if ascii:
-                    return io.TextIOWrapper(file, encoding="ascii", errors="surrogateescape")
-                else:
-                    return file
-    raise IOError("Could not locate the file '%s'." % filename)
+        file = opener_cache[(filename, names)]()
+    else:
+        for method in methods:
+            openers = method.openers(filename, names, extensions)
+            for opener in openers:
+                try:
+                    file = opener()
+                except EnvironmentError:
+                    file = None
+                if file:
+                    opener_cache[(filename, names)] = opener
+                    break
+            # break two loops here
+            else:
+                continue
+            break
+        else:
+            raise IOError("Could not locate the file '%s'." % filename)
+    if ascii:
+        return io.TextIOWrapper(file, encoding="ascii", errors="surrogateescape")
+    else:
+        return file
 
 
 class format:

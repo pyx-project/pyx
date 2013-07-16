@@ -1174,9 +1174,8 @@ def from_PFA_bytes(bytes):
 
 def from_PFA_filename(filename):
     """create a T1file instance from PFA font file of given name"""
-    file = open(filename, "rb")
-    t1file = from_PFA_bytes(file.read())
-    file.close()
+    with open(filename, "rb") as file:
+        t1file = from_PFA_bytes(file.read())
     return t1file
 
 def from_PFB_bytes(bytes):
@@ -1223,9 +1222,8 @@ def from_PFB_bytes(bytes):
 
 def from_PFB_filename(filename):
     """create a T1file instance from PFB font file of given name"""
-    file = open(filename, "rb")
-    t1file = from_PFB_bytes(file.read())
-    file.close()
+    with open(filename, "rb") as file:
+        t1file = from_PFB_bytes(file.read())
     return t1file
 
 def from_PF_bytes(bytes):
@@ -1236,7 +1234,6 @@ def from_PF_bytes(bytes):
 
 def from_PF_filename(filename):
     """create a T1file instance from PFA or PFB font file of given name"""
-    file = open(filename, "rb")
-    t1file = from_PF_bytes(file.read())
-    file.close()
+    with open(filename, "rb") as file:
+        t1file = from_PF_bytes(file.read())
     return t1file

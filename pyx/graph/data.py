@@ -323,9 +323,8 @@ class file(data):
             # not a file-like object -> open it
             cachekey = self.getcachekey(filename, commentpattern, stringpattern, columnpattern, skiphead, skiptail, every)
             if cachekey not in filecache:
-                f = open(filename)
-                filecache[cachekey] = readfile(f, filename)
-                f.close()
+                with open(filename) as f:
+                    filecache[cachekey] = readfile(f, filename)
             data.__init__(self, filecache[cachekey], **kwargs)
         else:
             data.__init__(self, readfile(filename, "user provided file-like object"), **kwargs)

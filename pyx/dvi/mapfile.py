@@ -121,39 +121,33 @@ class MAPline:
     def getfont(self):
         if self._font is None:
             if self.fontfilename is not None:
-                fontfile = config.open(self.fontfilename, [config.format.type1])
-                t1font = t1file.from_PF_bytes(fontfile.read())
-                fontfile.close()
+                with config.open(self.fontfilename, [config.format.type1]) as fontfile:
+                    t1font = t1file.from_PF_bytes(fontfile.read())
                 assert self.basepsname == t1font.name, "corrupt MAP file"
                 try:
-                    metricfile = config.open(os.path.splitext(self.fontfilename)[0], [config.format.afm], ascii=True)
-                except IOError:
+                    with config.open(os.path.splitext(self.fontfilename)[0], [config.format.afm], ascii=True) as metricfile:
+                        self._font = font.T1font(t1font, afmfile.AFMfile(metricfile))
+                except EnvironmentError:
                     try:
                         # fallback by using the pfm instead of the afm font metric
                         # (in all major TeX distributions there is no pfm file format defined by kpsewhich, but
                         # we can use the type1 format and search for the file including the expected suffix)
-                        metricfile = config.open("%s.pfm" % os.path.splitext(self.fontfilename)[0], [config.format.type1])
-                    except IOError:
+                        with config.open("%s.pfm" % os.path.splitext(self.fontfilename)[0], [config.format.type1]) as metricfile:
+                            self._font = font.T1font(t1font, pfmfile.PFMfile(metricfile, t1font))
+                    except EnvironmentError:
+                        # we need to continue without any metric file
                         self._font = font.T1font(t1font)
-                    else:
-                        self._font = font.T1font(t1font, pfmfile.PFMfile(metricfile, t1font))
-                        metricfile.close()
-                else:
-                    self._font = font.T1font(t1font, afmfile.AFMfile(metricfile))
-                    metricfile.close()
             else:
                 # builtin font
-                metricfile = config.open(self.basepsname, [config.format.afm], ascii=True)
-                self._font = font.T1builtinfont(self.basepsname, afmfile.AFMfile(metricfile))
-                metricfile.close()
+                with config.open(self.basepsname, [config.format.afm], ascii=True) as metricfile:
+                    self._font = font.T1builtinfont(self.basepsname, afmfile.AFMfile(metricfile))
         return self._font
 
     def getencoding(self):
         if self._encoding is _marker:
             if self.encodingfilename is not None:
-                encodingfile = config.open(self.encodingfilename, [config.format.tex_ps_header])
-                ef = encfile.ENCfile(encodingfile.read().decode("ascii", errors="surrogateescape"))
-                encodingfile.close()
+                with config.open(self.encodingfilename, [config.format.tex_ps_header]) as encodingfile:
+                    ef = encfile.ENCfile(encodingfile.read().decode("ascii", errors="surrogateescape"))
                 assert ef.name == "/%s" % self.reencodefont
                 self._encoding = ef.vector
 
@@ -171,19 +165,18 @@ def readfontmap(filenames):
     """ read font map from filename (without path) """
     fontmap = {}
     for filename in filenames:
-        mapfile = config.open(filename, [config.format.fontmap, config.format.dvips_config], ascii=True)
-        lineno = 0
-        for line in mapfile.readlines():
-            lineno += 1
-            line = line.rstrip()
-            if not (line=="" or line[0] in (" ", "%", "*", ";" , "#")):
-                try:
-                    fm = MAPline(line)
-                except (ParseError, UnsupportedPSFragment) as e:
-                    warnings.warn("Ignoring line %i in mapping file '%s': %s" % (lineno, filename, e))
-                except UnsupportedFontFormat as e:
-                    pass
-                else:
-                    fontmap[fm.texname] = fm
-        mapfile.close()
+        with config.open(filename, [config.format.fontmap, config.format.dvips_config], ascii=True) as mapfile:
+            lineno = 0
+            for line in mapfile.readlines():
+                lineno += 1
+                line = line.rstrip()
+                if not (line=="" or line[0] in (" ", "%", "*", ";" , "#")):
+                    try:
+                        fm = MAPline(line)
+                    except (ParseError, UnsupportedPSFragment) as e:
+                        warnings.warn("Ignoring line %i in mapping file '%s': %s" % (lineno, filename, e))
+                    except UnsupportedFontFormat as e:
+                        pass
+                    else:
+                        fontmap[fm.texname] = fm
     return fontmap

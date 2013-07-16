@@ -153,7 +153,6 @@ class EPSwriter(_PSwriter):
         file.write("%%EndProlog\n")
 
         file.write_bytes(pagefile.file.getvalue())
-        pagefile.close()
 
         file.write("showpage\n")
         file.write("%%Trailer\n")
@@ -197,7 +196,6 @@ class PSwriter(_PSwriter):
 
             pagesfile.write("%%EndPageSetup\n")
             pagesfile.write_bytes(pagefile.file.getvalue())
-            pagefile.close()
             pagesfile.write("pgsave restore\n")
             pagesfile.write("showpage\n")
             pagesfile.write("%%PageTrailer\n")
@@ -245,7 +243,6 @@ class PSwriter(_PSwriter):
         #file.write("%%EndSetup\n")
 
         file.write_bytes(pagesfile.file.getvalue())
-        pagesfile.close()
 
         file.write("%%Trailer\n")
         file.write("%%EOF\n")

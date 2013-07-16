@@ -73,7 +73,6 @@ class pattern(canvas.canvas, attr.exclusiveattr, style.fillstyle):
         realpatternbbox = bboxmodule.empty()
         canvas.canvas.processPS(self, patternfile, writer, pswriter.context(), registry, realpatternbbox)
         patternproc = patternfile.file.getvalue()
-        patternfile.close()
 
         if self.xstep is None:
             xstep = unit.topt(realpatternbbox.width())
@@ -114,7 +113,6 @@ class pattern(canvas.canvas, attr.exclusiveattr, style.fillstyle):
         realpatternbbox = bboxmodule.empty()
         canvas.canvas.processPDF(self, patternfile, writer, pdfwriter.context(), patternregistry, realpatternbbox)
         patternproc = patternfile.file.getvalue()
-        patternfile.close()
 
         registry.mergeregistry(patternregistry)
 

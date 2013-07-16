@@ -132,22 +132,33 @@ class page:
         self._process("processPDF", *args)
 
 
+class _noclose:
+
+    def __init__(self, f):
+        self.f = f
+
+    def __enter__(self):
+        return self.f
+
+    def __exit__(self, type, value, tb):
+        pass
+
+
 def _outputstream(file, suffix):
-    """returns a tuple: the open file handler and a boolean indicating
-    whether the file should be closed at the end or not"""
     if file is None:
         if not sys.argv[0].endswith(".py"):
             raise RuntimeError("could not auto-guess filename")
-        return open("%s.%s" % (sys.argv[0][:-3], suffix), "wb"), True
+        return open("%s.%s" % (sys.argv[0][:-3], suffix), "wb")
     if file == "-":
-        return sys.stdout.buffer, False
+        return _noclose(sys.stdout.buffer)
     try:
         file.write(b"")
-        return file, True
     except:
         if not file.endswith(".%s" % suffix):
-            return open("%s.%s" % (file, suffix), "wb"), True
-        return open(file, "wb"), True
+            return open("%s.%s" % (file, suffix), "wb")
+        return open(file, "wb")
+    else:
+        return _noclose(file)
 
 
 class document:
@@ -164,31 +175,24 @@ class document:
         self.pages.append(page)
 
     def writeEPSfile(self, file=None, **kwargs):
-        f, close = _outputstream(file, "eps")
-        pswriter.EPSwriter(self, f, **kwargs)
-        if close:
-            f.close()
+        with _outputstream(file, "eps") as f:
+            pswriter.EPSwriter(self, f, **kwargs)
 
     def writePSfile(self, file=None, **kwargs):
-        f, close = _outputstream(file, "ps")
-        pswriter.PSwriter(self, f, **kwargs)
-        if close:
-            f.close()
+        with _outputstream(file, "ps") as f:
+            pswriter.PSwriter(self, f, **kwargs)
 
     def writePDFfile(self, file=None, **kwargs):
-        f, close = _outputstream(file, "pdf")
-        pdfwriter.PDFwriter(self, f, **kwargs)
-        if close:
-            f.close()
+        with _outputstream(file, "pdf") as f:
+            pdfwriter.PDFwriter(self, f, **kwargs)
 
     def writetofile(self, filename, **kwargs):
         for suffix, method in [("eps", pswriter.writeEPSfile),
                                ("ps", pswriter.writePSfile),
                                ("pdf", pdfwriter.writePDFfile)]:
             if filename.endswith(".{}".format(suffix)):
-                f = open(filename, "wb")
-                method(self, f, **kwargs)
-                f.close()
+                with open(filename, "wb") as f:
+                    method(self, f, **kwargs)
                 return
         raise ValueError("unknown file extension")
 

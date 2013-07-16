@@ -415,17 +415,15 @@ class canvas(baseclasses.canvasitem):
 
         if input == "eps":
             gscmd += " -"
-            stdin = pycompat.popen(gscmd, "wb")
-            self.writeEPSfile(stdin, **kwargs)
-            stdin.close()
+            with pycompat.popen(gscmd, "wb") as stdin:
+                self.writeEPSfile(stdin, **kwargs)
         elif input == "pdf":
             # PDF files need to be accesible by random access and thus we need to create
             # a temporary file
-            fd, fname = tempfile.mkstemp()
-            f = os.fdopen(fd, "wb")
-            gscmd += " %s" % fname
-            self.writePDFfile(f, **kwargs)
-            f.close()
+            with tempfile.NamedTemporaryFile("wb", delete=False) as f:
+                gscmd += " %s" % f.name
+                self.writePDFfile(f, **kwargs)
+                fname = f.name
             os.system(gscmd)
             os.unlink(fname)
         else:
@@ -436,7 +434,7 @@ class canvas(baseclasses.canvasitem):
         """
         returns a pipe with the Ghostscript output of the EPS or PDF of the canvas
 
-        If seekable is True, a StringIO instance will be returned instead of a
+        If seekable is True, a BytesIO instance will be returned instead of a
         pipe to allow random access.
         """
 
@@ -452,11 +450,10 @@ class canvas(baseclasses.canvasitem):
         elif input == "pdf":
             # PDF files need to be accesible by random access and thus we need to create
             # a temporary file
-            fd, fname = tempfile.mkstemp()
-            f = os.fdopen(fd, "wb")
-            gscmd += " %s" % fname
-            self.writePDFfile(f, **kwargs)
-            f.close()
+            with tempfile.NamedTemporaryFile("wb", delete=False) as f:
+                gscmd += " %s" % f.name
+                self.writePDFfile(f, **kwargs)
+                fname = f.name
             stdout = pycompat.popen(gscmd, "rb")
             os.unlink(fname)
         else:
@@ -464,7 +461,7 @@ class canvas(baseclasses.canvasitem):
 
         if seekable:
             # the read method of a pipe object may not return the full content
-            f = io.StringIO()
+            f = io.BytesIO()
             while True:
                 data = stdout.read()
                 if not data:
