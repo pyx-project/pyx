@@ -130,9 +130,8 @@ class jpegimage(image):
         try:
             data = file.read()
         except:
-            f = open(file, "rb")
-            data = f.read()
-            f.close()
+            with open(file, "rb") as f:
+                data = f.read()
         pos = 0
         nestinglevel = 0
         try:

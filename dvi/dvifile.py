@@ -200,11 +200,10 @@ class DVIfile:
 
         # check whether it's a virtual font by trying to open it. if this fails, it is an ordinary TeX font
         try:
-            fontfile = config.open(fontname, [config.format.vf])
-        except IOError:
+            with config.open(fontname, [config.format.vf]) as fontfile:
+                afont = texfont.virtualfont(fontname, fontfile, c, q/self.tfmconv, d/self.tfmconv, self.tfmconv, self.pyxconv, self.debug>1)
+        except EnvironmentError:
             afont = texfont.TeXfont(fontname, c, q/self.tfmconv, d/self.tfmconv, self.tfmconv, self.pyxconv, self.debug>1)
-        else:
-            afont = texfont.virtualfont(fontname, fontfile, c, q/self.tfmconv, d/self.tfmconv, self.tfmconv, self.pyxconv, self.debug>1)
 
         self.fonts[num] = afont
 

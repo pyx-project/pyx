@@ -36,5 +36,8 @@ class writer:
     def tell(self):
         return self.file.tell()
 
-    def close(self):
-        self.file.close()
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        return self.file.__exit__(exc_type, exc_value, traceback)

@@ -102,8 +102,6 @@ class vffile:
             else:
                 raise VFError
 
-        afile.close()
-
     def getfonts(self):
         return self.fonts
 

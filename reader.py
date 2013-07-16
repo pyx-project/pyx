@@ -29,9 +29,6 @@ class reader:
     def __init__(self, filename):
         self.file = open(filename, "rb")
 
-    def close(self):
-        self.file.close()
-
     def tell(self):
         return self.file.tell()
 
@@ -81,6 +78,15 @@ class reader:
         l = self.readuchar()
         assert l <= bytes-1, "inconsistency in file: string too long"
         return self.file.read(bytes-1)[:l]
+
+    def close(self):
+        self.file.close()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        return self.file.__exit__(exc_type, exc_value, traceback)
 
 
 class bytesreader(reader):

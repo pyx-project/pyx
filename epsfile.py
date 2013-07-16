@@ -132,9 +132,6 @@ class linefilereader:
                 self.buffer = self.buffer[eol:]
                 return result
 
-    def close(self):
-        self.file.close()
-
 
 def _readbbox(file):
     """returns bounding box of EPS file filename"""
@@ -249,9 +246,8 @@ class epsfile(baseclasses.canvasitem):
         if bbox:
             self.mybbox = bbox
         else:
-            epsfile = self.open()
-            self.mybbox = _readbbox(epsfile)
-            epsfile.close()
+            with self.open() as epsfile:
+                self.mybbox = _readbbox(epsfile)
 
         # determine scaling in x and y direction
         self.scalex = self.scaley = scale
@@ -334,9 +330,8 @@ class epsfile(baseclasses.canvasitem):
 
         file.write("%%%%BeginDocument: %s\n" % self.filename)
 
-        epsfile = self.open()
-        file.write_bytes(epsfile.read())
-        epsfile.close()
+        with self.open() as epsfile:
+            file.write_bytes(epsfile.read())
 
         file.write("%%EndDocument\n")
         file.write("EndEPSF\n")

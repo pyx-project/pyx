@@ -266,7 +266,6 @@ class PDFcontent(PDFobject):
         acontext = context()
         page.processPDF(contentfile, awriter, acontext, registry, self.bbox)
         self.content = contentfile.file.getvalue()
-        contentfile.close()
 
     def write(self, file, awriter, registry):
         if awriter.compress:
@@ -319,7 +318,6 @@ class PDFwriter:
         file = writer.writer(file)
         file.write_bytes(b"%PDF-1.4\n%\xc3\xb6\xc3\xa9\n")
         registry.write(file, self, catalog)
-        file.close()
 
     def getfontmap(self):
         if self._fontmap is None:

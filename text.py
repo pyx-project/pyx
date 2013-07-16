@@ -903,9 +903,9 @@ class texrunner:
                     os.rename(usefile, self.texfilename + usefile[extpos:])
                 except OSError:
                     pass
-            texfile = open("%s.tex" % self.texfilename, "w") # start with filename -> creates dvi file with that name
-            texfile.write("\\relax%\n")
-            texfile.close()
+            with open("%s.tex" % self.texfilename, "w") as texfile:
+              # start with filename -> creates dvi file with that name
+                texfile.write("\\relax%\n")
             if self.texipc:
                 ipcflag = " --ipc"
             else:
@@ -957,20 +957,16 @@ class texrunner:
                 if self.lfs:
                     if not self.lfs.endswith(".lfs"):
                         self.lfs = "%s.lfs" % self.lfs
-                    lfsfile = config.open(self.lfs, [])
-                    lfsdef = lfsfile.read().decode("ascii")
-                    lfsfile.close()
+                    with config.open(self.lfs, []) as lfsfile:
+                        lfsdef = lfsfile.read().decode("ascii")
                     self.execute(lfsdef, [])
                     self.execute("\\normalsize%\n", [])
                 self.execute("\\newdimen\\linewidth\\newdimen\\textwidth%\n", [])
             elif self.mode == "latex":
                 if self.pyxgraphics:
-                    pyxdef = config.open("pyx.def", [])
                     pyxdef_filename = self.texfilename + ".pyx.def"
-                    pyxdef_file = open(pyxdef_filename, "wb")
-                    pyxdef_file.write(pyxdef.read())
-                    pyxdef.close()
-                    pyxdef_file.close()
+                    with config.open("pyx.def", []) as pyxdef, open(pyxdef_filename, "wb") as pyxdef_file:
+                        pyxdef_file.write(pyxdef.read())
                     pyxdef_filename_tex = os.path.abspath(pyxdef_filename).replace(os.sep, "/")
                     self.execute("\\makeatletter%\n"
                                  "\\let\\saveProcessOptions=\\ProcessOptions%\n"

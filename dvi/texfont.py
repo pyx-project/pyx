@@ -34,9 +34,8 @@ class TeXfont:
         self.d = d                  # design size of font (fix_word) in TeX points
         self.tfmconv = tfmconv      # conversion factor from tfm units to dvi units
         self.pyxconv = pyxconv      # conversion factor from dvi units to PostScript points
-        file = config.open(self.name, [config.format.tfm])
-        self.TFMfile = tfmfile.TFMfile(file, debug)
-        file.close()
+        with config.open(self.name, [config.format.tfm]) as file:
+            self.TFMfile = tfmfile.TFMfile(file, debug)
 
         # We only check for equality of font checksums if none of them
         # is zero. The case c == 0 happend in some VF files and
@@ -141,7 +140,6 @@ class virtualfont(TeXfont):
     def __init__(self, name, file, c, q, d, tfmconv, pyxconv, debug=0):
         TeXfont.__init__(self, name, c, q, d, tfmconv, pyxconv, debug)
         self.vffile = vffile.vffile(file, 1.0*q/d, tfmconv, pyxconv, debug > 1)
-        file.close()
 
     def getfonts(self):
         """ return fonts used in virtual font itself """
