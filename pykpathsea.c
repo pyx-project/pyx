@@ -88,14 +88,28 @@ static PyObject *py_kpse_find_file(PyObject *self, PyObject *args)
 /* exported methods */
 
 static PyMethodDef pykpathsea_methods[] = {
-  {"find_file", py_kpse_find_file,  METH_VARARGS},
+  {"find_file", (PyCFunction) py_kpse_find_file,  METH_VARARGS, NULL},
   {NULL, NULL}
 };
 
-#define AddFormat(key, value) PyDict_SetItemString(format, PyString_FromString(key), PyInt_FromLong(value))
+static struct PyModuleDef moduledef = {
+        PyModuleDef_HEAD_INIT,
+        "pykpathsea",
+        NULL,
+        -1,
+        pykpathsea_methods,
+        NULL,
+        NULL,
+        NULL,
+        NULL
+};
 
-void initpykpathsea(void)
+PyMODINIT_FUNC
+PyInit_pykpathsea(void)
 {
-  Py_InitModule("pykpathsea", pykpathsea_methods);
+  PyObject *module = PyModule_Create(&moduledef);
+  if (module == NULL)
+    return NULL;
   kpse_set_program_name("dvips", "dvips");
+  return module;
 }

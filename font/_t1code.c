@@ -34,7 +34,7 @@ static PyObject *py_decoder(PyObject *self, PyObject *args)
     unsigned char *code;
     int lcode, pr, n;
 
-    if (PyArg_ParseTuple(args, "s#ii", (char **) &code, &lcode, &pr, &n)) {
+    if (PyArg_ParseTuple(args, "y#ii", (char **) &code, &lcode, &pr, &n)) {
       unsigned char *data;
       int i;
       unsigned char x;
@@ -51,7 +51,7 @@ static PyObject *py_decoder(PyObject *self, PyObject *args)
       }
 
       /* convert result to string stripping first n chars */
-      result = PyString_FromStringAndSize((const char *)data + n, lcode - n);
+      result = PyBytes_FromStringAndSize((const char *)data + n, lcode - n);
       free(data);
       return result;
     }
@@ -76,7 +76,7 @@ static PyObject *py_encoder(PyObject *self, PyObject *args)
     unsigned char *random;
     int ldata, pr, lrandom;
 
-    if (PyArg_ParseTuple(args, "s#is#", (char **) &data, &ldata, &pr, (char **) &random, &lrandom)) {
+    if (PyArg_ParseTuple(args, "y#iy#", (char **) &data, &ldata, &pr, (char **) &random, &lrandom)) {
       unsigned char *code;
       int i;
       uint16_t r=pr;
@@ -95,7 +95,7 @@ static PyObject *py_encoder(PyObject *self, PyObject *args)
         r = (code[i+lrandom] + r) * C1 + C2;
       }
 
-      result = PyString_FromStringAndSize((const char *)code, ldata + lrandom);
+      result = PyBytes_FromStringAndSize((const char *)code, ldata + lrandom);
       free(code);
       return result;
     }
@@ -108,11 +108,27 @@ static PyObject *py_encoder(PyObject *self, PyObject *args)
 /* exported methods */
 
 static PyMethodDef t1code_methods[] = {
-    {"decoder", py_decoder,  METH_VARARGS},
-    {"encoder", py_encoder,  METH_VARARGS},
+    {"decoder", py_decoder,  METH_VARARGS, NULL},
+    {"encoder", py_encoder,  METH_VARARGS, NULL},
     {NULL, NULL}
 };
 
-void init_t1code(void) {
-    (void) Py_InitModule("_t1code", t1code_methods);
+static struct PyModuleDef moduledef = {
+        PyModuleDef_HEAD_INIT,
+        "_t1code",
+        NULL,
+        -1,
+        t1code_methods,
+        NULL,
+        NULL,
+        NULL,
+        NULL
+};
+
+PyMODINIT_FUNC
+PyInit__t1code(void)
+{
+  PyObject *module = PyModule_Create(&moduledef);
+  return module;
 }
+
