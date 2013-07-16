@@ -10,9 +10,8 @@ from pyx.dvi import dvifile
 class DvifileTestCase(unittest.TestCase):
 
     def dvitypetester(self, advifile):
-        dvitypefile = os.popen("dvitype %s" % advifile)
-        dvitypelines = dvitypefile.readlines()
-        dvitypefile.close()
+        with os.popen("dvitype %s" % advifile) as dvitypefile:
+            dvitypelines = dvitypefile.readlines()
         dvitypelineno = dvitypelines.index(" \n") + 1
 
         pyxdvifile = io.StringIO()
@@ -65,14 +64,13 @@ class DvifileTestCase(unittest.TestCase):
         os.system("rm sample2e.*")
 
     def testDvitypeBigScale(self):
-        texfile = open("bigscale.tex", "w")
-        texfile.write("\\nopagenumbers\n"
-                      "\\font\\myfont=cmr10 at 145.678pt\\myfont\n"
-                      "i\\par\n"
-                      "\\font\\myfont=cmr10 at 457.12346pt\\myfont\n"
-                      "m\\par\n"
-                      "\\bye\n")
-        texfile.close()
+        with open("bigscale.tex", "w") as texfile:
+            texfile.write("\\nopagenumbers\n"
+                          "\\font\\myfont=cmr10 at 145.678pt\\myfont\n"
+                          "i\\par\n"
+                          "\\font\\myfont=cmr10 at 457.12346pt\\myfont\n"
+                          "m\\par\n"
+                          "\\bye\n")
         os.system("tex bigscale.tex > /dev/null 2> /dev/null")
         self.dvitypetester("bigscale.dvi")
         os.system("rm bigscale.*")

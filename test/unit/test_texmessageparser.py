@@ -66,14 +66,12 @@ Underfull \vbox (badness 10000) detected at line 0""", textattrs=[text.parbox(1.
 
     def testLoadLongFileNames(self):
         testfilename = "x"*100
-        f = open(testfilename + ".tex", "w")
-        f.write("\message{ignore this}")
-        f.close()
+        with open(testfilename + ".tex", "w") as f:
+            f.write("\message{ignore this}")
         text.text(0, 0, "\\input %s\n" % testfilename, texmessages=[text.texmessage.load])
         os.remove(testfilename + ".tex")
-        f = open(testfilename + ".eps", "w")
-        f.write("%%BoundingBox: 0 0 10 10")
-        f.close()
+        with open(testfilename + ".eps", "w") as f:
+            f.write("%%BoundingBox: 0 0 10 10")
         text.text(0, 0, r"\includegraphics{%s}" % testfilename)
         os.remove(testfilename + ".eps")
 
