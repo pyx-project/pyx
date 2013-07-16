@@ -83,7 +83,7 @@ which will expand the tilde to your home directory.
 Does PyX run under my favorite operating system?
 ================================================
 
-Yes, if you have installed Python :ref:`what_is_python`) and TeX
+Yes, if you have installed Python (:ref:`what_is_python`) and TeX
 (:ref:`what_is_tex`). Both are available for a large variety of operating
 systems so chances are pretty good that you will get PyX to work on your
 system.
@@ -91,12 +91,10 @@ system.
 Under which versions of Python will PyX run?
 ============================================
 
-PyX is supposed to work with Python 2.1 and above. However, most of the
-development takes place under the current production version of Python (2.4.1
-by the time of this writing) and thus PyX is better tested with this version.
-On the other hand, the examples and tests are verified to run with Python 2.1
-and above using the latest bugfix releases. PyX will not work with earlier
-Python versions due to missing language features. 
+Until version 0.12.1, PyX is supposed to work with Python 2.3 up to 2.7.
+This and earlier versions will not run with Python 3. A version of PyX
+working with Python 3.2 and higher is presently available as development
+version in the SVN trunk. It is supposed to become a future version 0.13.
 
 The version of your Python interpreter can be determined by calling it with the
 option ``-V``. Alternatively, you can simply start the interpreter and take a

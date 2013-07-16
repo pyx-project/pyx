@@ -2,7 +2,7 @@
 Python
 ======
 
-.. what_is_python:
+.. _what_is_python:
 
 What is Python?
 ===============
