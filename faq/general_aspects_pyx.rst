@@ -52,20 +52,23 @@ Note that there are two underscores before and after ``version``.
 How can I access older versions of PyX?
 =======================================
 
-As at present it is not guaranteed that PyX is backward compatible, it may be
-desirable to access an older version of PyX instead of adapting older code to
-the current version of PyX. In order to do that, one needs the corresponding
-PyX package (see :ref:`where_do_I_get_PyX` if you need to download it), which
-should be unpacked below a directory, e.g.  ``/home/xyz/Python``,  where you
-want to keep the various PyX versions.  This will result in a subdirectory with
-a name like ``PyX-0.11.1`` which contains the contents of the corresponding
-package. You can then ask Python to first look in the appropriate directory
-before looking for the current version of PyX by inserting the following code
-(appropriately modified according to your needs) at the beginning of your
-program before importing the PyX module::
+There are reasons which might make it necessary to use older versions of PyX.
+If you are using Python 2 you will need PyX version 0.12.1 or earlier (see
+:ref:`_python_requirements`). Furthermore, as at present it is not guaranteed
+that PyX is backward compatible, it may be desirable to access an older version
+of PyX instead of adapting older code to a more recent version of PyX. In order
+to do that, one needs the corresponding PyX package (see
+:ref:`where_do_I_get_PyX` if you need to download it), which should be unpacked
+below a directory, e.g.  ``/home/xyz/Python``,  where you want to keep the
+various PyX versions.  This will result in a subdirectory with a name like
+``PyX-0.12.1`` which contains the contents of the corresponding package. You
+can then ask Python to first look in the appropriate directory before looking
+for the current version of PyX by inserting the following code (appropriately
+modified according to your needs) at the beginning of your program before
+importing the PyX module::
 
    import sys
-   sys.path.insert(0, "/home/xyz/Python/PyX-0.11.1")
+   sys.path.insert(0, "/home/xyz/Python/PyX-0.12.1")
 
 Including appropriate lines even if the current version of PyX is used, might
 turn out to be helpful when the current version has become an old version
@@ -76,7 +79,7 @@ If your operating system supports path expansion, you might use as an
 alternative::
 
    import sys, os
-   sys.path.insert(0, os.path.expanduser("~/Python/PyX-0.11.1"))
+   sys.path.insert(0, os.path.expanduser("~/Python/PyX-0.12.1"))
 
 which will expand the tilde to your home directory.
 
@@ -88,13 +91,14 @@ Yes, if you have installed Python (:ref:`what_is_python`) and TeX
 systems so chances are pretty good that you will get PyX to work on your
 system.
 
+.. _python_requirements:
+
 Under which versions of Python will PyX run?
 ============================================
 
-Until version 0.12.1, PyX is supposed to work with Python 2.3 up to 2.7.
-This and earlier versions will not run with Python 3. A version of PyX
-working with Python 3.2 and higher is presently available as development
-version in the SVN trunk. It is supposed to become a future version 0.13.
+Starting with version 0.13, PyX requires Python 3.2 or higher. If you still
+need to run PyX with Python 2, you should use version 0.12.1 which is designed
+to run with Python 2.3 up to 2.7.
 
 The version of your Python interpreter can be determined by calling it with the
 option ``-V``. Alternatively, you can simply start the interpreter and take a
