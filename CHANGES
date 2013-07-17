@@ -25,6 +25,11 @@
   - font/afmfile module:
     - parse more AFM files, also some with common inconsistencies (thanks to
       Markus Schwienbacher for reporting these issues)
+  - color module:
+    - functiongradient has been split into functiongradient_rgb, etc. and
+      the function parameters are now passed directly
+    - lineargradient has been removed for factory functions lineargradient_rgb, etc.
+      that provide linear gradients between colors of a particular color model
 
 0.12.1 (2012/10/26):
   - graph styles:

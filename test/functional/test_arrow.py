@@ -20,7 +20,7 @@ def testarrow(c):
 
     base = 2
 
-    pal = color.lineargradient(color.rgb.red, color.rgb.blue)
+    pal = color.lineargradient_rgb(color.rgb.red, color.rgb.blue)
 
     c.stroke(path(moveto(5,10), rlineto(5,0)),
            [#deco.barrow(size=base/math.sqrt(8)*unit.t_pt, constriction=1),

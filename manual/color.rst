@@ -63,13 +63,9 @@ RGB and CMYK versions of these latter gradients are also defined under the names
 `rgbgradient.Rainbow` and `cmykgradient.Rainbow`, etc.
 
 
-.. class:: gradient(min=0, max=1)
+.. class:: gradient()
 
-   This class provides the methods for the ``gradient``. Different initializations
-   can be found in ``lineargradient`` and ``functiongradient``.
-
-   *min* and *max* provide the valid range of the arguments for ``getcolor``.
-
+   This class defines the methods for the ``gradient``.
 
    .. function:: getcolor(parameter)
 
@@ -82,26 +78,28 @@ RGB and CMYK versions of these latter gradients are also defined under the names
       When a total number of *n_indices* different colors is needed from the gradient,
       this method returns the *index*-th color.
 
-
-.. class:: lineargradient(startcolor, endcolor, min=0, max=1)
-
-   This class provides a linear transition between two given colors. The linear
-   interpolation is performed on the color components of the specific color model.
-
-   *startcolor* and *endcolor* must be colors of the same color model.
-
-
-.. class:: functiongradient(functions, type, min=0, max=1)
+.. class:: functiongradient_cmyk(f_c, f_m, f_y, f_k)
+.. class:: functiongradient_gray(f_gray)
+.. class:: functiongradient_hsb(f_g, f_s, f_b)
+.. class:: functiongradient_rgb(f_r, f_g, f_b)
 
    This class provides an arbitray transition between colors of the same color
    model.
 
-   *type* is a string indicating the color model (one of ``"cmyk"``, ``"rgb"``,
-   ``"hsb"``, ``"grey"``)
+   The functions *f_c*, etc. map the values [0, 1] to the respective components
+   of the color model.
 
-   *functions* is a dictionary that maps the color components onto given functions.
-   E.g. for ``type="rgb"`` this dictionary must have the keys ``"r"``, ``"g"``, and
-   ``"b"``.
+.. function:: lineargradient_cmyk(mincolor, maxcolor)
+.. function:: lineargradient_gray(mincolor, maxcolor)
+.. function:: lineargradient_hsb(mincolor, maxcolor)
+.. function:: lineargradient_rgb(mincolor, maxcolor)
+
+   These factory functors for the corresponding *functiongradient_* classes
+   provide a linear transition between two given instances of the same color
+   class. The linear interpolation is performed on the color components of the
+   specific color model.
+
+   *mincolor* and *maxcolor* must be colors of the corresponding color class.
 
 .. class:: class rgbgradient(gradient)
 
