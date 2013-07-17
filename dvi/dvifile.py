@@ -21,7 +21,7 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import io, math, re, struct, sys, warnings
+import io, math, re, string, struct, sys, warnings
 from pyx import  bbox, canvas, color, epsfile, config, path, reader, trafo, unit
 from . import texfont, tfmfile
 
@@ -306,7 +306,7 @@ class DVIfile:
             if len(args) != 1:
                 raise RuntimeError("marker contains spaces")
             for c in args[0]:
-                if c not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@":
+                if c not in string.ascii_letters + string.digits + "@":
                     raise RuntimeError("marker contains invalid characters")
             if args[0] in self.actpage.markers:
                 raise RuntimeError("marker name occurred several times")
