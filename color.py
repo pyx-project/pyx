@@ -1,7 +1,7 @@
 # -*- encoding: utf-8 -*-
 #
 #
-# Copyright (C) 2002-2004, 2006 Jörg Lehmann <joergl@users.sourceforge.net>
+# Copyright (C) 2002-2004, 2006, 2013 Jörg Lehmann <joergl@users.sourceforge.net>
 # Copyright (C) 2003-2006 Michael Schindler <m-schindler@users.sourceforge.net>
 # Copyright (C) 2002-2011 André Wobst <wobsta@users.sourceforge.net>
 #
@@ -24,7 +24,7 @@
 import binascii, colorsys, math, struct, warnings
 from . import attr, style, pdfwriter
 
-# device-dependend (nonlinear) functions for color conversion
+# device-dependent (nonlinear) functions for color conversion
 # UCRx : [0,1] -> [-1, 1] UnderColorRemoval (removes black from c, y, m)
 # BG   : [0,1] -> [0, 1]  BlackGeneration (generate the black from the nominal k-value)
 # as long as we have no further knowledge we define them linearly with constants 1
@@ -50,56 +50,55 @@ def set(UCRc=None, UCRm=None, UCRy=None, BG=None):
 
 
 class color(attr.exclusiveattr, style.strokestyle, style.fillstyle):
-
     """base class for all colors"""
-
     def __init__(self):
-        attr.exclusiveattr.__init__(self, color)
+        super().__init__(color)
 
 
 clear = attr.clearclass(color)
 
 
-class grey(color):
+class gray(color):
 
     """grey tones"""
 
-    def __init__(self, gray):
-        color.__init__(self)
-        if gray<0 or gray>1: raise ValueError
-        self.color = {"gray": gray}
+    def __init__(self, gray=0.0):
+        super().__init__()
+        if gray<0 or gray>1:
+            raise ValueError("Value gray out of range [0,1]")
+        self.gray = gray
 
     def processPS(self, file, writer, context, registry):
-        file.write("%(gray)g setgray\n" % self.color)
+        file.write("%f setgray\n" % self.gray)
 
     def processPDF(self, file, writer, context, registry):
         if context.strokeattr:
-            file.write("%(gray)f G\n" % self.color)
+            file.write("%f G\n" % self.gray)
         if context.fillattr:
-            file.write("%(gray)f g\n" % self.color)
+            file.write("%f g\n" % self.gray)
 
     def cmyk(self):
-        return cmyk(0, 0, 0, 1 - self.color["gray"])
+        return cmyk(0, 0, 0, 1 - self.gray)
 
-    def grey(self):
-        return grey(**self.color)
-    gray = grey
+    def gray(self):
+        return gray(self.gray)
+    grey = gray
 
     def hsb(self):
-        return hsb(0, 0, self.color["gray"])
+        return hsb(0, 0, self.gray)
 
     def rgb(self):
-        return rgb(self.color["gray"], self.color["gray"], self.color["gray"])
+        return rgb(self.gray, self.gray, self.gray)
 
     def colorspacestring(self):
         return "/DeviceGray"
 
     def to8bitbytes(self):
-        return bytes((int(self.color["gray"]*255),))
+        return bytes((int(self.gray*255),))
 
-grey.black = grey(0.0)
-grey.white = grey(1.0)
-gray = grey
+gray.black = gray(0.0)
+gray.white = gray(1.0)
+grey = gray
 
 
 class rgb(color):
@@ -107,22 +106,29 @@ class rgb(color):
     """rgb colors"""
 
     def __init__(self, r=0.0, g=0.0, b=0.0):
-        color.__init__(self)
-        if r<0 or r>1 or g<0 or g>1 or b<0 or b>1: raise ValueError
-        self.color = {"r": r, "g": g, "b": b}
+        super().__init__()
+        if r<0 or r>1:
+            raise ValueError("Value r out of range [0,1]")
+        if g<0 or g>1:
+            raise ValueError("Value g out of range [0,1]")
+        if b<0 or b>1:
+            raise ValueError("Value b out of range [0,1]")
+        self.r = r
+        self.g = g
+        self.b = b
 
     def processPS(self, file, writer, context, registry):
-        file.write("%(r)g %(g)g %(b)g setrgbcolor\n" % self.color)
+        file.write("%f %f %f setrgbcolor\n" % (self.r, self.g, self.b))
 
     def processPDF(self, file, writer, context, registry):
         if context.strokeattr:
-            file.write("%(r)f %(g)f %(b)f RG\n" % self.color)
+            file.write("%f %f %f RG\n" % (self.r, self.g, self.b))
         if context.fillattr:
-            file.write("%(r)f %(g)f %(b)f rg\n" % self.color)
+            file.write("%f %f %f rg\n" % (self.r, self.g, self.b))
 
     def cmyk(self):
         # conversion to cmy
-        c, m, y = 1 - self.color["r"], 1 - self.color["g"], 1 - self.color["b"]
+        c, m, y = 1 - self.r, 1 - self.g, 1 - self.b
         # conversion from cmy to cmyk with device-dependent functions
         k = min([c, m, y])
         return cmyk(min(1, max(0, c - _UCRc(k))),
@@ -130,42 +136,22 @@ class rgb(color):
                     min(1, max(0, y - _UCRy(k))),
                     _BG(k))
 
-    def grey(self):
-        return grey(0.3*self.color["r"] + 0.59*self.color["g"] + 0.11*self.color["b"])
-    gray = grey
+    def gray(self):
+        return gray(0.3*self.r + 0.59*self.g + 0.11*self.b)
+    grey = gray
 
     def hsb(self):
-
-        values = list(self.color.values())
-        values.sort()
-        z, y, x = values
-        r, g, b = self.color["r"], self.color["g"], self.color["b"]
-        try:
-            if r == x and g == z:
-                return hsb((5 + (x-b)/(x-z)) / 6.0, (x - z) / x, x)
-            elif r == x and g > z:
-                return hsb((1 - (x-g)/(x-z)) / 6.0, (x - z) / x, x)
-            elif g == x and b == z:
-                return hsb((1 + (x-r)/(x-z)) / 6.0, (x - z) / x, x)
-            elif g == x and b > z:
-                return hsb((3 - (x-b)/(x-z)) / 6.0, (x - z) / x, x)
-            elif b == x and r == z:
-                return hsb((3 + (x-g)/(x-z)) / 6.0, (x - z) / x, x)
-            elif b == x and r > z:
-                return hsb((5 - (x-r)/(x-z)) / 6.0, (x - z) / x, x)
-            else:
-                raise ValueError
-        except ZeroDivisionError:
-            return hsb(0, 0, x)
+        h, s, b = colorsys.rgb_to_hsv(self.r, self.g, self.b)
+        return hsb(h, s, b)
 
     def rgb(self):
-        return rgb(**self.color)
+        return rgb(self.r, self.g, self.b)
 
     def colorspacestring(self):
         return "/DeviceRGB"
 
     def to8bitbytes(self):
-        return struct.pack("BBB", int(self.color["r"]*255), int(self.color["g"]*255), int(self.color["b"]*255))
+        return struct.pack("BBB", int(self.r*255), int(self.g*255), int(self.b*255))
 
     def tohexstring(self, cssstrip=1, addhash=1):
         hexstring = binascii.b2a_hex(self.to8bitbytes())
@@ -196,44 +182,36 @@ class hsb(color):
     """hsb colors"""
 
     def __init__(self, h=0.0, s=0.0, b=0.0):
-        color.__init__(self)
-        if h<0 or h>1 or s<0 or s>1 or b<0 or b>1: raise ValueError
-        self.color = {"h": h, "s": s, "b": b}
+        super().__init__()
+        if h<0 or h>1:
+            raise ValueError("Value h out of range [0,1]")
+        if s<0 or s>1:
+            raise ValueError("Value s out of range [0,1]")
+        if b<0 or b>1:
+            raise ValueError("Value b out of range [0,1]")
+        self.h = h
+        self.s = s
+        self.b = b
 
     def processPS(self, file, writer, context, registry):
-        file.write("%(h)g %(s)g %(b)g sethsbcolor\n" % self.color)
+        file.write("%f %f %f sethsbcolor\n" % (self.h, self.s, self.b))
 
     def processPDF(self, file, writer, context, registry):
-        r, g, b = colorsys.hsv_to_rgb(self.color["h"], self.color["s"], self.color["b"])
-        rgb(r, g, b).processPDF(file, writer, context, registry)
+        self.rgb().processPDF(file, writer, context, registry)
 
     def cmyk(self):
         return self.rgb().cmyk()
 
-    def grey(self):
-        return self.rgb().grey()
-    gray = grey
+    def gray(self):
+        return self.rgb().gray()
+    grey = gray
 
     def hsb(self):
-        return hsb(**self.color)
+        return hsb(self.h, self.s, self.b)
 
     def rgb(self):
-        h, s, b = self.color["h"], self.color["s"], self.color["b"]
-        i = int(6*h)
-        f = 6*h - i
-        m, n, k = 1 - s, 1 - s*f, 1 - s*(1-f)
-        if i == 1:
-            return rgb(b*n, b, b*m)
-        elif i == 2:
-            return rgb(b*m, b, b*k)
-        elif i == 3:
-            return rgb(b*m, b*n, b)
-        elif i == 4:
-            return rgb(b*k, b*m, b)
-        elif i == 5:
-            return rgb(b, b*m, b*n)
-        else:
-            return rgb(b, b*k, b*m)
+        r, g, b = colorsys.hsv_to_rgb(self.h, self.s, self.b)
+        return rgb(r, g, b)
 
     def colorspacestring(self):
         raise RuntimeError("colorspace string not available for hsb colors")
@@ -244,35 +222,44 @@ class cmyk(color):
     """cmyk colors"""
 
     def __init__(self, c=0.0, m=0.0, y=0.0, k=0.0):
-        color.__init__(self)
-        if c<0 or c>1 or m<0 or m>1 or y<0 or y>1 or k<0 or k>1: raise ValueError
-        self.color = {"c": c, "m": m, "y": y, "k": k}
+        super().__init__()
+        if c<0 or c>1:
+            raise ValueError("Value c out of range [0,1]")
+        if m<0 or m>1:
+            raise ValueError("Value m out of range [0,1]")
+        if y<0 or y>1:
+            raise ValueError("Value y out of range [0,1]")
+        if k<0 or k>1:
+            raise ValueError("Value k out of range [0,1]")
+        self.c = c
+        self.m = m
+        self.y = y
+        self.k = k
 
     def processPS(self, file, writer, context, registry):
-        file.write("%(c)g %(m)g %(y)g %(k)g setcmykcolor\n" % self.color)
+        file.write("%f %f %f %f setcmykcolor\n" % (self.c, self.m, self.y, self.k))
 
     def processPDF(self, file, writer, context, registry):
         if context.strokeattr:
-            file.write("%(c)f %(m)f %(y)f %(k)f K\n" % self.color)
+            file.write("%f %f %f %f K\n" % (self.c, self.m, self.y, self.k))
         if context.fillattr:
-            file.write("%(c)f %(m)f %(y)f %(k)f k\n" % self.color)
+            file.write("%f %f %f %f k\n" % (self.c, self.m, self.y, self.k))
 
     def cmyk(self):
-        return cmyk(**self.color)
+        return cmyk(self.c, self.m, self.y, self.k)
 
-    def grey(self):
-        return grey(1 - min([1, 0.3*self.color["c"] + 0.59*self.color["m"] +
-                                0.11*self.color["y"] + self.color["k"]]))
-    gray = grey
+    def gray(self):
+        return gray(1 - min([1, 0.3*self.c + 0.59*self.m + 0.11*self.y + self.k]))
+    grey = gray
 
     def hsb(self):
         return self.rgb().hsb()
 
     def rgb(self):
         # conversion to cmy:
-        c = min(1, self.color["c"] + self.color["k"])
-        m = min(1, self.color["m"] + self.color["k"])
-        y = min(1, self.color["y"] + self.color["k"])
+        c = min(1, self.c + self.k)
+        m = min(1, self.m + self.k)
+        y = min(1, self.y + self.k)
         # conversion from cmy to rgb:
         return rgb(1 - c, 1 - m, 1 - y)
 
@@ -280,7 +267,7 @@ class cmyk(color):
         return "/DeviceCMYK"
 
     def to8bitbytes(self):
-        return struct.pack("BBBB", int(self.color["c"]*255), int(self.color["m"]*255), int(self.color["y"]*255), int(self.color["k"]*255))
+        return struct.pack("BBBB", int(self.c*255), int(self.m*255), int(self.y*255), int(self.k*255))
 
 cmyk.GreenYellow    = cmyk(0.15, 0, 0.69, 0)
 cmyk.Yellow         = cmyk(0, 0, 1, 0)
@@ -354,6 +341,7 @@ cmyk.White          = cmyk(0, 0, 0, 0)
 cmyk.white          = cmyk.White
 cmyk.black          = cmyk.Black
 
+
 class palette(attr.changelist):
     """color palettes
 
@@ -361,6 +349,9 @@ class palette(attr.changelist):
 
 palette.clear = attr.clearclass(palette)
 
+#
+# gradients
+#
 
 class gradient(attr.changeattr):
 
@@ -383,104 +374,169 @@ class gradient(attr.changeattr):
 
 gradient.clear = attr.clearclass(gradient)
 
+#
+# gradient with arbitrary non-linear dependency
+#
 
-class lineargradient(gradient):
+class functiongradient_gray(gradient):
 
-    """collection of two colors for a linear transition between them"""
+    """arbitrary non-linear gradients of gray colors
 
-    def __init__(self, mincolor, maxcolor):
-        if mincolor.__class__ != maxcolor.__class__:
-            raise ValueError
-        self.colorclass = mincolor.__class__
-        self.mincolor = mincolor
-        self.maxcolor = maxcolor
-
-    def getcolor(self, param):
-        colordict = {}
-        for key in list(self.mincolor.color.keys()):
-            colordict[key] = param * self.maxcolor.color[key] + (1 - param) * self.mincolor.color[key]
-        return self.colorclass(**colordict)
-
-
-class functiongradient(gradient):
-
-    """collection of colors for an arbitray non-linear transition between them
-
-    parameters:
-    functions: a dictionary for the color values
-    type:      a string indicating the color class
+    f_gray: a function mapping [0,1] to the gray value
     """
 
-    def __init__(self, functions, cls):
-        self.functions = functions
-        self.cls = cls
+    def __init__(self, f_gray):
+        super().__init__()
+        self.f_gray = f_gray
 
     def getcolor(self, param):
-        colordict = {}
-        for key in list(self.functions.keys()):
-            colordict[key] = self.functions[key](param)
-        return self.cls(**colordict)
+        return gray(self.f_gray(param))
 
 
-class rgbgradient:
+class functiongradient_cmyk(gradient):
+
+    """arbitrary non-linear gradients of cmyk colors
+
+    f_c: a function mapping [0,1] to the c component
+    f_m: a function mapping [0,1] to the m component
+    f_y: a function mapping [0,1] to the y component
+    f_k: a function mapping [0,1] to the k component
+    """
+
+    def __init__(self, f_c, f_m, f_y, f_k):
+        super().__init__()
+        self.f_c = f_c
+        self.f_m = f_m
+        self.f_y = f_y
+        self.f_k = f_k
+
+    def getcolor(self, param):
+        return cmyk(self.f_c(param), self.f_m(param), self.f_y(param), self.f_k(param))
+
+
+class functiongradient_hsb(gradient):
+
+    """arbitrary non-linear gradients of hsb colors
+
+    f_h: a function mapping [0,1] to the h component
+    f_s: a function mapping [0,1] to the s component
+    f_b: a function mapping [0,1] to the b component
+    """
+
+    def __init__(self, f_h, f_s, f_b):
+        super().__init__()
+        self.f_h = f_h
+        self.f_s = f_s
+        self.f_b = f_b
+
+    def getcolor(self, param):
+        return hsb(self.f_h(param), self.f_s(param), self.f_b(param))
+
+
+class functiongradient_rgb(gradient):
+
+    """arbitrary non-linear gradients of rgb colors
+
+    f_r: a function mapping [0,1] to the r component
+    f_g: a function mapping [0,1] to the b component
+    f_b: a function mapping [0,1] to the b component
+    """
+
+    def __init__(self, f_r, f_g, f_b):
+        super().__init__()
+        self.f_r = f_r
+        self.f_g = f_g
+        self.f_b = f_b
+
+    def getcolor(self, param):
+        return rgb(self.f_r(param), self.f_g(param), self.f_b(param))
+
+#
+# factory functions for gradients interpolating linearly between two colors
+#
+
+def lineargradient_cmyk(mincolor, maxcolor):
+     return functiongradient_cmyk(lambda x:maxcolor.c * x + mincolor.c * (1-x),
+                                  lambda x:maxcolor.m * x + mincolor.m * (1-x),
+                                  lambda x:maxcolor.y * x + mincolor.y * (1-x),
+                                  lambda x:maxcolor.k * x + mincolor.k * (1-x))
+
+def lineargradient_gray(mincolor, maxcolor):
+     return functiongradient_gray(lambda x:maxcolor.gray * x + mincolor.gray * (1-x))
+
+def lineargradient_hsb(mincolor, maxcolor):
+     return functiongradient_hsb(lambda x:maxcolor.h * x + mincolor.h * (1-x),
+                                 lambda x:maxcolor.s * x + mincolor.s * (1-x),
+                                 lambda x:maxcolor.b * x + mincolor.b * (1-x))
+
+def lineargradient_rgb(mincolor, maxcolor):
+     return functiongradient_rgb(lambda x:maxcolor.r * x + mincolor.r * (1-x),
+                                 lambda x:maxcolor.g * x + mincolor.g * (1-x),
+                                 lambda x:maxcolor.b * x + mincolor.b * (1-x))
+
+
+#
+# gradients converted into other color spaces
+#
+
+class rgbgradient(gradient):
 
     "a gradient, which takes another gradient and returns rgb colors"
 
     def __init__(self, gradient):
+        super().__init__()
         self.gradient = gradient
 
     def getcolor(self, param):
         return self.gradient.getcolor(param).rgb()
 
 
-class cmykgradient:
+class cmykgradient(gradient):
 
     "a gradient, which takes another gradient and returns cmyk colors"
 
     def __init__(self, gradient):
+        super().__init__()
         self.gradient = gradient
 
     def getcolor(self, param):
         return self.gradient.getcolor(param).cmyk()
 
 
-
-gradient.Gray           = lineargradient(gray.white, gray.black)
+gradient.Gray           = lineargradient_gray(gray.white, gray.black)
 gradient.Grey           = gradient.Gray
-gradient.ReverseGray    = lineargradient(gray.black, gray.white)
+gradient.ReverseGray    = lineargradient_gray(gray.black, gray.white)
 gradient.ReverseGrey    = gradient.ReverseGray
-gradient.BlackYellow    = functiongradient({ # compare this with reversegray above
-    "r":(lambda x: 2*x*(1-x)**5 + 3.5*x**2*(1-x)**3 + 2.1*x*x*(1-x)**2 + 3.0*x**3*(1-x)**2 + x**0.5*(1-(1-x)**2)),
-    "g":(lambda x: 1.5*x**2*(1-x)**3 - 0.8*x**3*(1-x)**2 + 2.0*x**4*(1-x) + x**4),
-    "b":(lambda x: 5*x*(1-x)**5 - 0.5*x**2*(1-x)**3 + 0.3*x*x*(1-x)**2 + 5*x**3*(1-x)**2 + 0.5*x**6)},
-    rgb)
-gradient.YellowBlack    = functiongradient({
-    "r":(lambda x: 2*(1-x)*x**5 + 3.5*(1-x)**2*x**3 + 2.1*(1-x)*(1-x)*x**2 + 3.0*(1-x)**3*x**2 + (1-x)**0.5*(1-x**2)),
-    "g":(lambda x: 1.5*(1-x)**2*x**3 - 0.8*(1-x)**3*x**2 + 2.0*(1-x)**4*x + (1-x)**4),
-    "b":(lambda x: 5*(1-x)*x**5 - 0.5*(1-x)**2*x**3 + 0.3*(1-x)*(1-x)*x**2 + 5*(1-x)**3*x**2 + 0.5*(1-x)**6)},
-    rgb)
-gradient.RedGreen       = lineargradient(rgb.red, rgb.green)
-gradient.RedBlue        = lineargradient(rgb.red, rgb.blue)
-gradient.GreenRed       = lineargradient(rgb.green, rgb.red)
-gradient.GreenBlue      = lineargradient(rgb.green, rgb.blue)
-gradient.BlueRed        = lineargradient(rgb.blue, rgb.red)
-gradient.BlueGreen      = lineargradient(rgb.blue, rgb.green)
-gradient.RedBlack       = lineargradient(rgb.red, rgb.black)
-gradient.BlackRed       = lineargradient(rgb.black, rgb.red)
-gradient.RedWhite       = lineargradient(rgb.red, rgb.white)
-gradient.WhiteRed       = lineargradient(rgb.white, rgb.red)
-gradient.GreenBlack     = lineargradient(rgb.green, rgb.black)
-gradient.BlackGreen     = lineargradient(rgb.black, rgb.green)
-gradient.GreenWhite     = lineargradient(rgb.green, rgb.white)
-gradient.WhiteGreen     = lineargradient(rgb.white, rgb.green)
-gradient.BlueBlack      = lineargradient(rgb.blue, rgb.black)
-gradient.BlackBlue      = lineargradient(rgb.black, rgb.blue)
-gradient.BlueWhite      = lineargradient(rgb.blue, rgb.white)
-gradient.WhiteBlue      = lineargradient(rgb.white, rgb.blue)
-gradient.Rainbow        = lineargradient(hsb(0, 1, 1), hsb(2.0/3.0, 1, 1))
-gradient.ReverseRainbow = lineargradient(hsb(2.0/3.0, 1, 1), hsb(0, 1, 1))
-gradient.Hue            = lineargradient(hsb(0, 1, 1), hsb(1, 1, 1))
-gradient.ReverseHue     = lineargradient(hsb(1, 1, 1), hsb(0, 1, 1))
+gradient.BlackYellow    = functiongradient_rgb( # compare this with reversegray above
+    f_r=lambda x: 2*x*(1-x)**5 + 3.5*x**2*(1-x)**3 + 2.1*x*x*(1-x)**2 + 3.0*x**3*(1-x)**2 + x**0.5*(1-(1-x)**2),
+    f_g=lambda x: 1.5*x**2*(1-x)**3 - 0.8*x**3*(1-x)**2 + 2.0*x**4*(1-x) + x**4,
+    f_b=lambda x: 5*x*(1-x)**5 - 0.5*x**2*(1-x)**3 + 0.3*x*x*(1-x)**2 + 5*x**3*(1-x)**2 + 0.5*x**6)
+gradient.YellowBlack    = functiongradient_rgb(
+    f_r=lambda x: 2*(1-x)*x**5 + 3.5*(1-x)**2*x**3 + 2.1*(1-x)*(1-x)*x**2 + 3.0*(1-x)**3*x**2 + (1-x)**0.5*(1-x**2),
+    f_g=lambda x: 1.5*(1-x)**2*x**3 - 0.8*(1-x)**3*x**2 + 2.0*(1-x)**4*x + (1-x)**4,
+    f_b=lambda x: 5*(1-x)*x**5 - 0.5*(1-x)**2*x**3 + 0.3*(1-x)*(1-x)*x**2 + 5*(1-x)**3*x**2 + 0.5*(1-x)**6)
+gradient.RedGreen       = lineargradient_rgb(rgb.red, rgb.green)
+gradient.RedBlue        = lineargradient_rgb(rgb.red, rgb.blue)
+gradient.GreenRed       = lineargradient_rgb(rgb.green, rgb.red)
+gradient.GreenBlue      = lineargradient_rgb(rgb.green, rgb.blue)
+gradient.BlueRed        = lineargradient_rgb(rgb.blue, rgb.red)
+gradient.BlueGreen      = lineargradient_rgb(rgb.blue, rgb.green)
+gradient.RedBlack       = lineargradient_rgb(rgb.red, rgb.black)
+gradient.BlackRed       = lineargradient_rgb(rgb.black, rgb.red)
+gradient.RedWhite       = lineargradient_rgb(rgb.red, rgb.white)
+gradient.WhiteRed       = lineargradient_rgb(rgb.white, rgb.red)
+gradient.GreenBlack     = lineargradient_rgb(rgb.green, rgb.black)
+gradient.BlackGreen     = lineargradient_rgb(rgb.black, rgb.green)
+gradient.GreenWhite     = lineargradient_rgb(rgb.green, rgb.white)
+gradient.WhiteGreen     = lineargradient_rgb(rgb.white, rgb.green)
+gradient.BlueBlack      = lineargradient_rgb(rgb.blue, rgb.black)
+gradient.BlackBlue      = lineargradient_rgb(rgb.black, rgb.blue)
+gradient.BlueWhite      = lineargradient_rgb(rgb.blue, rgb.white)
+gradient.WhiteBlue      = lineargradient_rgb(rgb.white, rgb.blue)
+gradient.Rainbow        = lineargradient_hsb(hsb(0, 1, 1), hsb(2.0/3.0, 1, 1))
+gradient.ReverseRainbow = lineargradient_hsb(hsb(2.0/3.0, 1, 1), hsb(0, 1, 1))
+gradient.Hue            = lineargradient_hsb(hsb(0, 1, 1), hsb(1, 1, 1))
+gradient.ReverseHue     = lineargradient_hsb(hsb(1, 1, 1), hsb(0, 1, 1))
 rgbgradient.Rainbow        = rgbgradient(gradient.Rainbow)
 rgbgradient.ReverseRainbow = rgbgradient(gradient.ReverseRainbow)
 rgbgradient.Hue            = rgbgradient(gradient.Hue)
@@ -505,8 +561,8 @@ def jet_b(x):
     elif x < 0.38: return 1
     elif x < 0.62: return 1-(x-0.38)/(0.62-0.38)
     else: return 0
-gradient.Jet = functiongradient({"r":jet_r, "g":jet_g, "b":jet_b}, rgb)
-gradient.ReverseJet = functiongradient({"r":lambda x: jet_r(1-x), "g":lambda x: jet_g(1-x), "b":lambda x: jet_b(1-x)}, rgb)
+gradient.Jet = functiongradient_rgb(f_r=jet_r, f_g=jet_g, f_b=jet_b)
+gradient.ReverseJet = functiongradient_rgb(f_r=lambda x: jet_r(1-x), f_g=lambda x: jet_g(1-x), f_b=lambda x: jet_b(1-x))
 cmykgradient.Jet = cmykgradient(gradient.Jet)
 cmykgradient.ReverseJet = cmykgradient(gradient.ReverseJet)
 
