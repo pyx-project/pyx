@@ -156,10 +156,10 @@ class _keygraphstyle(_style):
     def color(self, privatedata, c):
         vc = privatedata.keygraph.axes["x"].convert(c)
         if vc < 0:
-            warnings.warn("gradiend color range is exceeded (lower bound)")
+            warnings.warn("gradient color range is exceeded (lower bound)")
             vc = 0
         if vc > 1:
-            warnings.warn("gradiend color range is exceeded (upper bound)")
+            warnings.warn("gradient color range is exceeded (upper bound)")
             vc = 1
         return self.gradient.getcolor(vc)
 
