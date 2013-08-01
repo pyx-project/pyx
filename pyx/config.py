@@ -50,7 +50,7 @@ class local:
     """locates files in the current directory"""
 
     def openers(self, filename, names, extensions):
-        return [lambda: builtinopen(filename+extension, "rb") for extension in extensions]
+        return [lambda extension=extension: builtinopen(filename+extension, "rb") for extension in extensions]
 
 locator_classes["local"] = local
 
