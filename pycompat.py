@@ -38,6 +38,12 @@ class wait_pipe:
         self.pipe.close()
         self.wait()
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, tb):
+        self.close()
+
 
 def popen(cmd, mode="r", bufsize=_marker):
     if mode[0] not in "rw" or "r" in mode[1:] or "w" in mode[1:]:
