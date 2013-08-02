@@ -906,9 +906,9 @@ class texrunner:
             with open("%s.tex" % self.texfilename, "w") as texfile:
               # start with filename -> creates dvi file with that name
                 texfile.write("\\relax%\n")
-            cmd = [self.mode, self.texfilename]
+            cmd = [config.get("text", self.mode, self.mode), self.texfilename]
             if self.texipc:
-                cmd.insert(1,"--ipc")
+                cmd.insert(1, "--ipc")
             pipes = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=0)
             self.texinput, self.texoutput = pipes.stdin, pipes.stdout
             if self.texdebug:

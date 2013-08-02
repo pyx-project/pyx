@@ -7,13 +7,13 @@
 
 [general]
 # general options
-#
+
 # warnings are issued using pythons warning module. You can influence
 # the output by the following option, using the values "default" (for
 # the python default), "short" (for a single line format), and
 # "shortest" for printing the warning message itself only.
 warnings = shortest
-#
+
 # Some options can contain several values and the space character is
 # used by default to separate several values. In case the space
 # character is needed itself as part of the values, you can set an
@@ -23,7 +23,13 @@ space = SPACE
 
 [text]
 # runtime configuration of the text module
-#
+
+# 'tex' specifies the TeX executable and defaults to 'tex'.
+tex = tex
+
+# 'latex' specifies the LaTeX executable and defaults to 'latex'.
+latex = latex
+
 # 'psfontmaps' is a whitespace separated list of options listing font
 # mapping files. Those files contain information about the available
 # type1 fonts. Depending on your TeX-installation you may need to add
@@ -56,7 +62,7 @@ texipc = 0
 
 [filelocator]
 # runtime configuration of file search mechanism
-#
+
 # 'methods' defines a list of methods to be tried one after each other
 # to find files like, e.g., fonts and corresponding metrics information.
 #

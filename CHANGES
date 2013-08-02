@@ -32,6 +32,7 @@
       that provide linear gradients between colors of a particular color model
   - pyxrc:
     - use APPDATA environment variable to locate the pyxrc on windows
+    - tex, latex, kpsewhich, and locate executables are now customizable in the pyxrc
 
 0.12.1 (2012/10/26):
   - graph styles:
