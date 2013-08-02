@@ -25,8 +25,8 @@
 A canvas holds a collection of all elements and corresponding attributes to be
 displayed. """
 
-import io, os, sys, string, tempfile, warnings
-from . import attr, baseclasses, document, pycompat, style, trafo
+import io, os, sys, string, subprocess, tempfile, warnings
+from . import attr, baseclasses, document, style, trafo
 from . import bbox as bboxmodule
 
 def _wrappedindocument(method):
@@ -364,24 +364,19 @@ class canvas(baseclasses.canvasitem):
     writetofile = _wrappedindocument(document.document.writetofile)
 
 
-    def _gscmd(self, device, filename, resolution=100, gscmd="gs", gsoptions="",
+    def _gscmd(self, device, filename, resolution=100, gs="gs", gsoptions=[],
                textalphabits=4, graphicsalphabits=4, ciecolor=False, **kwargs):
 
-        allowed_chars = string.ascii_letters + string.digits + "_-./"
-        if filename.translate(str.maketrans({allowed_char: None for allowed_char in allowed_chars})):
-            raise ValueError("for security reasons, only characters, digits and the characters '_-./' are allowed in filenames")
-
-        gscmd += " -dEPSCrop -dNOPAUSE -dQUIET -dBATCH -r%i -sDEVICE=%s -sOutputFile=%s" % (resolution, device, filename)
-        if gsoptions:
-            gscmd += " %s" % gsoptions
+        cmd = [gs, "-dEPSCrop", "-dNOPAUSE", "-dQUIET", "-dBATCH", "-r%d" % resolution, "-sDEVICE=%s" % device, "-sOutputFile=%s" % filename]
         if textalphabits is not None:
-            gscmd += " -dTextAlphaBits=%i" % textalphabits
+            cmd.append("-dTextAlphaBits=%i" % textalphabits)
         if graphicsalphabits is not None:
-            gscmd += " -dGraphicsAlphaBits=%i" % graphicsalphabits
+            cmd.append("-dGraphicsAlphaBits=%i" % graphicsalphabits)
         if ciecolor:
-            gscmd += " -dUseCIEColor"
+            cmd.append("-dUseCIEColor")
+        cmd.extend(gsoptions)
 
-        return gscmd, kwargs
+        return cmd, kwargs
 
     def writeGSfile(self, filename=None, device=None, input="eps", **kwargs):
         """
@@ -411,20 +406,22 @@ class canvas(baseclasses.canvasitem):
             else:
                 raise RuntimeError("could not auto-guess device")
 
-        gscmd, kwargs = self._gscmd(device, filename, **kwargs)
+        cmd, kwargs = self._gscmd(device, filename, **kwargs)
 
         if input == "eps":
-            gscmd += " -"
-            with pycompat.popen(gscmd, "wb") as stdin:
-                self.writeEPSfile(stdin, **kwargs)
+            cmd.append("-")
+            p = subprocess.Popen(cmd, stdin=subprocess.PIPE)
+            self.writeEPSfile(p.stdin, **kwargs)
+            p.stdin.close()
+            p.wait()
         elif input == "pdf":
             # PDF files need to be accesible by random access and thus we need to create
             # a temporary file
             with tempfile.NamedTemporaryFile("wb", delete=False) as f:
-                gscmd += " %s" % f.name
                 self.writePDFfile(f, **kwargs)
                 fname = f.name
-            os.system(gscmd)
+            cmd.append(fname)
+            subprocess.Popen(cmd).wait()
             os.unlink(fname)
         else:
             raise RuntimeError("input 'eps' or 'pdf' expected")
@@ -438,24 +435,30 @@ class canvas(baseclasses.canvasitem):
         pipe to allow random access.
         """
 
-        gscmd, kwargs = self._gscmd(device, "-", **kwargs)
+        cmd, kwargs = self._gscmd(device, "-", **kwargs)
 
         if input == "eps":
-            gscmd += " -"
+            cmd.append("-")
             # we can safely ignore that the input and output pipes could block each other,
             # because Ghostscript has to read the full input before writing the output
-            stdin, stdout = pycompat.popen2(gscmd)
-            self.writeEPSfile(stdin, **kwargs)
-            stdin.close()
+            p = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+            self.writeEPSfile(p.stdin, **kwargs)
+            p.stdin.close()
+            p.wait()
         elif input == "pdf":
             # PDF files need to be accesible by random access and thus we need to create
             # a temporary file
             with tempfile.NamedTemporaryFile("wb", delete=False) as f:
-                gscmd += " %s" % f.name
                 self.writePDFfile(f, **kwargs)
                 fname = f.name
-            stdout = pycompat.popen(gscmd, "rb")
+            cmd.append(fname)
+            p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+            # unfortunately, we can not remove the input file without fetching the output?!
+            data, error = p.communicate()
+            if error:
+                raise ValueError("error received while waiting for ghostscript")
             os.unlink(fname)
+            return io.BytesIO(data)
         else:
             raise RuntimeError("input 'eps' or 'pdf' expected")
 
@@ -463,12 +466,12 @@ class canvas(baseclasses.canvasitem):
             # the read method of a pipe object may not return the full content
             f = io.BytesIO()
             while True:
-                data = stdout.read()
+                data = p.stdout.read()
                 if not data:
                    break
                 f.write(data)
-            stdout.close()
+            p.stdout.close()
             f.seek(0)
             return f
         else:
-            return stdout
+            return p.stdout
