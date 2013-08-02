@@ -427,51 +427,27 @@ class canvas(baseclasses.canvasitem):
             raise RuntimeError("input 'eps' or 'pdf' expected")
 
 
-    def pipeGS(self, device, input="eps", seekable=False, **kwargs):
+    def pipeGS(self, device, input="eps", **kwargs):
         """
-        returns a pipe with the Ghostscript output of the EPS or PDF of the canvas
-
-        If seekable is True, a BytesIO instance will be returned instead of a
-        pipe to allow random access.
+        returns a BytesIO instance with the Ghostscript output of the EPS or PDF
         """
 
         cmd, kwargs = self._gscmd(device, "-", **kwargs)
 
-        if input == "eps":
-            cmd.append("-")
-            # we can safely ignore that the input and output pipes could block each other,
-            # because Ghostscript has to read the full input before writing the output
-            p = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-            self.writeEPSfile(p.stdin, **kwargs)
-            p.stdin.close()
-            p.wait()
-        elif input == "pdf":
-            # PDF files need to be accesible by random access and thus we need to create
-            # a temporary file
-            with tempfile.NamedTemporaryFile("wb", delete=False) as f:
+        with tempfile.NamedTemporaryFile("wb", delete=False) as f:
+            if input == "eps":
+                self.writeEPSfile(f, **kwargs)
+            elif input == "pdf":
                 self.writePDFfile(f, **kwargs)
-                fname = f.name
-            cmd.append(fname)
-            p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
-            # unfortunately, we can not remove the input file without fetching the output?!
-            data, error = p.communicate()
-            if error:
-                raise ValueError("error received while waiting for ghostscript")
-            os.unlink(fname)
-            return io.BytesIO(data)
-        else:
-            raise RuntimeError("input 'eps' or 'pdf' expected")
+            else:
+                raise RuntimeError("input 'eps' or 'pdf' expected")
+            fname = f.name
 
-        if seekable:
-            # the read method of a pipe object may not return the full content
-            f = io.BytesIO()
-            while True:
-                data = p.stdout.read()
-                if not data:
-                   break
-                f.write(data)
-            p.stdout.close()
-            f.seek(0)
-            return f
-        else:
-            return p.stdout
+        cmd.append(fname)
+        p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+        data, error = p.communicate()
+        os.unlink(fname)
+
+        if error:
+            raise ValueError("error received while waiting for ghostscript")
+        return io.BytesIO(data)
