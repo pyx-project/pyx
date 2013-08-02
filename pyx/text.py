@@ -21,7 +21,7 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import errno, functools, glob, os, threading, queue, re, tempfile, atexit, subprocess, time, warnings
+import errno, functools, glob, os, threading, queue, re, tempfile, atexit, time, warnings
 from . import config, unit, box, canvas, trafo, version, attr, style, path
 from pyx.dvi import dvifile
 from . import bbox as bboxmodule
@@ -909,7 +909,7 @@ class texrunner:
             cmd = [config.get("text", self.mode, self.mode), self.texfilename]
             if self.texipc:
                 cmd.insert(1, "--ipc")
-            pipes = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=0)
+            pipes = config.Popen(cmd, stdin=config.PIPE, stdout=config.PIPE, stderr=config.STDOUT, bufsize=0)
             self.texinput, self.texoutput = pipes.stdin, pipes.stdout
             if self.texdebug:
                 self.texinput = Tee(self.texinput, open(self.texdebug, "wb"))

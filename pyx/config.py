@@ -20,10 +20,11 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import configparser, os, subprocess, warnings
-import os, io, warnings, pkgutil
+import configparser, io, os, pkgutil, subprocess, shutil, warnings
 
 builtinopen = open
+show_files = False
+show_executes = False
 
 try:
     import pykpathsea as pykpathsea_module
@@ -169,11 +170,33 @@ locator_classes["pykpathsea"] = pykpathsea
 # 
 # locator_classes["libpathsea"] = libkpathsea
 
+def Popen(cmd, *args, **kwargs):
+    try:
+        cmd + ""
+    except:
+        pass
+    else:
+        raise ValueError("pyx.config.Popen must not be used with a string cmd")
+    if show_executes:
+        info = ["PyX executes", cmd[0], "with args", cmd[1:]]
+        try:
+            shutil.which
+        except:
+            pass
+        else:
+            info.append("located at")
+            info.append(shutil.which(cmd[0]))
+        print(*info)
+    return subprocess.Popen(cmd, *args, **kwargs)
+
+PIPE = subprocess.PIPE
+STDOUT = subprocess.STDOUT
+
 
 def fix_cygwin(full_filename):
     # detect cygwin result on windows python
     if os.name == "nt" and full_filename.startswith("/"):
-        with subprocess.Popen(['cygpath', '-w', full_filename], stdout=subprocess.PIPE).stdout as output:
+        with Popen(['cygpath', '-w', full_filename], stdout=subprocess.PIPE).stdout as output:
             return io.TextIOWrapper(output, encoding="ascii", errors="surrogateescape").readline().rstrip()
     return full_filename
 
@@ -188,7 +211,7 @@ class kpsewhich:
         full_filename = None
         for name in names:
             try:
-                with subprocess.Popen([self.kpsewhich, '--format', name, filename], stdout=subprocess.PIPE).stdout as output:
+                with Popen([self.kpsewhich, '--format', name, filename], stdout=subprocess.PIPE).stdout as output:
                     full_filename = io.TextIOWrapper(output, encoding="ascii", errors="surrogateescape").readline().rstrip()
             except OSError:
                 return []
@@ -220,7 +243,7 @@ class locate:
     def openers(self, filename, names, extensions):
         full_filename = None
         for extension in extensions:
-            with subprocess.Popen([self.locate, filename+extension], stdout=subprocess.PIPE).stdout as output:
+            with Popen([self.locate, filename+extension], stdout=subprocess.PIPE).stdout as output:
                 for line in io.TextIOWrapper(output, encoding="ascii", errors="surrogateescape"):
                     line = line.rstrip()
                     if os.path.basename(line) == filename+extension:
@@ -349,6 +372,12 @@ def open(filename, formats, ascii=False):
                 except EnvironmentError:
                     file = None
                 if file:
+                    if show_files:
+                        info = ["PyX filelocator found", filename, "by method", method.__class__.__name__]
+                        if hasattr(file, "name"):
+                            info.append("at")
+                            info.append(file.name)
+                        print(*info)
                     opener_cache[(filename, names)] = opener
                     break
             # break two loops here
@@ -356,6 +385,8 @@ def open(filename, formats, ascii=False):
                 continue
             break
         else:
+            info = ["PyX filelocator failed to find", filename, "of type", names, "and extensions", extensions]
+            print(*info)
             raise IOError("Could not locate the file '%s'." % filename)
     if ascii:
         return io.TextIOWrapper(file, encoding="ascii", errors="surrogateescape")
@@ -376,3 +407,4 @@ format.tex_ps_header = format("PostScript header", [".pro"])                    
 format.type1 = format("type1 fonts", [".pfa", ".pfb"])
 format.vf = format("vf", [".vf"])
 format.dvips_config = format("dvips config", [])
+

@@ -25,8 +25,8 @@
 A canvas holds a collection of all elements and corresponding attributes to be
 displayed. """
 
-import io, os, sys, string, subprocess, tempfile, warnings
-from . import attr, baseclasses, document, style, trafo
+import io, os, sys, string, tempfile, warnings
+from . import attr, baseclasses, config, document, style, trafo
 from . import bbox as bboxmodule
 
 def _wrappedindocument(method):
@@ -410,7 +410,7 @@ class canvas(baseclasses.canvasitem):
 
         if input == "eps":
             cmd.append("-")
-            p = subprocess.Popen(cmd, stdin=subprocess.PIPE)
+            p = config.Popen(cmd, stdin=config.PIPE)
             self.writeEPSfile(p.stdin, **kwargs)
             p.stdin.close()
             p.wait()
@@ -421,7 +421,7 @@ class canvas(baseclasses.canvasitem):
                 self.writePDFfile(f, **kwargs)
                 fname = f.name
             cmd.append(fname)
-            subprocess.Popen(cmd).wait()
+            config.Popen(cmd).wait()
             os.unlink(fname)
         else:
             raise RuntimeError("input 'eps' or 'pdf' expected")
@@ -444,7 +444,7 @@ class canvas(baseclasses.canvasitem):
             fname = f.name
 
         cmd.append(fname)
-        p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+        p = config.Popen(cmd, stdout=config.PIPE)
         data, error = p.communicate()
         os.unlink(fname)
 
