@@ -21,8 +21,8 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import errno, functools, glob, os, threading, queue, re, tempfile, atexit, time, warnings
-from . import config, unit, box, canvas, trafo, version, attr, style, pycompat, path
+import errno, functools, glob, os, threading, queue, re, tempfile, atexit, subprocess, time, warnings
+from . import config, unit, box, canvas, trafo, version, attr, style, path
 from pyx.dvi import dvifile
 from . import bbox as bboxmodule
 
@@ -906,11 +906,11 @@ class texrunner:
             with open("%s.tex" % self.texfilename, "w") as texfile:
               # start with filename -> creates dvi file with that name
                 texfile.write("\\relax%\n")
+            cmd = [self.mode, self.texfilename]
             if self.texipc:
-                ipcflag = " --ipc"
-            else:
-                ipcflag = ""
-            self.texinput, self.texoutput = pycompat.popen4("%s%s %s" % (self.mode, ipcflag, self.texfilename), "t", 0)
+                cmd.insert(1,"--ipc")
+            pipes = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=0)
+            self.texinput, self.texoutput = pipes.stdin, pipes.stdout
             if self.texdebug:
                 self.texinput = Tee(self.texinput, open(self.texdebug, "wb"))
             atexit.register(_cleantmp, self)
