@@ -54,7 +54,7 @@ def popen(cmd, mode="r", bufsize=_marker):
         kwargs = {"stdin": subprocess.PIPE}
     if bufsize is not _marker:
         kwargs["bufsize"] = bufsize
-    pipes = subprocess.Popen(cmd, shell=True, **kwargs)
+    pipes = subprocess.Popen(cmd, **kwargs)
     if mode[0] == "r":
         return pipes.stdout
     else:
@@ -65,7 +65,7 @@ def popen2(cmd, mode="t", bufsize=_marker):
               "stdout": subprocess.PIPE}
     if bufsize is not _marker:
         kwargs["bufsize"] = bufsize
-    pipes = subprocess.Popen(cmd, shell=True, **kwargs)
+    pipes = subprocess.Popen(cmd, **kwargs)
     return pipes.stdin, pipes.stdout
 
 def popen4(cmd, mode="t", bufsize=_marker):
@@ -74,5 +74,5 @@ def popen4(cmd, mode="t", bufsize=_marker):
               "stderr": subprocess.STDOUT}
     if bufsize is not _marker:
         kwargs["bufsize"] = bufsize
-    pipes = subprocess.Popen(cmd, shell=True, **kwargs)
+    pipes = subprocess.Popen(cmd, **kwargs)
     return pipes.stdin, pipes.stdout
