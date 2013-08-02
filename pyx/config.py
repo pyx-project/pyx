@@ -20,10 +20,8 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import configparser, os.path, warnings
+import configparser, os, subprocess, warnings
 import os, io, warnings, pkgutil
-
-from . import pycompat
 
 builtinopen = open
 
@@ -172,25 +170,31 @@ locator_classes["pykpathsea"] = pykpathsea
 # locator_classes["libpathsea"] = libkpathsea
 
 
+def fix_cygwin(full_filename):
+    # detect cygwin result on windows python
+    if os.name == "nt" and full_filename.startswith("/"):
+        with subprocess.Popen(['cygpath', '-w', full_filename], stdout=subprocess.PIPE).stdout as output:
+            return io.TextIOWrapper(output, encoding="ascii", errors="surrogateescape").readline().rstrip()
+    return full_filename
+
+
 class kpsewhich:
     """locate files using the kpsewhich executable"""
 
     def openers(self, filename, names, extensions):
+        full_filename = None
         for name in names:
             try:
-                with pycompat.popen('kpsewhich --format="%s" "%s"' % (name, filename)) as output:
-                    full_filenames = output.read()
+                with subprocess.Popen(['kpsewhich', '--format', name, filename], stdout=subprocess.PIPE).stdout as output:
+                    full_filename = io.TextIOWrapper(output, encoding="ascii", errors="surrogateescape").readline().rstrip()
             except OSError:
                 return []
-            if full_filenames:
+            if full_filename:
                 break
         else:
             return []
-        full_filename = full_filenames.decode("ascii").split("\n")[0].rstrip("\r")
 
-        # Detect Cygwin kpsewhich on Windows Python
-        if os.name == "nt" and full_filename.startswith("/"):
-            full_filename = pycompat.popen('cygpath -w "%s"' % full_filename).read().strip()
+        full_filename = fix_cygwin(full_filename)
 
         def _opener():
             try:
@@ -208,20 +212,28 @@ class locate:
     """locate files using a locate executable"""
 
     def openers(self, filename, names, extensions):
+        full_filename = None
         for extension in extensions:
-            full_filenames = pycompat.popen("locate \"%s\"" % (filename+extension)).read()
-            if full_filenames:
+            with subprocess.Popen(['locate', filename+extension], stdout=subprocess.PIPE).stdout as output:
+                for line in io.TextIOWrapper(output, encoding="ascii", errors="surrogateescape"):
+                    line = line.rstrip()
+                    if os.path.basename(line) == filename+extension:
+                        full_filename = line
+                        break
+            if full_filename:
                 break
         else:
             return []
-        full_filename = full_filenames.split("\n")[0].rstrip("\r")
+
+        full_filename = fix_cygwin(full_filename)
+
         def _opener():
             try:
-                return builtinopen(full_filenames, "rb")
+                return builtinopen(full_filename, "rb")
             except IOError:
                 warnings.warn("'%s' should be available at '%s' according to the locate, "
                               "but the file is not available at this location; "
-                              "update your locate database" % (filename, self.full_filenames[filename]))
+                              "update your locate database" % (filename+extension, full_filename))
         return [_opener]
 
 locator_classes["locate"] = locate
