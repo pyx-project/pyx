@@ -910,11 +910,7 @@ class texrunner:
                 ipcflag = " --ipc"
             else:
                 ipcflag = ""
-            try:
-                self.texinput, self.texoutput = pycompat.popen4("%s%s %s" % (self.mode, ipcflag, self.texfilename), "t", 0)
-            except ValueError:
-                # workaround: bufsize = 0 is not supported on MS windows for os.open4 (Python 2.4 and below, i.e. where subprocess is not available)
-                self.texinput, self.texoutput = pycompat.popen4("%s%s %s" % (self.mode, ipcflag, self.texfilename), "t")
+            self.texinput, self.texoutput = pycompat.popen4("%s%s %s" % (self.mode, ipcflag, self.texfilename), "t", 0)
             if self.texdebug:
                 self.texinput = Tee(self.texinput, open(self.texdebug, "wb"))
             atexit.register(_cleantmp, self)
