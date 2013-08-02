@@ -55,8 +55,8 @@ class local:
 locator_classes["local"] = local
 
 
-class internal_pkgutil:
-    """locates files within the PyX data tree (via pkgutil)"""
+class internal:
+    """locates files within the PyX data tree"""
 
     def openers(self, filename, names, extensions):
         for extension in extensions:
@@ -71,23 +71,7 @@ class internal_pkgutil:
                     return [lambda: io.BytesIO(data)]
         return []
 
-class internal_open:
-    """locates files within the PyX data tree (via an open relative to the path of this file)"""
-
-    def openers(self, filename, names, extensions):
-        result = []
-        for extension in extensions:
-            full_filename = filename+extension
-            dir = os.path.splitext(full_filename)[1][1:]
-            result.append(lambda: builtinopen(os.path.join(os.path.dirname(__file__), "data", dir, full_filename), "rb"))
-        return result
-
-try:
-    pkgutil.get_data
-except AttributeError:
-    locator_classes["internal"] = internal_open # fallback for python < 2.6
-else:
-    locator_classes["internal"] = internal_pkgutil
+locator_classes["internal"] = internal
 
 
 class recursivedir:
