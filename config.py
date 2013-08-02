@@ -232,7 +232,11 @@ class _marker: pass
 
 config = configparser.ConfigParser()
 config.read_string(locator_classes["internal"]().openers("pyxrc", [], [""])[0]().read().decode("utf-8"), source="(internal pyxrc)")
-config.read(os.path.expanduser("~/.pyxrc"), encoding="utf-8")
+if os.name == "nt":
+    user_pyxrc = os.path.join(os.environ['APPDATA'], "pyxrc")
+else:
+    user_pyxrc = os.path.expanduser("~/.pyxrc")
+config.read(user_pyxrc, encoding="utf-8")
 
 def get(section, option, default=_marker):
     if default is _marker:
@@ -283,7 +287,7 @@ def getlist(section, option, default=_marker):
     return l
 
 
-space = get("general", "space", None)
+space = get("general", "space", "SPACE")
 formatWarnings = get("general", "warnings", "default")
 if formatWarnings not in ["default", "short", "shortest"]:
     raise RuntimeError("invalid config value for option 'warnings' in section 'general'")

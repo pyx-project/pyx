@@ -13,6 +13,13 @@
 # the python default), "short" (for a single line format), and
 # "shortest" for printing the warning message itself only.
 warnings = shortest
+#
+# Some options can contain several values and the space character is
+# used by default to separate several values. In case the space
+# character is needed itself as part of the values, you can set an
+# unused replacement string to encode the space character being
+# part of the value. By default 'SPACE' is this magic string:
+space = SPACE
 
 [text]
 # runtime configuration of the text module
@@ -25,15 +32,15 @@ warnings = shortest
 # information browse the FAQ for the term 'font mapping file'.
 psfontmaps = psfonts.map
 
-# 'pdffontmaps' is similar to psfontmaps, but it used when pdf output
+# 'pdffontmaps' is similar to psfontmaps, but used when pdf output
 # is generated. (Note that pdf has a different set of builtin fonts.)
 pdffontmaps = pdftex.map
 
-# 'waitfortex' is an positive integer, namely the number of seconds
+# 'waitfortex' is an positive integer. It is the number of seconds
 # to be waited for an appropriate response from TeX/LaTeX.
 waitfortex = 60
 
-# 'showwaitfortex' is an non-negative integer, namely the number of
+# 'showwaitfortex' is an non-negative integer. It is the number of
 # seconds to be waited until (and between) emitting messages
 # indicating the waiting for an appropriate response from TeX/LaTeX.
 # This feature can be turned off by setting showwaitfortex to 0.
