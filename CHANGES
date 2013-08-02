@@ -30,6 +30,8 @@
       the function parameters are now passed directly
     - lineargradient has been removed for factory functions lineargradient_rgb, etc.
       that provide linear gradients between colors of a particular color model
+  - pyxrc:
+    - use APPDATA environment variable to locate the pyxrc on windows
 
 0.12.1 (2012/10/26):
   - graph styles:
