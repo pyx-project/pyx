@@ -73,5 +73,9 @@ texipc = 0
 #                 Building of this module can be enabled in the setup.cfg
 #                 file distributed with PyX.
 # - 'kpsewhich': locate files using the kpsewhich executable if available.
+#                The name of the executable can be set by the 'kpsewhich'
+#                option and defaults to 'kpsewhich'.
 # - 'locate': locate files using a locate executable if available.
+#             The name of the executable can be set by the 'locate'
+#             option and defaults to 'locate'.
 methods = local internal pykpathsea kpsewhich
