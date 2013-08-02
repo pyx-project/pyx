@@ -181,11 +181,14 @@ def fix_cygwin(full_filename):
 class kpsewhich:
     """locate files using the kpsewhich executable"""
 
+    def __init__(self):
+        self.kpsewhich = get("filelocator", "kpsewhich", "kpsewhich")
+
     def openers(self, filename, names, extensions):
         full_filename = None
         for name in names:
             try:
-                with subprocess.Popen(['kpsewhich', '--format', name, filename], stdout=subprocess.PIPE).stdout as output:
+                with subprocess.Popen([self.kpsewhich, '--format', name, filename], stdout=subprocess.PIPE).stdout as output:
                     full_filename = io.TextIOWrapper(output, encoding="ascii", errors="surrogateescape").readline().rstrip()
             except OSError:
                 return []
@@ -211,10 +214,13 @@ locator_classes["kpsewhich"] = kpsewhich
 class locate:
     """locate files using a locate executable"""
 
+    def __init__(self):
+        self.locate = get("filelocator", "locate", "locate")
+
     def openers(self, filename, names, extensions):
         full_filename = None
         for extension in extensions:
-            with subprocess.Popen(['locate', filename+extension], stdout=subprocess.PIPE).stdout as output:
+            with subprocess.Popen([self.locate, filename+extension], stdout=subprocess.PIPE).stdout as output:
                 for line in io.TextIOWrapper(output, encoding="ascii", errors="surrogateescape"):
                     line = line.rstrip()
                     if os.path.basename(line) == filename+extension:
