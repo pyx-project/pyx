@@ -128,7 +128,7 @@ convenience methods, which wrap the canvas into a single page document.
    *kwargs*.
 
 
-.. method:: canvas.pipeGS(device, seekable=False, resolution=100, gscommand="gs", gsoptions="", textalphabits=4, graphicsalphabits=4, ciecolor=False, input="eps", **kwargs)
+.. method:: canvas.pipeGS(device, seekable=False, resolution=100, gs="gs", gsoptions=[], textalphabits=4, graphicsalphabits=4, ciecolor=False, input="eps", **kwargs)
 
    This method pipes the content of a canvas to the ghostscript interpreter
    to generate other output formats. The output is returned by means of a
@@ -140,16 +140,17 @@ convenience methods, which wrap the canvas into a single page document.
    ``"jpeggray"`` might be available among others. See the output of ``gs
    --help`` and the ghostscript documentation for more information.
 
-   *resolution* specifies the resolution in dpi (dots per inch). *gscmd* is the
-   command to be used to invoke ghostscript. *gsoptions* is an option string
-   passed to the ghostscript interpreter. *textalphabits* and *graphicsalphabits*
-   are convenient parameters to set the ``TextAlphaBits`` and
-   ``GraphicsAlphaBits`` options of ghostscript. The addition of these options
-   can be skipped by setting their values to ``None``. *ciecolor* adds the
-   ``-dUseCIEColor`` flag to improve the CMYK to RGB color conversion. *input*
-   can be either ``"eps"`` or ``"pdf"`` to select the input type to be passed
-   to ghostscript (note slightly different features available in the different
-   input types regarding e.g. :mod:`epsfile` inclusion and transparency).
+   *resolution* specifies the resolution in dpi (dots per inch). *gs* is the
+   name of the ghostscript executable. *gsoptions* is a list of additional
+   options passed to the ghostscript interpreter. *textalphabits* and
+   *graphicsalphabits* are convenient parameters to set the ``TextAlphaBits``
+   and ``GraphicsAlphaBits`` options of ghostscript. The addition of these
+   options can be skipped by setting their values to ``None``. *ciecolor* adds
+   the ``-dUseCIEColor`` flag to improve the CMYK to RGB color conversion.
+   *input* can be either ``"eps"`` or ``"pdf"`` to select the input type to be
+   passed to ghostscript (note slightly different features available in the
+   different input types regarding e.g. :mod:`epsfile` inclusion and
+   transparency).
 
    *kwargs* are passed to the :meth:`writeEPSfile` method (not counting the *file*
    parameter), which is used to generate the input for ghostscript. By that you
