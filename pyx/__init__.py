@@ -32,6 +32,12 @@ built out of these primitives.
 from . import version
 __version__ = version.version
 
+import sys
+if sys.hexversion < 0x03020000:
+    sys.stderr.write("PyX {} requires Python 3.2 or higher.\n".format(__version__))
+    sys.exit()
+del sys
+
 __all__ = ["attr", "box", "bitmap", "canvas", "color", "connector", "deco", "deformer", "document",
            "epsfile", "graph", "mesh", "metapost", "path", "pattern", "pdfextra", "style", "trafo", "text", "unit"]
 

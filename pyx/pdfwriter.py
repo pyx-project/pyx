@@ -21,10 +21,11 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import io, copy, warnings, time
+import io, copy, logging, time
+logger = logging.getLogger("pyx")
 try:
     import zlib
-    haszlib = True
+    haszlib = False
 except:
     haszlib = False
 
@@ -298,7 +299,7 @@ class PDFwriter:
         self.writebbox = writebbox
         if compress and not haszlib:
             compress = 0
-            warnings.warn("compression disabled due to missing zlib module")
+            logger.warn("PDFwriter: compression disabled due to missing zlib module")
         self.compress = compress
         self.compresslevel = compresslevel
         self.strip_fonts = strip_fonts

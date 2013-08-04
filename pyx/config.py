@@ -20,7 +20,7 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import configparser, io, logging, os, pkgutil, subprocess, shutil, warnings
+import configparser, io, logging, os, pkgutil, subprocess, shutil
 
 logger_execute = logging.getLogger("pyx.execute")
 logger_filelocator = logging.getLogger("pyx.filelocator")
@@ -328,18 +328,6 @@ def getlist(section, option, default=_marker):
 
 
 space = get("general", "space", "SPACE")
-formatWarnings = get("general", "warnings", "default")
-if formatWarnings not in ["default", "short", "shortest"]:
-    raise RuntimeError("invalid config value for option 'warnings' in section 'general'")
-if formatWarnings != "default":
-    def formatwarning(message, category, filename, lineno, line=None):
-        if formatWarnings == "short":
-            return "%s:%s: %s: %s\n" % (filename, lineno, category.__name__, message)
-        else:
-            return "%s\n" % message
-    warnings.formatwarning = formatwarning
-
-
 methods = [locator_classes[method]()
            for method in getlist("filelocator", "methods", ["local", "internal", "pykpathsea", "kpsewhich"])]
 opener_cache = {}
