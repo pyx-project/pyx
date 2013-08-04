@@ -5,7 +5,7 @@ col = color.cmyk.PineGreen
 
 text.set(mode="latex")
 text.preamble(r"\usepackage{color}")
-text.preamble(r"\definecolor{COL}{cmyk}{%(c)g,%(m)g,%(y)g,%(k)g}" % col.color)
+text.preamble(r"\definecolor{COL}{cmyk}{%g,%g,%g,%g}" % (col.c, col.m, col.y, col.k))
 
 c = canvas.canvas()
 c.text(0, 0, r"\textcolor{COL}{Text} and outline have the same color")

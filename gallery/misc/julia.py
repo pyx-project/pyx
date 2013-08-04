@@ -13,7 +13,7 @@ c = 0.41 + 0.3j
 p = color.gradient.RedBlue
 
 def rgbcolortostring(c):
-    return bytes([int(255*c.color[name]) for name in "rgb"])
+    return bytes([int(255*c.r), int(255*c.g), int(255*c.b)])
 
 data = BytesIO()
 
