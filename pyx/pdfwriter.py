@@ -25,7 +25,7 @@ import io, copy, logging, time
 logger = logging.getLogger("pyx")
 try:
     import zlib
-    haszlib = False
+    haszlib = True
 except:
     haszlib = False
 
