@@ -41,23 +41,20 @@ import importlib
 for module in __all__:
     importlib.import_module('.' + module, package='pyx')
 
-def pyxinfo(show_files=True, show_executes=True):
-    import os, sys
+def pyxinfo():
+    import logging, os, sys
     from . import config
-    print("--- PyX info", "-"*37)
-    print("Platform name is:", os.name)
-    print("Python executable:", sys.executable)
-    print("Python version:", sys.version)
-    print("PyX comes from:", __file__)
-    print("PyX version:", __version__)
-    print("pyxrc", "is" if os.path.isfile(config.user_pyxrc) else "would be" ,"loaded from:", config.user_pyxrc)
-    print("pykpathsea:", "available" if config.has_pykpathsea else "not available")
-    print("file locators in use:", ", ".join(method.__class__.__name__ for method in config.methods))
-    print("show files:", show_files)
-    print("show executes:", show_executes)
-    print("-"*50)
-    config.show_files = show_files
-    config.show_executes = show_executes
+    logging.lastResort.setLevel(logging.INFO)
+    logger = logging.getLogger("pyx")
+    logger.setLevel(logging.INFO)
+    logger.info("Platform name is: {}".format(os.name))
+    logger.info("Python executable: {}".format(sys.executable))
+    logger.info("Python version: %s", sys.version)
+    logger.info("PyX comes from: %s", __file__)
+    logger.info("PyX version: %s", __version__)
+    logger.info("pyxrc %s %s %s", "is" if os.path.isfile(config.user_pyxrc) else "would be" ,"loaded from:", config.user_pyxrc)
+    logger.info("pykpathsea: %s", "available" if config.has_pykpathsea else "not available")
+    logger.info("file locators in use: %s", ", ".join(method.__class__.__name__ for method in config.methods))
 
 __all__.append("__version__")
 __all__.append("pyxinfo")
