@@ -21,7 +21,7 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import math, re, configparser, struct, warnings
+import math, re, configparser, struct
 from pyx import text
 from . import style
 builtinlist = list

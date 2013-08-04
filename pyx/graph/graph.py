@@ -22,11 +22,11 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 
-import math, re, string, warnings
+import logging, math, re, string
 from pyx import canvas, path, trafo, unit
 from pyx.graph.axis import axis, positioner
 
-
+logger = logging.getLogger("pyx")
 goldenmean = 0.5 * (math.sqrt(5) + 1)
 
 
@@ -192,7 +192,7 @@ class graph(canvas.canvas):
 
     def plot(self, data, styles=None, rangewarning=1):
         if self.didranges and rangewarning:
-            warnings.warn("axes ranges have already been analysed; no further adjustments will be performed")
+            logger.warning("axes ranges have already been analysed; no further adjustments will be performed")
         if self.didstyles:
             raise RuntimeError("can't plot further data after dostyles() has been executed")
         singledata = 0
@@ -285,7 +285,7 @@ class graph(canvas.canvas):
             self.doplotitem(plotitem)
 
     def dodata(self):
-        warnings.warn("dodata() has been deprecated. Use doplot() instead.")
+        logger.warning("dodata() has been deprecated. Use doplot() instead.")
         self.doplot()
 
     def dokeyitem(self, plotitem):

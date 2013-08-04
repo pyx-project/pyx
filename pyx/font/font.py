@@ -21,10 +21,11 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import warnings
+import logging
 from pyx import bbox, baseclasses, deco, path, pswriter, pdfwriter, trafo, unit
 from . import t1file, afmfile
 
+logger = logging.getLogger("pyx")
 
 ##############################################################################
 # PS resources
@@ -389,7 +390,7 @@ class T1text_pt(text_pt):
 
     def bbox(self):
         if self.font.metric is None:
-            warnings.warn("We are about to extract the bounding box from the path of the text. This is slow and differs from the font metric information. You should provide an afm file whenever possible.")
+            logger.warning("We are about to extract the bounding box from the path of the text. This is slow and differs from the font metric information. You should provide an afm file whenever possible.")
             return self.textpath().bbox()
         if not self.decode:
             raise ValueError("decoding required for font metric access (bbox)")

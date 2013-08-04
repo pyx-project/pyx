@@ -20,9 +20,10 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import sys, warnings
+import logging, sys
 from . import bbox, pswriter, pdfwriter, writer, trafo, style, unit
 
+logger = logging.getLogger("pyx")
 
 class paperformat:
 
@@ -58,7 +59,7 @@ class page:
             self.paperformat = paperformat
         else:
             self.paperformat = _paperformatfromstring(paperformat)
-            warnings.warn("specification of paperformat by string is deprecated, use document.paperformat.%s instead" % paperformat.capitalize(), DeprecationWarning)
+            logger.warning("specification of paperformat by string is deprecated, use document.paperformat.%s instead" % paperformat.capitalize(), DeprecationWarning)
 
         self.rotated = rotated
         self.centered = centered
@@ -88,12 +89,12 @@ class page:
                 pagetrafo = trafo.rotate(90).translated(paperwidth, 0)
                 if self.centered or self.fittosize:
                     if not self.fittosize and (bbox.height() > paperwidth or bbox.width() > paperheight):
-                        warnings.warn("content exceeds the papersize")
+                        logger.warning("content exceeds the papersize")
                     pagetrafo = pagetrafo.translated(-0.5*(paperwidth - bbox.height()) + bbox.bottom(),
                                                       0.5*(paperheight - bbox.width()) - bbox.left())
             else:
                 if not self.fittosize and (bbox.width() > paperwidth or bbox.height() > paperheight):
-                    warnings.warn("content exceeds the papersize")
+                    logger.warning("content exceeds the papersize")
                 pagetrafo = trafo.translate(0.5*(paperwidth - bbox.width())  - bbox.left(),
                                             0.5*(paperheight - bbox.height()) - bbox.bottom())
 

@@ -20,10 +20,12 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import io, os.path, re, warnings
+import io, logging, os.path, re
 from pyx import font, config
 from pyx.font import t1file, afmfile, pfmfile
 from pyx.dvi import encfile
+
+logger = logging.getLogger("pyx")
 
 class UnsupportedFontFormat(Exception):
     pass
@@ -174,7 +176,7 @@ def readfontmap(filenames):
                     try:
                         fm = MAPline(line)
                     except (ParseError, UnsupportedPSFragment) as e:
-                        warnings.warn("Ignoring line %i in mapping file '%s': %s" % (lineno, filename, e))
+                        logger.warning("Ignoring line %i in mapping file '%s': %s" % (lineno, filename, e))
                     except UnsupportedFontFormat as e:
                         pass
                     else:

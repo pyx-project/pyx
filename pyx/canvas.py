@@ -25,9 +25,11 @@
 A canvas holds a collection of all elements and corresponding attributes to be
 displayed. """
 
-import io, os, sys, string, tempfile, warnings
+import io, logging, os, sys, string, tempfile
 from . import attr, baseclasses, config, document, style, trafo
 from . import bbox as bboxmodule
+
+logger = logging.getLogger("pyx")
 
 def _wrappedindocument(method):
     def wrappedindocument(self, file=None, **kwargs):
@@ -39,8 +41,8 @@ def _wrappedindocument(method):
             elif name.startswith("write_"):
                 write_kwargs[name[6:]] = value
             else:
-                warnings.warn("Keyword argument %s of %s method should be prefixed with 'page_'" %
-                                (name, method.__name__), DeprecationWarning)
+                logger.warning("Keyword argument %s of %s method should be prefixed with 'page_'" %
+                            (name, method.__name__), DeprecationWarning)
                 page_kwargs[name] = value
         d = document.document([document.page(self, **page_kwargs)])
         self.__name__ = method.__name__

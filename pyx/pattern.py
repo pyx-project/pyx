@@ -20,10 +20,12 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import io, math, warnings
+import io, logging, math
 from . import attr, canvas, path, pdfwriter, pswriter, style, unit, trafo
 from . import writer as writermodule
 from . import bbox as bboxmodule
+
+logger = logging.getLogger("pyx")
 
 class _marker: pass
 
@@ -142,7 +144,7 @@ class pattern(canvas.canvas, attr.exclusiveattr, style.fillstyle):
         if context.strokeattr:
             # using patterns as stroke colors doesn't seem to work, so
             # we just don't do this...
-            warnings.warn("ignoring stroke color for patterns in PDF")
+            logger.warning("ignoring stroke color for patterns in PDF")
         if context.fillattr:
             file.write("/%s scn\n"% self.id)
 

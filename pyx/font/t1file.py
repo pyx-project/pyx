@@ -20,13 +20,14 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import array, binascii, io, math, re, warnings
+import array, binascii, io, logging, math, re
 try:
     import zlib
     haszlib = True
 except ImportError:
     haszlib = False
 
+logger = logging.getLogger("pyx")
 
 from pyx import trafo, reader, writer
 from pyx.path import path, moveto_pt, lineto_pt, curveto_pt, closepath
@@ -1049,7 +1050,7 @@ class T1file:
             glyphinfo_period = self.getglyphinfo("period")
             glyphinfo_colon = self.getglyphinfo("colon")
         except:
-            warnings.warn("Auto-guessing of font information for font '%s' failed. We're writing stub data instead." % self.name)
+            logger.warning("Auto-guessing of font information for font '%s' failed. We're writing stub data instead." % self.name)
             file.write("/Flags 4\n")
             file.write("/FontBBox [0 -100 1000 1000]\n")
             file.write("/ItalicAngle 0\n")
@@ -1075,7 +1076,7 @@ class T1file:
             file.write("/StemV %f\n" % (glyphinfo_period[4]-glyphinfo_period[2]))
 
     def getglyphinfo(self, glyph, flex=True):
-        warnings.warn("We are about to extract font information for the Type 1 font '%s' from its pfb file. This is bad practice (and it's slow). You should use an afm file instead." % self.name)
+        logger.warning("We are about to extract font information for the Type 1 font '%s' from its pfb file. This is bad practice (and it's slow). You should use an afm file instead." % self.name)
         context = T1context(self, flex=flex)
         p = path()
         self.updateglyphpath(glyph, p, trafo.trafo(), context)

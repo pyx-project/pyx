@@ -20,8 +20,10 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import os, string, tempfile, warnings
+import logging, os, string, tempfile
 from . import baseclasses, bbox, config, unit, trafo, pswriter
+
+logger = logging.getLogger("pyx")
 
 # PostScript-procedure definitions (cf. 5002.EPSF_Spec_v3.0.pdf)
 # with important correction in EndEPSF:
@@ -337,7 +339,7 @@ class epsfile(baseclasses.canvasitem):
         file.write("EndEPSF\n")
 
     def processPDF(self, file, writer, context, registry, bbox):
-        warnings.warn("EPS file is included as a bitmap created using pipeGS")
+        logger.warning("EPS file is included as a bitmap created using pipeGS")
         from pyx import bitmap, canvas
         from PIL import Image
         c = canvas.canvas()

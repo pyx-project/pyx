@@ -21,13 +21,12 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import errno, functools, glob, os, threading, queue, re, tempfile, atexit, time, warnings
+import errno, functools, logging, glob, os, threading, queue, re, tempfile, atexit, time
 from . import config, unit, box, canvas, trafo, version, attr, style, path
 from pyx.dvi import dvifile
 from . import bbox as bboxmodule
 
-class PyXTeXWarning(UserWarning): pass
-warnings.filterwarnings("always", category=PyXTeXWarning)
+logger = logging.getLogger("pyx")
 
 ###############################################################################
 # texmessages
@@ -358,32 +357,34 @@ class _texmessageallwarning(texmessage):
 
     def check(self, texrunner):
         if texrunner.texmessageparsed:
-            warnings.warn("ignoring all warnings:\n%s" % texrunner.texmessageparsed)
+            logger.info("ignoring all warnings:\n%s" % texrunner.texmessageparsed)
         texrunner.texmessageparsed = ""
 
 texmessage.allwarning = _texmessageallwarning()
 
 
 class texmessagepattern(texmessage):
-    """validates a given pattern and issue a warning (when set)"""
+    """validates a given pattern"""
 
-    def __init__(self, pattern, warning=None):
+    def __init__(self, pattern, description=None):
         self.pattern = pattern
-        self.warning = warning
+        self.description = description
 
     def check(self, texrunner):
         m = self.pattern.search(texrunner.texmessageparsed)
         while m:
             texrunner.texmessageparsed = texrunner.texmessageparsed[:m.start()] + texrunner.texmessageparsed[m.end():]
-            if self.warning:
-                warnings.warn("%s:\n%s" % (self.warning, m.string[m.start(): m.end()].rstrip()))
+            if self.description:
+                logger.warning("ignoring %s:\n%s" % (self.description, m.string[m.start(): m.end()].rstrip()))
+            else:
+                logger.info("ignoring matched pattern:\n%s" % (m.string[m.start(): m.end()].rstrip()))
             m = self.pattern.search(texrunner.texmessageparsed)
 
-texmessage.fontwarning = texmessagepattern(re.compile(r"^LaTeX Font Warning: .*$(\n^\(Font\).*$)*", re.MULTILINE), "ignoring font warning")
-texmessage.boxwarning = texmessagepattern(re.compile(r"^(Overfull|Underfull) \\[hv]box.*$(\n^..*$)*\n^$\n", re.MULTILINE), "ignoring overfull/underfull box warning")
-texmessage.rerunwarning = texmessagepattern(re.compile(r"^(LaTeX Warning: Label\(s\) may have changed\. Rerun to get cross-references right\s*\.)$", re.MULTILINE), "ignoring rerun warning")
-texmessage.packagewarning = texmessagepattern(re.compile(r"^package\s+(?P<packagename>\S+)\s+warning\s*:[^\n]+(?:\n\(?(?P=packagename)\)?[^\n]*)*", re.MULTILINE | re.IGNORECASE), "ignoring generic package warning")
-texmessage.nobblwarning = texmessagepattern(re.compile(r"^[\s\*]*(No file .*\.bbl.)\s*", re.MULTILINE), "ignoring no-bbl warning")
+texmessage.fontwarning = texmessagepattern(re.compile(r"^LaTeX Font Warning: .*$(\n^\(Font\).*$)*", re.MULTILINE), "font warning")
+texmessage.boxwarning = texmessagepattern(re.compile(r"^(Overfull|Underfull) \\[hv]box.*$(\n^..*$)*\n^$\n", re.MULTILINE), "overfull/underfull box warning")
+texmessage.rerunwarning = texmessagepattern(re.compile(r"^(LaTeX Warning: Label\(s\) may have changed\. Rerun to get cross-references right\s*\.)$", re.MULTILINE), "rerun warning")
+texmessage.packagewarning = texmessagepattern(re.compile(r"^package\s+(?P<packagename>\S+)\s+warning\s*:[^\n]+(?:\n\(?(?P=packagename)\)?[^\n]*)*", re.MULTILINE | re.IGNORECASE), "generic package warning")
+texmessage.nobblwarning = texmessagepattern(re.compile(r"^[\s\*]*(No file .*\.bbl.)\s*", re.MULTILINE), "no-bbl warning")
 
 
 
@@ -877,9 +878,9 @@ class texrunner:
                 hasevent = event.isSet()
                 if not hasevent:
                     if waited < self.waitfortex:
-                        warnings.warn("still waiting for %s after %i (of %i) seconds..." % (self.mode, waited, self.waitfortex), PyXTeXWarning)
+                        logger.warning("still waiting for %s after %i (of %i) seconds..." % (self.mode, waited, self.waitfortex), PyXTeXWarning)
                     else:
-                        warnings.warn("the timeout of %i seconds expired and %s did not respond." % (waited, self.mode), PyXTeXWarning)
+                        logger.warning("the timeout of %i seconds expired and %s did not respond." % (waited, self.mode), PyXTeXWarning)
             return hasevent
         else:
             event.wait(self.waitfortex)
@@ -1182,7 +1183,7 @@ class texrunner:
         try:
             self.execute(expr, self.defaulttexmessagesdefaultrun + self.texmessagesdefaultrun + texmessages)
         except TexResultError as e:
-            warnings.warn("We try to finish the dvi due to an unhandled tex error", PyXTeXWarning)
+            logger.warning("We try to finish the dvi due to an unhandled tex error", PyXTeXWarning)
             try:
                 self.finishdvi(ignoretail=1)
             except TexResultError:
