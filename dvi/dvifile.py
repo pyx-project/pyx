@@ -21,9 +21,11 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import io, math, re, string, struct, sys, warnings
+import io, logging, math, re, string, struct, sys
 from pyx import  bbox, canvas, color, epsfile, config, path, reader, trafo, unit
 from . import texfont, tfmfile
+
+logger = logging.getLogger("pyx")
 
 
 _DVI_CHARMIN     =   0 # typeset a character and move right (range min)
@@ -224,7 +226,7 @@ class DVIfile:
         if self.debug:
             self.debugfile.write("%d: xxx '%s'\n" % (self.filepos, s))
         if not s.startswith("PyX:"):
-            warnings.warn("ignoring special '%s'" % s)
+            logger.warning("ignoring special '%s'" % s)
             return
 
         # it is in general not safe to continue using the currently active font because

@@ -21,11 +21,11 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import functools, math, warnings
+import functools, logging, math
 from pyx import attr, unit, text
 from pyx.graph.axis import painter, parter, positioner, rater, texter, tick
 
-
+logger = logging.getLogger("pyx")
 class _marker: pass
 
 
@@ -275,7 +275,7 @@ class logarithmic(_regularaxis):
             return _regularaxis._create(self, data, positioner, graphtexrunner, self.parter, self.rater, errorname)
         except NoValidPartitionError:
             if self.linearparter:
-                warnings.warn("no valid logarithmic partitioning found for axis %s, switch to linear partitioning" % errorname)
+                logger.warning("no valid logarithmic partitioning found for axis %s, switch to linear partitioning" % errorname)
                 return _regularaxis._create(self, data, positioner, graphtexrunner, self.linearparter, self.rater, errorname)
             raise
 
@@ -537,7 +537,7 @@ class anchoredaxis:
         if self.canvas is None:
             self.axis.adjustaxis(self.data, columndata, self.graphtexrunner, self.errorname)
         else:
-            warnings.warn("ignore axis range adjustment of already created axis '%s'"  % self.errorname)
+            logger.warning("ignore axis range adjustment of already created axis '%s'"  % self.errorname)
 
     def vbasepath(self, v1=None, v2=None):
         return self.positioner.vbasepath(v1=v1, v2=v2)

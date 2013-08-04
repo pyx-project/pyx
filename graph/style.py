@@ -22,13 +22,14 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 
-import math, warnings, io
+import io, logging, math
 from pyx import attr, deco, bitmap, style, color, unit, canvas, path, mesh, trafo
 from pyx import text as textmodule
 from .graph import registerdefaultprovider, graphx
 from . import axis
 
 builtinrange = range
+logger = logging.getLogger("pyx")
 
 
 class _style:
@@ -156,10 +157,10 @@ class _keygraphstyle(_style):
     def color(self, privatedata, c):
         vc = privatedata.keygraph.axes["x"].convert(c)
         if vc < 0:
-            warnings.warn("gradient color range is exceeded (lower bound)")
+            logger.warning("gradient color range is exceeded (lower bound)")
             vc = 0
         if vc > 1:
-            warnings.warn("gradient color range is exceeded (upper bound)")
+            logger.warning("gradient color range is exceeded (upper bound)")
             vc = 1
         return self.gradient.getcolor(vc)
 
@@ -1085,10 +1086,10 @@ class histogram(_style):
         if self.fillable:
             if vvalue < -self.epsilon:
                 vvalue = 0
-                warnings.warn("cut at graph boundary adds artificial lines to fillable step histogram path")
+                logger.warning("cut at graph boundary adds artificial lines to fillable step histogram path")
             if vvalue > 1+self.epsilon:
                 vvalue = 1
-                warnings.warn("cut at graph boundary adds artificial lines to fillable step histogram path")
+                logger.warning("cut at graph boundary adds artificial lines to fillable step histogram path")
         if self.fillable or (-self.epsilon < vvalue < 1+self.epsilon):
             vpos1cut = 0
             if vpos1 < 0:
@@ -1123,7 +1124,7 @@ class histogram(_style):
                 else:
                     privatedata.path.append(graph.vgeodesic_el(vpos1, vvalue, vpos2, vvalue))
                 if self.fillable and vpos2cut:
-                    warnings.warn("cut at graph boundary adds artificial lines to fillable step histogram path")
+                    logger.warning("cut at graph boundary adds artificial lines to fillable step histogram path")
                     if privatedata.rangeaxisindex:
                         privatedata.path.append(graph.vgeodesic_el(vvalue, vpos2, privatedata.vfromvalue, vpos2))
                     else:
@@ -1160,7 +1161,7 @@ class histogram(_style):
                 if abs(vmincut + vmaxcut) > 1 or abs(vvaluecut+privatedata.vfromvaluecut) > 1:
                     done = 1
                 else:
-                    warnings.warn("multiple cuts at graph boundary add artificial lines to fillable rectangle histogram path")
+                    logger.warning("multiple cuts at graph boundary add artificial lines to fillable rectangle histogram path")
             elif vmincut:
                 done = 1
                 if privatedata.rangeaxisindex:
@@ -1823,7 +1824,7 @@ class surface(_keygraphstyle):
                 if not available1 or not available2 or not available3 or not available4:
                     continue
                 if not valid1 or not valid2 or not valid3 or not valid4:
-                    warnings.warn("surface elements partially outside of the graph are (currently) skipped completely")
+                    logger.warning("surface elements partially outside of the graph are (currently) skipped completely")
                     continue
                 def shrink(index, v1, v2, by):
                     v1 = v1[:]

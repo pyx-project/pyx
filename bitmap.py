@@ -20,7 +20,7 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import struct, warnings, binascii
+import binascii, logging, struct
 try:
     import zlib
     haszlib = True
@@ -28,6 +28,8 @@ except:
     haszlib = False
 
 from . import bbox, baseclasses, pswriter, pdfwriter, trafo, unit
+
+logger = logging.getLogger("pyx")
 
 devicenames = {"L": "/DeviceGray",
                "RGB": "/DeviceRGB",
@@ -309,7 +311,7 @@ class bitmap_trafo(baseclasses.canvasitem):
         if self.compressmode is not None and self.imagecompressed is not None:
             raise ValueError("compression of a compressed image not supported")
         if not haszlib and self.compressmode == "Flate":
-            warnings.warn("zlib module not available, disable compression")
+            logger.warning("zlib module not available, disable compression")
             self.compressmode = None
 
     def imagedata(self, interleavealpha):
@@ -354,18 +356,18 @@ class bitmap_trafo(baseclasses.canvasitem):
         if mode == "P":
             palettemode, palettedata = data.palette.getdata()
             if palettemode not in ["L", "RGB", "CMYK"]:
-                warnings.warn("image with unknown palette mode '%s' converted to rgb image" % palettemode)
+                logger.warning("image with unknown palette mode '%s' converted to rgb image" % palettemode)
                 data = data.convert("RGB")
                 mode = "RGB"
                 palettemode = None
                 palettedata = None
         elif len(mode) == 1:
             if mode != "L":
-                warnings.warn("specific single channel image mode not natively supported, converted to regular grayscale")
+                logger.warning("specific single channel image mode not natively supported, converted to regular grayscale")
                 data = data.convert("L")
                 mode = "L"
         elif mode not in ["CMYK", "RGB"]:
-            warnings.warn("image with unknown mode converted to rgb")
+            logger.warning("image with unknown mode converted to rgb")
             data = data.convert("RGB")
             mode = "RGB"
 

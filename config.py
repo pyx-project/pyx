@@ -22,6 +22,7 @@
 
 import configparser, io, logging, os, pkgutil, subprocess, shutil
 
+logger = logging.getLogger("pyx")
 logger_execute = logging.getLogger("pyx.execute")
 logger_filelocator = logging.getLogger("pyx.filelocator")
 
@@ -130,9 +131,9 @@ class ls_R:
                     try:
                         return builtinopen(self.full_filenames[filename+extension], "rb")
                     except IOError:
-                        warnings.warn("'%s' should be available at '%s' according to the ls-R file, "
-                                      "but the file is not available at this location; "
-                                      "update your ls-R file" % (filename, self.full_filenames[filename]))
+                        logger.warning("'%s' should be available at '%s' according to the ls-R file, "
+                                    "but the file is not available at this location; "
+                                    "update your ls-R file" % (filename, self.full_filenames[filename]))
                 return [_opener]
         return []
 
@@ -155,9 +156,9 @@ class pykpathsea:
             try:
                 return builtinopen(full_filename, "rb")
             except IOError:
-                warnings.warn("'%s' should be available at '%s' according to libkpathsea, "
-                              "but the file is not available at this location; "
-                              "update your kpsewhich database" % (filename, full_filename))
+                logger.warning("'%s' should be available at '%s' according to libkpathsea, "
+                            "but the file is not available at this location; "
+                            "update your kpsewhich database" % (filename, full_filename))
         return [_opener]
 
 locator_classes["pykpathsea"] = pykpathsea
@@ -225,9 +226,9 @@ class kpsewhich:
             try:
                 return builtinopen(full_filename, "rb")
             except IOError:
-                warnings.warn("'%s' should be available at '%s' according to kpsewhich, "
-                              "but the file is not available at this location; "
-                              "update your kpsewhich database" % (filename, full_filename))
+                logger.warning("'%s' should be available at '%s' according to kpsewhich, "
+                            "but the file is not available at this location; "
+                            "update your kpsewhich database" % (filename, full_filename))
         return [_opener]
 
 locator_classes["kpsewhich"] = kpsewhich
@@ -259,9 +260,9 @@ class locate:
             try:
                 return builtinopen(full_filename, "rb")
             except IOError:
-                warnings.warn("'%s' should be available at '%s' according to the locate, "
-                              "but the file is not available at this location; "
-                              "update your locate database" % (filename+extension, full_filename))
+                logger.warning("'%s' should be available at '%s' according to the locate, "
+                            "but the file is not available at this location; "
+                            "update your locate database" % (filename+extension, full_filename))
         return [_opener]
 
 locator_classes["locate"] = locate

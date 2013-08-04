@@ -21,8 +21,10 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import binascii, colorsys, math, struct, warnings
+import binascii, colorsys, logging, math, struct
 from . import attr, style, pdfwriter
+
+logger = logging.getLogger("pyx")
 
 # device-dependent (nonlinear) functions for color conversion
 # UCRx : [0,1] -> [-1, 1] UnderColorRemoval (removes black from c, y, m)
@@ -587,7 +589,7 @@ class transparency(attr.exclusiveattr, style.strokestyle, style.fillstyle):
         attr.exclusiveattr.__init__(self, transparency)
 
     def processPS(self, file, writer, context, registry):
-        warnings.warn("Transparency not available in PostScript, proprietary ghostscript extension code inserted.")
+        logger.warning("Transparency not available in PostScript, proprietary ghostscript extension code inserted.")
         file.write("%f .setshapealpha\n" % self.value)
 
     def processPDF(self, file, writer, context, registry):

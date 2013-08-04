@@ -299,7 +299,7 @@ class PDFwriter:
         self.writebbox = writebbox
         if compress and not haszlib:
             compress = 0
-            logger.warn("PDFwriter: compression disabled due to missing zlib module")
+            logger.warning("PDFwriter: compression disabled due to missing zlib module")
         self.compress = compress
         self.compresslevel = compresslevel
         self.strip_fonts = strip_fonts

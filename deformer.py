@@ -20,8 +20,10 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import functools, math, warnings
+import functools, logging, math
 from . import attr, baseclasses, mathutils, path, normpath, unit, color
+
+logger = logging.getLogger("pyx")
 
 # specific exception for an invalid parameterization point
 # used in parallel
@@ -375,7 +377,7 @@ class cycloid(baseclasses.deformer): # <<<
         # where we will add cycloid-points
         totlength = normsubpath.arclen_pt()
         if totlength <= skipfirst + skiplast + 2*radius*sinTurn:
-            warnings.warn("normsubpath is too short for deformation with cycloid -- skipping...")
+            logger.warning("normsubpath is too short for deformation with cycloid -- skipping...")
             return normsubpath
 
         # parameterization is in rotation-angle around the basepath
@@ -434,7 +436,7 @@ class cycloid(baseclasses.deformer): # <<<
                           basetrafo.apply_pt(postZ, sign * postY))
 
         if len(points) <= 1:
-            warnings.warn("normsubpath is too short for deformation with cycloid -- skipping...")
+            logger.warning("normsubpath is too short for deformation with cycloid -- skipping...")
             return normsubpath
 
         # Build the path from the pointlist
