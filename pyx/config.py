@@ -20,11 +20,12 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import configparser, io, os, pkgutil, subprocess, shutil, warnings
+import configparser, io, logging, os, pkgutil, subprocess, shutil, warnings
+
+logger_execute = logging.getLogger("pyx.execute")
+logger_filelocator = logging.getLogger("pyx.filelocator")
 
 builtinopen = open
-show_files = False
-show_executes = False
 
 try:
     import pykpathsea as pykpathsea_module
@@ -177,16 +178,14 @@ def Popen(cmd, *args, **kwargs):
         pass
     else:
         raise ValueError("pyx.config.Popen must not be used with a string cmd")
-    if show_executes:
-        info = ["PyX executes", cmd[0], "with args", cmd[1:]]
-        try:
-            shutil.which
-        except:
-            pass
-        else:
-            info.append("located at")
-            info.append(shutil.which(cmd[0]))
-        print(*info)
+    info = "PyX executes {} with args {}".format(cmd[0], cmd[1:])
+    try:
+        shutil.which
+    except:
+        pass
+    else:
+        info += " located at {}".format(shutil.which(cmd[0]))
+    logger_execute.info(info)
     return subprocess.Popen(cmd, *args, **kwargs)
 
 PIPE = subprocess.PIPE
@@ -372,12 +371,10 @@ def open(filename, formats, ascii=False):
                 except EnvironmentError:
                     file = None
                 if file:
-                    if show_files:
-                        info = ["PyX filelocator found", filename, "by method", method.__class__.__name__]
-                        if hasattr(file, "name"):
-                            info.append("at")
-                            info.append(file.name)
-                        print(*info)
+                    info = "PyX filelocator found {} by method {}".format(filename, method.__class__.__name__)
+                    if hasattr(file, "name"):
+                        info += " at {}".format(file.name)
+                    logger_filelocator.info(info)
                     opener_cache[(filename, names)] = opener
                     break
             # break two loops here
@@ -385,8 +382,7 @@ def open(filename, formats, ascii=False):
                 continue
             break
         else:
-            info = ["PyX filelocator failed to find", filename, "of type", names, "and extensions", extensions]
-            print(*info)
+            logger_filelocator.info("PyX filelocator failed to find {} of type {} and extensions {}".format(filename, names, extensions))
             raise IOError("Could not locate the file '%s'." % filename)
     if ascii:
         return io.TextIOWrapper(file, encoding="ascii", errors="surrogateescape")
