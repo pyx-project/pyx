@@ -13,12 +13,8 @@ because it is taken from the first chapter of the TeX book [#texbook]_ where
 the origin of the name TeX and its pronunciation are explained.
 
 Despite the ties between TeX and PyX, their pronunciation is quite different.
-According to the developers of PyX, it should be pronounced as pyks. Please do
-not pronounce it as pyx or pyç.
-
-.. todo::
-
-   Replace y in IPA by the correct sign (U+028F).
+According to the developers of PyX, it should be pronounced as [pʏks]. Please do
+not pronounce it as [pʏx] or [pʏç].
 
 .. _where_do_I_get_PyX:
 
@@ -29,14 +25,10 @@ The current release of PyX (as well as older ones) is freely available from
 `pyx.sourceforge.net <http://pyx.sourceforge.net>`_ where also a
 subversion repository with the latest patches can be found. Possibly older
 versions of PyX are also available as package for various Linux distributions:
-see, for instance,  `http://packages.debian.org/testing/python/python-pyx.html
-<http://packages.debian.org/testing/python/python-pyx.html>`_ for information
-on the \PyX package in Debian GNU/Linux,
-`http://packages.gentoo.org/ebuilds/?pyx-0.7.1
-<http://packages.gentoo.org/ebuilds/?pyx-0.7.1>`_ for a Gentoo Linux ebuild,
-and `http://www.novell.com/products/linuxpackages/professional/python-pyx.html
-<http://www.novell.com/products/linuxpackages/professional/python-pyx.html>`_
-for the PyX package in the SUSE LINUX professional distribution.
+see, for instance,  `http://packages.debian.org/testing/python-pyx
+<http://packages.debian.org/testing/python-pyx>`_ for information
+on the \PyX package in Debian GNU/Linux or `http://packages.ubuntu.com/raring/python-pyx
+<http://packages.ubuntu.com/raring/python-pyx>`_ for Ubuntu,
 
 How can I determine the version of PyX running on my machine?
 =============================================================
@@ -61,14 +53,14 @@ to do that, one needs the corresponding PyX package (see
 :ref:`where_do_I_get_PyX` if you need to download it), which should be unpacked
 below a directory, e.g.  ``/home/xyz/Python``,  where you want to keep the
 various PyX versions.  This will result in a subdirectory with a name like
-``PyX-0.12.1`` which contains the contents of the corresponding package. You
+``PyX-0.13`` which contains the contents of the corresponding package. You
 can then ask Python to first look in the appropriate directory before looking
 for the current version of PyX by inserting the following code (appropriately
 modified according to your needs) at the beginning of your program before
 importing the PyX module::
 
    import sys
-   sys.path.insert(0, "/home/xyz/Python/PyX-0.12.1")
+   sys.path.insert(0, "/home/xyz/Python/PyX-0.13")
 
 Including appropriate lines even if the current version of PyX is used, might
 turn out to be helpful when the current version has become an old version
@@ -79,7 +71,7 @@ If your operating system supports path expansion, you might use as an
 alternative::
 
    import sys, os
-   sys.path.insert(0, os.path.expanduser("~/Python/PyX-0.12.1"))
+   sys.path.insert(0, os.path.expanduser("~/Python/PyX-0.13"))
 
 which will expand the tilde to your home directory.
 
@@ -128,6 +120,21 @@ PDF files can be viewed by means of the ``Adobe Reader ®`` available from
 <http://www.adobe.com/products/acrobat/readstep2.html>`_. On systems running
 X11, ``xpdf`` might be an alternative. It is available from
 `http://www.foolabs.com/xpdf/ <http://www.foolabs.com/xpdf/>`_.
+
+If you want to do interactive development of a PyX graphics, you might consider
+to use an IPython notebook (see :ref:`_pyx_ipython_notebook`).
+
+.. _pyx_ipython_notebook:
+
+Will I be able to embed PyX graphics output into an IPython notebook?
+=====================================================================
+
+Yes, PyX canvas object and objects inheriting from the canvas class, in particular
+graphs and text, can be embedded into an IPython notebook. Suppose you have a 
+canvas object called ``c`` on which you have done some drawing. Then entering ``c``
+in an IPython notebook cell and executing that cell will automatically produce
+a PNG representation and embed it into the notebook. For more information on
+IPython and working with its notebooks see `http://www.ipython.org/ <http://www.ipython.org/>`_.
 
 I am a Gnuplot user and want to try PyX. Where can I get some help?
 ===================================================================
