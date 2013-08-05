@@ -28,7 +28,7 @@ versions of PyX are also available as package for various Linux distributions:
 see, for instance,  `http://packages.debian.org/testing/python-pyx
 <http://packages.debian.org/testing/python-pyx>`_ for information
 on the \PyX package in Debian GNU/Linux or `http://packages.ubuntu.com/raring/python-pyx
-<http://packages.ubuntu.com/raring/python-pyx>`_ for Ubuntu,
+<http://packages.ubuntu.com/raring/python-pyx>`_ for Ubuntu.
 
 How can I determine the version of PyX running on my machine?
 =============================================================
