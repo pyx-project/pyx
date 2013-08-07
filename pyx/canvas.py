@@ -41,8 +41,8 @@ def _wrappedindocument(method):
             elif name.startswith("write_"):
                 write_kwargs[name[6:]] = value
             else:
-                logger.warning("Keyword argument %s of %s method should be prefixed with 'page_'" %
-                            (name, method.__name__), DeprecationWarning)
+                logger.warning("implicit page keyword argument passing is deprecated; keyword argument '%s' of %s method should be changed to 'page_%s'" %
+                               (name, method.__name__, name))
                 page_kwargs[name] = value
         d = document.document([document.page(self, **page_kwargs)])
         self.__name__ = method.__name__
