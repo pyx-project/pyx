@@ -878,9 +878,9 @@ class texrunner:
                 hasevent = event.isSet()
                 if not hasevent:
                     if waited < self.waitfortex:
-                        logger.warning("still waiting for %s after %i (of %i) seconds..." % (self.mode, waited, self.waitfortex), PyXTeXWarning)
+                        logger.warning("still waiting for %s after %i (of %i) seconds..." % (self.mode, waited, self.waitfortex))
                     else:
-                        logger.warning("the timeout of %i seconds expired and %s did not respond." % (waited, self.mode), PyXTeXWarning)
+                        logger.warning("the timeout of %i seconds expired and %s did not respond." % (waited, self.mode))
             return hasevent
         else:
             event.wait(self.waitfortex)
@@ -1183,7 +1183,7 @@ class texrunner:
         try:
             self.execute(expr, self.defaulttexmessagesdefaultrun + self.texmessagesdefaultrun + texmessages)
         except TexResultError as e:
-            logger.warning("We try to finish the dvi due to an unhandled tex error", PyXTeXWarning)
+            logger.warning("We try to finish the dvi due to an unhandled tex error")
             try:
                 self.finishdvi(ignoretail=1)
             except TexResultError:

@@ -59,7 +59,7 @@ class page:
             self.paperformat = paperformat
         else:
             self.paperformat = _paperformatfromstring(paperformat)
-            logger.warning("specification of paperformat by string is deprecated, use document.paperformat.%s instead" % paperformat.capitalize(), DeprecationWarning)
+            logger.warning("specification of paperformat by string is deprecated, use document.paperformat.%s instead" % paperformat.capitalize())
 
         self.rotated = rotated
         self.centered = centered
