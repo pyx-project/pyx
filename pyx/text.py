@@ -39,6 +39,19 @@ logger = logging.getLogger("pyx")
 #   - the multiple usage of the name texmessage might be removed in the future
 ###############################################################################
 
+def remove_string(p, s):
+    """removes a pattern from a string.
+
+    The function removes the string p from the
+    string s. It returns a tuple of the resulting
+    string (performing a single removal at any
+    position within the string) and a boolean
+    indicating whether a removal has been done
+    or not."""
+    r = s.replace(p, '', 1)
+    return r, r != s
+
+
 def remove_pattern(p, s, ignore_nl=True):
     """removes a pattern from a string.
 
@@ -76,7 +89,7 @@ def remove_pattern(p, s, ignore_nl=True):
                 else:
                     j += 1
         return s[:s_start] + s[s_end:], m
-    return s, m
+    return s, None
 
 
 class TexResultError(ValueError):
@@ -135,7 +148,6 @@ class _texmessagestart(texmessage):
         m = self.startpattern.search(texrunner.texmessageparsed)
         if not m:
             raise TexResultError("TeX startup failed", texrunner)
-        texrunner.texmessageparsed = texrunner.texmessageparsed[m.end():]
 
         # check for \raiseerror -- just to be sure that communication works
         try:
@@ -168,10 +180,8 @@ class _texmessageinputmarker(texmessage):
     """validates the PyXInputMarker"""
 
     def check(self, texrunner):
-        try:
-            s1, s2 = texrunner.texmessageparsed.split("PyXInputMarker:executeid=%s:" % texrunner.executeid, 1)
-            texrunner.texmessageparsed = s1 + s2
-        except (IndexError, ValueError):
+        texrunner.texmessageparsed, m = remove_string("PyXInputMarker:executeid=%s:" % texrunner.executeid, texrunner.texmessageparsed)
+        if not m:
             raise TexResultError("PyXInputMarker expected", texrunner)
 
 
@@ -181,21 +191,19 @@ class _texmessagepyxbox(texmessage):
     pattern = re.compile(r"PyXBox:page=(?P<page>\d+),lt=-?\d*((\d\.?)|(\.?\d))\d*pt,rt=-?\d*((\d\.?)|(\.?\d))\d*pt,ht=-?\d*((\d\.?)|(\.?\d))\d*pt,dp=-?\d*((\d\.?)|(\.?\d))\d*pt:")
 
     def check(self, texrunner):
-        m = self.pattern.search(texrunner.texmessageparsed)
-        if m and m.group("page") == str(texrunner.page):
-            texrunner.texmessageparsed = texrunner.texmessageparsed[:m.start()] + texrunner.texmessageparsed[m.end():]
-        else:
+        texrunner.texmessageparsed, m = remove_pattern(self.pattern, texrunner.texmessageparsed, ignore_nl=False)
+        if not m:
             raise TexResultError("PyXBox expected", texrunner)
+        if m.group("page") != str(texrunner.page):
+            raise TexResultError("Wrong page number in PyXBox", texrunner)
 
 
 class _texmessagepyxpageout(texmessage):
     """validates the dvi shipout message (writing a page to the dvi file)"""
 
     def check(self, texrunner):
-        try:
-            s1, s2 = texrunner.texmessageparsed.split("[80.121.88.%s]" % texrunner.page, 1)
-            texrunner.texmessageparsed = s1 + s2
-        except (IndexError, ValueError):
+        texrunner.texmessageparsed, m = remove_string("[80.121.88.%s]" % texrunner.page, texrunner.texmessageparsed)
+        if not m:
             raise TexResultError("PyXPageOutMarker expected", texrunner)
 
 
@@ -207,16 +215,8 @@ class _texmessageend(texmessage):
     logPattern = re.compile(r"Transcript written on .*texput\.log\.")
 
     def check(self, texrunner):
-        m = self.auxPattern.search(texrunner.texmessageparsed)
-        if m:
-            texrunner.texmessageparsed = (texrunner.texmessageparsed[:m.start()] + texrunner.texmessageparsed[m.end():]).strip()
-
-        # check for "(see the transcript file for additional information)"
-        try:
-            s1, s2 = texrunner.texmessageparsed.split("(see the transcript file for additional information)", 1)
-            texrunner.texmessageparsed = (s1 + s2).strip()
-        except (IndexError, ValueError):
-            pass
+        texrunner.texmessageparsed, m = remove_pattern(self.auxPattern, texrunner.texmessageparsed, ignore_nl=False)
+        texrunner.texmessageparsed, m = remove_string("(see the transcript file for additional information)", texrunner.texmessageparsed)
 
         # check for "Output written on ...dvi (1 page, 220 bytes)."
         if texrunner.page:
@@ -226,10 +226,8 @@ class _texmessageend(texmessage):
             if m.group("page") != str(texrunner.page):
                 raise TexResultError("wrong number of pages reported", texrunner)
         else:
-            try:
-                s1, s2 = texrunner.texmessageparsed.split("No pages of output.", 1)
-                texrunner.texmessageparsed = s1 + s2
-            except (IndexError, ValueError):
+            texrunner.texmessageparsed, m = remove_string(texrunner.texmessageparsed.split, "No pages of output.")
+            if not m:
                 raise TexResultError("no dvifile expected", texrunner)
 
         # check for "Transcript written on ...log."
@@ -244,10 +242,10 @@ class _texmessageemptylines(texmessage):
     """
 
     def check(self, texrunner):
-        texrunner.texmessageparsed = texrunner.texmessageparsed.replace(r"(Please type a command or say `\end')", "")
-        texrunner.texmessageparsed = texrunner.texmessageparsed.replace(" ", "")
-        texrunner.texmessageparsed = texrunner.texmessageparsed.replace("*\n", "")
-        texrunner.texmessageparsed = texrunner.texmessageparsed.replace("\n", "")
+        texrunner.texmessageparsed = (texrunner.texmessageparsed.replace(r"(Please type a command or say `\end')", "")
+                                                                .replace(" ", "")
+                                                                .replace("*\n", "")
+                                                                .replace("\n", ""))
 
 
 class _texmessageload(texmessage):
