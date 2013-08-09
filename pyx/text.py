@@ -21,7 +21,7 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import errno, functools, logging, glob, os, threading, queue, re, tempfile, atexit, time
+import errno, functools, logging, glob, os, threading, queue, re, tempfile, atexit, time, shutil, sys
 from . import config, unit, box, canvas, trafo, version, attr, style, path
 from pyx.dvi import dvifile
 from . import bbox as bboxmodule
@@ -37,10 +37,49 @@ logger = logging.getLogger("pyx")
 #     parse the TeX/LaTeX response as it is stored in the texmessageparsed
 #     attribute of a texrunner instance
 #   - the multiple usage of the name texmessage might be removed in the future
-# - texmessage instances should implement _Itexmessage
 ###############################################################################
 
-class TexResultError(RuntimeError):
+def remove_pattern(p, s, ignore_nl=True):
+    """removes a pattern from a string.
+
+    The function removes the pattern p from the
+    string s. It returns a tuple of the resulting
+    string (performing a single removal at any
+    position within the string) and the matching
+    object (or None, if the pattern did not match).
+
+    When ignore_nl is set, newlines in string s
+    are ignored during the pattern matching. The
+    returned string will still contain all newline
+    characters outside of the matching part of the
+    string, whereas the matching object m does not
+    contain the newline characters inside of the
+    matching part of the string."""
+    if ignore_nl:
+        r = s.replace('\n', '')
+        has_nl = r != s
+    else:
+        r = s
+        has_nl = False
+    m = p.search(r)
+    if m:
+        s_start = r_start = m.start()
+        s_end = r_end = m.end()
+        if has_nl:
+            j = 0
+            for c in s:
+                if c == '\n':
+                    if j < r_end:
+                        s_end += 1
+                        if j <= r_start:
+                            s_start += 1
+                else:
+                    j += 1
+        return s[:s_start] + s[s_end:], m
+    return s, m
+
+
+class TexResultError(ValueError):
     """specialized texrunner exception class
     - it is raised by texmessage instances, when a texmessage indicates an error
     - it is raised by the texrunner itself, whenever there is a texmessage left
@@ -73,8 +112,7 @@ class TexResultError(RuntimeError):
         return self.description
 
 
-class _Itexmessage:
-    """validates/invalidates TeX/LaTeX response"""
+class texmessage(attr.attr):
 
     def check(self, texrunner):
         """check a Tex/LaTeX response and respond appropriate
@@ -84,15 +122,11 @@ class _Itexmessage:
           from the texrunners texmessageparsed attribute
           -> finally, there should be nothing left in there,
              otherwise it is interpreted as an error"""
-
-
-class texmessage(attr.attr): pass
+        raise NotImplementedError()
 
 
 class _texmessagestart(texmessage):
     """validates TeX/LaTeX startup"""
-
-    __implements__ = _Itexmessage
 
     startpattern = re.compile(r"This is [-0-9a-zA-Z\s_]*TeX")
 
@@ -113,21 +147,18 @@ class _texmessagestart(texmessage):
 class _texmessagenofile(texmessage):
     """allows for LaTeXs no-file warning"""
 
-    __implements__ = _Itexmessage
-
     def __init__(self, fileending):
         self.fileending = fileending
 
     def check(self, texrunner):
         try:
-            s1, s2 = texrunner.texmessageparsed.split("No file %s.%s." % (texrunner.texfilename, self.fileending), 1)
+            s1, s2 = texrunner.texmessageparsed.split("No file texput.%s." % self.fileending, 1)
             texrunner.texmessageparsed = s1 + s2
         except (IndexError, ValueError):
             try:
-                s1, s2 = texrunner.texmessageparsed.split("No file %s%s%s.%s." % (os.curdir,
-                                                                                   os.sep,
-                                                                                   texrunner.texfilename,
-                                                                                   self.fileending), 1)
+                s1, s2 = texrunner.texmessageparsed.split("No file %s%stexput.%s." % (os.curdir,
+                                                                                      os.sep,
+                                                                                      self.fileending), 1)
                 texrunner.texmessageparsed = s1 + s2
             except (IndexError, ValueError):
                 pass
@@ -135,8 +166,6 @@ class _texmessagenofile(texmessage):
 
 class _texmessageinputmarker(texmessage):
     """validates the PyXInputMarker"""
-
-    __implements__ = _Itexmessage
 
     def check(self, texrunner):
         try:
@@ -148,8 +177,6 @@ class _texmessageinputmarker(texmessage):
 
 class _texmessagepyxbox(texmessage):
     """validates the PyXBox output"""
-
-    __implements__ = _Itexmessage
 
     pattern = re.compile(r"PyXBox:page=(?P<page>\d+),lt=-?\d*((\d\.?)|(\.?\d))\d*pt,rt=-?\d*((\d\.?)|(\.?\d))\d*pt,ht=-?\d*((\d\.?)|(\.?\d))\d*pt,dp=-?\d*((\d\.?)|(\.?\d))\d*pt:")
 
@@ -164,8 +191,6 @@ class _texmessagepyxbox(texmessage):
 class _texmessagepyxpageout(texmessage):
     """validates the dvi shipout message (writing a page to the dvi file)"""
 
-    __implements__ = _Itexmessage
-
     def check(self, texrunner):
         try:
             s1, s2 = texrunner.texmessageparsed.split("[80.121.88.%s]" % texrunner.page, 1)
@@ -177,9 +202,9 @@ class _texmessagepyxpageout(texmessage):
 class _texmessageend(texmessage):
     """validates TeX/LaTeX finish"""
 
-    __implements__ = _Itexmessage
-
     auxPattern = re.compile(r"\(([^()]+\.aux|\"[^\"]+\.aux\")\)")
+    dviPattern = re.compile(r"Output written on .*texput\.dvi \((?P<page>\d+) pages?, \d+ bytes\)\.")
+    logPattern = re.compile(r"Transcript written on .*texput\.log\.")
 
     def check(self, texrunner):
         m = self.auxPattern.search(texrunner.texmessageparsed)
@@ -194,14 +219,12 @@ class _texmessageend(texmessage):
             pass
 
         # check for "Output written on ...dvi (1 page, 220 bytes)."
-        dvipattern = re.compile(r"Output written on %s\.dvi \((?P<page>\d+) pages?, \d+ bytes\)\." % texrunner.texfilename)
-        m = dvipattern.search(texrunner.texmessageparsed)
         if texrunner.page:
+            texrunner.texmessageparsed, m = remove_pattern(self.dviPattern, texrunner.texmessageparsed)
             if not m:
                 raise TexResultError("TeX dvifile messages expected", texrunner)
             if m.group("page") != str(texrunner.page):
                 raise TexResultError("wrong number of pages reported", texrunner)
-            texrunner.texmessageparsed = texrunner.texmessageparsed[:m.start()] + texrunner.texmessageparsed[m.end():]
         else:
             try:
                 s1, s2 = texrunner.texmessageparsed.split("No pages of output.", 1)
@@ -210,10 +233,8 @@ class _texmessageend(texmessage):
                 raise TexResultError("no dvifile expected", texrunner)
 
         # check for "Transcript written on ...log."
-        try:
-            s1, s2 = texrunner.texmessageparsed.split("Transcript written on %s.log." % texrunner.texfilename, 1)
-            texrunner.texmessageparsed = s1 + s2
-        except (IndexError, ValueError):
+        texrunner.texmessageparsed, m = remove_pattern(self.logPattern, texrunner.texmessageparsed)
+        if not m:
             raise TexResultError("TeX logfile message expected", texrunner)
 
 
@@ -221,8 +242,6 @@ class _texmessageemptylines(texmessage):
     """validates "*-only" (TeX/LaTeX input marker in interactive mode) and empty lines
     also clear TeX interactive mode warning (Please type a command or say `\\end')
     """
-
-    __implements__ = _Itexmessage
 
     def check(self, texrunner):
         texrunner.texmessageparsed = texrunner.texmessageparsed.replace(r"(Please type a command or say `\end')", "")
@@ -238,8 +257,6 @@ class _texmessageload(texmessage):
     - If the filename is enclosed in double quotes, it may contain blank space.
     - "(" and ")" must be used consistent (otherwise this validator just does nothing)
     - this is not always wanted, but we just assume that file inclusion is fine"""
-
-    __implements__ = _Itexmessage
 
     pattern = re.compile(r"\([\"]?(?P<filename>(?:(?<!\")[^()\s\n]+(?!\"))|[^\"\n]+)[\"]?(?P<additional>[^()]*)\)")
 
@@ -329,8 +346,6 @@ class _texmessageignore(_texmessageload):
       parser is available
     - PLEASE: - consider writing suitable tex message parsers
               - share your ideas/problems/solutions with others (use the PyX mailing lists)"""
-
-    __implements__ = _Itexmessage
 
     def check(self, texrunner):
         texrunner.texmessageparsed = ""
@@ -650,6 +665,7 @@ class _readpipe(threading.Thread):
             # universal EOL handling (convert everything into unix like EOLs)
             # XXX is this necessary on pipes?
             read = read.replace(b"\r", b"").replace(b"\n", b"") + b"\n"
+            
             self.gotqueue.put(read) # report, whats read
             if self.expect is not None and read.find(self.expect) != -1:
                 self.gotevent.set() # raise the got event, when the output was expected (XXX: within a single line)
@@ -741,28 +757,24 @@ def _cleantmp(texrunner):
     """get rid of temporary files
     - function to be registered by atexit
     - files contained in usefiles are kept"""
-    if texrunner.texruns: # cleanup while TeX is still running?
-        texrunner.expectqueue.put_nowait(None)              # do not expect any output anymore
-        if texrunner.mode == "latex":                       # try to immediately quit from TeX or LaTeX
-            texrunner.texinput.write(b"\n\\catcode`\\@11\\relax\\@@end\n")
-        else:
-            texrunner.texinput.write(b"\n\\end\n")
-        texrunner.texinput.close()                          # close the input queue and
-        if not texrunner.waitforevent(texrunner.quitevent): # wait for finish of the output
-            return                                          # didn't got a quit from TeX -> we can't do much more
-        texrunner.texruns = 0
-        texrunner.texdone = True
+    if texrunner.texruns:
+        texrunner.finishdvi()
+        if texrunner.texruns: # cleanup while TeX is still running?
+            texrunner.expectqueue.put_nowait(None)              # do not expect any output anymore
+            if texrunner.mode == "latex":                       # try to immediately quit from TeX or LaTeX
+                texrunner.texinput.write(b"\n\\catcode`\\@11\\relax\\@@end\n")
+            else:
+                texrunner.texinput.write(b"\n\\end\n")
+            texrunner.texinput.close()                          # close the input queue and
+            if not texrunner.waitforevent(texrunner.quitevent): # wait for finish of the output
+                logger.info("looks like we failed to quit TeX/LaTeX in atexit function")
     for usefile in texrunner.usefiles:
         extpos = usefile.rfind(".")
         try:
-            os.rename(texrunner.texfilename + usefile[extpos:], usefile)
+            os.rename(os.path.join(texrunner.textempdir, "texput" + usefile[extpos:]), usefile)
         except OSError:
             pass
-    for file in glob.glob("%s.*" % texrunner.texfilename) + ["%sNotes.bib" % texrunner.texfilename]:
-        try:
-            os.unlink(file)
-        except OSError:
-            pass
+    shutil.rmtree(texrunner.textempdir, ignore_errors=True)
 
 
 class _unset:
@@ -855,10 +867,7 @@ class texrunner:
         self.needdvitextboxes = [] # when texipc-mode off
         self.dvifile = None
         self.textboxesincluded = 0
-        savetempdir = tempfile.tempdir
-        tempfile.tempdir = os.curdir
-        self.texfilename = os.path.basename(tempfile.mktemp())
-        tempfile.tempdir = savetempdir
+        self.textempdir = tempfile.mkdtemp()
 
     def waitforevent(self, event):
         """waits verbosely with an timeout for an event
@@ -901,19 +910,16 @@ class texrunner:
             for usefile in self.usefiles:
                 extpos = usefile.rfind(".")
                 try:
-                    os.rename(usefile, self.texfilename + usefile[extpos:])
+                    os.rename(usefile, os.path.join(self.textempdir, "texput" + usefile[extpos:]))
                 except OSError:
                     pass
-            with open("%s.tex" % self.texfilename, "w") as texfile:
-              # start with filename -> creates dvi file with that name
-                texfile.write("\\relax%\n")
-            cmd = [config.get("text", self.mode, self.mode), self.texfilename]
+            cmd = [config.get("text", self.mode, self.mode), '--output-directory', self.textempdir]
             if self.texipc:
-                cmd.insert(1, "--ipc")
+                cmd.append("--ipc")
             pipes = config.Popen(cmd, stdin=config.PIPE, stdout=config.PIPE, stderr=config.STDOUT, bufsize=0)
             self.texinput, self.texoutput = pipes.stdin, pipes.stdout
             if self.texdebug:
-                self.texinput = Tee(self.texinput, open(self.texdebug, "wb"))
+                self.texinput = Tee(open(self.texdebug, "wb"), self.texinput)
             atexit.register(_cleantmp, self)
             self.expectqueue = queue.Queue(1)  # allow for a single entry only -> keeps the next InputMarker to be wait for
             self.gotevent = threading.Event()  # keeps the got inputmarker event
@@ -924,7 +930,8 @@ class texrunner:
             oldpreamblemode = self.preamblemode
             self.preamblemode = True
             self.readoutput.start()
-            self.execute("\\scrollmode\n\\raiseerror%\n" # switch to and check scrollmode
+            self.execute("\\relax\n" # don't read from a file but from stdin
+                         "\\scrollmode\n\\raiseerror%\n" # switch to and check scrollmode
                          "\\def\\PyX{P\\kern-.3em\\lower.5ex\hbox{Y}\kern-.18em X}%\n" # just the PyX Logo
                          "\\gdef\\PyXBoxHAlign{0}%\n" # global PyXBoxHAlign (0.0-1.0) for the horizontal alignment, default to 0
                          "\\newbox\\PyXBox%\n" # PyXBox will contain the output
@@ -949,7 +956,6 @@ class texrunner:
                          "\\def\\PyXInput#1{\\immediate\\write16{PyXInputMarker:executeid=#1:}}%\n" # write PyXInputMarker to stdout
                          "\\def\\PyXMarker#1{\\hskip0pt\\special{PyX:marker #1}}%", # write PyXMarker special into the dvi-file
                          self.defaulttexmessagesstart + self.texmessagesstart)
-            os.remove("%s.tex" % self.texfilename)
             if self.mode == "tex":
                 if self.lfs:
                     if not self.lfs.endswith(".lfs"):
@@ -961,14 +967,12 @@ class texrunner:
                 self.execute("\\newdimen\\linewidth\\newdimen\\textwidth%\n", [])
             elif self.mode == "latex":
                 if self.pyxgraphics:
-                    pyxdef_filename = self.texfilename + ".pyx.def"
-                    with config.open("pyx.def", []) as pyxdef, open(pyxdef_filename, "wb") as pyxdef_file:
-                        pyxdef_file.write(pyxdef.read())
-                    pyxdef_filename_tex = os.path.abspath(pyxdef_filename).replace(os.sep, "/")
+                    with config.open("pyx.def", []) as source, open(os.path.join(self.textempdir, "pyx.def"), "wb") as dest:
+                        dest.write(source.read())
                     self.execute("\\makeatletter%\n"
                                  "\\let\\saveProcessOptions=\\ProcessOptions%\n"
                                  "\\def\\ProcessOptions{%\n"
-                                 "\\def\\Gin@driver{" + pyxdef_filename_tex + "}%\n"
+                                 "\\def\\Gin@driver{" + self.textempdir.replace(os.sep, "/") + "/pyx.def}%\n"
                                  "\\def\\c@lor@namefile{dvipsnam.def}%\n"
                                  "\\saveProcessOptions}%\n"
                                  "\\makeatother",
@@ -991,7 +995,8 @@ class texrunner:
                 self.expr = ("\\ProcessPyXBox{%s%%\n}{%i}%%\n" % (expr, self.page) +
                              "\\PyXInput{%i}%%\n" % self.executeid)
         else: # TeX/LaTeX should be finished
-            self.expectqueue.put_nowait(("Transcript written on %s.log" % self.texfilename).encode(self.texenc))
+            # self.expectqueue.put_nowait(("Transcript written on texput.log").encode(self.texenc))
+            self.expectqueue.put_nowait(("Transcript written on").encode(self.texenc))
             if self.mode == "latex":
                 self.expr = "\\end{document}%\n"
             else:
@@ -1034,7 +1039,7 @@ class texrunner:
         - this method ensures that all textboxes can access their
           dvicanvas"""
         self.execute(None, self.defaulttexmessagesend + self.texmessagesend)
-        dvifilename = "%s.dvi" % self.texfilename
+        dvifilename = os.path.join(self.textempdir, "texput.dvi")
         if not self.texipc:
             self.dvifile = dvifile.DVIfile(dvifilename, debug=self.dvidebug)
             page = 1
@@ -1191,7 +1196,7 @@ class texrunner:
             raise e
         if self.texipc:
             if first:
-                self.dvifile = dvifile.DVIfile("%s.dvi" % self.texfilename, debug=self.dvidebug)
+                self.dvifile = dvifile.DVIfile(os.path.join(self.textempdir, "texput.dvi"), debug=self.dvidebug)
         match = self.PyXBoxPattern.search(self.texmessage)
         if not match or int(match.group("page")) != self.page:
             raise TexResultError("box extents not found", self)
@@ -1254,7 +1259,7 @@ class texrunner:
                          "\\vfill\\supereject%%\n" % text, [texmessage.ignore])
             if self.texipc:
                 if self.dvifile is None:
-                    self.dvifile = dvifile.DVIfile("%s.dvi" % self.texfilename, debug=self.dvidebug)
+                    self.dvifile = dvifile.DVIfile(os.path.join(self.textempdir, "texput.dvi"), debug=self.dvidebug)
             else:
                 raise RuntimeError("textboxes currently needs texipc")
             lastparnos = parnos
