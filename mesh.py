@@ -113,7 +113,7 @@ class mesh(baseclasses.canvasitem):
             from PIL import Image
             c = canvas.canvas()
             c.insert(self)
-            i = Image.open(c.pipeGS("pngalpha", resolution=writer.mesh_as_bitmap_resolution, seekable=True))
+            i = Image.open(c.pipeGS("pngalpha", resolution=writer.mesh_as_bitmap_resolution))
             i.load()
             b = bitmap.bitmap_pt(self.bbox().llx_pt, self.bbox().lly_pt, i)
             # we slightly shift the bitmap to re-center it, as the bitmap might contain some additional border
@@ -143,7 +143,7 @@ class mesh(baseclasses.canvasitem):
             from PIL import Image
             c = canvas.canvas()
             c.insert(self)
-            i = Image.open(c.pipeGS("pngalpha", resolution=writer.mesh_as_bitmap_resolution, seekable=True))
+            i = Image.open(c.pipeGS("pngalpha", resolution=writer.mesh_as_bitmap_resolution))
             i.load()
             b = bitmap.bitmap_pt(self.bbox().llx_pt, self.bbox().lly_pt, i)
             # we slightly shift the bitmap to re-center it, as the bitmap might contain some additional border

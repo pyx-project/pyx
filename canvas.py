@@ -139,7 +139,7 @@ class canvas(baseclasses.canvasitem):
         """
         Automatically represent as PNG graphic when evaluated in IPython notebook.
         """
-        return self.pipeGS(device="png16m", seekable=True).getvalue()
+        return self.pipeGS(device="png16m").getvalue()
 
     def bbox(self):
         """returns bounding box of canvas
