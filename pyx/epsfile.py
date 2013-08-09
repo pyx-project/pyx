@@ -344,7 +344,7 @@ class epsfile(baseclasses.canvasitem):
         from PIL import Image
         c = canvas.canvas()
         c.insert(self)
-        i = Image.open(c.pipeGS(device="pngalpha", resolution=600, seekable=True))
+        i = Image.open(c.pipeGS(device="pngalpha", resolution=600))
         i.load()
         b = bitmap.bitmap_pt(self.bbox().llx_pt, self.bbox().lly_pt, i)
         # we slightly shift the bitmap to re-center it, as the bitmap might contain some additional border

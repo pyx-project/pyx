@@ -128,17 +128,16 @@ convenience methods, which wrap the canvas into a single page document.
    *kwargs*.
 
 
-.. method:: canvas.pipeGS(device, seekable=False, resolution=100, gs="gs", gsoptions=[], textalphabits=4, graphicsalphabits=4, ciecolor=False, input="eps", **kwargs)
+.. method:: canvas.pipeGS(device, resolution=100, gs="gs", gsoptions=[], textalphabits=4, graphicsalphabits=4, ciecolor=False, input="eps", **kwargs)
 
    This method pipes the content of a canvas to the ghostscript interpreter
    to generate other output formats. The output is returned by means of a
-   python file object. As this file object is generated from a pipe, it is
-   not seekable by default. To make it seekable, enable the *seekable* flag.
-   *device* specifies a ghostscript output device by a string. Depending on the
-   ghostscript configuration ``"png16"``, ``"png16m"``, ``"png256"``,
-   ``"png48"``, ``"pngalpha"``, ``"pnggray"``, ``"pngmono"``, ``"jpeg"``, and
-   ``"jpeggray"`` might be available among others. See the output of ``gs
-   --help`` and the ghostscript documentation for more information.
+   python BytesIO object. *device* specifies a ghostscript output device by
+   a string. Depending on the ghostscript configuration ``"png16"``,
+   ``"png16m"``, ``"png256"``, ``"png48"``, ``"pngalpha"``, ``"pnggray"``,
+   ``"pngmono"``, ``"jpeg"``, and ``"jpeggray"`` might be available among
+   others. See the output of ``gs --help`` and the ghostscript documentation
+   for more information.
 
    *resolution* specifies the resolution in dpi (dots per inch). *gs* is the
    name of the ghostscript executable. *gsoptions* is a list of additional
