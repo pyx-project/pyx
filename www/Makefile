@@ -30,7 +30,7 @@ copy:
 	  for d in "" $$(grep / ../$$s/INDEX); \
 	  do \
 	    mkdir -p build/$$s/$$d; \
-	    for t in png py jpg dat eps pdf; \
+	    for t in png py ipynb jpg dat eps pdf; \
 	    do \
 	      cp ../$$s/$$d*.$$t build/$$s/$$d 2> /dev/null; \
 	    done; \
