@@ -206,6 +206,7 @@ latex_preamble = r'''
               pdfauthor={Gert-Ludwig Ingold <gert.ingold@physik.uni-augsburg.de>},
               pdfsubject={FAQ for PyX},
               pdfkeywords={PyX, graphics, tipps and tricks, FAQ}}
+  \DeclareUnicodeCharacter{028F}{{\fontsize{7}{7}\selectfont Y}}
 ''' % latex_documents[0][2]
 
 # Documents to append as an appendix to all manuals.
