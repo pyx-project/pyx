@@ -3,7 +3,10 @@ from IPython.nbformat.current import reads, write, new_output
 
 filename = os.path.splitext(sys.argv[1])[0]
 
-title, description = open("{}.txt".format(filename), encoding="utf-8").read().split('\n\n', 1)
+try:
+    title, description = open("{}.txt".format(filename), encoding="utf-8").read().split('\n\n', 1)
+except IOError:
+    title, description = filename, ""
 description = description.replace("...", "").replace("'''", "**").replace("''", "*")
 bendpattern = re.compile("^!+", re.MULTILINE)
 bendcode = "![bend](http://pyx.sourceforge.net/bend.png)"
