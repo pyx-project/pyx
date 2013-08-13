@@ -20,7 +20,7 @@ all:
 	cd $(dir $^); PYTHONPATH=$(CURDIR)/.. $(PYTHON) -W default $(notdir $^)
 
 %.ipynb: %.png
-	$(PYTHON) mkipynb.py $@
+	$(PYTHON) $(CURDIR)/../www/mkipynb.py $@
 
 misc/pattern.png: misc/pattern.eps
 	$(GS) -r400 -dEPSCrop -dNOPAUSE -dQUIET -dBATCH -sDEVICE=pnm -sOutputFile=- $^|pnmscale 0.25|pnmtopng -transparent 'rgb:ff/ff/ff' > $@
