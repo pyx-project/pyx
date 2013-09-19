@@ -18,8 +18,8 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import atexit, errno, functools, glob, inspect, io, logging, os, queue, re
-import shutil, sys, tempfile, textwrap, threading
+import atexit, errno, functools, glob, inspect, io, itertools, logging, os
+import queue, re, shutil, sys, tempfile, textwrap, threading
 
 from pyx import config, unit, box, canvas, trafo, version, attr, style, path
 from pyx import bbox as bboxmodule
@@ -38,13 +38,17 @@ def remove_string(p, s):
         the string was removed)
     :rtype: tuple of str and bool
 
+    Example:
+        >>> remove_string("XXX", "abcXXXdefXXXghi")
+        ('abcdefXXXghi', True)
+
     """
     r = s.replace(p, '', 1)
     return r, r != s
 
 
 def remove_pattern(p, s, ignore_nl=True):
-    """Removes a pattern from a string.
+    r"""Removes a pattern from a string.
 
     The function removes the first occurence of the pattern from a string. It
     returns a tuple of the resulting string and the matching object (or
@@ -60,6 +64,13 @@ def remove_pattern(p, s, ignore_nl=True):
     :returns: the result string and the match object or ``None`` if
         search failed
     :rtype: tuple of str and (re.match or None)
+
+    Example:
+        >>> r, m = remove_pattern(re.compile("XXX"), 'ab\ncXX\nXdefXX\nX')
+        >>> r
+        'ab\ncdefXX\nX'
+        >>> m.string[m.start():m.end()]
+        'XXX'
 
     """
     if ignore_nl:
@@ -86,74 +97,142 @@ def remove_pattern(p, s, ignore_nl=True):
     return s, None
 
 
+def index_all(c, s):
+    """Return list of positions of a character in a string.
+
+    Example:
+        >>> index_all("X", "abXcdXef")
+        [2, 5]
+
+    """
+    assert len(c) == 1
+    return [i for i, x in enumerate(s) if x == c]
+
+
+def pairwise(i):
+    """Returns iterator over pairs of data from an iterable.
+
+    Example:
+        >>> list(pairwise([1, 2, 3]))
+        [(1, 2), (2, 3)]
+
+    """
+    a, b = itertools.tee(i)
+    next(b, None)
+    return zip(a, b)
+
+
+def remove_nested_brackets(s, openbracket="(", closebracket=")", quote='"'):
+    """Remove nested brackets
+
+    Return a modified string with all nested brackets 1 removed, i.e. only
+    keep the first bracket nesting level. In case an opening bracket is
+    immediately followed by a quote, the quoted string is left untouched,
+    even if it contains brackets. The use-case for that are files in the
+    folder "Program Files (x86)".
+
+    If the bracket nesting level is broken (unbalanced), the unmodified
+    string is returned.
+
+    Example:
+        >>> remove_nested_brackets('aaa("bb()bb" cc(dd(ee))ff)ggg'*2)
+        'aaa("bb()bb" ccff)gggaaa("bb()bb" ccff)ggg'
+
+    """
+    openpos = index_all(openbracket, s)
+    closepos = index_all(closebracket, s)
+    if quote is not None:
+        quotepos = index_all(quote, s)
+        for openquote, closequote in pairwise(quotepos):
+             if openquote-1 in openpos:
+                 # ignore brackets in quoted string
+                 openpos = [pos for pos in openpos
+                            if not (openquote < pos < closequote)]
+                 closepos = [pos for pos in closepos
+                             if not (openquote < pos < closequote)]
+    if len(openpos) != len(closepos):
+        # unbalanced brackets
+        return s
+
+    # keep the original string in case we need to return due to broken nesting levels
+    r = s
+
+    level = 0
+    # Iterate over the bracket positions from the end.
+    # We go reversely to be able to immediately remove nested bracket levels
+    # without influencing bracket positions yet to come in the loop.
+    for pos, leveldelta in sorted(itertools.chain(zip(openpos, itertools.repeat(-1)),
+                                                  zip(closepos, itertools.repeat(1))),
+                                  reverse=True):
+        # the current bracket nesting level
+        level += leveldelta
+        if level < 0:
+            # unbalanced brackets
+            return s
+        if leveldelta == 1 and level == 2:
+            # a closing bracket to cut after
+            endpos = pos+1
+        if leveldelta == -1 and level == 1:
+            # an opening bracket to cut at -> remove
+            r = r[:pos] + r[endpos:]
+    return r
+
+
 class TexResultError(ValueError): pass
 
 
-class texmessage(attr.attr):
+class texmessage:
 
-    def check(self, msg, page):
-        """check a Tex/LaTeX response and respond appropriate
-        - read the texrunners texmessageparsed attribute
-        - if there is an problem found, raise TexResultError
-        - remove any valid and identified TeX/LaTeX response
-          from the texrunners texmessageparsed attribute
-          -> finally, there should be nothing left in there,
-             otherwise it is interpreted as an error"""
-        raise NotImplementedError()
+    start_pattern = re.compile(r"This is [-0-9a-zA-Z\s_]*TeX")
 
+    @staticmethod
+    def start(msg, page):
+        r"""Message parser to check for proper TeX startup.
 
-class _texmessagestart(texmessage):
-    """validates TeX/LaTeX startup"""
+        Example:
+        >>> texmessage.start(r'''
+        ... This is e-TeX (version)
+        ... *! Undefined control sequence.
+        ... <*> \raiseerror
+        ...                %
+        ... ''', 0)
+        ''
 
-    startpattern = re.compile(r"This is [-0-9a-zA-Z\s_]*TeX")
-
-    def check(self, msg, page):
-        # check for "This is e-TeX"
-        m = self.startpattern.search(msg)
-        if not m:
+        """
+        # check for "This is e-TeX" etc.
+        if not texmessage.start_pattern.search(msg):
             raise TexResultError("TeX startup failed")
 
         # check for \raiseerror -- just to be sure that communication works
-        try:
-            msg = msg.split("*! Undefined control sequence.\n<*> \\raiseerror\n               %\n", 1)[1]
-        except (IndexError, ValueError):
+        new = msg.split("*! Undefined control sequence.\n<*> \\raiseerror\n               %\n", 1)[-1]
+        if msg == new:
             raise TexResultError("TeX scrollmode check failed")
-        return msg
+        return new
 
+    @staticmethod
+    def no_file(fileending):
+        "Message parser generator for missing file with given fileending."
+        def check(msg, page):
+            "Message parser for missing {} file."
+            return msg.replace("No file texput.%s." % fileending, "").replace("No file %s%stexput.%s." % (os.curdir, os.sep, fileending), "")
+        check.__doc__ = check.__doc__.format(fileending)
+        return check
 
-class _texmessagenofile(texmessage):
-    """allows for LaTeXs no-file warning"""
+    no_aux = no_file.__func__("aux")
+    no_nav = no_file.__func__("nav")
 
-    def __init__(self, fileending):
-        self.fileending = fileending
+    aux_pattern = re.compile(r'\(([^()]+\.aux|"[^"]+\.aux")\)')
+    dvi_pattern = re.compile(r"Output written on .*texput\.dvi \((?P<page>\d+) pages?, \d+ bytes\)\.", re.DOTALL)
+    log_pattern = re.compile(r"Transcript written on .*texput\.log\.", re.DOTALL)
 
-    def check(self, msg, page):
-        try:
-            s1, s2 = msg.split("No file texput.%s." % self.fileending, 1)
-            msg = s1 + s2
-        except (IndexError, ValueError):
-            try:
-                s1, s2 = msg.split("No file %s%stexput.%s." % (os.curdir, os.sep, self.fileending), 1)
-                msg = s1 + s2
-            except (IndexError, ValueError):
-                pass
-        return msg
-
-
-class _texmessageend(texmessage):
-    """validates TeX/LaTeX finish"""
-
-    auxPattern = re.compile(r"\(([^()]+\.aux|\"[^\"]+\.aux\")\)")
-    dviPattern = re.compile(r"Output written on .*texput\.dvi \((?P<page>\d+) pages?, \d+ bytes\)\.")
-    logPattern = re.compile(r"Transcript written on .*texput\.log\.")
-
-    def check(self, msg, page):
-        msg, m = remove_pattern(self.auxPattern, msg, ignore_nl=False)
-        msg, m = remove_string("(see the transcript file for additional information)", msg)
+    @staticmethod
+    def end(msg, page):
+        "Message parser to check for proper TeX shutdown."
+        msg = re.sub(texmessage.aux_pattern, "", msg).replace("(see the transcript file for additional information)", "")
 
         # check for "Output written on ...dvi (1 page, 220 bytes)."
         if page:
-            msg, m = remove_pattern(self.dviPattern, msg)
+            msg, m = remove_pattern(texmessage.dvi_pattern, msg)
             if not m:
                 raise TexResultError("TeX dvifile messages expected")
             if m.group("page") != str(page):
@@ -164,156 +243,133 @@ class _texmessageend(texmessage):
                 raise TexResultError("no dvifile expected")
 
         # check for "Transcript written on ...log."
-        msg, m = remove_pattern(self.logPattern, msg)
+        msg, m = remove_pattern(texmessage.log_pattern, msg)
         if not m:
             raise TexResultError("TeX logfile message expected")
         return msg
 
+    quoted_file_pattern = re.compile(r'\("(?P<filename>[^"]+)".*?\)')
+    file_pattern = re.compile(r'\((?P<filename>[^"][^ )]*).*?\)', re.DOTALL)
 
-class _texmessageload(texmessage):
-    """validates inclusion of arbitrary files
-    - the matched pattern is "(<filename> <arbitrary other stuff>)", where
-      <filename> is a readable file and other stuff can be anything
-    - If the filename is enclosed in double quotes, it may contain blank space.
-    - "(" and ")" must be used consistent (otherwise this validator just does nothing)
-    - this is not always wanted, but we just assume that file inclusion is fine"""
+    @staticmethod
+    def load(msg, page):
+        """Message parser for loading of files.
 
-    pattern = re.compile(r"\([\"]?(?P<filename>(?:(?<!\")[^()\s\n]+(?!\"))|[^\"\n]+)[\"]?(?P<additional>[^()]*)\)")
+        Removes text starting with a round bracket followed by a filename
+        ignoring all further text until the corresponding closing bracket.
+        Quotes and/or line breaks in the filename are handled as needed to read
+        TeX output.
 
-    def baselevels(self, s, maxlevel=1, brackets="()", quotes='""'):
-        """strip parts of a string above a given bracket level
-        - return a modified (some parts might be removed) version of the string s
-          where all parts inside brackets with level higher than maxlevel are
-          removed
-        - if brackets do not match (number of left and right brackets is wrong
-          or at some points there were more right brackets than left brackets)
-          just return the unmodified string
-        - a quoted string immediately followed after a bracket is left untouched
-          even if it contains quotes itself"""
-        level = 0
-        highestlevel = 0
-        inquote = 0
-        res = ""
-        for i, c in enumerate(s):
-            if quotes and level <= maxlevel:
-                if not inquote and c == quotes[0] and i and s[i-1] == brackets[0]:
-                    inquote = True
-                elif inquote and c == quotes[1]:
-                    inquote = False
-            if inquote:
-                res += c
-            else:
-                if c == brackets[0]:
-                    level += 1
-                    if level > highestlevel:
-                        highestlevel = level
-                if level <= maxlevel:
-                    res += c
-                if c == brackets[1]:
-                    level -= 1
-        if level == 0 and highestlevel > 0:
-            return res
+        Without quoting the filename, the necessary removal of line breaks is
+        not well defined and the different possibilities are tested to check
+        whether one solution is ok. The last of the examples below checks this
+        behavior.
 
-    def check(self, msg, page):
-        search = self.baselevels(msg)
-        res = []
-        if search is not None:
-            m = self.pattern.search(search)
-            while m:
-                filename = m.group("filename").replace("\n", "")
-                try:
-                    additional = m.group("additional")
-                except IndexError:
-                    additional = ""
-                if (os.access(filename, os.R_OK) or
-                    len(additional) and additional[0] == "\n" and os.access(filename+additional.split()[0], os.R_OK)):
-                    res.append(search[:m.start()])
-                else:
-                    res.append(search[:m.end()])
-                search = search[m.end():]
-                m = self.pattern.search(search)
-            else:
-                res.append(search)
-                msg = "".join(res)
-        return msg
+        Examples:
+        >>> texmessage.load(r'''other (text.py) things''', 0)
+        'other  things'
+        >>> texmessage.load(r'''other ("text.py") things''', 0)
+        'other  things'
+        >>> texmessage.load(r'''other ("tex
+        ... t.py" further (ignored)
+        ... text) things''', 0)
+        'other  things'
+        >>> texmessage.load(r'''other (t
+        ... ext
+        ... .py
+        ... fur
+        ... ther (ignored) text) things''', 0)
+        'other  things'
 
-
-class _texmessageloaddef(_texmessageload):
-    """validates the inclusion of font description files (fd-files)
-    - works like _texmessageload
-    - filename must end with .def or .fd
-    - further text is allowed"""
-
-    pattern = re.compile(r"\([\"]?(?P<filename>(?:(?:(?<!\")[^\(\)\s\n\"]+)|(?:(?<=\")[^\(\)\"]+))(\.fd|\.def))[\"]?[\s\n]*(?P<additional>[\(]?[^\(\)]*[\)]?)[\s\n]*\)")
-
-    def baselevels(self, s, **kwargs):
-        return s
-
-
-class _texmessagegraphicsload(_texmessageload):
-    """validates the inclusion of files as the graphics packages writes it
-    - works like _texmessageload, but using "<" and ">" as delimiters
-    - filename must end with .eps and no further text is allowed"""
-
-    pattern = re.compile(r"<(?P<filename>[^>]+.eps)>")
-
-    def baselevels(self, s, **kwargs):
-        return s
-
-
-class _texmessageignore(_texmessageload):
-    """validates any TeX/LaTeX response
-    - this might be used, when the expression is ok, but no suitable texmessage
-      parser is available
-    - PLEASE: - consider writing suitable tex message parsers
-              - share your ideas/problems/solutions with others (use the PyX mailing lists)"""
-
-    def check(self, msg, page):
-        return ""
-
-
-class _texmessagewarn(texmessage):
-    """validates a given pattern 'pattern' as a warning 'warning'"""
-
-    def check(self, msg, page):
-        if msg:
-            logger.warn("ignoring TeX warnings:\n%s" % msg)
-        return ""
-
-
-class texmessagepattern(texmessage):
-    """validates a given pattern"""
-
-    def __init__(self, pattern, description=None):
-        self.pattern = pattern
-        self.description = description
-
-    def check(self, msg, page):
-        m = self.pattern.search(msg)
+        """
+        r = remove_nested_brackets(msg)
+        r, m = remove_pattern(texmessage.quoted_file_pattern, r)
         while m:
-            msg = msg[:m.start()] + msg[m.end():]
-            if self.description:
-                logger.warning("ignoring %s:\n%s" % (self.description, m.string[m.start(): m.end()].rstrip()))
+            if not os.path.isfile(m.group("filename")):
+                return msg
+            r, m = remove_pattern(texmessage.quoted_file_pattern, r)
+        r, m = remove_pattern(texmessage.file_pattern, r, ignore_nl=False)
+        while m:
+            for filename in itertools.accumulate(m.group("filename").split("\n")):
+                if os.path.isfile(filename):
+                    break
             else:
-                logger.info("ignoring matched pattern:\n%s" % (m.string[m.start(): m.end()].rstrip()))
-            m = self.pattern.search(msg)
-        return msg
+                return msg
+            r, m = remove_pattern(texmessage.file_pattern, r, ignore_nl=False)
+        return r
 
+    quoted_def_pattern = re.compile(r'\("(?P<filename>[^"]+\.(fd|def))"\)')
+    def_pattern = re.compile(r'\((?P<filename>[^"][^ )]*\.(fd|def))\)')
 
-texmessage.start = _texmessagestart()
-texmessage.noaux = _texmessagenofile("aux")
-texmessage.nonav = _texmessagenofile("nav")
-texmessage.end = _texmessageend()
-texmessage.load = _texmessageload()
-texmessage.loaddef = _texmessageloaddef()
-texmessage.graphicsload = _texmessagegraphicsload()
-texmessage.ignore = _texmessageignore()
-texmessage.warn = _texmessagewarn()
-texmessage.fontwarning = texmessagepattern(re.compile(r"^LaTeX Font Warning: .*$(\n^\(Font\).*$)*", re.MULTILINE), "font warning")
-texmessage.boxwarning = texmessagepattern(re.compile(r"^(Overfull|Underfull) \\[hv]box.*$(\n^..*$)*\n^$\n", re.MULTILINE), "overfull/underfull box warning")
-texmessage.rerunwarning = texmessagepattern(re.compile(r"^(LaTeX Warning: Label\(s\) may have changed\. Rerun to get cross-references right\s*\.)$", re.MULTILINE), "rerun warning")
-texmessage.packagewarning = texmessagepattern(re.compile(r"^package\s+(?P<packagename>\S+)\s+warning\s*:[^\n]+(?:\n\(?(?P=packagename)\)?[^\n]*)*", re.MULTILINE | re.IGNORECASE), "generic package warning")
-texmessage.nobblwarning = texmessagepattern(re.compile(r"^[\s\*]*(No file .*\.bbl.)\s*", re.MULTILINE), "no-bbl warning")
+    @staticmethod
+    def load_def(msg, page):
+        "Message parser for loading of font definition files."
+        r = msg
+        for p in [texmessage.quoted_def_pattern, texmessage.def_pattern]:
+            r, m = remove_pattern(p, r)
+            while m:
+                if not os.path.isfile(m.group("filename")):
+                    return msg
+                r, m = remove_pattern(texmessage.quoted_file_pattern, r)
+        return r
+
+    quoted_graphics_pattern = re.compile(r'<"(?P<filename>[^"]+\.eps)">')
+    graphics_pattern = re.compile(r'<(?P<filename>[^"][^>]*\.eps)>')
+
+    @staticmethod
+    def load_graphics(msg, page):
+        "Message parser for loading of graphics files."
+        r = msg
+        for p in [texmessage.quoted_graphics_pattern, texmessage.graphics_pattern]:
+            r, m = remove_pattern(p, r)
+            while m:
+                if not os.path.isfile(m.group("filename")):
+                    return msg
+                r, m = remove_pattern(texmessage.quoted_file_pattern, r)
+        return r
+
+    @staticmethod
+    def ignore(msg, page):
+        """Message parser to ignore all output.
+
+        Should be used as a last resort only. You should write a proper message
+        parser checking for the output you observe.
+
+        """
+        return ""
+
+    @staticmethod
+    def warn(msg, page):
+        """Message parser to warn about all output.
+
+        Similar to the :meth:`ignore` message parser, but writing a warning to
+        the logger about the message. This is considered to be better when you
+        need to get it working quickly as you will still be prompted about the
+        unresolved message, while the processing continues.
+
+        """
+        if msg:
+             logger.warn("ignoring TeX warnings:\n%s" % textwrap.indent(msg.rstrip(), "  "))
+        return ""
+
+    @staticmethod
+    def pattern(p, warning):
+        "Message parser generator for pattern matching."
+        def check(msg, page):
+            "Message parser for {}."
+            msg, m = remove_pattern(p, msg, ignore_nl=False)
+            while m:
+                logger.warning("ignoring %s:\n%s" % (warning, m.string[m.start(): m.end()].rstrip()))
+                msg, m = remove_pattern(p, msg, ignore_nl=False)
+            return msg
+        check.__doc__ = check.__doc__.format(warning)
+        return check
+
+    box_warning = pattern.__func__(re.compile(r"^(Overfull|Underfull) \\[hv]box.*$(\n^..*$)*\n^$\n", re.MULTILINE), "overfull/underfull box warning")
+    font_warning = pattern.__func__(re.compile(r"^LaTeX Font Warning: .*$(\n^\(Font\).*$)*", re.MULTILINE), "font warning")
+    package_warning = pattern.__func__(re.compile(r"^package\s+(?P<packagename>\S+)\s+warning\s*:[^\n]+(?:\n\(?(?P=packagename)\)?[^\n]*)*", re.MULTILINE | re.IGNORECASE), "generic package warning")
+    rerun_warning = pattern.__func__(re.compile(r"^(LaTeX Warning: Label\(s\) may have changed\. Rerun to get cross-references right\s*\.)$", re.MULTILINE), "rerun warning")
+    nobbl_warning = pattern.__func__(re.compile(r"^[\s\*]*(No file .*\.bbl.)\s*", re.MULTILINE), "no-bbl warning")
 
 
 
@@ -813,10 +869,10 @@ PyXBoxPattern = re.compile(r"PyXBox:page=(?P<page>\d+),lt=(?P<lt>-?\d*((\d\.?)|(
 class _texrunner:
 
     defaulttexmessagesstart = [texmessage.start]
-    defaulttexmessagesend = [texmessage.end, texmessage.fontwarning, texmessage.rerunwarning, texmessage.nobblwarning]
+    defaulttexmessagesend = [texmessage.end, texmessage.font_warning, texmessage.rerun_warning, texmessage.nobbl_warning]
     defaulttexmessagesdefaultpreamble = [texmessage.load]
-    defaulttexmessagesdefaultrun = [texmessage.loaddef, texmessage.graphicsload,
-                                    texmessage.fontwarning, texmessage.boxwarning, texmessage.packagewarning]
+    defaulttexmessagesdefaultrun = [texmessage.font_warning, texmessage.box_warning, texmessage.package_warning,
+                                    texmessage.load_def, texmessage.load_graphics]
 
     def __init__(self, executable,
                        texenc="ascii",
@@ -883,6 +939,7 @@ class _texrunner:
         self.executeid = 0
         self.page = 0
         self.preambles = []
+
         self.needdvitextboxes = [] # when texipc-mode off
         self.dvifile = None
         self.textboxesincluded = 0
@@ -965,9 +1022,8 @@ class _texrunner:
                     parsed, m = remove_string("[80.121.88.%s]" % self.page, parsed)
                     if not m:
                         raise TexResultError("PyXPageOutMarker expected")
-            texmessages = attr.mergeattrs(texmessages)
             for t in texmessages:
-                parsed = t.check(parsed, self.page)
+                parsed = t(parsed, self.page)
             if parsed.replace(r"(Please type a command or say `\end')", "").replace(" ", "").replace("*\n", "").replace("\n", ""):
                 raise TexResultError("unhandled TeX response (might be an error)")
         except TexResultError as e:
@@ -975,7 +1031,7 @@ class _texrunner:
                 def add(msg): e.args = (e.args[0] + msg,)
                 add("\nThe expression passed to TeX was:\n{}".format(textwrap.indent(expr.rstrip(), "  ")))
                 if self.errordebug >= 2:
-                    add("\nThe return message from TeX was:\n{}".formt(textwrap.indent(unparsed.rstrip(), "  ")))
+                    add("\nThe return message from TeX was:\n{}".format(textwrap.indent(unparsed.rstrip(), "  ")))
                 if self.errordebug == 1:
                     if parsed.count('\n') > 5:
                         parsed = "\n".join(parsed.split("\n")[:5] + ["(cut after 5 lines; use errordebug=2 for all output)"])
@@ -1172,7 +1228,7 @@ class texrunner(_texrunner):
 class latexrunner(_texrunner):
 
     defaulttexmessagesdocclass = [texmessage.load]
-    defaulttexmessagesbegindoc = [texmessage.load, texmessage.noaux]
+    defaulttexmessagesbegindoc = [texmessage.load, texmessage.no_aux]
 
     def __init__(self, executable=config.get("text", "latex", "latex"),
                        docclass="article", docopt=None, pyxgraphics=True,
