@@ -2,7 +2,9 @@ import sys
 if sys.path[0] != "../..":
     sys.path.insert(0, "../..")
 
-import unittest, warnings, os
+import unittest, warnings, os, logging
+
+from testfixtures import log_capture
 
 from pyx import text, unit
 
@@ -10,59 +12,65 @@ from pyx import text, unit
 
 class MessageParserTestCase(unittest.TestCase):
 
-    def assertRaisesUserWarning(self, texexpression, warningmessage, textattrs=[], texmessages=[]):
-        try:
-            warnings.resetwarnings()
-            warnings.filterwarnings(action="error")
-            text.text(0, 0, texexpression, textattrs=textattrs, texmessages=texmessages)
-        except UserWarning as w:
-            if str(w) != warningmessage:
-                if 0: # turn on for debugging differences
-                    print(len(str(w)), len(warningmessage))
-                    for i, (c1, c2) in enumerate(list(zip(str(w), warningmessage))):
-                        print(c1, end=' ')
-                        if c1 != c2:
-                            print("difference at position %d" % i)
-                            print(ord(c1), ord(c2))
-                            break
-                raise
-
-    def testWarnings(self):
-        self.assertRaisesUserWarning(r"\some \badly \broken \TeX", r"""ignoring all warnings:
-*
-*! Undefined control sequence.
-<argument> \some 
-                 \badly \broken \TeX 
-<*> }{1}
-        %
-! Undefined control sequence.
-<argument> \some \badly 
-                        \broken \TeX 
-<*> }{1}
-        %
-! Undefined control sequence.
-<argument> \some \badly \broken 
-                                \TeX 
-<*> }{1}
-        %
+    @log_capture(level=logging.WARNING)
+    def testBadTeX(self, l):
+        text.text(0, 0, r"\some \badly \broken \TeX", texmessages=[text.texmessage.warn])
+        l.check(("pyx", "WARNING", r"""ignoring TeX warnings:
+  *
+  *! Undefined control sequence.
+  <argument> \some 
+                   \badly \broken \TeX 
+  <*> }{1}
+          %
+  ! Undefined control sequence.
+  <argument> \some \badly 
+                          \broken \TeX 
+  <*> }{1}
+          %
+  ! Undefined control sequence.
+  <argument> \some \badly \broken 
+                                  \TeX 
+  <*> }{1}
+          %
 
 
-*
+  *"""))
 
-""", texmessages=[text.texmessage.allwarning])
-        self.assertRaisesUserWarning(r"\fontseries{invalid}\selectfont{}hello, world", r"""ignoring font warning:
+    @log_capture(level=logging.WARNING)
+    def testFontWarning(self, l):
+        text.text(0, 0, r"\fontseries{invalid}\selectfont{}hello, world", texmessages=[text.texmessage.font_warning])
+        text.defaulttexrunner.do_finish()
+        l.check(("pyx", "WARNING", r"""ignoring font warning:
 LaTeX Font Warning: Font shape `OT1/cmr/invalid/n' undefined
-(Font)              using `OT1/cmr/m/n' instead on input line 0.""", texmessages=[text.texmessage.fontwarning])
-        self.assertRaisesUserWarning(r"hello, world", r"""ignoring overfull/underfull box warning:
+(Font)              using `OT1/cmr/m/n' instead on input line 0."""),
+                ("pyx", "WARNING", r"""ignoring font warning:
+LaTeX Font Warning: Some font shapes were not available, defaults substituted."""))
+
+    @log_capture(level=logging.WARNING)
+    def testOverfullHboxWarning(self, l):
+        text.text(0, 0, r"hello, world", textattrs=[text.parbox(30*unit.u_pt)])
+        l.check(("pyx", "WARNING", r"""ignoring overfull/underfull box warning:
 Overfull \hbox (8.22089pt too wide) detected at line 0
-[]\OT1/cmr/m/n/10 hello,""", textattrs=[text.parbox(30*unit.u_pt)])
-        self.assertRaisesUserWarning(r"\hbadness=0hello, world, hello", r"""ignoring overfull/underfull box warning:
+[]\OT1/cmr/m/n/10 hello,"""))
+
+    @log_capture(level=logging.WARNING)
+    def testUnderfullHboxWarning(self, l):
+        text.text(0, 0, r"\hbadness=0hello, world, hello", textattrs=[text.parbox(2.5)])
+        l.check(("pyx", "WARNING", r"""ignoring overfull/underfull box warning:
 Underfull \hbox (badness 171) detected at line 0
-[]\OT1/cmr/m/n/10 hello, world,""", textattrs=[text.parbox(2.5)])
-        self.assertRaisesUserWarning(r"\parindent=0pt\vbox to 1cm {hello, world, hello, world, hello, world}", r"""ignoring overfull/underfull box warning:
-Overfull \vbox (2.4917pt too high) detected at line 0""", textattrs=[text.parbox(1.9)])
-        self.assertRaisesUserWarning(r"\parindent=0pt\vbox to 1cm {hello, world, hello, world}", r"""ignoring overfull/underfull box warning:
-Underfull \vbox (badness 10000) detected at line 0""", textattrs=[text.parbox(1.9)])
+[]\OT1/cmr/m/n/10 hello, world,"""))
+
+    @log_capture(level=logging.WARNING)
+    def testOverfullVboxWarning(self, l):
+        text.text(0, 0, r"\parindent=0pt\vbox to 1cm {hello, world, hello, world, hello, world}", textattrs=[text.parbox(1.9)])
+        l.check(("pyx", "WARNING", r"""ignoring overfull/underfull box warning:
+Overfull \vbox (2.4917pt too high) detected at line 0"""))
+
+    @log_capture(level=logging.WARNING)
+    def testUnderfullVboxWarning(self, l):
+        text.text(0, 0, r"\parindent=0pt\vbox to 1cm {hello, world, hello, world}", textattrs=[text.parbox(1.9)])
+        l.check(("pyx", "WARNING", r"""ignoring overfull/underfull box warning:
+Underfull \vbox (badness 10000) detected at line 0"""))
 
     def testLoadLongFileNames(self):
         testfilename = "x"*100
@@ -77,19 +85,7 @@ Underfull \vbox (badness 10000) detected at line 0""", textattrs=[text.parbox(1.
 
     def setUp(self):
         text.set(mode="latex")
-        text.reset()
         text.preamble(r"\usepackage{graphicx}")
-
-    def tearDown(self):
-        try:
-            warnings.resetwarnings()
-            warnings.filterwarnings(action="error")
-            text.defaulttexrunner.finishdvi()
-        except UserWarning as w:
-            if str(w) != """ignoring font warning:
-LaTeX Font Warning: Some font shapes were not available, defaults substituted.""":
-                raise
-
 
 if __name__ == "__main__":
     unittest.main()
