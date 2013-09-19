@@ -349,7 +349,7 @@ class texmessage:
 
         """
         if msg:
-             logger.warn("ignoring TeX warnings:\n%s" % textwrap.indent(msg.rstrip(), "  "))
+             logger.warning("ignoring TeX warnings:\n%s" % textwrap.indent(msg.rstrip(), "  "))
         return ""
 
     @staticmethod
@@ -967,18 +967,18 @@ class _texrunner:
                             f()
                             if self.texoutput.done():
                                 break
-                            logger.warn(msg)
+                            logger.warning(msg)
                 for usefile in self.usefiles:
                     extpos = usefile.rfind(".")
                     try:
                         os.rename(os.path.join(self.tmpdir, "texput" + usefile[extpos:]), usefile)
                     except EnvironmentError:
-                        logger.warn("Could not save '{}'.".format(usefile))
+                        logger.warning("Could not save '{}'.".format(usefile))
                         if os.path.isfile(usefile):
                             try:
                                 os.unlink(usefile)
                             except EnvironmentError:
-                                logger.warn("Failed to remove spurious file '{}'.".format(usefile))
+                                logger.warning("Failed to remove spurious file '{}'.".format(usefile))
         finally:
             shutil.rmtree(self.tmpdir, ignore_errors=True)
 
