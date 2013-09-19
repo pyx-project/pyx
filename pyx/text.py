@@ -21,7 +21,7 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import atexit, errno, functools, glob, inspect, logging, os, threading, queue, re, shutil, sys, tempfile, time
+import atexit, errno, functools, glob, inspect, io, logging, os, threading, queue, re, shutil, sys, tempfile, time
 from . import config, unit, box, canvas, trafo, version, attr, style, path
 from pyx.dvi import dvifile
 from . import bbox as bboxmodule
@@ -625,38 +625,58 @@ size.clear = attr.clearclass(size)
 
 class MonitorOutput(threading.Thread):
 
-    def __init__(self, output):
+    def __init__(self, name, output):
+        """Deadlock-safe output stream reader and monitor
+
+        This method sets up a thread to continously read from an output
+        stream. In addition, it can look for a certain string in the output
+        (see :meth:`expect`) and return all the collected output.
+
+        :param name: name to be used while logging problems (it is also used
+            as the thread name)
+        :type name: ``str``
+        :param output: output stream
+        :type output: ``file``
+
+        """
         self.output = output
         self._expect = queue.Queue(1)
         self._received = threading.Event()
         self._output = queue.Queue()
-        threading.Thread.__init__(self, daemon=1)
+        threading.Thread.__init__(self, name=name, daemon=1)
         self.start()
 
     def expect(self, s):
-        """expect a string s on a single line in the output
+        """Expect a string on a *single* line in the output.
 
         This method must be called *before* the output occurs, i.e. before
         the input is written to the TeX/LaTeX process.
 
-        For use outside of the thread routine."""
+        :param s: expected string or ``None`` if output is expected to become
+            empty
+        :type s: ``str``, ``None``
+
+        """
         self._expect.put_nowait(s)
 
-    def read(self, texenc):
-        """read the collected output since its last call
+    def read(self):
+        """Read all output collected since its previous call
 
-        The reading should be synchronized by the expect and wait methods.
+        The output reading should be synchronized by the :meth:`expect`
+        and :meth:`wait` methods.
 
-        For use outside of the thread routine."""
+        """
         l = []
         try:
             while True:
-                l.append(self._output.get_nowait().decode(texenc))
+                l.append(self._output.get_nowait())
         except queue.Empty:
             pass
         return "".join(l).replace("\r\n", "\n").replace("\r", "\n")
 
-    def _wait(self, waiter, checker, logname):
+    def _wait(self, waiter, checker):
+        """helper method to implement :meth:`wait` and :meth:`done` with
+        progress message and timeout."""
         wait = config.getint("text", "wait", 60)
         showwait = config.getint("text", "showwait", 5)
         if showwait:
@@ -672,25 +692,52 @@ class MonitorOutput(threading.Thread):
                 hasevent = checker()
                 if not hasevent:
                     if waited < wait:
-                        logger.warning("Still waiting for %s after %i (of %i) seconds..." % (logname, waited, wait))
+                        logger.warning("Still waiting for {} "
+                                       "after {} (of {}) seconds..."
+                                       .format(self.name, waited, wait))
                     else:
-                        logger.warning("The timeout of %i seconds expired and %s did not respond." % (waited, logname))
+                        logger.warning("The timeout of {} seconds expired "
+                                       "and {} did not respond."
+                                       .format(waited, self.name))
             return hasevent
         else:
             waiter(wait)
             return checker()
 
-    def wait(self, logname):
-        r = self._wait(self._received.wait, self._received.isSet, logname)
+    def wait(self):
+        """Wait for the expected output to happen.
+
+        Waits either until a line containing the string set by the previous
+        :meth:`expect` call to happen, or a timeout occurs.
+
+        :returns: ``True`` when the expected string was found
+        :rtype: ``bool``
+
+        """
+        r = self._wait(self._received.wait, self._received.isSet)
         if r:
             self._received.clear()
         return r
 
-    def done(self, logname):
-        self._wait(self.join, lambda self=self: not self.is_alive(), logname)
+    def done(self):
+        """Waits until the output becomes empty.
+
+        Waits either until the output becomes empty, or a timeout occurs.
+        The generated output can still be catched by :meth:`read` after
+        :meth:`done` was successful.
+
+        In the proper workflow :meth:`expect` should be called with ``None``
+        before the output completes, as otherwise a ``ValueError`` is raised
+        in the :meth:`run`.
+
+        :returns: ``True`` when the output has become empty.
+        :rtype: ``bool``
+
+        """
+        self._wait(self.join, lambda self=self: not self.is_alive())
 
     def _readline(self):
-        "Read a line from the output, to be used *inside* the thread routine."
+        "Read a line from the output, used *inside* the thread routine."
         while True:
             try:
                 return self.output.readline()
@@ -699,7 +746,12 @@ class MonitorOutput(threading.Thread):
                      raise
 
     def run(self):
-        """thread routine"""
+        """Thread routine, must not be called from outside.
+
+        :raises: ``ValueError``: output becomes empty while some string is
+            expected
+
+        """
         expect = None
         while True:
             line = self._readline()
@@ -717,8 +769,8 @@ class MonitorOutput(threading.Thread):
                     self._received.set()
                     expect = None
         self.output.close()
-        if expect is not None and expect.find(b"PyXInputMarker") != -1:
-            raise ValueError("TeX/LaTeX finished unexpectedly")
+        if expect is not None:
+            raise ValueError("{} finished unexpectedly".format(self.name))
 
 
 class textbox(box.rect, canvas.canvas):
@@ -793,35 +845,6 @@ class textbox(box.rect, canvas.canvas):
         bbox += box.rect.bbox(self)
 
 
-def cleantmp(tempdir, usefiles):
-    """get rid of temporary files
-    - function to be registered by atexit
-    - files contained in usefiles are kept"""
-    if 0: # texrunner.state < STATE_DONE: XXX
-        texrunner.finishdvi()
-        if texrunner.state < STATE_DONE: # cleanup while TeX is still running?
-            texrunner.texoutput.expect(None)                    # do not expect any output anymore
-            if texrunner.mode == "latex":                       # try to immediately quit from TeX or LaTeX
-                texrunner.texinput.write(b"\n\\catcode`\\@11\\relax\\@@end\n")
-            else:
-                texrunner.texinput.write(b"\n\\end\n")
-            texrunner.texinput.close()                          # close the input queue and
-            if not texrunner.waitforevent(texrunner.texoutput.done): # wait for finish of the output
-                logger.info("looks like we failed to quit TeX/LaTeX in atexit function")
-    for usefile in usefiles:
-        extpos = usefile.rfind(".")
-        try:
-            os.rename(os.path.join(tempdir, "texput" + usefile[extpos:]), usefile)
-        except EnvironmentError:
-            logger.warn("Could not save '{}'.".format(usefile))
-            if os.path.isfile(usefile):
-                try:
-                    os.unlink(usefile)
-                except EnvironmentError:
-                    logger.warn("Failed to remove spurious file '{}'.".format(usefile))
-    shutil.rmtree(tempdir, ignore_errors=True)
-
-
 class _marker:
     pass
 
@@ -891,25 +914,53 @@ class _texrunner:
         self.needdvitextboxes = [] # when texipc-mode off
         self.dvifile = None
         self.textboxesincluded = 0
-        self.textempdir = tempfile.mkdtemp()
-        atexit.register(cleantmp, self.textempdir, self.usefiles)
+        self.tempdir = tempfile.mkdtemp()
+        atexit.register(self.cleanup)
 
-    def execute(self, expr, texmessages, with_marker=True):
+    def cleanup(self):
+        """get rid of temporary files
+        - function to be registered by atexit
+        - files contained in usefiles are kept"""
+        if self.state > STATE_START:
+            if self.state < STATE_DONE:
+                self.finishdvi()
+                if self.state < STATE_DONE: # cleanup while TeX is still running?
+                    self.texoutput.expect(None)
+                    self.force_done()
+                    self.texinput.close()
+                    if self.texoutput.done():
+                        logger.warn("Failed to force a quit of %s in clean-up function.".format(self.name))
+            for usefile in self.usefiles:
+                extpos = usefile.rfind(".")
+                try:
+                    os.rename(os.path.join(self.tempdir, "texput" + usefile[extpos:]), usefile)
+                except EnvironmentError:
+                    logger.warn("Could not save '{}'.".format(usefile))
+                    if os.path.isfile(usefile):
+                        try:
+                            os.unlink(usefile)
+                        except EnvironmentError:
+                            logger.warn("Failed to remove spurious file '{}'.".format(usefile))
+        shutil.rmtree(self.tempdir, ignore_errors=True)
+
+
+    def execute(self, expr, texmessages):
         """executes expr within TeX/LaTeX
         - when self.preamblemode is set, the expr is passed directly to TeX/LaTeX
         - when self.preamblemode is unset, the expr is passed to \ProcessPyXBox
         - texmessages is a list of texmessage instances"""
         self.executeid += 1
         if self.state < STATE_END:
-            self.texoutput.expect(("PyXInputMarker:executeid=%i:" % self.executeid).encode(self.texenc))
-            self.texinput.write((expr + "%%\n\\PyXInput{%i}%%\n" % self.executeid).encode(self.texenc))
+            self.texoutput.expect("PyXInputMarker:executeid=%i:" % self.executeid)
+            self.texinput.write(expr + "%%\n\\PyXInput{%i}%%\n" % self.executeid)
         else:
-            self.texoutput.expect(("Transcript written on").encode(self.texenc))
-            self.texinput.write(expr.encode(self.texenc))
-        gotexpect = self.texoutput.wait(self.name)
-        self.texmessage = self.texoutput.read(self.texenc)
+            self.texoutput.expect("Transcript written on")
+            self.texinput.write(expr)
+        self.texinput.flush()
+        wait_ok = self.texoutput.wait()
+        self.texmessage = self.texoutput.read()
         self.texmessageparsed = self.texmessage
-        if gotexpect:
+        if wait_ok:
             if self.state < STATE_END:
                 texmessage.inputmarker.check(self)
                 if self.state == STATE_TYPESET:
@@ -932,17 +983,17 @@ class _texrunner:
         for usefile in self.usefiles:
             extpos = usefile.rfind(".")
             try:
-                os.rename(usefile, os.path.join(self.textempdir, "texput" + usefile[extpos:]))
+                os.rename(usefile, os.path.join(self.tempdir, "texput" + usefile[extpos:]))
             except OSError:
                 pass
-        cmd = [self.executable, '--output-directory', self.textempdir]
+        cmd = [self.executable, '--output-directory', self.tempdir]
         if self.texipc:
             cmd.append("--ipc")
         pipes = config.Popen(cmd, stdin=config.PIPE, stdout=config.PIPE, stderr=config.STDOUT, bufsize=0)
-        self.texinput = pipes.stdin
+        self.texinput = io.TextIOWrapper(pipes.stdin, encoding=self.texenc)
         if self.texdebug:
-            self.texinput = Tee(open(self.texdebug, "wb"), self.texinput)
-        self.texoutput = MonitorOutput(pipes.stdout)
+            self.texinput = Tee(open(self.texdebug, "wb", encoding=self.texenc), self.texinput)
+        self.texoutput = MonitorOutput(self.name, io.TextIOWrapper(pipes.stdout, encoding=self.texenc))
         self.execute("\\relax\n" # don't read from a file but from stdin
                      "\\scrollmode\n\\raiseerror%\n" # switch to and check scrollmode
                      "\\def\\PyX{P\\kern-.3em\\lower.5ex\hbox{Y}\kern-.18em X}%\n" # just the PyX Logo
@@ -976,16 +1027,13 @@ class _texrunner:
             self.do_start()
         self.execute(expr, [])
 
-    def go_typeset(self):
-        pass
-
     def do_typeset(self, expr, texmessages):
         if self.state < STATE_PREAMBLE:
             self.do_start()
         self.go_typeset()
         self.state = STATE_TYPESET
         self.page += 1
-        self.execute("\\ProcessPyXBox{%s%%\n}{%i}" % (expr, self.page), [])
+        self.execute("\\ProcessPyXBox{%s%%\n}{%i}" % (expr, self.page), texmessages)
 
     def go_typeset(self):
         "execute the commands to switch into typeset mode (i.e. \\begin{document})."
@@ -1001,14 +1049,14 @@ class _texrunner:
         self.go_finish()
         self.state = STATE_DONE
         self.texinput.close()                        # close the input queue and
-        self.texoutput.done(self.name)            # wait for finish of the output
+        self.texoutput.done()            # wait for finish of the output
 
     def finishdvi(self, ignoretail=0):
         """finish TeX/LaTeX and read the dvifile
         - this method ensures that all textboxes can access their
           dvicanvas"""
         self.do_finish()
-        dvifilename = os.path.join(self.textempdir, "texput.dvi")
+        dvifilename = os.path.join(self.tempdir, "texput.dvi")
         if not self.texipc:
             self.dvifile = dvifile.DVIfile(dvifilename, debug=self.dvidebug)
             page = 1
@@ -1076,10 +1124,8 @@ class _texrunner:
         trafos = attr.getattrs(textattrs, [trafo.trafo_pt])
         fillstyles = attr.getattrs(textattrs, [style.fillstyle])
         textattrs = attr.getattrs(textattrs, [textattr])
-        # reverse loop over the merged textattrs (last is applied first)
-        lentextattrs = len(textattrs)
-        for i in range(lentextattrs):
-            expr = textattrs[lentextattrs-1-i].apply(expr)
+        for texattr in textattrs[::-1]:
+            expr = textattr.apply(expr)
         try:
             self.do_typeset(expr, self.defaulttexmessagesdefaultrun + self.texmessagesdefaultrun + texmessages)
         except TexResultError as e:
@@ -1091,7 +1137,7 @@ class _texrunner:
             raise e
         if self.texipc:
             if first:
-                self.dvifile = dvifile.DVIfile(os.path.join(self.textempdir, "texput.dvi"), debug=self.dvidebug)
+                self.dvifile = dvifile.DVIfile(os.path.join(self.tempdir, "texput.dvi"), debug=self.dvidebug)
         match = self.PyXBoxPattern.search(self.texmessage)
         if not match or int(match.group("page")) != self.page:
             raise TexResultError("box extents not found", self)
@@ -1121,8 +1167,11 @@ class texrunner(_texrunner):
         self.name = "TeX"
 
     def go_finish(self):
-        self.execute("\\end%\n", self.defaulttexmessagesend + self.texmessagesend, with_marker=False)
+        self.execute("\\end%\n", self.defaulttexmessagesend + self.texmessagesend)
         super().go_finish()
+
+    def force_done(self):
+        self.texinput.write("\n\\end\n")
 
     def do_start(self):
         super().do_start()
@@ -1157,18 +1206,21 @@ class latexrunner(_texrunner):
         super().go_typeset()
 
     def go_finish(self):
-        self.execute("\\end{document}%\n", self.defaulttexmessagesend + self.texmessagesend, with_marker=False)
+        self.execute("\\end{document}%\n", self.defaulttexmessagesend + self.texmessagesend)
         super().go_finish()
+
+    def force_done(self):
+        self.texinput.write("\n\\catcode`\\@11\\relax\\@@end\n")
 
     def do_start(self):
         super().do_start()
         if self.pyxgraphics:
-            with config.open("pyx.def", []) as source, open(os.path.join(self.textempdir, "pyx.def"), "wb") as dest:
+            with config.open("pyx.def", []) as source, open(os.path.join(self.tempdir, "pyx.def"), "wb") as dest:
                 dest.write(source.read())
             self.execute("\\makeatletter%\n"
                          "\\let\\saveProcessOptions=\\ProcessOptions%\n"
                          "\\def\\ProcessOptions{%\n"
-                         "\\def\\Gin@driver{" + self.textempdir.replace(os.sep, "/") + "/pyx.def}%\n"
+                         "\\def\\Gin@driver{" + self.tempdir.replace(os.sep, "/") + "/pyx.def}%\n"
                          "\\def\\c@lor@namefile{dvipsnam.def}%\n"
                          "\\saveProcessOptions}%\n"
                          "\\makeatother",
