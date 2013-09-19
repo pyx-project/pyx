@@ -91,7 +91,7 @@ class TexResultError(ValueError): pass
 
 class texmessage(attr.attr):
 
-    def check(self, msg, executeid, page):
+    def check(self, msg, page):
         """check a Tex/LaTeX response and respond appropriate
         - read the texrunners texmessageparsed attribute
         - if there is an problem found, raise TexResultError
@@ -107,7 +107,7 @@ class _texmessagestart(texmessage):
 
     startpattern = re.compile(r"This is [-0-9a-zA-Z\s_]*TeX")
 
-    def check(self, msg, executeid, page):
+    def check(self, msg, page):
         # check for "This is e-TeX"
         m = self.startpattern.search(msg)
         if not m:
@@ -127,7 +127,7 @@ class _texmessagenofile(texmessage):
     def __init__(self, fileending):
         self.fileending = fileending
 
-    def check(self, msg, executeid, page):
+    def check(self, msg, page):
         try:
             s1, s2 = msg.split("No file texput.%s." % self.fileending, 1)
             msg = s1 + s2
@@ -147,7 +147,7 @@ class _texmessageend(texmessage):
     dviPattern = re.compile(r"Output written on .*texput\.dvi \((?P<page>\d+) pages?, \d+ bytes\)\.")
     logPattern = re.compile(r"Transcript written on .*texput\.log\.")
 
-    def check(self, msg, executeid, page):
+    def check(self, msg, page):
         msg, m = remove_pattern(self.auxPattern, msg, ignore_nl=False)
         msg, m = remove_string("(see the transcript file for additional information)", msg)
 
@@ -214,7 +214,7 @@ class _texmessageload(texmessage):
         if level == 0 and highestlevel > 0:
             return res
 
-    def check(self, msg, executeid, page):
+    def check(self, msg, page):
         search = self.baselevels(msg)
         res = []
         if search is not None:
@@ -268,14 +268,14 @@ class _texmessageignore(_texmessageload):
     - PLEASE: - consider writing suitable tex message parsers
               - share your ideas/problems/solutions with others (use the PyX mailing lists)"""
 
-    def check(self, msg, executeid, page):
+    def check(self, msg, page):
         return ""
 
 
 class _texmessagewarn(texmessage):
     """validates a given pattern 'pattern' as a warning 'warning'"""
 
-    def check(self, msg, executeid, page):
+    def check(self, msg, page):
         if msg:
             logger.warn("ignoring TeX warnings:\n%s" % msg)
         return ""
@@ -288,7 +288,7 @@ class texmessagepattern(texmessage):
         self.pattern = pattern
         self.description = description
 
-    def check(self, msg, executeid, page):
+    def check(self, msg, page):
         m = self.pattern.search(msg)
         while m:
             msg = msg[:m.start()] + msg[m.end():]
@@ -967,7 +967,7 @@ class _texrunner:
                         raise TexResultError("PyXPageOutMarker expected")
             texmessages = attr.mergeattrs(texmessages)
             for t in texmessages:
-                parsed = t.check(parsed, self.executeid, self.page)
+                parsed = t.check(parsed, self.page)
             if parsed.replace(r"(Please type a command or say `\end')", "").replace(" ", "").replace("*\n", "").replace("\n", ""):
                 raise TexResultError("unhandled TeX response (might be an error)")
         except TexResultError as e:
@@ -975,11 +975,10 @@ class _texrunner:
                 def add(msg): e.args = (e.args[0] + msg,)
                 add("\nThe expression passed to TeX was:\n{}".format(textwrap.indent(expr.rstrip(), "  ")))
                 if self.errordebug >= 2:
-                    add("\nThe return message from TeX was:\n"
-                        "  %s" % unparsed.rstrip().replace("\n", "\n  "))
+                    add("\nThe return message from TeX was:\n{}".formt(textwrap.indent(unparsed.rstrip(), "  ")))
                 if self.errordebug == 1:
                     if parsed.count('\n') > 5:
-                        parsed = "\n".join(parsed.split("\n")[:5] + ["(cut after 5 lines, use errordebug=2 for all output)"])
+                        parsed = "\n".join(parsed.split("\n")[:5] + ["(cut after 5 lines; use errordebug=2 for all output)"])
                 add("\nAfter parsing the return message from TeX, the following was left:\n{}".format(textwrap.indent(parsed.rstrip(), "  ")))
             raise e
         if oldstate == newstate == STATE_TYPESET:
