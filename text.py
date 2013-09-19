@@ -40,7 +40,7 @@ logger = logging.getLogger("pyx")
 ###############################################################################
 
 def remove_string(p, s):
-    """removes a pattern from a string.
+    """removes a string from a string.
 
     The function removes the string p from the
     string s. It returns a tuple of the resulting
@@ -518,7 +518,7 @@ class parbox_pt(attr.sortbeforeexclusiveattr, textattr):
         elif self.baseline == self.bottom:
             return r"\linewidth=%.5ftruept\vbox{\hsize=\linewidth\textwidth=\linewidth{}%s}" % (self.width, expr)
         else:
-            RuntimeError("invalid baseline argument")
+            ValueError("invalid baseline argument")
 
 parbox_pt.clear = attr.clearclass(parbox_pt)
 
@@ -590,7 +590,7 @@ class size(attr.sortbeforeattr, textattr):
 
     def __init__(self, sizeindex=None, sizename=None, sizelist=defaultsizelist):
         if (sizeindex is None and sizename is None) or (sizeindex is not None and sizename is not None):
-            raise RuntimeError("either specify sizeindex or sizename")
+            raise ValueError("either specify sizeindex or sizename")
         attr.sortbeforeattr.__init__(self, [_mathmode, _vshift])
         if sizeindex is not None:
             if sizeindex >= 0 and sizeindex < sizelist.index(None):
@@ -675,7 +675,7 @@ class _readpipe(threading.Thread):
         # EOF reached
         self.pipe.close()
         if self.expect is not None and self.expect.find(b"PyXInputMarker") != -1:
-            raise RuntimeError("TeX/LaTeX finished unexpectedly")
+            raise ValueError("TeX/LaTeX finished unexpectedly")
         self.quitevent.set()
 
 
@@ -705,14 +705,14 @@ class textbox(box.rect, canvas.canvas):
 
     def transform(self, *trafos):
         if self.insertdvicanvas:
-            raise RuntimeError("can't apply transformation after dvicanvas was inserted")
+            raise ValueError("can't apply transformation after dvicanvas was inserted")
         box.rect.transform(self, *trafos)
         for trafo in trafos:
             self.texttrafo = trafo * self.texttrafo
 
     def setdvicanvas(self, dvicanvas):
         if self.dvicanvas is not None:
-            raise RuntimeError("multiple call to setdvicanvas")
+            raise ValueError("multiple call to setdvicanvas")
         self.dvicanvas = dvicanvas
 
     def ensuredvicanvas(self):
@@ -775,7 +775,7 @@ def _cleantmp(texrunner):
     shutil.rmtree(texrunner.textempdir, ignore_errors=True)
 
 
-class _unset:
+class _marker:
     pass
 
 
@@ -1045,7 +1045,7 @@ class texrunner:
                 box.setdvicanvas(self.dvifile.readpage([ord("P"), ord("y"), ord("X"), page, 0, 0, 0, 0, 0, 0], fontmap=box.fontmap, singlecharmode=box.singlecharmode))
                 page += 1
         if not ignoretail and self.dvifile.readpage(None) is not None:
-            raise RuntimeError("end of dvifile expected")
+            raise ValueError("end of dvifile expected")
         self.dvifile = None
         self.needdvitextboxes = []
 
@@ -1067,73 +1067,73 @@ class texrunner:
             self.preambles = []
             self.preamblemode = True
 
-    def set(self, mode=_unset,
-                  lfs=_unset,
-                  docclass=_unset,
-                  docopt=_unset,
-                  texenc=_unset,
-                  usefiles=_unset,
-                  waitfortex=_unset,
-                  showwaitfortex=_unset,
-                  texipc=_unset,
-                  texdebug=_unset,
-                  dvidebug=_unset,
-                  errordebug=_unset,
-                  pyxgraphics=_unset,
-                  texmessagesstart=_unset,
-                  texmessagesdocclass=_unset,
-                  texmessagesbegindoc=_unset,
-                  texmessagesend=_unset,
-                  texmessagesdefaultpreamble=_unset,
-                  texmessagesdefaultrun=_unset):
+    def set(self, mode=_marker,
+                  lfs=_marker,
+                  docclass=_marker,
+                  docopt=_marker,
+                  texenc=_marker,
+                  usefiles=_marker,
+                  waitfortex=_marker,
+                  showwaitfortex=_marker,
+                  texipc=_marker,
+                  texdebug=_marker,
+                  dvidebug=_marker,
+                  errordebug=_marker,
+                  pyxgraphics=_marker,
+                  texmessagesstart=_marker,
+                  texmessagesdocclass=_marker,
+                  texmessagesbegindoc=_marker,
+                  texmessagesend=_marker,
+                  texmessagesdefaultpreamble=_marker,
+                  texmessagesdefaultrun=_marker):
         """provide a set command for TeX/LaTeX settings
         - TeX/LaTeX must not yet been started
         - especially needed for the defaultrunner, where no access to
           the constructor is available"""
         if self.texruns:
-            raise RuntimeError("set not allowed -- TeX/LaTeX already started")
-        if mode is not _unset:
+            raise ValueError("set not allowed -- TeX/LaTeX already started")
+        if mode is not _marker:
             mode = mode.lower()
             if mode != "tex" and mode != "latex":
                 raise ValueError("mode \"TeX\" or \"LaTeX\" expected")
             self.mode = mode
-        if lfs is not _unset:
+        if lfs is not _marker:
             self.lfs = lfs
-        if docclass is not _unset:
+        if docclass is not _marker:
             self.docclass = docclass
-        if docopt is not _unset:
+        if docopt is not _marker:
             self.docopt = docopt
-        if texenc is not _unset:
+        if texenc is not _marker:
             self.texenc = texenc
-        if usefiles is not _unset:
+        if usefiles is not _marker:
             self.usefiles = usefiles
-        if waitfortex is not _unset:
+        if waitfortex is not _marker:
             self.waitfortex = waitfortex
-        if showwaitfortex is not _unset:
+        if showwaitfortex is not _marker:
             self.showwaitfortex = showwaitfortex
-        if texipc is not _unset:
+        if texipc is not _marker:
             self.texipc = texipc
-        if texdebug is not _unset:
+        if texdebug is not _marker:
             self.texdebug = texdebug
-        if dvidebug is not _unset:
+        if dvidebug is not _marker:
             self.dvidebug = dvidebug
-        if errordebug is not _unset:
+        if errordebug is not _marker:
             self.errordebug = errordebug
-        if pyxgraphics is not _unset:
+        if pyxgraphics is not _marker:
             self.pyxgraphics = pyxgraphics
-        if errordebug is not _unset:
+        if errordebug is not _marker:
             self.errordebug = errordebug
-        if texmessagesstart is not _unset:
+        if texmessagesstart is not _marker:
             self.texmessagesstart = texmessagesstart
-        if texmessagesdocclass is not _unset:
+        if texmessagesdocclass is not _marker:
             self.texmessagesdocclass = texmessagesdocclass
-        if texmessagesbegindoc is not _unset:
+        if texmessagesbegindoc is not _marker:
             self.texmessagesbegindoc = texmessagesbegindoc
-        if texmessagesend is not _unset:
+        if texmessagesend is not _marker:
             self.texmessagesend = texmessagesend
-        if texmessagesdefaultpreamble is not _unset:
+        if texmessagesdefaultpreamble is not _marker:
             self.texmessagesdefaultpreamble = texmessagesdefaultpreamble
-        if texmessagesdefaultrun is not _unset:
+        if texmessagesdefaultrun is not _marker:
             self.texmessagesdefaultrun = texmessagesdefaultrun
 
     def preamble(self, expr, texmessages=[]):
@@ -1148,7 +1148,7 @@ class texrunner:
         - preamble expressions must not create any dvi output
         - args might contain texmessage instances"""
         if self.texdone or not self.preamblemode:
-            raise RuntimeError("preamble calls disabled due to previous text calls")
+            raise ValueError("preamble calls disabled due to previous text calls")
         texmessages = self.defaulttexmessagesdefaultpreamble + self.texmessagesdefaultpreamble + texmessages
         self.execute(expr, texmessages)
         self.preambles.append((expr, texmessages))
@@ -1259,7 +1259,7 @@ class texrunner:
                 if self.dvifile is None:
                     self.dvifile = dvifile.DVIfile(os.path.join(self.textempdir, "texput.dvi"), debug=self.dvidebug)
             else:
-                raise RuntimeError("textboxes currently needs texipc")
+                raise ValueError("textboxes currently needs texipc")
             lastparnos = parnos
             parnos = []
             lastparshapes = parshapes
