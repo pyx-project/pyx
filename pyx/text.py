@@ -140,26 +140,6 @@ class _texmessagenofile(texmessage):
         return msg
 
 
-class _texmessageinputmarker(texmessage):
-    """validates the PyXInputMarker"""
-
-    def check(self, msg, executeid, page):
-        msg, m = remove_string("PyXInputMarker:executeid=%s:" % executeid, msg)
-        if not m:
-            raise TexResultError("PyXInputMarker expected")
-        return msg
-
-
-class _texmessagepyxpageout(texmessage):
-    """validates the dvi shipout message (writing a page to the dvi file)"""
-
-    def check(self, msg, executeid, page):
-        msg, m = remove_string("[80.121.88.%s]" % page, msg)
-        if not m:
-            raise TexResultError("PyXPageOutMarker expected")
-        return msg
-
-
 class _texmessageend(texmessage):
     """validates TeX/LaTeX finish"""
 
@@ -188,15 +168,6 @@ class _texmessageend(texmessage):
         if not m:
             raise TexResultError("TeX logfile message expected")
         return msg
-
-
-class _texmessageemptylines(texmessage):
-    """validates "*-only" (TeX/LaTeX input marker in interactive mode) and empty lines
-    also clear TeX interactive mode warning (Please type a command or say `\\end')
-    """
-
-    def check(self, msg, executeid, page):
-        return msg.replace(r"(Please type a command or say `\end')", "").replace(" ", "").replace("*\n", "").replace("\n", "")
 
 
 class _texmessageload(texmessage):
@@ -301,21 +272,6 @@ class _texmessageignore(_texmessageload):
         return ""
 
 
-texmessage.start = _texmessagestart()
-texmessage.noaux = _texmessagenofile("aux")
-texmessage.nonav = _texmessagenofile("nav")
-texmessage.end = _texmessageend()
-texmessage.load = _texmessageload()
-texmessage.loaddef = _texmessageloaddef()
-texmessage.graphicsload = _texmessagegraphicsload()
-texmessage.ignore = _texmessageignore()
-
-# for internal use:
-texmessage.inputmarker = _texmessageinputmarker()
-texmessage.pyxpageout = _texmessagepyxpageout()
-texmessage.emptylines = _texmessageemptylines()
-
-
 class _texmessagewarn(texmessage):
     """validates a given pattern 'pattern' as a warning 'warning'"""
 
@@ -323,8 +279,6 @@ class _texmessagewarn(texmessage):
         if msg:
             logger.warn("ignoring TeX warnings:\n%s" % msg)
         return ""
-
-texmessage.warn = _texmessagewarn()
 
 
 class texmessagepattern(texmessage):
@@ -345,6 +299,16 @@ class texmessagepattern(texmessage):
             m = self.pattern.search(msg)
         return msg
 
+
+texmessage.start = _texmessagestart()
+texmessage.noaux = _texmessagenofile("aux")
+texmessage.nonav = _texmessagenofile("nav")
+texmessage.end = _texmessageend()
+texmessage.load = _texmessageload()
+texmessage.loaddef = _texmessageloaddef()
+texmessage.graphicsload = _texmessagegraphicsload()
+texmessage.ignore = _texmessageignore()
+texmessage.warn = _texmessagewarn()
 texmessage.fontwarning = texmessagepattern(re.compile(r"^LaTeX Font Warning: .*$(\n^\(Font\).*$)*", re.MULTILINE), "font warning")
 texmessage.boxwarning = texmessagepattern(re.compile(r"^(Overfull|Underfull) \\[hv]box.*$(\n^..*$)*\n^$\n", re.MULTILINE), "overfull/underfull box warning")
 texmessage.rerunwarning = texmessagepattern(re.compile(r"^(LaTeX Warning: Label\(s\) may have changed\. Rerun to get cross-references right\s*\.)$", re.MULTILINE), "rerun warning")
@@ -988,7 +952,9 @@ class _texrunner:
             if not wait_ok:
                 raise TexResultError("TeX didn't respond as expected within the timeout period.")
             if newstate != STATE_DONE:
-                parsed = texmessage.inputmarker.check(parsed, self.executeid, self.page)
+                parsed, m = remove_string("PyXInputMarker:executeid=%s:" % self.executeid, parsed)
+                if not m:
+                    raise TexResultError("PyXInputMarker expected")
                 if oldstate == newstate == STATE_TYPESET:
                     parsed, m = remove_pattern(PyXBoxPattern, parsed, ignore_nl=False)
                     if not m:
@@ -996,11 +962,13 @@ class _texrunner:
                     if m.group("page") != str(self.page):
                         raise TexResultError("Wrong page number in PyXBox")
                     extent = [float(x)*72/72.27*unit.x_pt for x in m.group("lt", "rt", "ht", "dp")]
-                    parsed = texmessage.pyxpageout.check(parsed, self.executeid, self.page)
+                    parsed, m = remove_string("[80.121.88.%s]" % self.page, parsed)
+                    if not m:
+                        raise TexResultError("PyXPageOutMarker expected")
             texmessages = attr.mergeattrs(texmessages)
             for t in texmessages:
                 parsed = t.check(parsed, self.executeid, self.page)
-            if texmessage.emptylines.check(parsed, self.executeid, self.page):
+            if parsed.replace(r"(Please type a command or say `\end')", "").replace(" ", "").replace("*\n", "").replace("\n", ""):
                 raise TexResultError("unhandled TeX response (might be an error)")
         except TexResultError as e:
             if self.errordebug > 0:
