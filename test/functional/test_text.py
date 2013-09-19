@@ -3,8 +3,8 @@ import sys; sys.path[:0] = ["../.."]
 
 from pyx import *
 
-c = canvas.canvas()
 text.set(mode="latex")
+c = canvas.canvas()
 text.preamble(r"""%
     \usepackage{graphicx}
     \usepackage{color}
