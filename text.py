@@ -623,59 +623,102 @@ size.clear = attr.clearclass(size)
 ###############################################################################
 
 
-class _readpipe(threading.Thread):
-    """threaded reader of TeX/LaTeX output
-    - sets an event, when a specific string in the programs output is found
-    - sets an event, when the terminal ends"""
+class MonitorOutput(threading.Thread):
 
-    def __init__(self, pipe, expectqueue, gotevent, gotqueue, quitevent):
-        """initialize the reader
-        - pipe: file to be read from
-        - expectqueue: keeps the next InputMarker to be wait for
-        - gotevent: the "got InputMarker" event
-        - gotqueue: a queue containing the lines recieved from TeX/LaTeX
-        - quitevent: the "end of terminal" event"""
-        threading.Thread.__init__(self)
-        self.setDaemon(1) # don't care if the output might not be finished (nevertheless, it shouldn't happen)
-        self.pipe = pipe
-        self.expectqueue = expectqueue
-        self.gotevent = gotevent
-        self.gotqueue = gotqueue
-        self.quitevent = quitevent
-        self.expect = None
+    def __init__(self, output):
+        self.output = output
+        self._expect = queue.Queue(1)
+        self._received = threading.Event()
+        self._output = queue.Queue()
+        threading.Thread.__init__(self, daemon=1)
+        self.start()
+
+    def expect(self, s):
+        """expect a string s on a single line in the output
+
+        This method must be called *before* the output occurs, i.e. before
+        the input is written to the TeX/LaTeX process.
+
+        For use outside of the thread routine."""
+        self._expect.put_nowait(s)
+
+    def read(self, texenc):
+        """read the collected output since its last call
+
+        The reading should be synchronized by the expect and wait methods.
+
+        For use outside of the thread routine."""
+        l = []
+        try:
+            while True:
+                l.append(self._output.get_nowait().decode(texenc))
+        except queue.Empty:
+            pass
+        return "".join(l).replace("\r\n", "\n").replace("\r", "\n")
+
+    def _wait(self, waiter, checker, logname):
+        wait = config.getint("text", "wait", 60)
+        showwait = config.getint("text", "showwait", 5)
+        if showwait:
+            waited = 0
+            hasevent = 0
+            while waited < wait and not hasevent:
+                if wait - waited > showwait:
+                    waiter(showwait)
+                    waited += showwait
+                else:
+                    waiter(wait - waited)
+                    waited += wait - waited
+                hasevent = checker()
+                if not hasevent:
+                    if waited < wait:
+                        logger.warning("Still waiting for %s after %i (of %i) seconds..." % (logname, waited, wait))
+                    else:
+                        logger.warning("The timeout of %i seconds expired and %s did not respond." % (waited, logname))
+            return hasevent
+        else:
+            waiter(wait)
+            return checker()
+
+    def wait(self, logname):
+        r = self._wait(self._received.wait, self._received.isSet, logname)
+        if r:
+            self._received.clear()
+        return r
+
+    def done(self, logname):
+        self._wait(self.join, lambda self=self: not self.is_alive(), logname)
+
+    def _readline(self):
+        "Read a line from the output, to be used *inside* the thread routine."
+        while True:
+            try:
+                return self.output.readline()
+            except IOError as e:
+                if e.errno != errno.EINTR:
+                     raise
 
     def run(self):
         """thread routine"""
-        def _read():
-            # catch interupted system call errors while reading
-            while True:
+        expect = None
+        while True:
+            line = self._readline()
+            if expect is None:
                 try:
-                    return self.pipe.readline()
-                except IOError as e:
-                    if e.errno != errno.EINTR:
-                         raise
-        read = _read() # read, what comes in
-        try:
-            self.expect = self.expectqueue.get_nowait() # read, what should be expected
-        except queue.Empty:
-            pass
-        while len(read):
-            # universal EOL handling (convert everything into unix like EOLs)
-            read = read.replace(b"\r", b"").replace(b"\n", b"") + b"\n"
-
-            self.gotqueue.put(read) # report, whats read
-            if self.expect is not None and read.find(self.expect) != -1:
-                self.gotevent.set() # raise the got event, when the output was expected
-            read = _read() # read again
-            try:
-                self.expect = self.expectqueue.get_nowait()
-            except queue.Empty:
-                pass
-        # EOF reached
-        self.pipe.close()
-        if self.expect is not None and self.expect.find(b"PyXInputMarker") != -1:
+                    expect = self._expect.get_nowait()
+                except queue.Empty:
+                    pass
+            if not line:
+                break
+            self._output.put(line)
+            if expect is not None:
+                found = line.find(expect)
+                if found != -1:
+                    self._received.set()
+                    expect = None
+        self.output.close()
+        if expect is not None and expect.find(b"PyXInputMarker") != -1:
             raise ValueError("TeX/LaTeX finished unexpectedly")
-        self.quitevent.set()
 
 
 class textbox(box.rect, canvas.canvas):
@@ -757,13 +800,13 @@ def cleantmp(tempdir, usefiles):
     if 0: # texrunner.state < STATE_DONE: XXX
         texrunner.finishdvi()
         if texrunner.state < STATE_DONE: # cleanup while TeX is still running?
-            texrunner.expectqueue.put_nowait(None)              # do not expect any output anymore
+            texrunner.texoutput.expect(None)                    # do not expect any output anymore
             if texrunner.mode == "latex":                       # try to immediately quit from TeX or LaTeX
                 texrunner.texinput.write(b"\n\\catcode`\\@11\\relax\\@@end\n")
             else:
                 texrunner.texinput.write(b"\n\\end\n")
             texrunner.texinput.close()                          # close the input queue and
-            if not texrunner.waitforevent(texrunner.quitevent): # wait for finish of the output
+            if not texrunner.waitforevent(texrunner.texoutput.done): # wait for finish of the output
                 logger.info("looks like we failed to quit TeX/LaTeX in atexit function")
     for usefile in usefiles:
         extpos = usefile.rfind(".")
@@ -821,8 +864,6 @@ class _texrunner:
     def __init__(self, executable,
                        texenc="ascii",
                        usefiles=[],
-                       waitfortex=config.getint("text", "waitfortex", 60),
-                       showwaitfortex=config.getint("text", "showwaitfortex", 5),
                        texipc=config.getboolean("text", "texipc", 0),
                        texdebug=None,
                        dvidebug=0,
@@ -834,8 +875,6 @@ class _texrunner:
         self.executable = executable
         self.texenc = texenc
         self.usefiles = usefiles
-        self.waitfortex = waitfortex
-        self.showwaitfortex = showwaitfortex
         self.texipc = texipc
         self.texdebug = texdebug
         self.dvidebug = dvidebug
@@ -862,22 +901,15 @@ class _texrunner:
         - texmessages is a list of texmessage instances"""
         self.executeid += 1
         if self.state < STATE_END:
+            self.texoutput.expect(("PyXInputMarker:executeid=%i:" % self.executeid).encode(self.texenc))
             self.texinput.write((expr + "%%\n\\PyXInput{%i}%%\n" % self.executeid).encode(self.texenc))
-            self.expectqueue.put_nowait(("PyXInputMarker:executeid=%i:" % self.executeid).encode(self.texenc))
         else:
+            self.texoutput.expect(("Transcript written on").encode(self.texenc))
             self.texinput.write(expr.encode(self.texenc))
-            self.expectqueue.put_nowait(("Transcript written on").encode(self.texenc))
-        gotevent = self.waitforevent(self.gotevent)
-        self.gotevent.clear()
-        try:
-            self.texmessage = ""
-            while True:
-                self.texmessage += self.gotqueue.get_nowait().decode(self.texenc)
-        except queue.Empty:
-            pass
-        self.texmessage = self.texmessage.replace("\r\n", "\n").replace("\r", "\n")
+        gotexpect = self.texoutput.wait(self.name)
+        self.texmessage = self.texoutput.read(self.texenc)
         self.texmessageparsed = self.texmessage
-        if gotevent:
+        if gotexpect:
             if self.state < STATE_END:
                 texmessage.inputmarker.check(self)
                 if self.state == STATE_TYPESET:
@@ -907,15 +939,10 @@ class _texrunner:
         if self.texipc:
             cmd.append("--ipc")
         pipes = config.Popen(cmd, stdin=config.PIPE, stdout=config.PIPE, stderr=config.STDOUT, bufsize=0)
-        self.texinput, self.texoutput = pipes.stdin, pipes.stdout
+        self.texinput = pipes.stdin
         if self.texdebug:
             self.texinput = Tee(open(self.texdebug, "wb"), self.texinput)
-        self.expectqueue = queue.Queue(1)  # allow for a single entry only -> keeps the next InputMarker to be wait for
-        self.gotevent = threading.Event()  # keeps the got inputmarker event
-        self.gotqueue = queue.Queue(0)     # allow arbitrary number of entries
-        self.quitevent = threading.Event() # keeps for end of terminal event
-        self.readoutput = _readpipe(self.texoutput, self.expectqueue, self.gotevent, self.gotqueue, self.quitevent)
-        self.readoutput.start()
+        self.texoutput = MonitorOutput(pipes.stdout)
         self.execute("\\relax\n" # don't read from a file but from stdin
                      "\\scrollmode\n\\raiseerror%\n" # switch to and check scrollmode
                      "\\def\\PyX{P\\kern-.3em\\lower.5ex\hbox{Y}\kern-.18em X}%\n" # just the PyX Logo
@@ -974,34 +1001,7 @@ class _texrunner:
         self.go_finish()
         self.state = STATE_DONE
         self.texinput.close()                        # close the input queue and
-        gotevent = self.waitforevent(self.quitevent) # wait for finish of the output
-
-    def waitforevent(self, event):
-        """waits verbosely with an timeout for an event
-        - observes an event while periodly while printing messages
-        - returns the status of the event (isSet)
-        - does not clear the event"""
-        if self.showwaitfortex:
-            waited = 0
-            hasevent = 0
-            while waited < self.waitfortex and not hasevent:
-                if self.waitfortex - waited > self.showwaitfortex:
-                    event.wait(self.showwaitfortex)
-                    waited += self.showwaitfortex
-                else:
-                    event.wait(self.waitfortex - waited)
-                    waited += self.waitfortex - waited
-                hasevent = event.isSet()
-                if not hasevent:
-                    if waited < self.waitfortex:
-                        logger.warning("still waiting for %s after %i (of %i) seconds..." % (self.mode, waited, self.waitfortex))
-                    else:
-                        logger.warning("the timeout of %i seconds expired and %s did not respond." % (waited, self.mode))
-            return hasevent
-        else:
-            event.wait(self.waitfortex)
-            return event.isSet()
-
+        self.texoutput.done(self.name)            # wait for finish of the output
 
     def finishdvi(self, ignoretail=0):
         """finish TeX/LaTeX and read the dvifile
@@ -1118,6 +1118,7 @@ class texrunner(_texrunner):
     def __init__(self, executable=config.get("text", "tex", "tex"), lfs="10pt", **kwargs):
         super().__init__(executable=executable, **kwargs)
         self.lfs = lfs
+        self.name = "TeX"
 
     def go_finish(self):
         self.execute("\\end%\n", self.defaulttexmessagesend + self.texmessagesend, with_marker=False)
@@ -1149,6 +1150,7 @@ class latexrunner(_texrunner):
         self.pyxgraphics = pyxgraphics
         self.texmessagesdocclass = texmessagesdocclass
         self.texmessagesbegindoc = texmessagesbegindoc
+        self.name = "LaTeX"
 
     def go_typeset(self):
         self.execute("\\begin{document}", self.defaulttexmessagesbegindoc + self.texmessagesbegindoc)
