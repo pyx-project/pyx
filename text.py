@@ -776,10 +776,10 @@ class textbox(box.rect, canvas.canvas):
     - the output is contained in a page of the dvifile available thru the texrunner"""
     # TODO: shouldn't all boxes become canvases? how about inserts then?
 
-    def __init__(self, x, y, left, right, height, depth, finishdvi, attrs):
+    def __init__(self, x, y, left, right, height, depth, do_finish, attrs):
         """
-        - finishdvi is a method to be called to get the dvicanvas
-          (e.g. the finishdvi calls the setdvicanvas method)
+        - do_finish is a method to be called to get the dvicanvas
+          (e.g. the do_finish calls the setdvicanvas method)
         - attrs are fillstyles"""
         self.left = left
         self.right = right
@@ -789,7 +789,7 @@ class textbox(box.rect, canvas.canvas):
         self.texttrafo = trafo.scale(unit.scale["x"]).translated(x, y)
         box.rect.__init__(self, x - left, y - depth, left + right, depth + height, abscenter = (left, depth))
         canvas.canvas.__init__(self, attrs)
-        self.finishdvi = finishdvi
+        self.do_finish = do_finish
         self.dvicanvas = None
         self.insertdvicanvas = False
 
@@ -807,8 +807,8 @@ class textbox(box.rect, canvas.canvas):
 
     def ensuredvicanvas(self):
         if self.dvicanvas is None:
-            self.finishdvi()
-            assert self.dvicanvas is not None, "finishdvi is broken"
+            self.do_finish()
+            assert self.dvicanvas is not None, "do_finish is broken"
         if not self.insertdvicanvas:
             self.insert(self.dvicanvas, [self.texttrafo])
             self.insertdvicanvas = True
@@ -957,7 +957,7 @@ class _texrunner:
         try:
             if self.state > STATE_START:
                 if self.state < STATE_DONE:
-                    self.finishdvi()
+                    self.do_finish()
                     if self.state < STATE_DONE: # cleanup while TeX is still running?
                         self.texoutput.expect(None)
                         self.force_done()
@@ -1111,26 +1111,24 @@ class _texrunner:
         self.texinput.close()            # close the input queue and
         self.texoutput.done()            # wait for finish of the output
 
-    def finishdvi(self):
-        """finish TeX/LaTeX and read the dvifile
-        - this method ensures that all textboxes can access their
-          dvicanvas"""
-        dvifilename = os.path.join(self.tmpdir, "texput.dvi")
         if not self.texipc:
+            dvifilename = os.path.join(self.tmpdir, "texput.dvi")
             self.dvifile = dvifile.DVIfile(dvifilename, debug=self.dvidebug)
             page = 1
             for box in self.needdvitextboxes:
                 box.setdvicanvas(self.dvifile.readpage([ord("P"), ord("y"), ord("X"), page, 0, 0, 0, 0, 0, 0], fontmap=box.fontmap, singlecharmode=box.singlecharmode))
                 page += 1
-        #if self.dvifile.readpage(None) is not None:
-        #    raise ValueError("end of dvifile expected but further pages follow")
+        if self.dvifile.readpage(None) is not None:
+            raise ValueError("end of dvifile expected but further pages follow")
+
         self.dvifile = None
         self.needdvitextboxes = []
 
     def reset(self, reinit=0):
         "resets the tex runner to its initial state (upto its record to old dvi file(s))"
+        assert self.state > STATE_START
         if self.state < STATE_DONE:
-            self.finishdvi()
+            self.do_finish()
         self.executeid = 0
         self.page = 0
         self.state = STATE_START
@@ -1179,7 +1177,7 @@ class _texrunner:
         left, right, height, depth = self.do_typeset(expr, self.defaulttexmessagesdefaultrun + self.texmsgrun + texmessages)
         if self.texipc and first:
             self.dvifile = dvifile.DVIfile(os.path.join(self.tmpdir, "texput.dvi"), debug=self.dvidebug)
-        box = textbox(x, y, left, right, height, depth, self.finishdvi, fillstyles)
+        box = textbox(x, y, left, right, height, depth, self.do_finish, fillstyles)
         for t in trafos:
             box.reltransform(t) # TODO: should trafos really use reltransform???
                                 #       this is quite different from what we do elsewhere!!!
