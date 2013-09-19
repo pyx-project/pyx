@@ -1,51 +1,84 @@
 
 .. module:: text
+   :synopsis: High-level interface for text output including a TeX/LaTeX
+              interface
 
-***************************************
-Module :mod:`text`: TeX/LaTeX interface
-***************************************
+****
+Text
+****
 
+Rationale
+=========
 
-Basic functionality
-===================
+The :mod:`text` module is used to create text output. It seamlessly integrates
+Donald E. Knuths famous TeX typesetting engine\ [#]_. The module is a
+high-level interface to an extensive stack of TeX and font related
+functionality in PyX, whose details are way beyond this manual and completely
+irrelevant for the typical PyX user. However, the basic concept should be
+described briefly, as it provides important insights into essential properties
+of the whole machinery.
 
-The :mod:`text` module seamlessly integrates Donald E. Knuths famous TeX
-typesetting engine into PyX. The basic procedure is:
+PyX does not apply any limitations on the text submitted by the user. Instead
+the text is directly passed to TeX. This has the implication, that the text to
+be typeset should  come from a trusted source or some security measures should
+have been applied already. PyX just adds a light and transparent wrapper using
+basic TeX functionality for later identification and output extraction. This
+procedure enables full access to all TeX features and makes PyX on the other
+hand dependent on the error handling provided by TeX. However, a detailed and
+immediate control of the TeX output allows PyX to report problems back to the
+user as they occur.
 
-* start a TeX/LaTeX instance as soon as a TeX/LaTeX preamble setting or a text
-  creation is requested
+While we only talked about TeX so far (and will continue to do so in the rest
+of this section), it is important to note that the coupling is not limited to
+plain TeX. Currently, PyX can also use LaTeX for typesetting, and other TeX
+variants could be added in the future. What PyX really depends on is the
+ability of the typesetting program to generate dvi\ [#]_.
 
-* create boxes containing the requested text and shipout those boxes to the dvi
-  file
+As soon as some text creation is requested or, even before that, a preamble
+setting or macro definition is submitted, the TeX program is started as a
+separate process. The input and output of TeX is bound to a :class:`texrunner`
+instance. Typically, the process will be kept alive and will be reused for all
+future typesetting requests of this :class:`texrunner` instance until the end
+of the PyX process. There are certain situations when the TeX program needs to
+be shutdown early, which are be described in detail in the :ref:`texipc`
+section.
 
-* immediately analyse the TeX/LaTeX output for errors; the box extents are also
-  contained in the TeX/LaTeX output and thus become available immediately
+Whenever PyX sends some commands to the TeX interpreter, it adds an output
+marker at the end, and waits for this output marker to be echoed in the TeX
+output. All intermediate output is attributed to the commands just sent and
+will be analysed for problems. This is done by :ref:`texmessage` instances.
+Here, a problem could be logged to the PyX logger at warning level, thus
+be reported to stderr by default. This happens for over- or underful boxes or
+font warnings emitted by TeX. For other unknown problems (*i.e.* output not
+handled by any of the given :ref:`texmessage` instances), a
+:ref:`TexResultError` is raised, which creates a detailed error report
+including the traceback, the commands submitted to TeX and the output returned
+by TeX.
 
-* when your TeX installation supports the ``ipc`` mode and PyX is configured to
-  use it, the dvi output is also analysed immediately; alternatively PyX quits the
-  TeX/LaTeX instance to read the dvi file once the output needs to be generated or
-  marker positions are accessed
+PyX wraps each text to be typeset in a TeX box and adds a shipout of this box
+to the TeX code before forwarding it to TeX. Thus a page in the dvi file is
+created containing just this output. Furthermore TeX is asked to output the box
+extent. By that PyX will immediately know the size of the text without
+referring to the dvi. This also allows faking the box size by TeX means, as you
+would expect it.
 
-* Type1 fonts are used for the PostScript generation
+Once the actual output is requested, PyX reads the content of the dvi file,
+accessing the page related to the output in question. It then does all the
+necessary steps to transform the dvi content to the requested output format,
+like searching for virtual font files, font metrices, font mapping files, and
+PostScript Type1 fonts to be used in the final output. Here a present
+limitation has been mentioned: PyX presently can use PostScript Type1 fonts
+only to generate text output. While this is a serious limitation, all the
+default fonts in TeX are available in Type1 nowadays and current TeX
+installations are alreadily configured to use them by default.
 
-Note that for using Type1 fonts an appropriate font mapping file has to be
-provided. When your TeX installation is configured to use Type1 fonts by
-default, the ``psfonts.map`` will contain entries for the standard TeX fonts
-already. Alternatively, you may either look for ``updmap`` used by many TeX
-distributions to create an appropriate font mapping file. You may also specify
-one or several alternative font mapping files like ``psfonts.cmz`` in the global
-``pyxrc`` or your local ``.pyxrc``. Finally you can also use the *fontmap*
-keyword argument to a texrunners :meth:`text` method to use different mappings
-within a single outout file.
+TeX interface
+=============
 
-
-TeX/LaTeX instances: the :class:`texrunner` class
-=================================================
-
+.. autoclass:: _texrunner
 
 Instances of the class :class:`texrunner` are responsible for executing and
 controling a TeX/LaTeX instance.
-
 
 .. class:: texrunner(mode="tex", lfs="10pt", docclass="article", docopt=None, usefiles=[], fontmaps=config.get("text", "fontmaps", "psfonts.map"), waitfortex=config.getint("text", "waitfortex", 60), showwaitfortex=config.getint("text", "showwaitfortex", 5), texipc=config.getboolean("text", "texipc", 0), texdebug=None, dvidebug=0, errordebug=1, pyxgraphics=1, texmessagesstart=[], texmessagesdocclass=[], texmessagesbegindoc=[], texmessagesend=[], texmessagesdefaultpreamble=[], texmessagesdefaultrun=[])
 
@@ -427,20 +460,21 @@ Using the graphics-bundle with LaTeX
 ====================================
 
 The packages in the LaTeX graphics bundle (``color.sty``, ``graphics.sty``,
-``graphicx.sty``, ...) make extensive use of ``\\special`` commands. PyX defines
-a clean set of such commands to fit the needs of the LaTeX graphics bundle. This
-is done via the ``pyx.def`` driver file, which tells the graphics bundle about
-the syntax of the ``\\special`` commands as expected by PyX. You can install the
-driver file ``pyx.def`` into your LaTeX search path and add the content of both
-files ``color.cfg`` and ``graphics.cfg`` to your personal configuration files.
-[#]_ After you have installed the ``cfg`` files, please use the :mod:`text`
-module with unset ``pyxgraphics`` keyword argument which will switch off a
-convenience hack for less experienced LaTeX users. You can then import the LaTeX
-graphics bundle packages and related packages (e.g. ``rotating``, ...) with the
-option ``pyx``, e.g. ``\\usepackage[pyx]{color,graphicx}``. Note that the option
-``pyx`` is only available with unset *pyxgraphics* keyword argument and a
-properly installed driver file. Otherwise, omit the specification of a driver
-when loading the packages.
+``graphicx.sty``, ...) make extensive use of ``\\special`` commands. PyX
+defines a clean set of such commands to fit the needs of the LaTeX graphics
+bundle. This is done via the ``pyx.def`` driver file, which tells the graphics
+bundle about the syntax of the ``\\special`` commands as expected by PyX. You
+can install the driver file ``pyx.def`` into your LaTeX search path and add the
+content of both files ``color.cfg`` and ``graphics.cfg`` to your personal
+configuration files\ [#]_. After you have installed the ``cfg`` files, please
+use the :mod:`text` module with unset ``pyxgraphics`` keyword argument which
+will switch off a convenience hack for less experienced LaTeX users. You can
+then import the LaTeX graphics bundle packages and related packages (e.g.
+``rotating``, ...) with the option ``pyx``, e.g.
+``\\usepackage[pyx]{color,graphicx}``. Note that the option ``pyx`` is only
+available with unset *pyxgraphics* keyword argument and a properly installed
+driver file. Otherwise, omit the specification of a driver when loading the
+packages.
 
 When you define colors in LaTeX via one of the color models ``gray``, ``cmyk``,
 ``rgb``, ``RGB``, ``hsb``, then PyX will use the corresponding values (one to
@@ -645,8 +679,26 @@ an ``os.chdir`` at the beginning of your script will do fine). You than just
 need to take care of specifying full paths when accessing data from your
 original working directory, but that's intended and necessary for that case.
 
+.. _config:
+
+Configuration
+=============
+
+.. _texipc:
+
+TeX ipc mode
+------------
+
+Debugging
+---------
+
 .. rubric:: Footnotes
 
-.. [#] If you do not know what this is all about, you can just ignore this paragraph.
-   But be sure that the *pyxgraphics* keyword argument is always set!
+.. [#] https://en.wikipedia.org/wiki/TeX
+
+.. [#] https://en.wikipedia.org/wiki/Device_independent_file_format
+
+.. [#] If you do not know what this is all about, you can just ignore this
+       paragraph. But be sure that the *pyxgraphics* keyword argument is always
+       set!
 
