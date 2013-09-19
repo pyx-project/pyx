@@ -23,7 +23,7 @@ dy = -0.65
 
 # see comment in colorname.py
 
-p = re.compile("(?P<id>gradient\\.(?P<name>[a-z]+)) += [a-z]+gradient\\(.*\\)\n", re.IGNORECASE)
+p = re.compile("(?P<id>gradient\\.(?P<name>[a-z]+)) += [a-z]*gradient_[a-z]+\\(", re.IGNORECASE)
 lines = imp.find_module("color", pyx.__path__)[0].readlines()
 firstgraph = None
 for line in lines: # we yet don't use a file iterator
