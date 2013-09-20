@@ -1,7 +1,7 @@
 # -*- encoding: utf-8 -*-
 #
 #
-# Copyright (C) 2004-2012 André Wobst <wobsta@users.sourceforge.net>
+# Copyright (C) 2004-2013 André Wobst <wobsta@users.sourceforge.net>
 # Copyright (C) 2011 Michael Schindler<m-schindler@users.sourceforge.net>
 #
 # This file is part of PyX (http://pyx.sourceforge.net/).
@@ -151,7 +151,7 @@ class jpegimage(image):
                         if not nestinglevel:
                             end = pos + 2
                             break
-                    elif data[pos+1] in [0o300, 0o301]:
+                    elif data[pos+1] in [0o300, 0o302]:
                         l, bits, height, width, components = struct.unpack(">HBHHB", data[pos+2:pos+10])
                         if bits != 8:
                             raise ValueError("implementation limited to 8 bit per component only")

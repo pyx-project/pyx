@@ -30,6 +30,8 @@
       the function parameters are now passed directly
     - lineargradient has been removed for factory functions lineargradient_rgb, etc.
       that provide linear gradients between colors of a particular color model
+  - bitmap module:
+    - fix jpegimage for progressive jpeg files (thanks to Michael Schindler)
   - pyxrc:
     - use APPDATA environment variable to locate the pyxrc on windows
     - tex, latex, kpsewhich, and locate executables are now customizable in the pyxrc
