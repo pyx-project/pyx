@@ -187,25 +187,20 @@ class texmessage:
     """Collection of TeX output parsers.
 
     This class is not meant to be instanciated. Instead, it serves as a
-    namespace for texmessage parsers, which are functions receiving a TeX
+    namespace for TeX output parsers, which are functions receiving a TeX
     output and returning parsed output.
 
-    In addition, this class also contains some parser generators
-    (:meth:`texmessage.no_file` and :meth:`texmessage.pattern`), which return a
-    parser function according to the given parameters. They are used to
-    generate some of the parsers in this class and could also be helpful to
-    create other texmessage parsers.
+    In addition, this class also contains some generator functions (namely
+    :attr:`texmessage.no_file` and :attr:`texmessage.pattern`), which return a
+    function according to the given parameters. They are used to generate some
+    of the parsers in this class and can be used to create others as well.
     """
 
     start_pattern = re.compile(r"This is [-0-9a-zA-Z\s_]*TeX")
 
     @staticmethod
-    def start(msg, page):
-        r"""Message parser to check for proper TeX startup.
-
-        This class also removes the TeX error created by PyX shortly after the
-        TeX interpreter startup, which is done just to test the proper
-        communication.
+    def start(msg):
+        r"""Validate TeX/LaTeX startup message including scrollmode test.
 
         Example:
             >>> texmessage.start(r'''
@@ -229,9 +224,9 @@ class texmessage:
 
     @staticmethod
     def no_file(fileending, qualname=None):
-        "Message parser generator for missing file with given fileending."
-        def check(msg, page):
-            "Message parser for missing {} file."
+        "Generator function to ignore the missing file message for fileending."
+        def check(msg):
+            "Ignore the missing {} file message."
             return msg.replace("No file texput.%s." % fileending, "").replace("No file %s%stexput.%s." % (os.curdir, os.sep, fileending), "")
         check.__doc__ = check.__doc__.format(fileending)
         if qualname is not None:
@@ -242,25 +237,12 @@ class texmessage:
     no_nav = staticmethod(no_file.__func__("nav", "texmessage.no_nav"))
 
     aux_pattern = re.compile(r'\(([^()]+\.aux|"[^"]+\.aux")\)')
-    dvi_pattern = re.compile(r"Output written on .*texput\.dvi \((?P<page>\d+) pages?, \d+ bytes\)\.", re.DOTALL)
     log_pattern = re.compile(r"Transcript written on .*texput\.log\.", re.DOTALL)
 
     @staticmethod
-    def end(msg, page):
-        "Message parser to check for proper TeX shutdown."
+    def end(msg):
+        "Validate TeX shutdown message."
         msg = re.sub(texmessage.aux_pattern, "", msg).replace("(see the transcript file for additional information)", "")
-
-        # check for "Output written on ...dvi (1 page, 220 bytes)."
-        if page:
-            msg, m = remove_pattern(texmessage.dvi_pattern, msg)
-            if not m:
-                raise TexResultError("TeX dvifile messages expected")
-            if m.group("page") != str(page):
-                raise TexResultError("wrong number of pages reported")
-        else:
-            msg, m = remove_string("No pages of output.", msg)
-            if not m:
-                raise TexResultError("no dvifile expected")
 
         # check for "Transcript written on ...log."
         msg, m = remove_pattern(texmessage.log_pattern, msg)
@@ -272,13 +254,13 @@ class texmessage:
     file_pattern = re.compile(r'\((?P<filename>[^"][^ )]*).*?\)', re.DOTALL)
 
     @staticmethod
-    def load(msg, page):
-        """Message parser for loading of files.
+    def load(msg):
+        """Ignore file loading messages.
 
         Removes text starting with a round bracket followed by a filename
         ignoring all further text until the corresponding closing bracket.
-        Quotes and/or line breaks in the filename are handled as needed to read
-        TeX output.
+        Quotes and/or line breaks in the filename are handled as needed for TeX
+        output.
 
         Without quoting the filename, the necessary removal of line breaks is
         not well defined and the different possibilities are tested to check
@@ -322,8 +304,8 @@ class texmessage:
     def_pattern = re.compile(r'\((?P<filename>[^"][^ )]*\.(fd|def))\)')
 
     @staticmethod
-    def load_def(msg, page):
-        "Message parser for loading of font definition files."
+    def load_def(msg):
+        "Ignore font definition (``*.fd`` and ``*.def``) loading messages."
         r = msg
         for p in [texmessage.quoted_def_pattern, texmessage.def_pattern]:
             r, m = remove_pattern(p, r)
@@ -337,8 +319,8 @@ class texmessage:
     graphics_pattern = re.compile(r'<(?P<filename>[^"][^>]*\.eps)>')
 
     @staticmethod
-    def load_graphics(msg, page):
-        "Message parser for loading of graphics files."
+    def load_graphics(msg):
+        "Ignore graphics file (``*.eps``) loading messages."
         r = msg
         for p in [texmessage.quoted_graphics_pattern, texmessage.graphics_pattern]:
             r, m = remove_pattern(p, r)
@@ -349,23 +331,23 @@ class texmessage:
         return r
 
     @staticmethod
-    def ignore(msg, page):
-        """Message parser to ignore all output.
+    def ignore(msg):
+        """Ignore all messages.
 
-        Should be used as a last resort only. You should write a proper message
-        parser checking for the output you observe.
+        Should be used as a last resort only. You should write a proper TeX
+        output parser function for the output you observe.
 
         """
         return ""
 
     @staticmethod
-    def warn(msg, page):
-        """Message parser to warn about all output.
+    def warn(msg):
+        """Warn about all messages.
 
-        Similar to the :meth:`ignore` message parser, but writing a warning to
-        the logger about the message. This is considered to be better when you
-        need to get it working quickly as you will still be prompted about the
-        unresolved message, while the processing continues.
+        Similar to :attr:`ignore`, but writing a warning to the logger about
+        the TeX output. This is considered to be better when you need to get it
+        working quickly as you will still be prompted about the unresolved
+        output, while the processing continues.
 
         """
         if msg:
@@ -374,9 +356,9 @@ class texmessage:
 
     @staticmethod
     def pattern(p, warning, qualname=None):
-        "Message parser generator using regular expression pattern matching."
-        def check(msg, page):
-            "Message parser for {}."
+        "Warn by regular expression pattern matching."
+        def check(msg):
+            "Warn about {}."
             msg, m = remove_pattern(p, msg, ignore_nl=False)
             while m:
                 logger.warning("ignoring %s:\n%s" % (warning, m.string[m.start(): m.end()].rstrip()))
@@ -388,15 +370,15 @@ class texmessage:
         return check
 
     box_warning = staticmethod(pattern.__func__(re.compile(r"^(Overfull|Underfull) \\[hv]box.*$(\n^..*$)*\n^$\n", re.MULTILINE),
-                               "overfull/underfull box warning", qualname="texmessage.box_warning"))
+                               "overfull/underfull box", qualname="texmessage.box_warning"))
     font_warning = staticmethod(pattern.__func__(re.compile(r"^LaTeX Font Warning: .*$(\n^\(Font\).*$)*", re.MULTILINE),
-                                "font warning", qualname="texmessage.font_warning"))
+                                "font substitutions of NFSS", qualname="texmessage.font_warning"))
     package_warning = staticmethod(pattern.__func__(re.compile(r"^package\s+(?P<packagename>\S+)\s+warning\s*:[^\n]+(?:\n\(?(?P=packagename)\)?[^\n]*)*", re.MULTILINE | re.IGNORECASE),
-                                   "generic package warning", qualname="texmessage.package_warning"))
+                                   "generic package messages", qualname="texmessage.package_warning"))
     rerun_warning = staticmethod(pattern.__func__(re.compile(r"^(LaTeX Warning: Label\(s\) may have changed\. Rerun to get cross-references right\s*\.)$", re.MULTILINE),
-                                 "rerun warning", qualname="texmessage.rerun_warning"))
+                                 "rerun required message", qualname="texmessage.rerun_warning"))
     nobbl_warning = staticmethod(pattern.__func__(re.compile(r"^[\s\*]*(No file .*\.bbl.)\s*", re.MULTILINE),
-                                 "no-bbl warning", qualname="texmessage.nobbl_warning"))
+                                 "no-bbl message", qualname="texmessage.nobbl_warning"))
 
 
 ###############################################################################
@@ -898,6 +880,7 @@ class Tee(object):
 # The texrunner state represents the next (or current) execute state.
 STATE_START, STATE_PREAMBLE, STATE_TYPESET, STATE_DONE = range(4)
 PyXBoxPattern = re.compile(r"PyXBox:page=(?P<page>\d+),lt=(?P<lt>-?\d*((\d\.?)|(\.?\d))\d*)pt,rt=(?P<rt>-?\d*((\d\.?)|(\.?\d))\d*)pt,ht=(?P<ht>-?\d*((\d\.?)|(\.?\d))\d*)pt,dp=(?P<dp>-?\d*((\d\.?)|(\.?\d))\d*)pt:")
+dvi_pattern = re.compile(r"Output written on .*texput\.dvi \((?P<page>\d+) pages?, \d+ bytes\)\.", re.DOTALL)
 
 class baserunner:
 
@@ -1053,8 +1036,21 @@ class baserunner:
                     parsed, m = remove_string("[80.121.88.%s]" % self.page, parsed)
                     if not m:
                         raise TexResultError("PyXPageOutMarker expected")
+            else:
+                # check for "Output written on ...dvi (1 page, 220 bytes)."
+                if self.page:
+                    parsed, m = remove_pattern(dvi_pattern, parsed)
+                    if not m:
+                        raise TexResultError("TeX dvifile messages expected")
+                    if m.group("page") != str(self.page):
+                        raise TexResultError("wrong number of pages reported")
+                else:
+                    parsed, m = remove_string("No pages of output.", parsed)
+                    if not m:
+                        raise TexResultError("no dvifile expected")
+
             for t in texmessages:
-                parsed = t(parsed, self.page)
+                parsed = t(parsed)
             if parsed.replace(r"(Please type a command or say `\end')", "").replace(" ", "").replace("*\n", "").replace("\n", ""):
                 raise TexResultError("unhandled TeX response (might be an error)")
         except TexResultError as e:

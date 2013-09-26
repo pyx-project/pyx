@@ -72,22 +72,71 @@ only to generate text output. While this is a serious limitation, all the
 default fonts in TeX are available in Type1 nowadays and current TeX
 installations are alreadily configured to use them by default.
 
+
 TeX interface
 =============
 
 .. autoclass:: baserunner
    :members: preamble, text, text_pt, texmessages_start_default, texmessages_end_default, texmessages_preamble_default, texmessages_run_default
 
+.. autoclass:: texrunner
+
+.. autoclass:: latexrunner
+
+.. autofunction:: set
+
+
+TeX output parsers
+==================
+
+While running TeX (and variants thereof) a variety of information is written to
+stdout like status messages, details about file access, and also warnings
+and errors. PyX reads all the output and analyses it. Some of the output is
+triggered as a direct response to the TeX input and is thus easy to understand
+for PyX. This includes page output information, but also workflow control
+information injected by PyX into the input stream. PyX uses it to check the
+communication and typeset progress. All the other output is handled by a list
+of :class:`texmessage` parsers, an individual set of functions applied to the
+TeX output one after the other. Each of the function receives the TeX output as
+a string and return it back (maybe altered). Such a function must perform one
+of the following actions in response to the TeX output is receives:
+
+ 1. If it does not find any text in the TeX output it feals responsible for, it
+    should just return the unchanged string.
+
+ 2. If it finds a text it is responsible for, and the message is just fine
+    (doesn't need to be communicated to the user), it should just remove this
+    text and return the rest of the TeX output.
+
+ 3. If the text should be communicated to the user, a message should be written
+    the the pyx logger at warning level, thus being reported to the user on
+    stderr by default. Examples are underfull and overfull box warnings or font
+    warnings. In addition, the text should be removed as in 2 above.
+
+ 4. If the output contains an error information the user should fix, a
+    TexResultError should be raised.
+
+This is rather uncommon, that the fourth option is taken. Instead errors can
+just be kept in the output as PyX considers *all* unhandled TeX output as an
+error. In addition to the error message, information about the TeX in- and
+output can be echoed according to the :class:`errordetail` setting in the
+:class:`baserunner`.
+
 .. autoclass:: errordetail
    :members:
 
 .. autoexception:: TexResultError
 
+To prevent any unhandled TeX output to be reported as an error,
+:attr:`texmessage.warn` or :attr:`texmessage.ignore` can be used. Here's a list
+of all available :class:`texmessage` parsers:
+
 .. autoclass:: texmessage
    :members:
 
-Instances of the class :class:`texrunner` are responsible for executing and
-controling a TeX/LaTeX instance.
+
+.. Instances of the class :class:`texrunner` are responsible for executing and
+.. controling a TeX/LaTeX instance.
 
 .. class:: texrunner(mode="tex", lfs="10pt", docclass="article", docopt=None, usefiles=[], fontmaps=config.get("text", "fontmaps", "psfonts.map"), waitfortex=config.getint("text", "waitfortex", 60), showwaitfortex=config.getint("text", "showwaitfortex", 5), texipc=config.getboolean("text", "texipc", 0), texdebug=None, dvidebug=0, errordebug=1, pyxgraphics=1, texmessagesstart=[], texmessagesdocclass=[], texmessagesbegindoc=[], texmessagesend=[], texmessagesdefaultpreamble=[], texmessagesdefaultrun=[])
 
@@ -525,90 +574,6 @@ moment:
 
 ``PyX:rotate_end``
    ends rotation.
-
-
-TeX message parsers
-===================
-
-
-Message parsers are used to scan the output of TeX/LaTeX. The output is analysed
-by a sequence of TeX message parsers. Each message parser analyses the output
-and removes those parts of the output, it feels responsible for. If there is
-nothing left in the end, the message got validated, otherwise an exception is
-raised reporting the problem. A message parser might issue a warning when
-removing some output to give some feedback to the user.
-
-
-.. class:: texmessage()
-
-   This class acts as a container for TeX message parsers instances, which are all
-   instances of classes derived from :class:`texmessage`.
-
-The following TeX message parser instances are available:
-
-
-.. attribute:: texmessage.start
-
-   Check for TeX/LaTeX startup message including scrollmode test.
-
-
-.. attribute:: texmessage.noaux
-
-   Ignore LaTeXs no-aux-file warning.
-
-
-.. attribute:: texmessage.end
-
-   Check for proper TeX/LaTeX tear down message.
-
-
-.. attribute:: texmessage.load
-
-   Accepts arbitrary loading of files without checking for details, *i.e.* accept
-   ``(file ...)`` where ``file`` is an readable file.
-
-
-.. attribute:: texmessage.loaddef
-
-   Accepts arbitrary loading of ``fd`` files, *i.e.* accept ``(file.def)`` and
-   ``(file.fd)`` where ``file.def`` or ``file.fd`` is an readable file,
-   respectively.
-
-
-.. attribute:: texmessage.graphicsload
-
-   Accepts arbitrary loading of ``eps`` files, *i.e.* accept ``(file.eps)`` where
-   ``file.eps`` is an readable file.
-
-
-.. attribute:: texmessage.ignore
-
-   Ignores everything (this is probably a bad idea, but sometimes you might just
-   want to ignore everything).
-
-
-.. attribute:: texmessage.allwarning
-
-   Ignores everything but issues a warning.
-
-
-.. attribute:: texmessage.fontwarning
-
-   Issues a warning about font substitutions of the LaTeXs NFSS.
-
-
-.. attribute:: texmessage.boxwarning
-
-   Issues a warning on under- and overfull horizontal and vertical boxes.
-
-
-.. class:: texmessagepattern(pattern, warning=None)
-
-   This is a derived class of :class:`texmessage`. It can be used to construct
-   simple TeX message parsers, which validate a TeX message matching a certain
-   regular expression pattern *pattern*. When *warning* is set, a warning message
-   is issued. Several of the TeX message parsers described above are implemented
-   using this class.
 
 
 The :attr:`defaulttexrunner` instance
