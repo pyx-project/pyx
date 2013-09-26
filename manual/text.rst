@@ -46,12 +46,12 @@ section.
 Whenever PyX sends some commands to the TeX interpreter, it adds an output
 marker at the end, and waits for this output marker to be echoed in the TeX
 output. All intermediate output is attributed to the commands just sent and
-will be analysed for problems. This is done by :ref:`texmessage` instances.
+will be analysed for problems. This is done by :class:`texmessage` parsers.
 Here, a problem could be logged to the PyX logger at warning level, thus
 be reported to stderr by default. This happens for over- or underful boxes or
 font warnings emitted by TeX. For other unknown problems (*i.e.* output not
-handled by any of the given :ref:`texmessage` instances), a
-:ref:`TexResultError` is raised, which creates a detailed error report
+handled by any of the given :class:`texmessage` parsers), a
+:exc:`TexResultError` is raised, which creates a detailed error report
 including the traceback, the commands submitted to TeX and the output returned
 by TeX.
 
@@ -75,7 +75,16 @@ installations are alreadily configured to use them by default.
 TeX interface
 =============
 
-.. autoclass:: _texrunner
+.. autoclass:: baserunner
+   :members: preamble, text, text_pt, texmessages_start_default, texmessages_end_default, texmessages_preamble_default, texmessages_run_default
+
+.. autoclass:: errordetail
+   :members:
+
+.. autoexception:: TexResultError
+
+.. autoclass:: texmessage
+   :members:
 
 Instances of the class :class:`texrunner` are responsible for executing and
 controling a TeX/LaTeX instance.

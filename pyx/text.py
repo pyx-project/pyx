@@ -178,10 +178,24 @@ def remove_nested_brackets(s, openbracket="(", closebracket=")", quote='"'):
     return r
 
 
-class TexResultError(ValueError): pass
+class TexResultError(ValueError):
+    "Error raised by :class:`texmessage` parsers."
+    pass
 
 
 class texmessage:
+    """Collection of TeX output parsers.
+
+    This class is not meant to be instanciated. Instead, it serves as a
+    namespace for texmessage parsers, which are functions receiving a TeX
+    output and returning parsed output.
+
+    In addition, this class also contains some parser generators
+    (:meth:`texmessage.no_file` and :meth:`texmessage.pattern`), which return a
+    parser function according to the given parameters. They are used to
+    generate some of the parsers in this class and could also be helpful to
+    create other texmessage parsers.
+    """
 
     start_pattern = re.compile(r"This is [-0-9a-zA-Z\s_]*TeX")
 
@@ -189,14 +203,18 @@ class texmessage:
     def start(msg, page):
         r"""Message parser to check for proper TeX startup.
 
+        This class also removes the TeX error created by PyX shortly after the
+        TeX interpreter startup, which is done just to test the proper
+        communication.
+
         Example:
-        >>> texmessage.start(r'''
-        ... This is e-TeX (version)
-        ... *! Undefined control sequence.
-        ... <*> \raiseerror
-        ...                %
-        ... ''', 0)
-        ''
+            >>> texmessage.start(r'''
+            ... This is e-TeX (version)
+            ... *! Undefined control sequence.
+            ... <*> \raiseerror
+            ...                %
+            ... ''', 0)
+            ''
 
         """
         # check for "This is e-TeX" etc.
@@ -210,16 +228,18 @@ class texmessage:
         return new
 
     @staticmethod
-    def no_file(fileending):
+    def no_file(fileending, qualname=None):
         "Message parser generator for missing file with given fileending."
         def check(msg, page):
             "Message parser for missing {} file."
             return msg.replace("No file texput.%s." % fileending, "").replace("No file %s%stexput.%s." % (os.curdir, os.sep, fileending), "")
         check.__doc__ = check.__doc__.format(fileending)
+        if qualname is not None:
+            check.__qualname__ = qualname
         return check
 
-    no_aux = no_file.__func__("aux")
-    no_nav = no_file.__func__("nav")
+    no_aux = staticmethod(no_file.__func__("aux", "texmessage.no_aux"))
+    no_nav = staticmethod(no_file.__func__("nav", "texmessage.no_nav"))
 
     aux_pattern = re.compile(r'\(([^()]+\.aux|"[^"]+\.aux")\)')
     dvi_pattern = re.compile(r"Output written on .*texput\.dvi \((?P<page>\d+) pages?, \d+ bytes\)\.", re.DOTALL)
@@ -266,20 +286,20 @@ class texmessage:
         behavior.
 
         Examples:
-        >>> texmessage.load(r'''other (text.py) things''', 0)
-        'other  things'
-        >>> texmessage.load(r'''other ("text.py") things''', 0)
-        'other  things'
-        >>> texmessage.load(r'''other ("tex
-        ... t.py" further (ignored)
-        ... text) things''', 0)
-        'other  things'
-        >>> texmessage.load(r'''other (t
-        ... ext
-        ... .py
-        ... fur
-        ... ther (ignored) text) things''', 0)
-        'other  things'
+            >>> texmessage.load(r'''other (text.py) things''', 0)
+            'other  things'
+            >>> texmessage.load(r'''other ("text.py") things''', 0)
+            'other  things'
+            >>> texmessage.load(r'''other ("tex
+            ... t.py" further (ignored)
+            ... text) things''', 0)
+            'other  things'
+            >>> texmessage.load(r'''other (t
+            ... ext
+            ... .py
+            ... fur
+            ... ther (ignored) text) things''', 0)
+            'other  things'
 
         """
         r = remove_nested_brackets(msg)
@@ -353,8 +373,8 @@ class texmessage:
         return ""
 
     @staticmethod
-    def pattern(p, warning):
-        "Message parser generator for pattern matching."
+    def pattern(p, warning, qualname=None):
+        "Message parser generator using regular expression pattern matching."
         def check(msg, page):
             "Message parser for {}."
             msg, m = remove_pattern(p, msg, ignore_nl=False)
@@ -363,14 +383,20 @@ class texmessage:
                 msg, m = remove_pattern(p, msg, ignore_nl=False)
             return msg
         check.__doc__ = check.__doc__.format(warning)
+        if qualname is not None:
+            check.__qualname__ = qualname
         return check
 
-    box_warning = pattern.__func__(re.compile(r"^(Overfull|Underfull) \\[hv]box.*$(\n^..*$)*\n^$\n", re.MULTILINE), "overfull/underfull box warning")
-    font_warning = pattern.__func__(re.compile(r"^LaTeX Font Warning: .*$(\n^\(Font\).*$)*", re.MULTILINE), "font warning")
-    package_warning = pattern.__func__(re.compile(r"^package\s+(?P<packagename>\S+)\s+warning\s*:[^\n]+(?:\n\(?(?P=packagename)\)?[^\n]*)*", re.MULTILINE | re.IGNORECASE), "generic package warning")
-    rerun_warning = pattern.__func__(re.compile(r"^(LaTeX Warning: Label\(s\) may have changed\. Rerun to get cross-references right\s*\.)$", re.MULTILINE), "rerun warning")
-    nobbl_warning = pattern.__func__(re.compile(r"^[\s\*]*(No file .*\.bbl.)\s*", re.MULTILINE), "no-bbl warning")
-
+    box_warning = staticmethod(pattern.__func__(re.compile(r"^(Overfull|Underfull) \\[hv]box.*$(\n^..*$)*\n^$\n", re.MULTILINE),
+                               "overfull/underfull box warning", qualname="texmessage.box_warning"))
+    font_warning = staticmethod(pattern.__func__(re.compile(r"^LaTeX Font Warning: .*$(\n^\(Font\).*$)*", re.MULTILINE),
+                                "font warning", qualname="texmessage.font_warning"))
+    package_warning = staticmethod(pattern.__func__(re.compile(r"^package\s+(?P<packagename>\S+)\s+warning\s*:[^\n]+(?:\n\(?(?P=packagename)\)?[^\n]*)*", re.MULTILINE | re.IGNORECASE),
+                                   "generic package warning", qualname="texmessage.package_warning"))
+    rerun_warning = staticmethod(pattern.__func__(re.compile(r"^(LaTeX Warning: Label\(s\) may have changed\. Rerun to get cross-references right\s*\.)$", re.MULTILINE),
+                                 "rerun warning", qualname="texmessage.rerun_warning"))
+    nobbl_warning = staticmethod(pattern.__func__(re.compile(r"^[\s\*]*(No file .*\.bbl.)\s*", re.MULTILINE),
+                                 "no-bbl warning", qualname="texmessage.nobbl_warning"))
 
 
 ###############################################################################
@@ -845,6 +871,13 @@ class _marker:
     pass
 
 
+class errordetail:
+    "Constants defining the verbosity of the :exc:`TexResultError`."
+    none = 0    #: Without any input and output.
+    default = 1 #: Input and parsed output shortend to 5 lines.
+    full = 2    #: Full input and unparsed as well as parsed output.
+
+
 class Tee(object):
 
     def __init__(self, *files):
@@ -866,25 +899,30 @@ class Tee(object):
 STATE_START, STATE_PREAMBLE, STATE_TYPESET, STATE_DONE = range(4)
 PyXBoxPattern = re.compile(r"PyXBox:page=(?P<page>\d+),lt=(?P<lt>-?\d*((\d\.?)|(\.?\d))\d*)pt,rt=(?P<rt>-?\d*((\d\.?)|(\.?\d))\d*)pt,ht=(?P<ht>-?\d*((\d\.?)|(\.?\d))\d*)pt,dp=(?P<dp>-?\d*((\d\.?)|(\.?\d))\d*)pt:")
 
-class _texrunner:
+class baserunner:
 
-    defaulttexmessagesstart = [texmessage.start]
-    defaulttexmessagesend = [texmessage.end, texmessage.font_warning, texmessage.rerun_warning, texmessage.nobbl_warning]
-    defaulttexmessagesdefaultpreamble = [texmessage.load]
-    defaulttexmessagesdefaultrun = [texmessage.font_warning, texmessage.box_warning, texmessage.package_warning,
-                                    texmessage.load_def, texmessage.load_graphics]
+    texmessages_start_default = [texmessage.start]
+    #: default :class:`texmessage` parsers for interpreter startup
+    texmessages_start_default = [texmessage.start]
+    #: default :class:`texmessage` parsers for interpreter shutdown
+    texmessages_end_default = [texmessage.end, texmessage.font_warning, texmessage.rerun_warning, texmessage.nobbl_warning]
+    #: default :class:`texmessage` parsers for preamble output
+    texmessages_preamble_default = [texmessage.load]
+    #: default :class:`texmessage` parsers for typeset output
+    texmessages_run_default = [texmessage.font_warning, texmessage.box_warning, texmessage.package_warning,
+                                      texmessage.load_def, texmessage.load_graphics]
 
     def __init__(self, executable,
                        texenc="ascii",
                        usefiles=[],
                        texipc=config.getboolean("text", "texipc", 0),
-                       texdebug=None,
-                       dvidebug=False,
-                       errordebug=1,
-                       texmsgstart=[],
-                       texmsgend=[],
-                       texmsgpreamble=[],
-                       texmsgrun=[]):
+                       copyinput=None,
+                       dvitype=False,
+                       errordetail=errordetail.default,
+                       texmessages_start=[],
+                       texmessages_end=[],
+                       texmessages_preamble=[],
+                       texmessages_run=[]):
         """Base class for the TeX interface.
 
         .. note:: This class cannot be used directly. It is the base class for
@@ -898,42 +936,36 @@ class _texrunner:
             interpreter
         :param usefiles: list of supplementary files
         :type usefiles: list of str
-        :param bool texipc: :ref:`texipc` flag. The default value shown is an
-            artifact of the documentation build environment. The actual default
-            is defined by the *texipc* option of the *text* section of the
-            :ref:`config`.
-        :param texdebug: filename or file to be used to store a copy of all the
-            input passed to the TeX interpreter
-        :type texdebug: None or str or file
-        :param bool dvidebug: ``True`` to turn on dvitype-like output
-        :param int errordebug: verbosity of the TexResultError messages
-            (``0`` means without the input and output details,
-            ``1`` means input and parsed output shortend to 5 lines, and
-            ``2`` means full input and unparsed as well as parsed output)
-        :param texmsgstart: additional message parsers to parse the TeX
-            interpreter startup
-        :type texmsgstart: list of texmsg
-        :param texmsgend: additional message parsers to parse the TeX
-            interpreter shutdown
-        :type texmsgend: list of texmsg
-        :param texmsgpreamble: additional message parsers to parse the preamble
+        :param bool texipc: :ref:`texipc` flag.
+        :param copyinput: filename or file to be used to store a copy of all
+            the input passed to the TeX interpreter
+        :type copyinput: None or str or file
+        :param bool dvitype: flag to turn on dvitype-like output
+        :param errordetail: verbosity of the :exc:`TexResultError`
+        :type errordetail: :class:`errordetail`
+        :param texmessages_start: additional message parsers at interpreter
+            startup
+        :type texmessages_start: list of :class:`texmessage` parsers
+        :param texmessages_end: additional message parsers at interpreter
+            shutdown
+        :type texmessages_end: list of :class:`texmessage` parsers
+        :param texmessages_preamble: additional message parsers for preamble
             output
-        :type texmsgpreamble: list of texmsg
-        :param texmsgrun: additional message parsers to parse the typeset
-            output
-        :type texmsgrun: list of texmsg
+        :type texmessages_preamble: list of :class:`texmessage` parsers
+        :param texmessages_run: additional message parsers for typset output
+        :type texmessages_run: list of :class:`texmessage` parsers
         """
         self.executable = executable
         self.texenc = texenc
         self.usefiles = usefiles
         self.texipc = texipc
-        self.texdebug = texdebug
-        self.dvidebug = dvidebug
-        self.errordebug = errordebug
-        self.texmsgstart = texmsgstart
-        self.texmsgend = texmsgend
-        self.texmsgpreamble = texmsgpreamble
-        self.texmsgrun = texmsgrun
+        self.copyinput = copyinput
+        self.dvitype = dvitype
+        self.errordetail = errordetail
+        self.texmessages_start = texmessages_start
+        self.texmessages_end = texmessages_end
+        self.texmessages_preamble = texmessages_preamble
+        self.texmessages_run = texmessages_run
 
         self.state = STATE_START
         self.executeid = 0
@@ -950,8 +982,7 @@ class _texrunner:
         """Clean-up TeX interpreter and tmp directory.
 
         This funtion is hooked up in atexit to quit the TeX interpreter, to
-        save contents of the usefile files, and to remove the temporary
-        directory.
+        save contents of usefiles, and to remove the temporary directory.
 
         """
         try:
@@ -1027,14 +1058,14 @@ class _texrunner:
             if parsed.replace(r"(Please type a command or say `\end')", "").replace(" ", "").replace("*\n", "").replace("\n", ""):
                 raise TexResultError("unhandled TeX response (might be an error)")
         except TexResultError as e:
-            if self.errordebug > 0:
+            if self.errordetail > errordetail.none:
                 def add(msg): e.args = (e.args[0] + msg,)
                 add("\nThe expression passed to TeX was:\n{}".format(textwrap.indent(expr.rstrip(), "  ")))
-                if self.errordebug >= 2:
+                if self.errordetail == errordetail.full:
                     add("\nThe return message from TeX was:\n{}".format(textwrap.indent(unparsed.rstrip(), "  ")))
-                if self.errordebug == 1:
-                    if parsed.count('\n') > 5:
-                        parsed = "\n".join(parsed.split("\n")[:5] + ["(cut after 5 lines; use errordebug=2 for all output)"])
+                if self.errordetail == errordetail.default:
+                    if parsed.count('\n') > 6:
+                        parsed = "\n".join(parsed.split("\n")[:5] + ["(cut after 5 lines; use errordetail.full for all output)"])
                 add("\nAfter parsing the return message from TeX, the following was left:\n{}".format(textwrap.indent(parsed.rstrip(), "  ")))
             raise e
         if oldstate == newstate == STATE_TYPESET:
@@ -1058,13 +1089,13 @@ class _texrunner:
             cmd.append("--ipc")
         self.popen = config.Popen(cmd, stdin=config.PIPE, stdout=config.PIPE, stderr=config.STDOUT, bufsize=0)
         self.texinput = io.TextIOWrapper(self.popen.stdin, encoding=self.texenc)
-        if self.texdebug:
+        if self.copyinput:
             try:
-                self.texdebug.write
+                self.copyinput.write
             except AttributeError:
-                self.texinput = Tee(open(self.texdebug, "w", encoding=self.texenc), self.texinput)
+                self.texinput = Tee(open(self.copyinput, "w", encoding=self.texenc), self.texinput)
             else:
-                self.texinput = Tee(self.texdebug, self.texinput)
+                self.texinput = Tee(self.copyinput, self.texinput)
         self.texoutput = MonitorOutput(self.name, io.TextIOWrapper(self.popen.stdout, encoding=self.texenc))
         self._execute("\\scrollmode\n\\raiseerror%\n" # switch to and check scrollmode
                       "\\def\\PyX{P\\kern-.3em\\lower.5ex\hbox{Y}\kern-.18em X}%\n" # just the PyX Logo
@@ -1090,7 +1121,7 @@ class _texrunner:
                       "{\\count0=80\\count1=121\\count2=88\\count3=#2\\shipout\\box\\PyXBoxHAligned}}%\n" # shipout PyXBox to Page 80.121.88.<page number>
                       "\\def\\PyXInput#1{\\immediate\\write16{PyXInputMarker:executeid=#1:}}%\n" # write PyXInputMarker to stdout
                       "\\def\\PyXMarker#1{\\hskip0pt\\special{PyX:marker #1}}%", # write PyXMarker special into the dvi-file
-                      self.defaulttexmessagesstart + self.texmsgstart, STATE_PREAMBLE, STATE_PREAMBLE)
+                      self.texmessages_start_default + self.texmessages_start, STATE_PREAMBLE, STATE_PREAMBLE)
 
     def do_preamble(self, expr, texmessages):
         if self.state < STATE_PREAMBLE:
@@ -1113,7 +1144,7 @@ class _texrunner:
 
         if not self.texipc:
             dvifilename = os.path.join(self.tmpdir, "texput.dvi")
-            self.dvifile = dvifile.DVIfile(dvifilename, debug=self.dvidebug)
+            self.dvifile = dvifile.DVIfile(dvifilename, debug=self.dvitype)
             page = 1
             for box in self.needdvitextboxes:
                 box.setdvicanvas(self.dvifile.readpage([ord("P"), ord("y"), ord("X"), page, 0, 0, 0, 0, 0, 0], fontmap=box.fontmap, singlecharmode=box.singlecharmode))
@@ -1149,7 +1180,7 @@ class _texrunner:
           without breaking something)
         - preamble expressions must not create any dvi output
         - args might contain texmessage instances"""
-        texmessages = self.defaulttexmessagesdefaultpreamble + self.texmsgpreamble + texmessages
+        texmessages = self.texmessages_preamble_default + self.texmessages_preamble + texmessages
         self.preambles.append((expr, texmessages))
         self.do_preamble(expr, texmessages)
 
@@ -1174,9 +1205,9 @@ class _texrunner:
         for ta in textattrs[::-1]:
             expr = ta.apply(expr)
         first = self.state < STATE_TYPESET
-        left, right, height, depth = self.do_typeset(expr, self.defaulttexmessagesdefaultrun + self.texmsgrun + texmessages)
+        left, right, height, depth = self.do_typeset(expr, self.texmessages_run_default + self.texmessages_run + texmessages)
         if self.texipc and first:
-            self.dvifile = dvifile.DVIfile(os.path.join(self.tmpdir, "texput.dvi"), debug=self.dvidebug)
+            self.dvifile = dvifile.DVIfile(os.path.join(self.tmpdir, "texput.dvi"), debug=self.dvitype)
         box = textbox(x, y, left, right, height, depth, self.do_finish, fillstyles)
         for t in trafos:
             box.reltransform(t) # TODO: should trafos really use reltransform???
@@ -1194,7 +1225,7 @@ class _texrunner:
         return self.text(x * unit.t_pt, y * unit.t_pt, expr, *args, **kwargs)
 
 
-class texrunner(_texrunner):
+class texrunner(baserunner):
 
     def __init__(self, executable=config.get("text", "tex", "tex"), lfs="10pt", **kwargs):
         super().__init__(executable=executable, **kwargs)
@@ -1206,7 +1237,7 @@ class texrunner(_texrunner):
         self.state = STATE_TYPESET
 
     def go_finish(self):
-        self._execute("\\end%\n", self.defaulttexmessagesend + self.texmsgend, STATE_TYPESET, STATE_DONE)
+        self._execute("\\end%\n", self.texmessages_end_default + self.texmessages_end, STATE_TYPESET, STATE_DONE)
 
     def force_done(self):
         self.texinput.write("\n\\end\n")
@@ -1223,27 +1254,27 @@ class texrunner(_texrunner):
         self._execute("\\newdimen\\linewidth\\newdimen\\textwidth%\n", [], STATE_PREAMBLE, STATE_PREAMBLE)
 
 
-class latexrunner(_texrunner):
+class latexrunner(baserunner):
 
-    defaulttexmessagesdocclass = [texmessage.load]
-    defaulttexmessagesbegindoc = [texmessage.load, texmessage.no_aux]
+    texmessages_docclass_default = [texmessage.load]
+    texmessages_begindoc_default = [texmessage.load, texmessage.no_aux]
 
     def __init__(self, executable=config.get("text", "latex", "latex"),
                        docclass="article", docopt=None, pyxgraphics=True,
-                       texmessagesdocclass=[], texmessagesbegindoc=[], **kwargs):
+                       texmessages_docclass=[], texmessages_begindoc=[], **kwargs):
         super().__init__(executable=executable, **kwargs)
         self.docclass = docclass
         self.docopt = docopt
         self.pyxgraphics = pyxgraphics
-        self.texmessagesdocclass = texmessagesdocclass
-        self.texmessagesbegindoc = texmessagesbegindoc
+        self.texmessages_docclass = texmessages_docclass
+        self.texmessages_begindoc = texmessages_begindoc
         self.name = "LaTeX"
 
     def go_typeset(self):
-        self._execute("\\begin{document}", self.defaulttexmessagesbegindoc + self.texmessagesbegindoc, STATE_PREAMBLE, STATE_TYPESET)
+        self._execute("\\begin{document}", self.texmessages_begindoc_default + self.texmessages_begindoc, STATE_PREAMBLE, STATE_TYPESET)
 
     def go_finish(self):
-        self._execute("\\end{document}%\n", self.defaulttexmessagesend + self.texmsgend, STATE_TYPESET, STATE_DONE)
+        self._execute("\\end{document}%\n", self.texmessages_end_default + self.texmessages_end, STATE_TYPESET, STATE_DONE)
 
     def force_done(self):
         self.texinput.write("\n\\catcode`\\@11\\relax\\@@end\n")
@@ -1263,10 +1294,10 @@ class latexrunner(_texrunner):
                           [], STATE_PREAMBLE, STATE_PREAMBLE)
         if self.docopt is not None:
             self._execute("\\documentclass[%s]{%s}" % (self.docopt, self.docclass),
-                          self.defaulttexmessagesdocclass + self.texmessagesdocclass, STATE_PREAMBLE, STATE_PREAMBLE)
+                          self.texmessages_docclass_default + self.texmessages_docclass, STATE_PREAMBLE, STATE_PREAMBLE)
         else:
             self._execute("\\documentclass{%s}" % self.docclass,
-                          self.defaulttexmessagesdocclass + self.texmessagesdocclass, STATE_PREAMBLE, STATE_PREAMBLE)
+                          self.texmessages_docclass_default + self.texmessages_docclass, STATE_PREAMBLE, STATE_PREAMBLE)
 
 
 def set(mode="tex", **kwargs):

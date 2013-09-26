@@ -233,3 +233,53 @@ man_pages = [
 mathjax_path = 'http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=default'
 todo_include_todos = True
 autoclass_content = 'both'
+autodoc_member_order = 'bysource'
+
+
+# -- unprocessed function signature extractor ----------------------------------
+# This feature is not robust. It does not parse the code properly, removes
+# comments and whitespace doubtfully, requires '):' without space for
+# termination, etc.
+
+import inspect
+
+def function_signature_lines(lines):
+    # extract the lines of the function definition removing comments
+    # and stripping spaces
+    for line in lines:
+        code = line.split("#", 1)[0].strip()
+        yield code
+        if code.endswith("):"):
+            break
+
+def unprocessed_function_signature(app, what, name, obj, options, sig, retann):
+    # extract the unprocessed signature from the source
+    if what not in ["class", "method", "staticmethod", "function"]:
+        return
+    if what == "class":
+        # get the constructor (code copied from autodoc)
+        obj = getattr(obj, "__init__", None)
+        if obj is None or obj is object.__init__ or not \
+           (inspect.ismethod(obj) or inspect.isfunction(obj)):
+            return
+    src, line = inspect.findsource(obj)
+    code = " ".join(function_signature_lines(src[line:])).split("(", 1)[1][:-2]
+    if code.startswith("self, "):
+        code = code[6:]
+    elif code == "self":
+        code = ""
+    return "({})".format(code), retann
+
+def setup(app):
+    app.connect('autodoc-process-signature', unprocessed_function_signature)
+
+
+# -- monkey patch safe_repr for function signatures ----------------------------
+
+import re
+import sphinx.util.inspect
+
+old_safe_repr = sphinx.util.inspect.safe_repr
+function_pattern = re.compile(r"<function (\S+) at 0x[0-9a-f]+>")
+sphinx.util.inspect.safe_repr = lambda obj: re.sub(function_pattern, r"\1",
+                                                   old_safe_repr(obj))
