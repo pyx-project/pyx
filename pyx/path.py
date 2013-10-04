@@ -1082,20 +1082,17 @@ class path:
             return self._normpath
         if self.pathitems:
             if epsilon is _marker:
-                normpath = self.pathitems[0].createnormpath()
+                np = self.pathitems[0].createnormpath()
             else:
-                normpath = self.pathitems[0].createnormpath(epsilon)
+                np = self.pathitems[0].createnormpath(epsilon)
             context = self.pathitems[0].createcontext()
             for pathitem in self.pathitems[1:]:
-                pathitem.updatenormpath(normpath, context)
+                pathitem.updatenormpath(np, context)
         else:
-            if epsilon is _marker:
-                normpath = normpath([])
-            else:
-                normpath = normpath(epsilon=epsilon)
+            np = normpath()
         if epsilon is _marker:
-            self._normpath = normpath
-        return normpath
+            self._normpath = np
+        return np
 
     def paramtoarclen_pt(self, params):
         """return arc lenght(s) in pts matching the given param(s)"""
