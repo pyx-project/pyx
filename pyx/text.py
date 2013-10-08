@@ -882,7 +882,11 @@ STATE_START, STATE_PREAMBLE, STATE_TYPESET, STATE_DONE = range(4)
 PyXBoxPattern = re.compile(r"PyXBox:page=(?P<page>\d+),lt=(?P<lt>-?\d*((\d\.?)|(\.?\d))\d*)pt,rt=(?P<rt>-?\d*((\d\.?)|(\.?\d))\d*)pt,ht=(?P<ht>-?\d*((\d\.?)|(\.?\d))\d*)pt,dp=(?P<dp>-?\d*((\d\.?)|(\.?\d))\d*)pt:")
 dvi_pattern = re.compile(r"Output written on .*texput\.dvi \((?P<page>\d+) pages?, \d+ bytes\)\.", re.DOTALL)
 
-class baserunner:
+class TexDoneError(Exception):
+    pass
+
+
+class SingleRunner:
 
     texmessages_start_default = [texmessage.start]
     #: default :class:`texmessage` parsers for interpreter startup
@@ -953,11 +957,9 @@ class baserunner:
         self.state = STATE_START
         self.executeid = 0
         self.page = 0
-        self.preambles = []
 
         self.needdvitextboxes = [] # when texipc-mode off
         self.dvifile = None
-        self.textboxesincluded = 0
 
         self.tmpdir = None
 
@@ -1148,36 +1150,21 @@ class baserunner:
         if self.dvifile.readpage(None) is not None:
             raise ValueError("end of dvifile expected but further pages follow")
 
-        self.dvifile = None
-        self.needdvitextboxes = []
-
-    def reset(self, reinit=0):
-        "resets the tex runner to its initial state (upto its record to old dvi file(s))"
-        assert self.state > STATE_START
-        if self.state < STATE_DONE:
-            self.do_finish()
-        self.executeid = 0
-        self.page = 0
-        self.state = STATE_START
-        if reinit:
-            for expr, texmessages in self.preambles:
-                self.do_preamble(expr, texmessages)
-        else:
-            self.preambles = []
-
     def preamble(self, expr, texmessages=[]):
-        r"""put something into the TeX/LaTeX preamble
-        - in LaTeX, this is done before the \begin{document}
-          (you might use \AtBeginDocument, when you're in need for)
-        - it is not allowed to call preamble after calling the
-          text method for the first time (for LaTeX this is needed
-          due to \begin{document}; in TeX it is forced for compatibility
-          (you should be able to switch from TeX to LaTeX, if you want,
-          without breaking something)
-        - preamble expressions must not create any dvi output
-        - args might contain texmessage instances"""
+        r"""Execute a preamble.
+
+        :param str expr: expression to be executed
+        :param texmessages: additional message parsers
+        :type texmessages: list of :class:`texmessage` parsers
+
+        Preambles must not generate output, but are used to load files, perform
+        settings, define macros, *etc*. In LaTeX mode, preambles are executed
+        before ``\begin{document}``. The method can be called multiple times,
+        but only prior to :meth:`SingleRunner.text` and
+        :meth:`SingleRunner.text_pt`.
+
+        """
         texmessages = self.texmessages_preamble_default + self.texmessages_preamble + texmessages
-        self.preambles.append((expr, texmessages))
         self.do_preamble(expr, texmessages)
 
     def text(self, x, y, expr, textattrs=[], texmessages=[], fontmap=None, singlecharmode=False):
@@ -1189,10 +1176,8 @@ class baserunner:
           - texmessage instances
           - trafo._trafo instances
           - style.fillstyle instances"""
-        if expr is None:
-            raise ValueError("None expression is invalid")
         if self.state == STATE_DONE:
-            self.reset(reinit=1)
+            raise TexDoneError("typesetting process was terminated already")
         textattrs = attr.mergeattrs(textattrs) # perform cleans
         attr.checkattrs(textattrs, [textattr, trafo.trafo_pt, style.fillstyle])
         trafos = attr.getattrs(textattrs, [trafo.trafo_pt])
@@ -1221,7 +1206,7 @@ class baserunner:
         return self.text(x * unit.t_pt, y * unit.t_pt, expr, *args, **kwargs)
 
 
-class texrunner(baserunner):
+class SingleTexRunner(SingleRunner):
 
     def __init__(self, executable=config.get("text", "tex", "tex"), lfs="10pt", **kwargs):
         super().__init__(executable=executable, **kwargs)
@@ -1250,7 +1235,7 @@ class texrunner(baserunner):
         self._execute("\\newdimen\\linewidth\\newdimen\\textwidth%\n", [], STATE_PREAMBLE, STATE_PREAMBLE)
 
 
-class latexrunner(baserunner):
+class SingleLatexRunner(SingleRunner):
 
     texmessages_docclass_default = [texmessage.load]
     texmessages_begindoc_default = [texmessage.load, texmessage.no_aux]
@@ -1296,19 +1281,77 @@ class latexrunner(baserunner):
                           self.texmessages_docclass_default + self.texmessages_docclass, STATE_PREAMBLE, STATE_PREAMBLE)
 
 
+def reset_for_tex_done(f):
+    @functools.wraps(f)
+    def wrapped(self, *args, **kwargs):
+        try:
+            return f(self, *args, **kwargs)
+        except TexDoneError:
+            self.reset(reinit=True)
+            return f(self, *args, **kwargs)
+    return wrapped
+
+
+class MultiRunner:
+
+    def __init__(self, cls, *args, **kwargs):
+        self.cls = cls
+        self.args = args
+        self.kwargs = kwargs
+        self.reset()
+
+    def preamble(self, expr, texmessages=[]):
+        self.preambles.append((expr, texmessages))
+        self.instance.preamble(expr, texmessages)
+
+    @reset_for_tex_done
+    def text_pt(self, *args, **kwargs):
+        return self.instance.text_pt(*args, **kwargs)
+
+    @reset_for_tex_done
+    def text(self, *args, **kwargs):
+        return self.instance.text(*args, **kwargs)
+
+    def reset(self, reinit=False):
+        "resets the tex runner to its initial state (upto its record to old dvi file(s))"
+        self.instance = self.cls(*self.args, **self.kwargs)
+        if reinit:
+            for expr, texmessages in self.preambles:
+                self.preamble(expr, texmessages)
+        else:
+            self.preambles = []
+
+
+class TexRunner(MultiRunner):
+
+    def __init__(self, **kwargs):
+        super().__init__(SingleTexRunner, **kwargs)
+
+
+class LatexRunner(MultiRunner):
+
+    def __init__(self, **kwargs):
+        super().__init__(SingleLatexRunner, **kwargs)
+
+
+# old, deprecated names:
+texrunner = TexRunner
+latexrunner = LatexRunner
+
 def set(mode="tex", **kwargs):
-    global defaulttexrunner, reset, preamble, text, text_pt
+    # note: defaulttexrunner is deprecated
+    global default_runner, defaulttexrunner, reset, preamble, text, text_pt
     mode = mode.lower()
     if mode == "tex":
-        defaulttexrunner = texrunner(**kwargs)
+        default_runner = defaulttexrunner = TexRunner(**kwargs)
     elif mode == "latex":
-        defaulttexrunner = latexrunner(**kwargs)
+        default_runner = defaulttexrunner = LatexRunner(**kwargs)
     else:
         raise ValueError("mode \"TeX\" or \"LaTeX\" expected")
-    reset = defaulttexrunner.reset
-    preamble = defaulttexrunner.preamble
-    text = defaulttexrunner.text
-    text_pt = defaulttexrunner.text_pt
+    reset = default_runner.reset
+    preamble = default_runner.preamble
+    text = default_runner.text
+    text_pt = default_runner.text_pt
 
 set()
 
