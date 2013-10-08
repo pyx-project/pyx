@@ -829,11 +829,7 @@ class textbox(box.rect, canvas.canvas):
         self.ensuredvicanvas()
         textpath = path.path()
         for item in self.dvicanvas.items:
-            try:
-                textpath += item.textpath()
-            except AttributeError:
-                # ignore color settings etc.
-                pass
+            textpath += item.textpath()
         return textpath.transformed(self.texttrafo)
 
     def processPS(self, file, writer, context, registry, bbox):
