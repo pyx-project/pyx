@@ -21,7 +21,7 @@
 import atexit, errno, functools, glob, inspect, io, itertools, logging, os
 import queue, re, shutil, sys, tempfile, textwrap, threading
 
-from pyx import config, unit, box, canvas, trafo, version, attr, style, path
+from pyx import config, unit, box, baseclasses, trafo, version, attr, style, path
 from pyx import bbox as bboxmodule
 from pyx.dvi import dvifile
 
@@ -777,14 +777,14 @@ class MonitorOutput(threading.Thread):
             raise ValueError("{} finished unexpectedly".format(self.name))
 
 
-class textbox(box.rect, canvas.canvas):
+class textbox(box.rect, baseclasses.canvasitem):
     """basically a box.rect, but it contains a text created by the texrunner
     - texrunner._text and texrunner.text return such an object
     - _textbox instances can be inserted into a canvas
     - the output is contained in a page of the dvifile available thru the texrunner"""
     # TODO: shouldn't all boxes become canvases? how about inserts then?
 
-    def __init__(self, x, y, left, right, height, depth, do_finish, attrs):
+    def __init__(self, x, y, left, right, height, depth, do_finish, fontmap, singlecharmode, attrs):
         """
         - do_finish is a method to be called to get the dvicanvas
           (e.g. the do_finish calls the setdvicanvas method)
@@ -794,54 +794,49 @@ class textbox(box.rect, canvas.canvas):
         self.width = left + right
         self.height = height
         self.depth = depth
+        self.do_finish = do_finish
+        self.fontmap = fontmap
+        self.singlecharmode = singlecharmode
+        self.attrs = attrs
+
         self.texttrafo = trafo.scale(unit.scale["x"]).translated(x, y)
         box.rect.__init__(self, x - left, y - depth, left + right, depth + height, abscenter = (left, depth))
-        canvas.canvas.__init__(self, attrs)
-        self.do_finish = do_finish
+
         self.dvicanvas = None
         self.insertdvicanvas = False
 
     def transform(self, *trafos):
-        if self.insertdvicanvas:
-            raise ValueError("can't apply transformation after dvicanvas was inserted")
+        if self.dvicanvas is not None:
+            raise ValueError("can't apply after dvicanvas was inserted")
         box.rect.transform(self, *trafos)
         for trafo in trafos:
             self.texttrafo = trafo * self.texttrafo
 
-    def setdvicanvas(self, dvicanvas):
-        if self.dvicanvas is not None:
-            raise ValueError("multiple call to setdvicanvas")
-        self.dvicanvas = dvicanvas
-
-    def ensuredvicanvas(self):
-        if self.dvicanvas is None:
-            self.do_finish()
-            assert self.dvicanvas is not None, "do_finish is broken"
-        if not self.insertdvicanvas:
-            self.insert(self.dvicanvas, [self.texttrafo])
-            self.insertdvicanvas = True
+    def readdvipage(self, dvifile, page):
+        self.dvicanvas = dvifile.readpage([ord("P"), ord("y"), ord("X"), page, 0, 0, 0, 0, 0, 0],
+                                          fontmap=self.fontmap, singlecharmode=self.singlecharmode, attrs=[self.texttrafo] + self.attrs)
 
     def marker(self, marker):
-        self.ensuredvicanvas()
+        self.do_finish()
         return self.texttrafo.apply(*self.dvicanvas.markers[marker])
 
     def textpath(self):
-        self.ensuredvicanvas()
+        self.do_finish()
         textpath = path.path()
         for item in self.dvicanvas.items:
             textpath += item.textpath()
         return textpath.transformed(self.texttrafo)
 
     def processPS(self, file, writer, context, registry, bbox):
-        self.ensuredvicanvas()
+        self.do_finish()
         abbox = bboxmodule.empty()
-        canvas.canvas.processPS(self, file, writer, context, registry, abbox)
+        self.dvicanvas.processPS(file, writer, context, registry, abbox)
         bbox += box.rect.bbox(self)
 
     def processPDF(self, file, writer, context, registry, bbox):
-        self.ensuredvicanvas()
+        self.do_finish()
         abbox = bboxmodule.empty()
-        canvas.canvas.processPDF(self, file, writer, context, registry, abbox)
+        self.dvicanvas.processPDF(file, writer, context, registry, abbox)
         bbox += box.rect.bbox(self)
 
 
@@ -1130,6 +1125,8 @@ class SingleRunner:
         return self._execute(expr, texmessages, STATE_TYPESET, STATE_TYPESET)
 
     def do_finish(self):
+        if self.state == STATE_DONE:
+            return
         if self.state < STATE_TYPESET:
             self.go_typeset()
         self.go_finish()
@@ -1141,7 +1138,7 @@ class SingleRunner:
             self.dvifile = dvifile.DVIfile(dvifilename, debug=self.dvitype)
             page = 1
             for box in self.needdvitextboxes:
-                box.setdvicanvas(self.dvifile.readpage([ord("P"), ord("y"), ord("X"), page, 0, 0, 0, 0, 0, 0], fontmap=box.fontmap, singlecharmode=box.singlecharmode))
+                box.readdvipage(self.dvifile, page)
                 page += 1
         if self.dvifile.readpage(None) is not None:
             raise ValueError("end of dvifile expected but further pages follow")
@@ -1185,16 +1182,14 @@ class SingleRunner:
         left, right, height, depth = self.do_typeset(expr, self.texmessages_run_default + self.texmessages_run + texmessages)
         if self.texipc and first:
             self.dvifile = dvifile.DVIfile(os.path.join(self.tmpdir, "texput.dvi"), debug=self.dvitype)
-        box = textbox(x, y, left, right, height, depth, self.do_finish, fillstyles)
+        box = textbox(x, y, left, right, height, depth, self.do_finish, fontmap, singlecharmode, fillstyles)
         for t in trafos:
             box.reltransform(t) # TODO: should trafos really use reltransform???
                                 #       this is quite different from what we do elsewhere!!!
                                 #       see https://sourceforge.net/mailarchive/forum.php?thread_id=9137692&forum_id=23700
         if self.texipc:
-            box.setdvicanvas(self.dvifile.readpage([ord("P"), ord("y"), ord("X"), self.page, 0, 0, 0, 0, 0, 0], fontmap=fontmap, singlecharmode=singlecharmode))
+            box.readdvipage(self.dvifile, self.page)
         else:
-            box.fontmap = fontmap
-            box.singlecharmode = singlecharmode
             self.needdvitextboxes.append(box)
         return box
 
@@ -1313,7 +1308,7 @@ class MultiRunner:
         self.instance = self.cls(*self.args, **self.kwargs)
         if reinit:
             for expr, texmessages in self.preambles:
-                self.preamble(expr, texmessages)
+                self.instance.preamble(expr, texmessages)
         else:
             self.preambles = []
 
