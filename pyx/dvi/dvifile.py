@@ -397,7 +397,7 @@ class DVIfile:
             else:
                 raise DVIError
 
-    def readpage(self, pageid=None, fontmap=None, singlecharmode=False):
+    def readpage(self, pageid=None, fontmap=None, singlecharmode=False, attrs=[]):
         """ reads a page from the dvi file
 
         This routine reads a page from the dvi file which is
@@ -425,7 +425,7 @@ class DVIfile:
             else:
                 raise DVIError
 
-        self.actpage = canvas.canvas()
+        self.actpage = canvas.canvas(attrs)
         self.actpage.markers = {}
         self.pos = [0, 0, 0, 0, 0, 0]
 
