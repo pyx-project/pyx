@@ -70,6 +70,6 @@ class canvasitem:
 
 class deformer(attr.attr):
 
-    def deform (self, basepath):
+    def deform(self, basepath):
         raise NotImplementedError()
 
