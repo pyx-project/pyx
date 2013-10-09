@@ -605,10 +605,10 @@ class curvedtext(deco, attr.attr):
 
         textattrs = self.defaulttextattrs + self.textattrs
         t = texrunner.text(0, 0, self.text, textattrs, singlecharmode=1)
-        t.ensuredvicanvas()
+        t.do_finish()
 
         # we copy the style from the original textbox and modify the position for each dvicanvas item
-        c = canvas.canvas(t.styles)
+        c = canvas.canvas(t.dvicanvas.styles)
         for item in t.dvicanvas.items:
             bbox = item.bbox()
             bbox = bbox.transformed(t.texttrafo)
