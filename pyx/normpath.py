@@ -259,6 +259,11 @@ class normline_pt(normsubpathitem):
             try:
                 det = 1.0 / (b_deltax_pt * a_deltay_pt - b_deltay_pt * a_deltax_pt)
             except ArithmeticError:
+                # a unique (within epsilon) solution is possible even for colinear lines
+                if math.hypot(self.x1_pt - other.x0_pt, self.y1_pt - other.y0_pt) < epsilon:
+                    return [(1, 0)]
+                if math.hypot(self.x0_pt - other.x1_pt, self.y0_pt - other.y1_pt) < epsilon:
+                    return [(0, 1)]
                 return []
 
             ba_deltax0_pt = other.x0_pt - self.x0_pt
@@ -268,9 +273,16 @@ class normline_pt(normsubpathitem):
             b_t = (a_deltax_pt * ba_deltay0_pt - a_deltay_pt * ba_deltax0_pt) * det
 
             # check for intersections out of bound
-            # TODO: we might allow for a small out of bound errors.
             if not (0<=a_t<=1 and 0<=b_t<=1):
-                return []
+                # correct the parameters, if the deviation is smaller than epsilon
+                a_t = min(1, max(0, a_t))
+                b_t = min(1, max(0, b_t))
+                a_x = self.x0_pt + a_deltax_pt*a_t
+                a_y = self.y0_pt + a_deltay_pt*a_t
+                b_x = other.x0_pt + b_deltax_pt*b_t
+                b_y = other.y0_pt + b_deltay_pt*b_t
+                if math.hypot(a_x - b_x, a_y - b_y) > epsilon:
+                    return []
 
             # return parameters of intersection
             return [(a_t, b_t)]
