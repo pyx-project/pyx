@@ -93,8 +93,11 @@ class normsubpathitem:
     might be shared between several normsubpaths.
     """
 
-    def arclen_pt(self, epsilon):
-        """return arc length in pts"""
+    def arclen_pt(self, epsilon, upper=False):
+        """return arc length in pts
+
+        When upper is set, the upper bound is calculated, otherwise the lower
+        bound is returned."""
         pass
 
     def _arclentoparam_pt(self, lengths_pt, epsilon):
@@ -221,7 +224,7 @@ class normline_pt(normsubpathitem):
         """return a tuple of params"""
         return self._arclentoparam_pt(lengths_pt, epsilon)[0]
 
-    def arclen_pt(self,  epsilon):
+    def arclen_pt(self,  epsilon, upper=False):
         return math.hypot(self.x0_pt-self.x1_pt, self.y0_pt-self.y1_pt)
 
     def at_pt(self, params):
@@ -425,9 +428,9 @@ class normcurve_pt(normsubpathitem):
         """return a tuple of params"""
         return self._arclentoparam_pt(lengths_pt, epsilon)[0]
 
-    def arclen_pt(self, epsilon):
+    def arclen_pt(self, epsilon, upper=False):
         a, b = self._midpointsplit(epsilon)
-        return a.arclen_pt(epsilon) + b.arclen_pt(epsilon)
+        return a.arclen_pt(epsilon, upper=upper) + b.arclen_pt(epsilon, upper=upper)
 
     def at_pt(self, params):
         return [( (-self.x0_pt+3*self.x1_pt-3*self.x2_pt+self.x3_pt)*t*t*t +
@@ -698,6 +701,12 @@ class _leftnormline_pt(normline_pt):
         self.l2_pt = l2_pt
         self.l3_pt = l3_pt
 
+    def arclen_pt(self,  epsilon, upper=False):
+        if upper:
+            return self.l1_pt + self.l2_pt + self.l3_pt
+        else:
+            return math.hypot(self.x0_pt-self.x1_pt, self.y0_pt-self.y1_pt)
+
     def subparamtoparam(self, param):
         if 0 <= param <= 1:
             params = mathutils.realpolyroots(self.l1_pt-2*self.l2_pt+self.l3_pt,
@@ -862,9 +871,12 @@ class normsubpath:
             else:
                 self.skippedline = normline_pt(xs_pt, ys_pt, xe_pt, ye_pt)
 
-    def arclen_pt(self):
-        """return arc length in pts"""
-        return sum([npitem.arclen_pt(self.epsilon) for npitem in self.normsubpathitems])
+    def arclen_pt(self, upper=False):
+        """return arc length in pts
+
+        When upper is set, the upper bound is calculated, otherwise the lower
+        bound is returned."""
+        return sum([npitem.arclen_pt(self.epsilon, upper=upper) for npitem in self.normsubpathitems])
 
     def _arclentoparam_pt(self, lengths_pt):
         """return a tuple of params and the total length arc length in pts"""
@@ -1505,13 +1517,19 @@ class normpath:
             else:
                 self.normsubpaths = item.createnormpath(self).normsubpaths
 
-    def arclen_pt(self):
-        """return arc length in pts"""
-        return sum([normsubpath.arclen_pt() for normsubpath in self.normsubpaths])
+    def arclen_pt(self, upper=False):
+        """return arc length in pts
 
-    def arclen(self):
-        """return arc length"""
-        return self.arclen_pt() * unit.t_pt
+        When upper is set, the upper bound is calculated, otherwise the lower
+        bound is returned."""
+        return sum([normsubpath.arclen_pt(upper=upper) for normsubpath in self.normsubpaths])
+
+    def arclen(self, upper=False):
+        """return arc length
+
+        When upper is set, the upper bound is calculated, otherwise the lower
+        bound is returned."""
+        return self.arclen_pt(upper=upper) * unit.t_pt
 
     def _arclentoparam_pt(self, lengths_pt):
         """return the params matching the given lengths_pt"""
