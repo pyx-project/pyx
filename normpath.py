@@ -414,8 +414,8 @@ class normcurve_pt(normsubpathitem):
 
     def _arclentoparam_pt(self, lengths_pt, epsilon):
         a, b = self._midpointsplit(epsilon)
-        params_a, arclen_a_pt = a._arclentoparam_pt(lengths_pt, epsilon)
-        params_b, arclen_b_pt = b._arclentoparam_pt([length_pt - arclen_a_pt for length_pt in lengths_pt], epsilon)
+        params_a, arclen_a_pt = a._arclentoparam_pt(lengths_pt, 0.5*epsilon)
+        params_b, arclen_b_pt = b._arclentoparam_pt([length_pt - arclen_a_pt for length_pt in lengths_pt], 0.5*epsilon)
         params = []
         for param_a, param_b, length_pt in zip(params_a, params_b, lengths_pt):
             if length_pt > arclen_a_pt:
@@ -430,7 +430,7 @@ class normcurve_pt(normsubpathitem):
 
     def arclen_pt(self, epsilon, upper=False):
         a, b = self._midpointsplit(epsilon)
-        return a.arclen_pt(epsilon, upper=upper) + b.arclen_pt(epsilon, upper=upper)
+        return a.arclen_pt(0.5*epsilon, upper=upper) + b.arclen_pt(0.5*epsilon, upper=upper)
 
     def at_pt(self, params):
         return [( (-self.x0_pt+3*self.x1_pt-3*self.x2_pt+self.x3_pt)*t*t*t +
