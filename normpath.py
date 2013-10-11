@@ -339,7 +339,7 @@ class normline_pt(normsubpathitem):
                         return [(sp, so)]
                 return []
 
-            det = 1.0 / det
+            det = 1.0 / invdet
 
             ba_deltax0_pt = other.x0_pt - self.x0_pt
             ba_deltay0_pt = other.y0_pt - self.y0_pt
