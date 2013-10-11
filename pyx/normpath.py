@@ -410,11 +410,10 @@ class normcurve_pt(normsubpathitem):
                 return newline(x0_pt, y0_pt, x3_pt, y3_pt, l1_pt, l2_pt, l3_pt)
 
             if intersect:
-                # For intersections we calculate the distrance of
-                # (x1_pt, y1_pt) and (x2_pt, y2_pt) from the line defined by
-                # (x0_pt, y0_pt) and (x3_pt, y3_pt). We skip the division by
-                # l0_pt in the result and calculate d1_pt*l0_pt and d2_pt*l0_pt
-                # instead.
+                # For intersections we calculate the distance of (x1_pt, y1_pt)
+                # and (x2_pt, y2_pt) from the line defined by (x0_pt, y0_pt)
+                # and (x3_pt, y3_pt). We skip the division by l0_pt in the
+                # result and calculate d1_pt*l0_pt and d2_pt*l0_pt instead.
                 d1_pt_times_l0_pt = (x3_pt-x0_pt)*(y0_pt-y1_pt) - (x0_pt-x1_pt)*(y3_pt-y0_pt)
                 d2_pt_times_l0_pt = (x0_pt-x3_pt)*(y3_pt-y2_pt) - (x3_pt-x2_pt)*(y0_pt-y3_pt)
                 if abs(d1_pt_times_l0_pt) < epsilon*l0_pt and abs(d2_pt_times_l0_pt) < epsilon*l0_pt:
