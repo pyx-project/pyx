@@ -390,39 +390,33 @@ class normcurve_pt(normsubpathitem):
         xmidpoint_pt = 0.5*(x01_12_pt + x12_23_pt)
         ymidpoint_pt = 0.5*(y01_12_pt + y12_23_pt)
 
-        # Before returning the normcurves we check whether we can
-        # replace them by normlines within an error of epsilon pts.
-        # The maximal error value is given by the modulus of the
-        # difference between the length of the control polygon
-        # (i.e. |P1-P0|+|P2-P1|+|P3-P2|), which consitutes an upper
-        # bound for the length, and the length of the straight line
-        # between start and end point of the normcurve (i.e. |P3-P1|),
-        # which represents a lower bound.
-        l0_pt = math.hypot(xmidpoint_pt - self.x0_pt, ymidpoint_pt - self.y0_pt)
-        l1_pt = math.hypot(x01_pt - self.x0_pt, y01_pt - self.y0_pt)
-        l2_pt = math.hypot(x01_12_pt - x01_pt, y01_12_pt - y01_pt)
-        l3_pt = math.hypot(xmidpoint_pt - x01_12_pt, ymidpoint_pt - y01_12_pt)
-        if l1_pt+l2_pt+l3_pt-l0_pt < epsilon:
-            a = _leftnormline_pt(self.x0_pt, self.y0_pt, xmidpoint_pt, ymidpoint_pt, l1_pt, l2_pt, l3_pt)
-        else:
-            a = _leftnormcurve_pt(self.x0_pt, self.y0_pt,
-                                  x01_pt, y01_pt,
-                                  x01_12_pt, y01_12_pt,
-                                  xmidpoint_pt, ymidpoint_pt)
+        def subcurve(x0_pt, y0_pt, x1_pt, y1_pt, x2_pt, y2_pt, x3_pt, y3_pt, newline, newcurve):
+            # Before returning the subcurve we check whether we can
+            # replace it by a normline within an error of epsilon pts.
+            # The maximal error value is given by the modulus of the
+            # difference between the length of the control polygon
+            # (i.e. |P1-P0|+|P2-P1|+|P3-P2|), which consitutes an upper
+            # bound for the length, and the length of the straight line
+            # between start and end point of the normcurve (i.e. |P3-P1|),
+            # which represents a lower bound.
+            l0_pt = math.hypot(x3_pt-x0_pt, y3_pt-y0_pt)
+            l1_pt = math.hypot(x1_pt-x0_pt, y1_pt-y0_pt)
+            l2_pt = math.hypot(x2_pt-x1_pt, y2_pt-y1_pt)
+            l3_pt = math.hypot(x3_pt-x2_pt, y3_pt-y2_pt)
+            if l1_pt+l2_pt+l3_pt-l0_pt < epsilon:
+                return newline(x0_pt, y0_pt, x3_pt, y3_pt, l1_pt, l2_pt, l3_pt)
+            return newcurve(x0_pt, y0_pt, x1_pt, y1_pt, x2_pt, y2_pt, x3_pt, y3_pt)
 
-        l0_pt = math.hypot(self.x3_pt - xmidpoint_pt, self.y3_pt - ymidpoint_pt)
-        l1_pt = math.hypot(x12_23_pt - xmidpoint_pt, y12_23_pt - ymidpoint_pt)
-        l2_pt = math.hypot(x23_pt - x12_23_pt, y23_pt - y12_23_pt)
-        l3_pt = math.hypot(self.x3_pt - x23_pt, self.y3_pt - y23_pt)
-        if l1_pt+l2_pt+l3_pt-l0_pt < epsilon:
-            b = _rightnormline_pt(xmidpoint_pt, ymidpoint_pt, self.x3_pt, self.y3_pt, l1_pt, l2_pt, l3_pt)
-        else:
-            b = _rightnormcurve_pt(xmidpoint_pt, ymidpoint_pt,
-                                   x12_23_pt, y12_23_pt,
-                                   x23_pt, y23_pt,
-                                   self.x3_pt, self.y3_pt)
-
-        return a, b
+        return (subcurve(self.x0_pt, self.y0_pt,
+                         x01_pt, y01_pt,
+                         x01_12_pt, y01_12_pt,
+                         xmidpoint_pt, ymidpoint_pt,
+                         _leftnormline_pt, _leftnormcurve_pt),
+                subcurve(xmidpoint_pt, ymidpoint_pt,
+                         x12_23_pt, y12_23_pt,
+                         x23_pt, y23_pt,
+                         self.x3_pt, self.y3_pt,
+                         _rightnormline_pt, _rightnormcurve_pt))
 
     def _arclentoparam_pt(self, lengths_pt, epsilon):
         a, b = self._midpointsplit(epsilon)
