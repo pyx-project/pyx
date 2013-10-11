@@ -359,7 +359,7 @@ class normcurve_pt(normsubpathitem):
         return "normcurve_pt(%g, %g, %g, %g, %g, %g, %g, %g)" % (self.x0_pt, self.y0_pt, self.x1_pt, self.y1_pt,
                                                                  self.x2_pt, self.y2_pt, self.x3_pt, self.y3_pt)
 
-    def _midpointsplit(self, epsilon):
+    def _midpointsplit(self, epsilon, intersect):
         """split curve into two parts
 
         Helper method to reduce the complexity of a problem by turning
@@ -393,18 +393,55 @@ class normcurve_pt(normsubpathitem):
         def subcurve(x0_pt, y0_pt, x1_pt, y1_pt, x2_pt, y2_pt, x3_pt, y3_pt, newline, newcurve):
             # Before returning the subcurve we check whether we can
             # replace it by a normline within an error of epsilon pts.
-            # The maximal error value is given by the modulus of the
-            # difference between the length of the control polygon
-            # (i.e. |P1-P0|+|P2-P1|+|P3-P2|), which consitutes an upper
-            # bound for the length, and the length of the straight line
-            # between start and end point of the normcurve (i.e. |P3-P1|),
-            # which represents a lower bound.
             l0_pt = math.hypot(x3_pt-x0_pt, y3_pt-y0_pt)
             l1_pt = math.hypot(x1_pt-x0_pt, y1_pt-y0_pt)
             l2_pt = math.hypot(x2_pt-x1_pt, y2_pt-y1_pt)
             l3_pt = math.hypot(x3_pt-x2_pt, y3_pt-y2_pt)
-            if l1_pt+l2_pt+l3_pt-l0_pt < epsilon:
+
+            # When arclen calculation is performed, the maximal error value is
+            # given by the modulus of the difference between the length of the
+            # control polygon (i.e. |P1-P0|+|P2-P1|+|P3-P2|), which consitutes
+            # an upper bound for the length, and the length of the straight
+            # line between start and end point of the normcurve (i.e. |P3-P1|),
+            # which represents a lower bound.
+            if not intersect and l1_pt+l2_pt+l3_pt-l0_pt < epsilon:
+                # We can ignore the sign of l1_pt, l2_pt and l3_pt, as the sum
+                # of the absolute values is close to l0_pt anyway.
                 return newline(x0_pt, y0_pt, x3_pt, y3_pt, l1_pt, l2_pt, l3_pt)
+
+            if intersect:
+                # For intersections we calculate the distrance of
+                # (x1_pt, y1_pt) and (x2_pt, y2_pt) from the line defined by
+                # (x0_pt, y0_pt) and (x3_pt, y3_pt). We skip the division by
+                # l0_pt in the result and calculate d1_pt*l0_pt and d2_pt*l0_pt
+                # instead.
+                d1_pt_times_l0_pt = (x3_pt-x0_pt)*(y0_pt-y1_pt) - (x0_pt-x1_pt)*(y3_pt-y0_pt)
+                d2_pt_times_l0_pt = (x0_pt-x3_pt)*(y3_pt-y2_pt) - (x3_pt-x2_pt)*(y0_pt-y3_pt)
+                if abs(d1_pt_times_l0_pt) < epsilon*l0_pt and abs(d2_pt_times_l0_pt) < epsilon*l0_pt:
+                    # We could return the line now, but for this to be correct,
+                    # we would need to take into account the signs of l1_pt,
+                    # l2_pt, and l3_pt. In addition, this could result in
+                    # multiple parameters mathing a position on the line. While
+                    # this should be forbidden by properly constructed
+                    # normpaths, we will still handle this case here by checking
+                    # the signs of l1_pt, l2_pt, and l3_pt.
+                    s1 = (x1_pt-x0_pt)*(x3_pt-x0_pt)+(y1_pt-y0_pt)*(y3_pt-y0_pt)
+                    s2 = (x2_pt-x1_pt)*(x3_pt-x0_pt)+(y2_pt-y1_pt)*(y3_pt-y0_pt)
+                    s3 = (x2_pt-x3_pt)*(x0_pt-x3_pt)+(y2_pt-y3_pt)*(y0_pt-y3_pt)
+
+                    # If the signs are negative (i.e. we have backwards
+                    # directed segments in the control polygon), we can still
+                    # continue, if the corresponding segment is smaller than
+                    # epsilon.
+                    if ((s1 > 0 or l1_pt < epsilon) and
+                        (s2 > 0 or l2_pt < epsilon) and
+                        (s3 > 0 or l3_pt < epsilon)):
+                        # As the sign of the segments is either positive or the
+                        # segments are short, we can continue with the unsigned
+                        # values for the segment lengths, as for the arclen
+                        # calculation.
+                        return newline(x0_pt, y0_pt, x3_pt, y3_pt, l1_pt, l2_pt, l3_pt)
+
             return newcurve(x0_pt, y0_pt, x1_pt, y1_pt, x2_pt, y2_pt, x3_pt, y3_pt)
 
         return (subcurve(self.x0_pt, self.y0_pt,
@@ -419,7 +456,7 @@ class normcurve_pt(normsubpathitem):
                          _rightnormline_pt, _rightnormcurve_pt))
 
     def _arclentoparam_pt(self, lengths_pt, epsilon):
-        a, b = self._midpointsplit(epsilon)
+        a, b = self._midpointsplit(epsilon, intersect=False)
         params_a, arclen_a_pt = a._arclentoparam_pt(lengths_pt, 0.5*epsilon)
         params_b, arclen_b_pt = b._arclentoparam_pt([length_pt - arclen_a_pt for length_pt in lengths_pt], 0.5*epsilon)
         params = []
@@ -435,7 +472,7 @@ class normcurve_pt(normsubpathitem):
         return self._arclentoparam_pt(lengths_pt, epsilon)[0]
 
     def arclen_pt(self, epsilon, upper=False):
-        a, b = self._midpointsplit(epsilon)
+        a, b = self._midpointsplit(epsilon, intersect=False)
         return a.arclen_pt(0.5*epsilon, upper=upper) + b.arclen_pt(0.5*epsilon, upper=upper)
 
     def at_pt(self, params):
@@ -524,7 +561,7 @@ class normcurve_pt(normsubpathitem):
         # Bezier curves.
         if not self.cbox().intersects(other.cbox()):
             return []
-        a, b = self._midpointsplit(epsilon)
+        a, b = self._midpointsplit(epsilon, intersect=True)
         # To improve the performance in the general case we alternate the
         # splitting process between the two normsubpathitems
         return ( [(a.subparamtoparam(a_t), o_t) for o_t, a_t in other.intersect(a, epsilon)] +
