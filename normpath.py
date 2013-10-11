@@ -256,15 +256,90 @@ class normline_pt(normsubpathitem):
 
             b_deltax_pt = other.x1_pt - other.x0_pt
             b_deltay_pt = other.y1_pt - other.y0_pt
-            try:
-                det = 1.0 / (b_deltax_pt * a_deltay_pt - b_deltay_pt * a_deltax_pt)
-            except ArithmeticError:
-                # a unique (within epsilon) solution is possible even for colinear lines
-                if math.hypot(self.x1_pt - other.x0_pt, self.y1_pt - other.y0_pt) < epsilon:
-                    return [(1, 0)]
-                if math.hypot(self.x0_pt - other.x1_pt, self.y0_pt - other.y1_pt) < epsilon:
-                    return [(0, 1)]
+
+            invdet = b_deltax_pt * a_deltay_pt - b_deltay_pt * a_deltax_pt
+
+            if invdet < epsilon * epsilon:
+                # At least one of the lines is either very short or the lines
+                # are almost parallel. In both cases, a proper colinear check
+                # is adequate, already. Let's first check for short lines.
+                short_self = math.hypot(self.x1_pt - self.x0_pt,
+                                        self.y1_pt - self.y0_pt) < epsilon
+                short_other = math.hypot(other.x1_pt - other.x0_pt,
+                                         other.y1_pt - other.y0_pt) < epsilon
+
+                # For short lines we will only take their middle point into
+                # account.
+                if short_self:
+                    sx_pt = 0.5*(self.x0_pt + self.x1_pt)
+                    sy_pt = 0.5*(self.y0_pt + self.x1_pt)
+                if short_other:
+                    ox_pt = 0.5*(other.x0_pt + other.x1_pt)
+                    oy_pt = 0.5*(other.y0_pt + other.y1_pt)
+
+                # We define two helper functions returning a valid parameter of
+                # a point on a line given a point close to this line.
+                def closepoint(x_pt, y_pt,
+                               x0_pt, y0_pt, x1_pt, y1_pt):
+                    """Returns the line parameter p in range [0, 1] for which
+                    the point (x_pt, y_pt) is closest to the line defined by
+                    ((x0_pt, y0_pt), (x1_pt, y1_pt)). The distance of (x0_pt,
+                    y0_pt) and (x1_pt, y1_pt) must be larger than epsilon. If
+                    the point has a greater distance than epsilon, None is
+                    returned."""
+                    p = (((x0_pt - x_pt)*(x0_pt - x1_pt) +
+                          (y0_pt - y_pt)*(y0_pt - y1_pt))/
+                         ((x1_pt - x0_pt)**2 + (y1_pt - y0_pt)**2))
+                    p = min(1, max(0, p))
+                    xs_pt = x0_pt + p*(x1_pt - x0_pt)
+                    xs_pt = x0_pt + p*(x1_pt - x0_pt)
+                    return p
+
+                def closepoint2(x_pt, y_pt,
+                                x0_pt, y0_pt, x1_pt, y1_pt,
+                                X0_pt, Y0_pt, X1_pt, Y1_pt):
+                    """Same as closepoint but for two lines ((x0_pt, y0_pt),
+                    (x1_pt, y1_pt) and ((X0_pt, Y0_pt), (X1_pt, Y1_pt))
+                    returning a tuple of parameters."""
+                    p = closepoint(x_pt, y_pt, x0_pt, y0_pt, x1_pt, y1_pt)
+                    if p is None:
+                        return None, None
+                    P = closepoint(x_pt, y_pt, X0_pt, Y0_pt, X1_pt, Y1_pt)
+                    return p, P
+
+                if short_self and short_other:
+                    # If both lines are short, we just measure the distance of
+                    # the middle points.
+                    if math.hypot(ox_pt - sx_pt, oy_pt - sy_pt) < epsilon:
+                        return [(0.5, 0.5)]
+                elif short_self:
+                    p = closepoint(sx_pt, sy_pt,
+                                   other.x0_pt, other.y0_pt, other.x1_pt, other.y1_pt)
+                    if p is not None:
+                        return [(0.5, p)]
+                elif short_other:
+                    p = closepoint(ox_pt, oy_pt,
+                                   self.x0_pt, self.y0_pt, self.x1_pt, self.y1_pt)
+                    if p is not None:
+                        return [(p, 0.5)]
+                else:
+                    # For two long colinear lines, we need to test the middle
+                    # points constructed from a beginning and an end point of
+                    # the two lines, in both combinations. We return just one
+                    # solution even when the lines intersect for a whole range.
+                    sp, so = closepoint2(0.5*(self.x0_pt + other.x1_pt), 0.5*(self.y0_pt + other.y1_pt),
+                                         self.x0_pt, self.y0_pt, self.x1_pt, self.y1_pt,
+                                         other.x0_pt, other.y0_pt, other.x1_pt, other.y1_pt)
+                    if sp is not None and so is not None:
+                        return [(sp, so)]
+                    sp, so = closepoint2(0.5*(self.x1_pt + other.x0_pt), 0.5*(self.y1_pt + other.y0_pt),
+                                         self.x0_pt, self.y0_pt, self.x1_pt, self.y1_pt,
+                                         other.x0_pt, other.y0_pt, other.x1_pt, other.y1_pt)
+                    if sp is not None and so is not None:
+                        return [(sp, so)]
                 return []
+
+            det = 1.0 / det
 
             ba_deltax0_pt = other.x0_pt - self.x0_pt
             ba_deltay0_pt = other.y0_pt - self.y0_pt
