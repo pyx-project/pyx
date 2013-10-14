@@ -277,8 +277,8 @@ class normline_pt(normsubpathitem):
                     ox_pt = 0.5*(other.x0_pt + other.x1_pt)
                     oy_pt = 0.5*(other.y0_pt + other.y1_pt)
 
-                # We define two helper functions returning a valid parameter of
-                # a point on a line given a point close to this line.
+                # We define a helper function returning a valid parameter of a
+                # point on a line given a point close to this line.
                 def closepoint(x_pt, y_pt,
                                x0_pt, y0_pt, x1_pt, y1_pt):
                     """Returns the line parameter p in range [0, 1] for which
@@ -297,18 +297,6 @@ class normline_pt(normsubpathitem):
                         return p
                     return None # just be explicit in returning None here
 
-                def closepoint2(x_pt, y_pt,
-                                x0_pt, y0_pt, x1_pt, y1_pt,
-                                X0_pt, Y0_pt, X1_pt, Y1_pt):
-                    """Same as closepoint but for two lines ((x0_pt, y0_pt),
-                    (x1_pt, y1_pt) and ((X0_pt, Y0_pt), (X1_pt, Y1_pt))
-                    returning a tuple of parameters."""
-                    p = closepoint(x_pt, y_pt, x0_pt, y0_pt, x1_pt, y1_pt)
-                    if p is None:
-                        return None, None
-                    P = closepoint(x_pt, y_pt, X0_pt, Y0_pt, X1_pt, Y1_pt)
-                    return p, P
-
                 if short_self and short_other:
                     # If both lines are short, we just measure the distance of
                     # the middle points.
@@ -325,20 +313,22 @@ class normline_pt(normsubpathitem):
                     if p is not None:
                         return [(p, 0.5)]
                 else:
-                    # For two long colinear lines, we need to test the middle
-                    # points constructed from a beginning and an end point of
-                    # the two lines, in both combinations. We return just one
+                    # For two long colinear lines, we need to test the
+                    # beginning and end point of the two lines with respect to
+                    # the other line, in all combinations. We return just one
                     # solution even when the lines intersect for a whole range.
-                    sp, so = closepoint2(0.5*(self.x0_pt + other.x1_pt), 0.5*(self.y0_pt + other.y1_pt),
-                                         self.x0_pt, self.y0_pt, self.x1_pt, self.y1_pt,
-                                         other.x0_pt, other.y0_pt, other.x1_pt, other.y1_pt)
-                    if sp is not None and so is not None:
-                        return [(sp, so)]
-                    sp, so = closepoint2(0.5*(self.x1_pt + other.x0_pt), 0.5*(self.y1_pt + other.y0_pt),
-                                         self.x0_pt, self.y0_pt, self.x1_pt, self.y1_pt,
-                                         other.x0_pt, other.y0_pt, other.x1_pt, other.y1_pt)
-                    if sp is not None and so is not None:
-                        return [(sp, so)]
+                    p = closepoint(self.x0_pt, self.y0_pt, other.x0_pt, other.y0_pt, other.x1_pt, other.y1_pt)
+                    if p is not None:
+                        return [(0, p)]
+                    p = closepoint(self.x1_pt, self.y1_pt, other.x0_pt, other.y0_pt, other.x1_pt, other.y1_pt)
+                    if p is not None:
+                        return [(1, p)]
+                    p = closepoint(other.x0_pt, other.y0_pt, self.x0_pt, self.y0_pt, self.x1_pt, self.y1_pt)
+                    if p is not None:
+                        return [(p, 0)]
+                    p = closepoint(other.x1_pt, other.y1_pt, self.x0_pt, self.y0_pt, self.x1_pt, self.y1_pt)
+                    if p is not None:
+                        return [(p, 1)]
                 return []
 
             det = 1.0 / invdet
