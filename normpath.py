@@ -292,8 +292,10 @@ class normline_pt(normsubpathitem):
                          ((x1_pt - x0_pt)**2 + (y1_pt - y0_pt)**2))
                     p = min(1, max(0, p))
                     xs_pt = x0_pt + p*(x1_pt - x0_pt)
-                    xs_pt = x0_pt + p*(x1_pt - x0_pt)
-                    return p
+                    ys_pt = y0_pt + p*(y1_pt - y0_pt)
+                    if math.hypot(xs_pt - x_pt, ys_pt - y_pt) < epsilon:
+                        return p
+                    return None # just be explicit in returning None here
 
                 def closepoint2(x_pt, y_pt,
                                 x0_pt, y0_pt, x1_pt, y1_pt,
