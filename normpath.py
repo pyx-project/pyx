@@ -259,10 +259,11 @@ class normline_pt(normsubpathitem):
 
             invdet = b_deltax_pt * a_deltay_pt - b_deltay_pt * a_deltax_pt
 
-            if invdet < epsilon * epsilon:
-                # At least one of the lines is either very short or the lines
-                # are almost parallel. In both cases, a proper colinear check
-                # is adequate, already. Let's first check for short lines.
+            if abs(invdet) < epsilon * epsilon:
+                # As invdet measures the area spanned by the two lines, least
+                # one of the lines is either very short or the lines are almost
+                # parallel. In both cases, a proper colinear check is adequate,
+                # already. Let's first check for short lines.
                 short_self = math.hypot(self.x1_pt - self.x0_pt,
                                         self.y1_pt - self.y0_pt) < epsilon
                 short_other = math.hypot(other.x1_pt - other.x0_pt,
@@ -277,8 +278,6 @@ class normline_pt(normsubpathitem):
                     ox_pt = 0.5*(other.x0_pt + other.x1_pt)
                     oy_pt = 0.5*(other.y0_pt + other.y1_pt)
 
-                # We define a helper function returning a valid parameter of a
-                # point on a line given a point close to this line.
                 def closepoint(x_pt, y_pt,
                                x0_pt, y0_pt, x1_pt, y1_pt):
                     """Returns the line parameter p in range [0, 1] for which
