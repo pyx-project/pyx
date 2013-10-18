@@ -498,9 +498,6 @@ class normcurve_pt(normsubpathitem):
                     # we would need to take into account the signs of l1_pt,
                     # l2_pt, and l3_pt. In addition, this could result in
                     # multiple parameters matching a position on the line.
-                    # While this should be forbidden by properly constructed
-                    # normpaths, we will still handle this case here by checking
-                    # the signs of l1_pt, l2_pt, and l3_pt.
                     s1 = (x1_pt-x0_pt)*(x3_pt-x0_pt)+(y1_pt-y0_pt)*(y3_pt-y0_pt)
                     s2 = (x2_pt-x1_pt)*(x3_pt-x0_pt)+(y2_pt-y1_pt)*(y3_pt-y0_pt)
                     s3 = (x2_pt-x3_pt)*(x0_pt-x3_pt)+(y2_pt-y3_pt)*(y0_pt-y3_pt)
