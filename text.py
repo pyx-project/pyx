@@ -806,11 +806,9 @@ class textbox(box.rect, baseclasses.canvasitem):
         self.insertdvicanvas = False
 
     def transform(self, *trafos):
-        if self.dvicanvas is not None:
-            raise ValueError("can't apply after dvicanvas was inserted")
         box.rect.transform(self, *trafos)
         for trafo in trafos:
-            self.texttrafo = trafo * self.texttrafo
+            self.dvicanvas.trafo = trafo * self.dvicanvas.trafo
 
     def readdvipage(self, dvifile, page):
         self.dvicanvas = dvifile.readpage([ord("P"), ord("y"), ord("X"), page, 0, 0, 0, 0, 0, 0],
