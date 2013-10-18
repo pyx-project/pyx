@@ -320,6 +320,72 @@ to each other since otherwise the straight line approximation would
 not be valid at all.
 % >>>
 
+\section{Relative coordinates}
+
+A B\'ezier curve is given by
+\begin{equation}
+  \vec b(t) = (1-t)^3\vec p_0 + 3t(1-t)^2\vec p_1 + 3t^2(1-t)\vec p_2 + t^3\vec p_3
+\end{equation}
+where $\vec p_0 = (x_0, y_0)$, $\vec p_1 = (x_1, y_1)$, $\vec p_2 =
+(x_2, y_2)$, and $\vec p_3 = (x_3, y_3)$ are the control points.
+
+When $\vec p_0$ differs from $\vec p_3$ we can express the B\'ezier
+curve in relative coordinates $r(t)$ and $s(t)$ by
+\begin{equation}
+  \vec b(t) = \vec q + r(t)\vec r + s(t)\vec s
+\end{equation}
+with
+\begin{align}
+  \vec q & = \vec p_0\\
+  \vec r & = \vec p_3 - \vec p_0 = \left(\begin{array}{c} x_3 - x_0 \\ y_3 - y_0 \end{array}\right)\\
+  \vec s & = \left(\begin{array}{c} y_3 - y_0 \\ x_0 - x_3 \end{array}\right)
+\end{align}
+
+Note that
+\begin{equation}
+  \vec r\cdot\vec r = \vec s\cdot\vec s := l^2
+\end{equation}
+where $l$ is the distance between $\vec p_0$ and $\vec p_3$.
+
+In addition $\vec r$ and $\vec s$ are perpendicular:
+\begin{equation}
+  \vec r\cdot\vec s = 0
+\end{equation}
+
+We can express the control points in the new coordinates:
+\begin{align}
+  \vec p_0 & = \vec q\\
+  \vec p_1 & = \vec q + r_1\vec r + s_1\vec s\\
+  \vec p_2 & = \vec q + r_2\vec r + s_2\vec s\\
+  \vec p_3 & = \vec q + \vec r
+\end{align}
+
+The coefficients $r_1$, $r_2$, $s_1$, $s_2$ are given by scalar
+products due to the properties of $\vec r$ and $\vec s$ given above:
+\begin{align}
+  r_1 l^2 & = (\vec p_1 - \vec p_0)\cdot\vec r\\
+  r_2 l^2 & = (\vec p_2 - \vec p_0)\cdot\vec r\\
+  s_1 l^2 & = (\vec p_1 - \vec p_0)\cdot\vec s\\
+  s_2 l^2 & = (\vec p_2 - \vec p_0)\cdot\vec s
+\end{align}
+
+The parametric functions $r(t)$ and $s(t)$ become
+\begin{align}
+  r(t) & = 3t(1-t)^2 r_1 + 3t^2(1-t) r_2 + t^3\\
+  s(t) & = 3t(1-t)^2 s_1 + 3t^2(1-t) s_2
+\end{align}
+
+\emph{Note:} Originally the idea was to use relative coordinates to
+remove unstabilities in B\'ezier curves (especially cusps) considering
+all points with $\dot r(t)$ being zero or extremal. This idea works
+very well in general, and could, for example, also remove
+self-intersections. (You can get rid of any backwards directed curve
+sections, i.e. where $\dot r(t)<0$.) However, the whole idea has been
+discarded as $\dot r(t)$ could be close to zero for $t=0$ and $t=1$.
+The pre-removal of such problems would introduce major defects to the
+B\'ezier curve (like changing the direction of the tangential vector
+at the beginning and the end point).
+
 \end{document}
 
 % vim:foldmethod=marker:foldmarker=<<<,>>>
