@@ -807,8 +807,9 @@ class textbox(box.rect, baseclasses.canvasitem):
 
     def transform(self, *trafos):
         box.rect.transform(self, *trafos)
-        for trafo in trafos:
-            self.dvicanvas.trafo = trafo * self.dvicanvas.trafo
+        if self.dvicanvas:
+            for trafo in trafos:
+                self.dvicanvas.trafo = trafo * self.dvicanvas.trafo
 
     def readdvipage(self, dvifile, page):
         self.dvicanvas = dvifile.readpage([ord("P"), ord("y"), ord("X"), page, 0, 0, 0, 0, 0, 0],
