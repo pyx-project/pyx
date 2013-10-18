@@ -425,38 +425,49 @@ class normcurve_pt(normsubpathitem):
         return "normcurve_pt(%g, %g, %g, %g, %g, %g, %g, %g)" % (self.x0_pt, self.y0_pt, self.x1_pt, self.y1_pt,
                                                                  self.x2_pt, self.y2_pt, self.x3_pt, self.y3_pt)
 
-    def _midpointsplit(self, epsilon, intersect):
-        """split curve into two parts
+    def _split(self, t=0.5, epsilon=None, intersect=False):
+        """Split curve into two parts
 
-        Helper method to reduce the complexity of a problem by turning
-        a normcurve_pt into several normline_pt segments. This method
-        returns normcurve_pt instances only, when they are not yet straight
-        enough to be replaceable by normcurve_pt instances. Thus a recursive
-        midpointsplitting will turn a curve into line segments with the
-        given precision epsilon.
+        The splitting point is defined by the parameter t (in range 0 to 1).
+        When epsilon is None, the two resulting curves are returned. However,
+        when epsilon is set to a (small) float, the method can be used
+        recursively to reduce the complexity of a problem by turning a
+        normcurve_pt into several normline_pt segments. The method returns
+        normcurve_pt instances only, when they are not yet straight enough to
+        be replaceable by normline_pt instances. The criteria for returning a
+        line instead of a curve depends on the value of the boolean intersect.
+        When not set, the abort cirteria is defined by the error of the arclen
+        of the curve vs. the line not being larger than epsilon. When in
+        intersect mode, all points of the curve must be closer to the line than
+        epsilon.
         """
+
+        s = 1-t
 
         # first, we have to calculate the  midpoints between adjacent
         # control points
-        x01_pt = 0.5*(self.x0_pt + self.x1_pt)
-        y01_pt = 0.5*(self.y0_pt + self.y1_pt)
-        x12_pt = 0.5*(self.x1_pt + self.x2_pt)
-        y12_pt = 0.5*(self.y1_pt + self.y2_pt)
-        x23_pt = 0.5*(self.x2_pt + self.x3_pt)
-        y23_pt = 0.5*(self.y2_pt + self.y3_pt)
+        x01_pt = s*self.x0_pt + t*self.x1_pt
+        y01_pt = s*self.y0_pt + t*self.y1_pt
+        x12_pt = s*self.x1_pt + t*self.x2_pt
+        y12_pt = s*self.y1_pt + t*self.y2_pt
+        x23_pt = s*self.x2_pt + t*self.x3_pt
+        y23_pt = s*self.y2_pt + t*self.y3_pt
 
         # In the next iterative step, we need the midpoints between 01 and 12
         # and between 12 and 23
-        x01_12_pt = 0.5*(x01_pt + x12_pt)
-        y01_12_pt = 0.5*(y01_pt + y12_pt)
-        x12_23_pt = 0.5*(x12_pt + x23_pt)
-        y12_23_pt = 0.5*(y12_pt + y23_pt)
+        x01_12_pt = s*x01_pt + t*x12_pt
+        y01_12_pt = s*y01_pt + t*y12_pt
+        x12_23_pt = s*x12_pt + t*x23_pt
+        y12_23_pt = s*y12_pt + t*y23_pt
 
         # Finally the midpoint is given by
-        xmidpoint_pt = 0.5*(x01_12_pt + x12_23_pt)
-        ymidpoint_pt = 0.5*(y01_12_pt + y12_23_pt)
+        xmidpoint_pt = s*x01_12_pt + t*x12_23_pt
+        ymidpoint_pt = s*y01_12_pt + t*y12_23_pt
 
         def subcurve(x0_pt, y0_pt, x1_pt, y1_pt, x2_pt, y2_pt, x3_pt, y3_pt, newline, newcurve):
+            if epsilon is None:
+                return normcurve_pt(x0_pt, y0_pt, x1_pt, y1_pt, x2_pt, y2_pt, x3_pt, y3_pt)
+
             # Before returning the subcurve we check whether we can
             # replace it by a normline within an error of epsilon pts.
             l0_pt = math.hypot(x3_pt-x0_pt, y3_pt-y0_pt)
@@ -521,7 +532,7 @@ class normcurve_pt(normsubpathitem):
                          _rightnormline_pt, _rightnormcurve_pt))
 
     def _arclentoparam_pt(self, lengths_pt, epsilon):
-        a, b = self._midpointsplit(epsilon, intersect=False)
+        a, b = self._split(epsilon=epsilon)
         params_a, arclen_a_pt = a._arclentoparam_pt(lengths_pt, 0.5*epsilon)
         params_b, arclen_b_pt = b._arclentoparam_pt([length_pt - arclen_a_pt for length_pt in lengths_pt], 0.5*epsilon)
         params = []
@@ -537,7 +548,7 @@ class normcurve_pt(normsubpathitem):
         return self._arclentoparam_pt(lengths_pt, epsilon)[0]
 
     def arclen_pt(self, epsilon, upper=False):
-        a, b = self._midpointsplit(epsilon, intersect=False)
+        a, b = self._split(epsilon=epsilon)
         return a.arclen_pt(0.5*epsilon, upper=upper) + b.arclen_pt(0.5*epsilon, upper=upper)
 
     def at_pt(self, params):
@@ -626,7 +637,7 @@ class normcurve_pt(normsubpathitem):
         # Bezier curves.
         if not self.cbox().intersects(other.cbox()):
             return []
-        a, b = self._midpointsplit(epsilon, intersect=True)
+        a, b = self._split(epsilon=epsilon, intersect=True)
         # To improve the performance in the general case we alternate the
         # splitting process between the two normsubpathitems
         return ( [(a.subparamtoparam(a_t), o_t) for o_t, a_t in other.intersect(a, epsilon)] +
