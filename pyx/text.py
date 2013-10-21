@@ -623,7 +623,8 @@ class MonitorOutput(threading.Thread):
         self._expect = queue.Queue(1)
         self._received = threading.Event()
         self._output = queue.Queue()
-        threading.Thread.__init__(self, name=name, daemon=1)
+        threading.Thread.__init__(self, name=name)
+        self.daemon = True
         self.start()
 
     def expect(self, s):
