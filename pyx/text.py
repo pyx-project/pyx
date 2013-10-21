@@ -27,6 +27,12 @@ from pyx.dvi import dvifile
 
 logger = logging.getLogger("pyx")
 
+
+def indent_text(text):
+    "Prepends two spaces to each line in text."
+    return "".join("  " + line for line in text.splitlines(True))
+
+
 def remove_string(p, s):
     """Removes a string from a string.
 
@@ -351,7 +357,7 @@ class texmessage:
 
         """
         if msg:
-             logger.warning("ignoring TeX warnings:\n%s" % textwrap.indent(msg.rstrip(), "  "))
+             logger.warning("ignoring TeX warnings:\n%s" % indent_text(msg.rstrip()))
         return ""
 
     @staticmethod
@@ -1049,13 +1055,13 @@ class SingleRunner:
         except TexResultError as e:
             if self.errordetail > errordetail.none:
                 def add(msg): e.args = (e.args[0] + msg,)
-                add("\nThe expression passed to TeX was:\n{}".format(textwrap.indent(expr.rstrip(), "  ")))
+                add("\nThe expression passed to TeX was:\n{}".format(indent_text(expr.rstrip())))
                 if self.errordetail == errordetail.full:
-                    add("\nThe return message from TeX was:\n{}".format(textwrap.indent(unparsed.rstrip(), "  ")))
+                    add("\nThe return message from TeX was:\n{}".format(indent_text(unparsed.rstrip())))
                 if self.errordetail == errordetail.default:
                     if parsed.count('\n') > 6:
                         parsed = "\n".join(parsed.split("\n")[:5] + ["(cut after 5 lines; use errordetail.full for all output)"])
-                add("\nAfter parsing the return message from TeX, the following was left:\n{}".format(textwrap.indent(parsed.rstrip(), "  ")))
+                add("\nAfter parsing the return message from TeX, the following was left:\n{}".format(indent_text(parsed.rstrip())))
             raise e
         if oldstate == newstate == STATE_TYPESET:
             return extent
