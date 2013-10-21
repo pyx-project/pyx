@@ -212,7 +212,8 @@ class kpsewhich:
         for name in names:
             try:
                 with Popen([self.kpsewhich, '--format', name, filename], stdout=subprocess.PIPE).stdout as output:
-                    full_filename = io.TextIOWrapper(output, encoding="ascii", errors="surrogateescape").readline().rstrip()
+                    with io.TextIOWrapper(output, encoding="ascii", errors="surrogateescape") as text_output:
+                        full_filename = text_output.readline().rstrip()
             except OSError:
                 return []
             if full_filename:
@@ -244,11 +245,12 @@ class locate:
         full_filename = None
         for extension in extensions:
             with Popen([self.locate, filename+extension], stdout=subprocess.PIPE).stdout as output:
-                for line in io.TextIOWrapper(output, encoding="ascii", errors="surrogateescape"):
-                    line = line.rstrip()
-                    if os.path.basename(line) == filename+extension:
-                        full_filename = line
-                        break
+                with io.TextIOWrapper(output, encoding="ascii", errors="surrogateescape") as text_output:
+                    for line in text_output:
+                        line = line.rstrip()
+                        if os.path.basename(line) == filename+extension:
+                            full_filename = line
+                            break
             if full_filename:
                 break
         else:
