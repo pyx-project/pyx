@@ -814,6 +814,8 @@ class textbox(box.rect, baseclasses.canvasitem):
 
     def transform(self, *trafos):
         box.rect.transform(self, *trafos)
+        for trafo in trafos:
+            self.texttrafo = trafo * self.texttrafo
         if self.dvicanvas:
             for trafo in trafos:
                 self.dvicanvas.trafo = trafo * self.dvicanvas.trafo
