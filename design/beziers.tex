@@ -637,6 +637,35 @@ the cubic equation for $x$ leads us to
 %
 % >>>
 
+\section{Removing cusps}
+
+A cusp is a point on a B\'ezier curve $\vec b(t)$, where
+$\mathrm{d}\vec b(t)/\mathrm{d}t=\dot{\vec b}(t)$ vanishs.
+For stability we don't want it to be almost zero either.
+For comparison, a straight line
+$\vec l(t)=\vec p_0 + (\vec p_3-\vec p_0)t$ has the constant derivative
+$\mathrm{d}\vec l(t)/\mathrm{d}t = \dot{\vec l}(t) = \vec p_3-\vec p_0$.
+As lines shorter than $\epsilon$ are forbidden, we have
+$|\dot{\vec l}(t)| \ge \epsilon$. We want to enforce
+this limit to B\'ezier curves as well, \emph{i.e.}
+$|\dot{\vec b}(t)| \ge \epsilon$.
+
+First we have to take into account the beginning ($t=0$) and end point
+($t=1$) of the B\'ezier curve. Here, the derivates are given by
+$\dot{\vec b}(0) = 3(\vec p_1-\vec p_0)$ and
+$\dot{\vec b}(1) = 3(\vec p_3-\vec p_2)$. In case the absolute value
+of the derivatives are smaller than $\epsilon$, we need to shift
+$\vec p_1$ and $\vec p_2$, respectively. For $\vec p_1$ a new value is
+choosen in the direction of $\vec p_2$ with respect to $\vec p_0$ if
+$\vec p_2$ is more distant than $\epsilon/3$, otherwise the direction
+of $\vec p_3$ is used. The distance of the new point is choosen such
+that the absolute value of the derivate becomes $\epsilon$. $\vec p_2$
+is shifted similarly using the unshifted position for $\vec p_1$.
+
+Once the derivatives at the boundary fulfil the requirement, we need
+to search for minimal values of the absolute value (or the square) of
+the derivate within the valid parameter range. If the absolute value
+is smaller at an extrema, the curve is split at that point.
 \end{document}
 
 % vim:foldmethod=marker:foldmarker=<<<,>>>

@@ -973,19 +973,80 @@ class normsubpath:
                 raise NormpathException("Cannot append to closed normsubpath")
 
             if self.skippedline:
-                xs_pt, ys_pt = self.skippedline.atbegin_pt()
-            else:
-                xs_pt, ys_pt = anormsubpathitem.atbegin_pt()
-            xe_pt, ye_pt = anormsubpathitem.atend_pt()
-
-            if (math.hypot(xe_pt-xs_pt, ye_pt-ys_pt) >= self.epsilon or
-                anormsubpathitem.arclen_pt(self.epsilon) >= self.epsilon):
-                if self.skippedline:
-                    anormsubpathitem = anormsubpathitem.modifiedbegin_pt(xs_pt, ys_pt)
-                self.normsubpathitems.append(anormsubpathitem)
+                anormsubpathitem = anormsubpathitem.modifiedbegin_pt(*self.skippedline.atbegin_pt())
                 self.skippedline = None
+
+            if isinstance(anormsubpathitem, normline_pt):
+                if math.hypot(anormsubpathitem.x1_pt-anormsubpathitem.x0_pt, anormsubpathitem.y1_pt-anormsubpathitem.y0_pt) >= self.epsilon:
+                    self.normsubpathitems.append(anormsubpathitem)
+                else:
+                    self.skippedline = anormsubpathitem
             else:
-                self.skippedline = normline_pt(xs_pt, ys_pt, xe_pt, ye_pt)
+                # it is a normcurve_pt
+                x0_pt = anormsubpathitem.x0_pt
+                y0_pt = anormsubpathitem.y0_pt
+                x1_pt = anormsubpathitem.x1_pt
+                y1_pt = anormsubpathitem.y1_pt
+                x2_pt = anormsubpathitem.x2_pt
+                y2_pt = anormsubpathitem.y2_pt
+                x3_pt = anormsubpathitem.x3_pt
+                y3_pt = anormsubpathitem.y3_pt
+
+                l03_pt = math.hypot(x3_pt-x0_pt, y3_pt-y0_pt)
+                l01_pt = math.hypot(x1_pt-x0_pt, y1_pt-y0_pt)
+                l02_pt = math.hypot(x2_pt-x0_pt, y2_pt-y0_pt)
+                l23_pt = math.hypot(x2_pt-x3_pt, y2_pt-y3_pt)
+                l13_pt = math.hypot(x1_pt-x3_pt, y1_pt-y3_pt)
+
+                if l03_pt >= self.epsilon or ( (l01_pt*3 >= self.epsilon or l02_pt*3 >= self.epsilon) and
+                                               (l23_pt*3 >= self.epsilon or l13_pt*3 >= self.epsilon) ):
+                    # We first may shift (x1_pt, y1_pt) and (x2_pt, y2_pt) to
+                    # have minimal derivates at the beginning and end point.
+
+                    # keep a copy of (x1_pt, y1_pt) for shifting (x2_pt, y2_pt)
+                    x1o_pt = x1_pt
+                    y1o_pt = y1_pt
+
+                    if l01_pt*3 < self.epsilon:
+                        if l02_pt*3 >= self.epsilon:
+                            x1_pt = x0_pt + (x2_pt-x0_pt)*self.epsilon/l02_pt/3
+                            y1_pt = y0_pt + (y2_pt-y0_pt)*self.epsilon/l02_pt/3
+                        else:
+                            x1_pt = x0_pt + (x3_pt-x0_pt)*self.epsilon/l03_pt/3
+                            y1_pt = y0_pt + (y3_pt-y0_pt)*self.epsilon/l03_pt/3
+
+                    if l23_pt*3 < self.epsilon:
+                        if l13_pt*3 >= self.epsilon:
+                            x2_pt = x3_pt + (x1o_pt-x3_pt)*self.epsilon/l13_pt/3
+                            y2_pt = y3_pt + (y1o_pt-y3_pt)*self.epsilon/l13_pt/3
+                        else:
+                            x2_pt = x3_pt + (x0_pt-x3_pt)*self.epsilon/l03_pt/3
+                            y2_pt = y3_pt + (y0_pt-y3_pt)*self.epsilon/l03_pt/3
+
+                    newitems = [normcurve_pt(x0_pt, y0_pt, x1_pt, y1_pt, x2_pt, y2_pt, x3_pt, y3_pt)]
+
+                    # find extrema of the derivative
+                    ax = x3_pt - 3*x2_pt + 3*x1_pt - x0_pt
+                    bx = 2*x0_pt - 4*x1_pt + 2*x2_pt
+                    cx = x1_pt - x0_pt
+                    ay = y3_pt - 3*y2_pt + 3*y1_pt - y0_pt
+                    by = 2*y0_pt - 4*y1_pt + 2*y2_pt
+                    cy = y1_pt - y0_pt
+                    roots = mathutils.realpolyroots(4*ax*ax + 4*ay*ay, 6*ax*bx + 6*ay*by, 4*ax*cx + 4*ay*cy + 2*bx*bx + 2*by*by, 2*bx*cx + 2*by*cy)
+
+                    # split at points of too small derivative
+                    splitpoints = [t for t in roots if 0 < t < 1 and 9*((ax*t*t+bx*t+cx)**2+(ay*t*t+by*t+cy)**2) < self.epsilon*self.epsilon]
+                    if not splitpoints:
+                        self.normsubpathitems.extend(newitems)
+                    else:
+                        splitpoints.sort()
+                        for i, splitpoint in enumerate(splitpoints):
+                            if i:
+                                splitpoint = (splitpoint-splitpoints[i-1])/(1-splitpoints[i-1])
+                            newitems.extend(newitems.pop()._split(splitpoint))
+                        self.extend(newitems)
+                else:
+                    self.skippedline = normline_pt(anormsubpathitem.x0_pt, anormsubpathitem.y0_pt, anormsubpathitem.x3_pt, anormsubpathitem.y3_pt)
 
     def arclen_pt(self, upper=False):
         """return arc length in pts
