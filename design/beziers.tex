@@ -322,6 +322,7 @@ not be valid at all.
 
 \section{Relative coordinates}
 
+% <<<
 A B\'ezier curve is given by
 \begin{equation}
   \vec b(t) = (1-t)^3\vec p_0 + 3t(1-t)^2\vec p_1 + 3t^2(1-t)\vec p_2 + t^3\vec p_3
@@ -385,6 +386,256 @@ discarded as $\dot r(t)$ could be close to zero for $t=0$ and $t=1$.
 The pre-removal of such problems would introduce major defects to the
 B\'ezier curve (like changing the direction of the tangential vector
 at the beginning and the end point).
+% >>>
+
+\section{Invalid parametrisation}
+
+% <<<
+If the derivative of the parametrisation vanishes (both coordinates) at a
+parameter~$t\in[0,1]$, the parametrisation is considered to be invalid at this
+point. Under which circumstances can this occur? We search for solutions~$t$ for
+the quadratic equations
+%
+\begin{equation}
+  \label{zeroderiv}
+  \begin{aligned}
+    0 = x(t)/3 &= t^2\bigl[(x_3-x_0) - 3(x_2-x_1)\bigr] + 2t\bigl[(x_2-x_1)-(x_1-x_0)\bigr] + (x_1-x_0) \\
+    0 = y(t)/3 &= t^2\bigl[(y_3-y_0) - 3(y_2-y_1)\bigr] + 2t\bigl[(y_2-y_1)-(y_1-y_0)\bigr] + (y_1-y_0)
+  \end{aligned}
+\end{equation}
+%
+Using the usual formula for a quadratic equation $0=at^2 + bt + c$, we get the
+same parameter for $x$- and $y$-coordinates, and the two inequalities from
+$0\leq t\leq1$,
+%
+\begin{equation}
+  \label{samet}
+  t_{1,2} = \frac{1}{2a_x} \Bigl(-b_x \pm^1 \sqrt{b_x^2 - 4a_xc_x}\Bigr)
+          = \frac{1}{2a_y} \Bigl(-b_y \pm^2 \sqrt{b_y^2 - 4a_yc_y}\Bigr)
+\end{equation}
+%
+The two sign choices are independent of each other.
+
+For the moment, we put aside the special cases $p_3=p_0$ and $p_1=p_0$. As
+affine transformations cannot change the degeneracy of the parametrisation, we
+can fix three points without loss of generality:
+%
+\begin{equation}
+  \begin{aligned}
+    (x_0, y_0) = (0, 0),\quad
+    (x_1, y_1) = (0, 1),\quad
+    (x_3, y_3) = (1, 0).
+  \end{aligned}
+\end{equation}
+%
+Thus, the only remaining true parameters are $(x_2, y_2)$. We will use $\Delta x
+= x_2$ and $\Delta y = y_2 - 1$. Equation~\eqref{samet} now becomes
+%
+\begin{equation}
+%   a_y \Bigl(-b_x/2 \pm^1 \sqrt{(b_x/2)^2 - a_xc_x}\Bigr)
+% = a_x \Bigl(-b_y/2 \pm^2 \sqrt{(b_y/2)^2 - a_yc_y}\Bigr)
+%
+%   ( -3\Delta y) \Bigl(-(\Delta x  ) \pm^1 \sqrt{(\Delta x  )^2            }\Bigr)
+% = (1-3\Delta x) \Bigl(-(\Delta y-1) \pm^2 \sqrt{(\Delta y-1)^2 + 3\Delta y}\Bigr)
+%
+ \label{samet2}
+   ( -3\Delta y) \Bigl(-\Delta x  \pm^1 \sqrt{(\Delta x  )^2           }\Bigr)
+ = (1-3\Delta x) \Bigl(1-\Delta y \pm^2 \sqrt{1 + \Delta y + \Delta y^2}\Bigr)
+\end{equation}
+%
+Special care has to be taken if $a_x=0$ or $a_y=0$. For the inequalities, we
+have to consider the signs of $a_x$ and $a_y$ explicitly:
+\arraycolsep=0pt
+%
+\begin{equation}
+  \begin{aligned}
+  0 \leq -\Delta x \pm^1 \sqrt{\Delta x^2} \leq 1-3\Delta x &\quad\text{if $\Delta x < 1/3$ (or $a_x > 0$)} \\
+  0 \leq  \Delta x \mp^1 \sqrt{\Delta x^2} \leq 3\Delta x-1 &\quad\text{if $1/3 < \Delta x$ (or $a_x < 0$)}
+  \end{aligned}
+\end{equation}
+%
+which can be reduced to
+%
+\begin{equation}
+  \label{constr1}
+  \begin{aligned}
+  \text{no constraint} &\quad\text{if $\Delta x \leq 0$} \\
+  \text{only the upper sign of $\pm^1$ is allowed} &\quad\text{if $0 < \Delta x < 1$} \\
+  \text{no constraint} &\quad\text{if $\Delta x \geq 1$}
+  \end{aligned}
+\end{equation}
+%
+Between $0$ and $1$ the upper sign makes the inequality to be trivially
+satisfied, because $-\Delta x + |\Delta x| = 0$.
+
+The inequality constraint can equivalently be formulated for $\Delta y$,
+%
+\begin{equation}
+  \begin{aligned}
+  0 \leq 1-\Delta y \pm^2 \sqrt{1+\Delta y+\Delta y^2} \leq -3\Delta y &\quad\text{if $\Delta y < 0$ (or $a_y > 0$)} \\
+  0 \leq \Delta y-1 \mp^2 \sqrt{1+\Delta y+\Delta y^2} \leq  3\Delta y &\quad\text{if $\Delta y > 0$ (or $a_y < 0$)}
+  \end{aligned}
+\end{equation}
+%
+In the first line, the comparison with~$0$ is always true. In the right
+comparison, the lower sign is always possible and does not yield a constraint,
+whereas the upper sign is only possible for $\Delta y \leq -1$. In the second
+line, the upper sign is incompatible with the left comparison, and the lower
+sign is always possible. We can reduce the conditions to
+%
+\begin{equation}
+  \label{constr2}
+  \begin{aligned}
+  \text{no constraint} &\quad\text{if $\Delta y \leq -1$} \\
+  \text{only the lower sign of $\pm^2$ is allowed} &\quad\text{if $\Delta y > -1$} \\
+  \end{aligned}
+\end{equation}
+%
+
+Equation~\eqref{samet2} with the two constraints \eqref{constr1} and
+\eqref{constr2} is the system of equations that gives us the values $\Delta x,
+\Delta y$ for which the parametrisation could be invalid.
+
+First, let us check that the classic case for a cusp is well described. It has
+$\Delta x=-1, \Delta y=0$. We have no constraint on $x$, and we have to take the
+lower sign on $y$. Indeed, the left-hand side of eq.~\eqref{samet2} vanishes due
+for the lower sign, and the right one vanishes also for the lower sign. This
+case is shown among the examples in figure~\ref{fig:invalid3}.
+
+%
+\begin{figure}[ht]
+  \centering
+  \includegraphics{invalid2}%
+  \caption{Absolute value of the difference between left- and right-hand side of
+  eq.~\eqref{samet2}. The dotted lines are given by eqs.~\eqref{leftcurve} and
+  \eqref{rightcurve}.}%
+  \label{fig:invalid2}%
+\end{figure}%
+%
+\begin{figure}[ht]
+  \centering
+  \includegraphics{invalid3}%
+  \caption{Some examples of invalid parametrisations from the general
+  (non-degenerate) case described by eqs.~\eqref{samet2}, \eqref{constr1},
+  \eqref{constr2}.}%
+  \label{fig:invalid3}%
+\end{figure}%
+%
+Figure~\ref{fig:invalid2} shows the difference between left- and right-hand side
+of Eq.~\eqref{samet2} for all valid signs, respecting the constraints. The
+horizontal and vertical lines are those special cases where $a_x=0$ or $a_y=0$
+and need further considerations. The zero-level curve at $\Delta x < 0$ (dotted
+curve in the figure) is well described by the equation
+%
+\begin{equation}
+  \label{leftcurve}
+  \Delta x = \frac{1}{3}\Bigl(-1-2\Delta y - \sqrt{(2\Delta y+1)^2 + 3}\Bigr)
+\end{equation}
+%
+which is obtained by taking the upper sign of $\pm^1$ in eq.~\eqref{samet2}:
+With negative values of $\Delta x$ the left-hand side becomes $6\Delta x\Delta
+y$. Isolating the square-root and then taking the square leads to a quadratic
+equation for $\Delta x$, of which eq.~\eqref{leftcurve} is the negative
+solution. A numerical check shows that this solution corresponds to the lower
+sign of $\pm^2$ and has thus no restriction in $\Delta y$. The second solution
+(dotted curve in the figure for $\Delta x>0$) of the mentioned quadratic
+equation,
+%
+\begin{equation}
+  \label{rightcurve}
+  \Delta x = \frac{1}{3}\Bigl(-1-2\Delta y + \sqrt{(2\Delta y+1)^2 + 3}\Bigr)
+\end{equation}
+%
+corresponds to the upper sign of $\pm^2$ and is thus subject to the constraint
+\hbox{$\Delta y \leq -1$}.
+
+Apart from the general cases on the two curves, we must treat some special cases
+separately:
+%
+\begin{itemize}
+\item $a_y=0$: This appears as a zero-level line in figure~\ref{fig:invalid2},
+    but this is an artefact coming from both sides of eq.~\eqref{samet2} being
+    zero. We have to go back to the original set of
+    equations~\eqref{zeroderiv}: We have in the lower line $\Delta y=0$, thus
+    $t=1/2$. Going back to the upper line with this value, we obtain $\Delta
+    x=-1$. This parameter point is already covered by the general treatment.
+\item $a_x=0$: This implies $\Delta x=1/3$, and the upper line gives $t=0$.
+    This, however, contradicts the lower line. We do not get an invalid
+    parametrisation point from $a_x=0$.
+\item $p_1=p_0$: This is either an even more degenerate case (see below), or it
+    can be mapped to the reverse situation of $\Delta x=1, \Delta y=-1$ which
+    was $p_2=p_3$.
+\item $p_1=p_0$ and $p_2=p_3$: This is a line.
+\item $p_3=p_0$: There are invalid parametrisation points if all four
+    $p_0,p_1,p_2,p_3$ are collinear. Depending on the sign of
+    $(p_1-p_0)\cdot(p_3-p_2)$ there are one or two invalid points.
+\item $p_1=p_0=p_2=p_3$: This is a point.
+\end{itemize}
+%
+% >>>
+
+\section{Self-intersections}
+
+% <<<
+In order to determine the control points which lead to self-intersections, we
+could analyse the set of equations
+%
+\begin{equation}
+    x(t_1) = x(t_2)\quad\text{and}\quad
+    y(t_1) = y(t_2) \quad\text{for}\quad t_1\neq t_2.
+\end{equation}
+%
+To solve the problem, we could express the solutions $t(\Delta x, \bar x)$ of
+the cubic equation $\bar x = x(t)$, test their number via Cardano's equation,
+and, if they are more than one, use a pair of them in the $y$-equation to see
+whether we get two times the same $y$-value. This would be a formidable task.
+
+We here take a different route. As for the invalid parametrisation above, we
+exclude some degenerate cases and use affine transformations, such that only the
+parameters $\Delta x=x_2$ and $\Delta y=y_2-1$ are left. It is geometrically
+evident that a little left and right of the two relevant curves in
+figure~\ref{fig:invalid2} we must have different situations as far as
+self-intersections are concerned. Either we find one a little left or a little
+right of the curves, and none on the respective other side. Further, a
+self-intersection can clear away when parameters change such that the curve
+passes through one of its endpoints. These two conditions boil down to the phase
+diagram in figure~\ref{fig:selfinter2}. In the gray shaded areas,
+self-intersections are possible.
+%
+\begin{figure}[t]
+  \includegraphics{selfinter2}%
+  \caption{Self-intersections are possible in the gray-shaded areas. The black,
+  red, green, blue curves are from eqs.~\eqref{leftcurve}, \eqref{rightcurve},
+  \eqref{pass00}, \eqref{pass10}, respectively.}%
+  \label{fig:selfinter2}%
+\end{figure}
+%
+
+We first calculate the parameters $0<t<t$ for which the curve passes through
+$(0,0)$. The $x$-coordinate leads to $t=3\Delta x/(3\Delta x - 1)$, and the
+$y$-coordinate to $t=-1/\Delta y$. From the latter we know that again $\Delta
+y\leq 1$. Setting both parameters equal allows to express $\Delta x(\Delta y)$
+or inverse,
+%
+\begin{align}
+  \label{pass00}
+  \Delta x &= \frac{1}{3(\Delta y+1)} \\
+  \Delta y &= \frac{1-3\Delta x}{3\Delta x}
+\end{align}
+%
+
+The calculation for passing through $(1,0)$ is a little more complicated, since
+the cubic equation for $x$ (which had a double root at $t=0$ before) now reads
+$0 = 3\Delta xt^2(1-t) + t^3 - 1$. The equation for~$y$ has not changed and
+leads to the same solution with the same constraint. Using $t=-1/\Delta y$ in
+the cubic equation for $x$ leads us to
+%
+\begin{align}
+  \label{pass10}
+  \Delta x &= \frac{1+\Delta y^3}{3(\Delta y+1)}.
+\end{align}
+%
+% >>>
 
 \end{document}
 
