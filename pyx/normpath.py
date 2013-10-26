@@ -1044,6 +1044,16 @@ class normsubpath:
                             if i:
                                 splitpoint = (splitpoint-splitpoints[i-1])/(1-splitpoints[i-1])
                             newitems.extend(newitems.pop()._split(splitpoint))
+
+                        # Replace short curves by lines. Otherwise skippedlines
+                        # could shake up the short curve completely.
+                        for i in range(len(newitems)):
+                            l01_pt = math.hypot(newitems[i].x1_pt-newitems[i].x0_pt, newitems[i].y1_pt-newitems[i].y0_pt)
+                            l12_pt = math.hypot(newitems[i].x2_pt-newitems[i].x1_pt, newitems[i].y2_pt-newitems[i].y1_pt)
+                            l23_pt = math.hypot(newitems[i].x3_pt-newitems[i].x2_pt, newitems[i].y3_pt-newitems[i].y2_pt)
+                            if l01_pt+l12_pt+l23_pt < self.epsilon:
+                                newitems[i] = normline_pt(newitems[i].x0_pt, newitems[i].y0_pt, newitems[i].x3_pt, newitems[i].y3_pt)
+
                         self.extend(newitems)
                 else:
                     self.skippedline = normline_pt(anormsubpathitem.x0_pt, anormsubpathitem.y0_pt, anormsubpathitem.x3_pt, anormsubpathitem.y3_pt)
