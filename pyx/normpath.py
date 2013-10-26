@@ -1045,7 +1045,7 @@ class normsubpath:
                                 splitpoint = (splitpoint-splitpoints[i-1])/(1-splitpoints[i-1])
                             newitems.extend(newitems.pop()._split(splitpoint))
 
-                        # Replace short curves by lines. Otherwise skippedlines
+                        # Replace short curves by lines. Otherwise skippedline
                         # could shake up the short curve completely.
                         for i in range(len(newitems)):
                             l01_pt = math.hypot(newitems[i].x1_pt-newitems[i].x0_pt, newitems[i].y1_pt-newitems[i].y0_pt)
