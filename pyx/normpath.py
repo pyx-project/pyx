@@ -1007,21 +1007,24 @@ class normsubpath:
                     x1o_pt = x1_pt
                     y1o_pt = y1_pt
 
+                    # When repositioning the control points, use a factor 2.9
+                    # instead of 3 to get a derivative above the threshold as
+                    # otherwise deep recursions can occur.
                     if l01_pt*3 < self.epsilon:
                         if l02_pt*3 >= self.epsilon:
-                            x1_pt = x0_pt + (x2_pt-x0_pt)*self.epsilon/l02_pt/3
-                            y1_pt = y0_pt + (y2_pt-y0_pt)*self.epsilon/l02_pt/3
+                            x1_pt = x0_pt + (x2_pt-x0_pt)*self.epsilon/l02_pt/2.9
+                            y1_pt = y0_pt + (y2_pt-y0_pt)*self.epsilon/l02_pt/2.9
                         else:
-                            x1_pt = x0_pt + (x3_pt-x0_pt)*self.epsilon/l03_pt/3
-                            y1_pt = y0_pt + (y3_pt-y0_pt)*self.epsilon/l03_pt/3
+                            x1_pt = x0_pt + (x3_pt-x0_pt)*self.epsilon/l03_pt/2.9
+                            y1_pt = y0_pt + (y3_pt-y0_pt)*self.epsilon/l03_pt/2.9
 
                     if l23_pt*3 < self.epsilon:
                         if l13_pt*3 >= self.epsilon:
-                            x2_pt = x3_pt + (x1o_pt-x3_pt)*self.epsilon/l13_pt/3
-                            y2_pt = y3_pt + (y1o_pt-y3_pt)*self.epsilon/l13_pt/3
+                            x2_pt = x3_pt + (x1o_pt-x3_pt)*self.epsilon/l13_pt/2.9
+                            y2_pt = y3_pt + (y1o_pt-y3_pt)*self.epsilon/l13_pt/2.9
                         else:
-                            x2_pt = x3_pt + (x0_pt-x3_pt)*self.epsilon/l03_pt/3
-                            y2_pt = y3_pt + (y0_pt-y3_pt)*self.epsilon/l03_pt/3
+                            x2_pt = x3_pt + (x0_pt-x3_pt)*self.epsilon/l03_pt/2.9
+                            y2_pt = y3_pt + (y0_pt-y3_pt)*self.epsilon/l03_pt/2.9
 
                     newitems = [normcurve_pt(x0_pt, y0_pt, x1_pt, y1_pt, x2_pt, y2_pt, x3_pt, y3_pt)]
 
@@ -1042,6 +1045,7 @@ class normsubpath:
                         splitpoints.sort()
                         for i, splitpoint in enumerate(splitpoints):
                             if i:
+                                # take splitpoint relative to the subcurve
                                 splitpoint = (splitpoint-splitpoints[i-1])/(1-splitpoints[i-1])
                             newitems.extend(newitems.pop()._split(splitpoint))
 
