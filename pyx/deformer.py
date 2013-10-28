@@ -23,6 +23,8 @@
 import functools, logging, math
 from . import attr, baseclasses, mathutils, path, normpath, unit, color
 
+normpath.invalid = 175e175 # Just a very crude workaround to get the code running again. normpath.invalid does not exist anymore.
+
 logger = logging.getLogger("pyx")
 
 # specific exception for an invalid parameterization point
@@ -418,12 +420,13 @@ class cycloid(baseclasses.deformer): # <<<
             # Respect the curvature of the basepath for the cycloid's curvature
             # XXX this is only a heuristic, not a "true" expression for
             #     the curvature in curved coordinate systems
-            pathradius = normsubpath.curveradius_pt([param])[0]
-            if pathradius is not normpath.invalid:
+            try:
+                pathradius = 1/normsubpath.curvature_pt([param])[0]
+            except ArithmeticError:
+                factor = 1
+            else:
                 factor = (pathradius - baseY) / pathradius
                 factor = abs(factor)
-            else:
-                factor = 1
             l = L * factor
 
             # The control points prior and after the point on the cycloid
@@ -1115,9 +1118,9 @@ class parallel(baseclasses.deformer): # <<<
                 middleparam = (
                   (begparam * abs(begcurv*dist - 1) + endparam * abs(endcurv*dist - 1)) /
                   (abs(begcurv*dist - 1) + abs(endcurv*dist - 1)))
-                middleradius = normcurve.curveradius_pt([middleparam])[0]
-
-                if middleradius is normpath.invalid:
+                try:
+                    middleradius = 1/normcurve.curvature_pt([middleparam])[0]
+                except ArithmeticError:
                     raise InvalidParamException(middleparam)
 
                 if abs(middleradius - dist) < epsilon:
