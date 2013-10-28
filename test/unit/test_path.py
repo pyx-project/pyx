@@ -274,9 +274,9 @@ class NormpathTestCase(unittest.TestCase):
 
         sp.append(normline_pt(1.5, 1.2, 1.3, 1.6))
         sp.append(normcurve_pt(1.3, 1.6, 1.4, 1.7, 1.3, 1.7, 1.3, 1.8))
-        sp.append(normcurve_pt(1.3, 1.8, 2.4, 2.7, 3.3, 3.7, 1.4, 1.8))
+        sp.append(normcurve_pt(1.3, 1.8, 4.4, 2.7, 5.3, 5.7, 1.4, 1.8))
 
-        self.assertAlmostEqualNormsubpath(sp, normsubpath([normline_pt(0, 0, 1.5, 0), normline_pt(1.5, 0, 1.5, 1.2), normcurve_pt(1.5, 1.2, 2.4, 2.7, 3.3, 3.7, 1.4, 1.8)]))
+        self.assertAlmostEqualNormsubpath(sp, normsubpath([normline_pt(0, 0, 1.5, 0), normline_pt(1.5, 0, 1.5, 1.2), normcurve_pt(1.5, 1.2, 4.4, 2.7, 5.3, 5.7, 1.4, 1.8)]))
 
     def testintersectnormsubpath(self):
         smallposy = 0.09
