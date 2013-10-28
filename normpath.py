@@ -28,53 +28,16 @@ from . import bbox as bboxmodule
 
 class _marker: pass
 
-################################################################################
-
 # specific exception for normpath-related problems
 class NormpathException(Exception): pass
 
-# invalid result marker
-class _invalid:
-
-    """invalid result marker class
-
-    The following norm(sub)path(item) methods:
-      - trafo
-      - rotation
-      - tangent_pt
-      - tangent
-      - curvature_pt
-      - curvradius_pt
-    return list of result values, which might contain the invalid instance
-    defined below to signal points, where the result is undefined due to
-    properties of the norm(sub)path(item). Accessing invalid leads to an
-    NormpathException, but you can test the result values by "is invalid".
-    """
-
-    def invalid1(self):
-        raise NormpathException("invalid result (the requested value is undefined due to path properties)")
-    __str__ = __repr__ = __neg__ = invalid1
-
-    def invalid2(self, other):
-        self.invalid1()
-    __cmp__ = __add__ = __iadd__ = __sub__ = __isub__ = __mul__ = __imul__ = __div__ = __truediv__ = __idiv__ = invalid2
-
-invalid = _invalid()
-
-################################################################################
-
 # global epsilon (default precision of normsubpaths)
 _epsilon = 1e-5
-# minimal relative speed (abort condition for tangent information)
-_minrelspeed = 1e-5
 
-def set(epsilon=None, minrelspeed=None):
+def set(epsilon=None):
     global _epsilon
-    global _minrelspeed
     if epsilon is not None:
         _epsilon = epsilon
-    if minrelspeed is not None:
-        _minrelspeed = minrelspeed
 
 
 ################################################################################
@@ -134,19 +97,7 @@ class normsubpathitem:
         pass
 
     def curvature_pt(self, params):
-        """return the curvature at params in 1/pts
-
-        The result contains the invalid instance at positions, where the
-        curvature is undefined."""
-        pass
-
-    def curveradius_pt(self, params):
-        """return the curvature radius at params in pts
-
-        The curvature radius is the inverse of the curvature. Where the
-        curvature is undefined, the invalid instance is returned. Note that
-        this radius can be negative or positive, depending on the sign of the
-        curvature."""
+        """return the curvature at params in 1/pts"""
         pass
 
     def intersect(self, other, epsilon):
@@ -245,9 +196,6 @@ class normline_pt(normsubpathitem):
 
     def curvature_pt(self, params):
         return [0] * len(params)
-
-    def curveradius_pt(self, params):
-        return [invalid] * len(params)
 
     def intersect(self, other, epsilon):
         if isinstance(other, normline_pt):
@@ -596,35 +544,7 @@ class normcurve_pt(normsubpathitem):
                       6 * param * (self.y1_pt - 2*self.y2_pt + self.y3_pt) )
 
             hypot = math.hypot(xdot, ydot)
-            if hypot/approxarclen > _minrelspeed:
-                result.append((xdot*yddot - ydot*xddot) / hypot**3)
-            else:
-                result.append(invalid)
-        return result
-
-    def curveradius_pt(self, params):
-        result = []
-        # see notes in rotation
-        approxarclen = (math.hypot(self.x1_pt-self.x0_pt, self.y1_pt-self.y0_pt) +
-                        math.hypot(self.x2_pt-self.x1_pt, self.y2_pt-self.y1_pt) +
-                        math.hypot(self.x3_pt-self.x2_pt, self.y3_pt-self.y2_pt))
-        for param in params:
-            xdot = ( 3 * (1-param)*(1-param) * (-self.x0_pt + self.x1_pt) +
-                     6 * (1-param)*param * (-self.x1_pt + self.x2_pt) +
-                     3 * param*param * (-self.x2_pt + self.x3_pt) )
-            ydot = ( 3 * (1-param)*(1-param) * (-self.y0_pt + self.y1_pt) +
-                     6 * (1-param)*param * (-self.y1_pt + self.y2_pt) +
-                     3 * param*param * (-self.y2_pt + self.y3_pt) )
-            xddot = ( 6 * (1-param) * (self.x0_pt - 2*self.x1_pt + self.x2_pt) +
-                      6 * param * (self.x1_pt - 2*self.x2_pt + self.x3_pt) )
-            yddot = ( 6 * (1-param) * (self.y0_pt - 2*self.y1_pt + self.y2_pt) +
-                      6 * param * (self.y1_pt - 2*self.y2_pt + self.y3_pt) )
-
-            hypot = math.hypot(xdot, ydot)
-            if hypot/approxarclen > _minrelspeed:
-                result.append(hypot**3 / (xdot*yddot - ydot*xddot))
-            else:
-                result.append(invalid)
+            result.append((xdot*yddot - ydot*xddot) / hypot**3)
         return result
 
     def intersect(self, other, epsilon):
@@ -667,14 +587,6 @@ class normcurve_pt(normsubpathitem):
 
     def rotation(self, params):
         result = []
-        # We need to take care of the case of tdx_pt and tdy_pt close to zero.
-        # We should not compare those values to epsilon (which is a length) directly.
-        # Furthermore we want this "speed" in general and it's abort condition in
-        # particular to be invariant on the actual size of the normcurve. Hence we
-        # first calculate a crude approximation for the arclen.
-        approxarclen = (math.hypot(self.x1_pt-self.x0_pt, self.y1_pt-self.y0_pt) +
-                        math.hypot(self.x2_pt-self.x1_pt, self.y2_pt-self.y1_pt) +
-                        math.hypot(self.x3_pt-self.x2_pt, self.y3_pt-self.y2_pt))
         for param in params:
             tdx_pt = (3*(  -self.x0_pt+3*self.x1_pt-3*self.x2_pt+self.x3_pt)*param*param +
                       2*( 3*self.x0_pt-6*self.x1_pt+3*self.x2_pt           )*param +
@@ -682,16 +594,7 @@ class normcurve_pt(normsubpathitem):
             tdy_pt = (3*(  -self.y0_pt+3*self.y1_pt-3*self.y2_pt+self.y3_pt)*param*param +
                       2*( 3*self.y0_pt-6*self.y1_pt+3*self.y2_pt           )*param +
                         (-3*self.y0_pt+3*self.y1_pt                        ))
-            # We scale the speed such the "relative speed" of a line is 1 independend of
-            # the length of the line. For curves we want this "relative speed" to be higher than
-            # _minrelspeed:
-            if math.hypot(tdx_pt, tdy_pt)/approxarclen > _minrelspeed:
-                result.append(trafo.rotate(math.degrees(math.atan2(tdy_pt, tdx_pt))))
-            else:
-                # Note that we can't use the rule of l'Hopital here, since it would
-                # not provide us with a sign for the tangent. Hence we wouldn't
-                # notice whether the sign changes (which is a typical case at cusps).
-                result.append(invalid)
+            result.append(trafo.rotate(math.degrees(math.atan2(tdy_pt, tdx_pt))))
         return result
 
     def segments(self, params):
@@ -750,10 +653,7 @@ class normcurve_pt(normsubpathitem):
     def trafo(self, params):
         result = []
         for rotation, at_pt in zip(self.rotation(params), self.at_pt(params)):
-            if rotation is invalid:
-                result.append(rotation)
-            else:
-                result.append(trafo.translate_pt(*at_pt) * rotation)
+            result.append(trafo.translate_pt(*at_pt) * rotation)
         return result
 
     def transformed(self, trafo):
@@ -1160,26 +1060,11 @@ class normsubpath:
         return result
 
     def curvature_pt(self, params):
-        """return the curvature at params in 1/pts
-
-        The result contain the invalid instance at positions, where the
-        curvature is undefined."""
+        """return the curvature at params in 1/pts"""
         result = [None] * len(params)
         for normsubpathitemindex, (indices, params) in list(self._distributeparams(params).items()):
             for index, curvature_pt in zip(indices, self.normsubpathitems[normsubpathitemindex].curvature_pt(params)):
                 result[index] = curvature_pt
-        return result
-
-    def curveradius_pt(self, params):
-        """return the curvature radius at params in pts
-
-        The curvature radius is the inverse of the curvature. When the
-        curvature is 0, the invalid instance is returned. Note that this radius can be negative
-        or positive, depending on the sign of the curvature."""
-        result = [None] * len(params)
-        for normsubpathitemindex, (indices, params) in list(self._distributeparams(params).items()):
-            for index, radius_pt in zip(indices, self.normsubpathitems[normsubpathitemindex].curveradius_pt(params)):
-                result[index] = radius_pt
         return result
 
     def extend(self, normsubpathitems):
@@ -1814,69 +1699,18 @@ class normpath:
             result.append(normsubpath.copy())
         return result
 
-    def _curvature_pt(self, params):
-        """return the curvature in 1/pts at params
+    @_valueorlistmethod
+    def curvature_pt(self, params):
+        """return the curvature in 1/pt at params
 
-        When the curvature is undefined, the invalid instance is returned."""
+        The curvature radius is the inverse of the curvature. Note that this
+        radius can be negative or positive, depending on the sign of the
+        curvature."""
 
         result = [None] * len(params)
         for normsubpathindex, (indices, params) in list(self._distributeparams(params).items()):
             for index, curvature_pt in zip(indices, self.normsubpaths[normsubpathindex].curvature_pt(params)):
                 result[index] = curvature_pt
-        return result
-
-    @_valueorlistmethod
-    def curvature_pt(self, params):
-        """return the curvature in 1/pt at params
-
-        The curvature radius is the inverse of the curvature. When the
-        curvature is undefined, the invalid instance is returned. Note that
-        this radius can be negative or positive, depending on the sign of the
-        curvature."""
-
-        result = [None] * len(params)
-        for normsubpathindex, (indices, params) in list(self._distributeparams(params).items()):
-            for index, curv_pt in zip(indices, self.normsubpaths[normsubpathindex].curvature_pt(params)):
-                result[index] = curv_pt
-        return result
-
-    def _curveradius_pt(self, params):
-        """return the curvature radius at params in pts
-
-        The curvature radius is the inverse of the curvature. When the
-        curvature is 0, None is returned. Note that this radius can be negative
-        or positive, depending on the sign of the curvature."""
-
-        result = [None] * len(params)
-        for normsubpathindex, (indices, params) in list(self._distributeparams(params).items()):
-            for index, radius_pt in zip(indices, self.normsubpaths[normsubpathindex].curveradius_pt(params)):
-                result[index] = radius_pt
-        return result
-
-    @_valueorlistmethod
-    def curveradius_pt(self, params):
-        """return the curvature radius in pts at param(s) or arc length(s) in pts
-
-        The curvature radius is the inverse of the curvature. When the
-        curvature is 0, None is returned. Note that this radius can be negative
-        or positive, depending on the sign of the curvature."""
-
-        return self._curveradius_pt(self._convertparams(params, self.arclentoparam_pt))
-
-    @_valueorlistmethod
-    def curveradius(self, params):
-        """return the curvature radius at param(s) or arc length(s)
-
-        The curvature radius is the inverse of the curvature. When the
-        curvature is 0, None is returned. Note that this radius can be negative
-        or positive, depending on the sign of the curvature."""
-
-        result = []
-        for radius_pt in self._curveradius_pt(self._convertparams(params, self.arclentoparam)):
-            if radius_pt is not invalid:
-                result.append(radius_pt * unit.t_pt)
-            else:
-                result.append(invalid)
         return result
 
     def end(self):
@@ -2075,10 +1909,7 @@ class normpath:
         tangenttemplate = path.line_pt(0, 0, length_pt, 0).normpath()
         for normsubpathindex, (indices, params) in list(self._distributeparams(params).items()):
             for index, atrafo in zip(indices, self.normsubpaths[normsubpathindex].trafo(params)):
-                if atrafo is invalid:
-                    result[index] = invalid
-                else:
-                    result[index] = tangenttemplate.transformed(atrafo)
+                result[index] = tangenttemplate.transformed(atrafo)
         return result
 
     @_valueorlistmethod
