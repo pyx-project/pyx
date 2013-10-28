@@ -32,44 +32,44 @@ class MessageParserTestCase(unittest.TestCase):
                                   \TeX 
   <*> }{1}
           %
-
-
+  
+  
   *"""))
 
     @log_capture(level=logging.WARNING)
     def testFontWarning(self, l):
         text.text(0, 0, r"\fontseries{invalid}\selectfont{}hello, world", texmessages=[text.texmessage.font_warning])
-        text.defaulttexrunner.do_finish()
-        l.check(("pyx", "WARNING", r"""ignoring font warning:
+        text.default_runner.instance.do_finish()
+        l.check(("pyx", "WARNING", r"""ignoring font substitutions of NFSS:
 LaTeX Font Warning: Font shape `OT1/cmr/invalid/n' undefined
 (Font)              using `OT1/cmr/m/n' instead on input line 0."""),
-                ("pyx", "WARNING", r"""ignoring font warning:
+                ("pyx", "WARNING", r"""ignoring font substitutions of NFSS:
 LaTeX Font Warning: Some font shapes were not available, defaults substituted."""))
 
     @log_capture(level=logging.WARNING)
     def testOverfullHboxWarning(self, l):
         text.text(0, 0, r"hello, world", textattrs=[text.parbox(30*unit.u_pt)])
-        l.check(("pyx", "WARNING", r"""ignoring overfull/underfull box warning:
+        l.check(("pyx", "WARNING", r"""ignoring overfull/underfull box:
 Overfull \hbox (8.22089pt too wide) detected at line 0
 []\OT1/cmr/m/n/10 hello,"""))
 
     @log_capture(level=logging.WARNING)
     def testUnderfullHboxWarning(self, l):
         text.text(0, 0, r"\hbadness=0hello, world, hello", textattrs=[text.parbox(2.5)])
-        l.check(("pyx", "WARNING", r"""ignoring overfull/underfull box warning:
+        l.check(("pyx", "WARNING", r"""ignoring overfull/underfull box:
 Underfull \hbox (badness 171) detected at line 0
 []\OT1/cmr/m/n/10 hello, world,"""))
 
     @log_capture(level=logging.WARNING)
     def testOverfullVboxWarning(self, l):
         text.text(0, 0, r"\parindent=0pt\vbox to 1cm {hello, world, hello, world, hello, world}", textattrs=[text.parbox(1.9)])
-        l.check(("pyx", "WARNING", r"""ignoring overfull/underfull box warning:
+        l.check(("pyx", "WARNING", r"""ignoring overfull/underfull box:
 Overfull \vbox (2.4917pt too high) detected at line 0"""))
 
     @log_capture(level=logging.WARNING)
     def testUnderfullVboxWarning(self, l):
         text.text(0, 0, r"\parindent=0pt\vbox to 1cm {hello, world, hello, world}", textattrs=[text.parbox(1.9)])
-        l.check(("pyx", "WARNING", r"""ignoring overfull/underfull box warning:
+        l.check(("pyx", "WARNING", r"""ignoring overfull/underfull box:
 Underfull \vbox (badness 10000) detected at line 0"""))
 
     def testLoadLongFileNames(self):
