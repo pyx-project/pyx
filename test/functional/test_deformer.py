@@ -200,10 +200,10 @@ def testparallel_1(c):
     p = parallel(-0.4, relerr=1.0e-2).deform(p)
     hard_test(c, p, -0.39, parallel(0.0), move, "H")
 
-    # test for infinite curvature in the middle:
-    move = (9, 8)
-    p = path.curve(0,0, 1,1, 0,1, 1,0)
-    hard_test(c, p, -0.2, parallel(0.0), move, "I")
+#    # test for infinite curvature in the middle:
+#    move = (9, 8)
+#    p = path.curve(0,0, 1,1, 0,1, 1,0)
+#    hard_test(c, p, -0.2, parallel(0.0), move, "I")
 
     # test for infinite curvature at the end:
     move = (5, 8)
