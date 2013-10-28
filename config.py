@@ -85,7 +85,7 @@ class recursivedir:
     def openers(self, filename, names, extensions):
         for extension in extensions:
             if filename+extension in self.full_filenames:
-                return [lambda: builtinopen(self.full_filenames[filename], "rb")]
+                return [lambda: builtinopen(self.full_filenames[filename+extension], "rb")]
         while self.dirs:
             dir = self.dirs.pop(0)
             for item in os.listdir(dir):
@@ -96,7 +96,7 @@ class recursivedir:
                     self.full_filenames[item] = full_item
             for extension in extensions:
                 if filename+extension in self.full_filenames:
-                    return [lambda: builtinopen(self.full_filenames[filename], "rb")]
+                    return [lambda: builtinopen(self.full_filenames[filename+extension], "rb")]
         return []
 
 locator_classes["recursivedir"] = recursivedir
@@ -133,7 +133,7 @@ class ls_R:
                     except IOError:
                         logger.warning("'%s' should be available at '%s' according to the ls-R file, "
                                     "but the file is not available at this location; "
-                                    "update your ls-R file" % (filename, self.full_filenames[filename]))
+                                    "update your ls-R file" % (filename, self.full_filenames[filename+extension]))
                 return [_opener]
         return []
 
