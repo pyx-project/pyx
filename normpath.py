@@ -552,7 +552,7 @@ class normcurve_pt(normsubpathitem):
         # overlap. Note that we use the control box instead of the bounding
         # box here, because the former can be calculated more efficiently for
         # Bezier curves.
-        if not self.cbox().enlarge_pt(epsilon).intersects(other.cbox()):
+        if not self.cbox().enlarged_pt(epsilon).intersects(other.cbox()):
             return []
         a, b = self._split(epsilon=epsilon, intersect=True)
         # To improve the performance in the general case we alternate the
