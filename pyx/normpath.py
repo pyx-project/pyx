@@ -2,8 +2,8 @@
 #
 #
 # Copyright (C) 2002-2011 Jörg Lehmann <joergl@users.sourceforge.net>
-# Copyright (C) 2003-2006 Michael Schindler <m-schindler@users.sourceforge.net>
-# Copyright (C) 2002-2011 André Wobst <wobsta@users.sourceforge.net>
+# Copyright (C) 2003-2013 Michael Schindler <m-schindler@users.sourceforge.net>
+# Copyright (C) 2002-2013 André Wobst <wobsta@users.sourceforge.net>
 #
 # This file is part of PyX (http://pyx.sourceforge.net/).
 #
@@ -552,7 +552,7 @@ class normcurve_pt(normsubpathitem):
         # overlap. Note that we use the control box instead of the bounding
         # box here, because the former can be calculated more efficiently for
         # Bezier curves.
-        if not self.cbox().intersects(other.cbox()):
+        if not self.cbox().enlarge_pt(epsilon).intersects(other.cbox()):
             return []
         a, b = self._split(epsilon=epsilon, intersect=True)
         # To improve the performance in the general case we alternate the
