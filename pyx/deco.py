@@ -3,7 +3,7 @@
 #
 # Copyright (C) 2002-2011 Jörg Lehmann <joergl@users.sourceforge.net>
 # Copyright (C) 2003-2011 Michael Schindler <m-schindler@users.sourceforge.net>
-# Copyright (C) 2002-2011 André Wobst <wobsta@users.sourceforge.net>
+# Copyright (C) 2002-2013 André Wobst <wobsta@users.sourceforge.net>
 #
 # This file is part of PyX (http://pyx.sourceforge.net/).
 #
@@ -623,29 +623,54 @@ class curvedtext(deco, attr.attr):
 
 class shownormpath(deco, attr.attr):
 
+    default_normline_attrs = [color.rgb.blue]
+    default_normcurve_attrs = [color.rgb.green]
+    default_endpoint_attrs = []
+    default_controlline_attrs = [color.rgb.red, style.linestyle.dashed]
+    default_controlpoint_attrs = [color.rgb.red]
+
+    def __init__(self, normline_attrs=[], normcurve_attrs=[],
+                       endpoint_size=0.05*unit.v_cm, endpoint_attrs=[],
+                       controlline_attrs=[],
+                       controlpoint_size=0.05*unit.v_cm, controlpoint_attrs=[]):
+        self.normline_attrs = attr.refineattrs(normline_attrs, self.default_normline_attrs, [style.strokestyle])
+        self.normcurve_attrs = attr.refineattrs(normcurve_attrs, self.default_normcurve_attrs, [style.strokestyle])
+        self.endpoint_size_pt = unit.topt(endpoint_size)
+        self.endpoint_attrs = attr.refineattrs(endpoint_attrs, self.default_endpoint_attrs, [style.fillstyle])
+        self.controlline_attrs = attr.refineattrs(controlline_attrs, self.default_controlline_attrs, [style.strokestyle])
+        self.controlpoint_size_pt = unit.topt(controlpoint_size)
+        self.controlpoint_attrs = attr.refineattrs(controlpoint_attrs, self.default_controlpoint_attrs, [style.fillstyle])
+
     def decorate(self, dp, texrunner):
-        r_pt = 2
         dp.ensurenormpath()
         for normsubpath in dp.path.normsubpaths:
             for i, normsubpathitem in enumerate(normsubpath.normsubpathitems):
+                p = path.path(path.moveto_pt(*normsubpathitem.atbegin_pt()), normsubpathitem.pathitem())
                 if isinstance(normsubpathitem, normpath.normcurve_pt):
-                    dp.ornaments.stroke(normpath.normpath([normpath.normsubpath([normsubpathitem])]), [color.rgb.green])
+                    if self.normcurve_attrs is not None:
+                        dp.ornaments.stroke(p, self.normcurve_attrs)
                 else:
-                    dp.ornaments.stroke(normpath.normpath([normpath.normsubpath([normsubpathitem])]), [color.rgb.blue])
+                    if self.normline_attrs is not None:
+                        dp.ornaments.stroke(p, self.normline_attrs)
         for normsubpath in dp.path.normsubpaths:
             for i, normsubpathitem in enumerate(normsubpath.normsubpathitems):
                 if isinstance(normsubpathitem, normpath.normcurve_pt):
-                    dp.ornaments.stroke(path.line_pt(normsubpathitem.x0_pt, normsubpathitem.y0_pt, normsubpathitem.x1_pt, normsubpathitem.y1_pt), [style.linestyle.dashed, color.rgb.red])
-                    dp.ornaments.stroke(path.line_pt(normsubpathitem.x2_pt, normsubpathitem.y2_pt, normsubpathitem.x3_pt, normsubpathitem.y3_pt), [style.linestyle.dashed, color.rgb.red])
-                    dp.ornaments.draw(path.circle_pt(normsubpathitem.x1_pt, normsubpathitem.y1_pt, r_pt), [filled([color.rgb.red])])
-                    dp.ornaments.draw(path.circle_pt(normsubpathitem.x2_pt, normsubpathitem.y2_pt, r_pt), [filled([color.rgb.red])])
-        for normsubpath in dp.path.normsubpaths:
-            for i, normsubpathitem in enumerate(normsubpath.normsubpathitems):
-                if not i:
-                    x_pt, y_pt = normsubpathitem.atbegin_pt()
-                    dp.ornaments.draw(path.circle_pt(x_pt, y_pt, r_pt), [filled])
-                x_pt, y_pt = normsubpathitem.atend_pt()
-                dp.ornaments.draw(path.circle_pt(x_pt, y_pt, r_pt), [filled])
+                    if self.controlline_attrs is not None:
+                        dp.ornaments.stroke(path.line_pt(normsubpathitem.x0_pt, normsubpathitem.y0_pt,
+                                                         normsubpathitem.x1_pt, normsubpathitem.y1_pt), self.controlline_attrs)
+                        dp.ornaments.stroke(path.line_pt(normsubpathitem.x2_pt, normsubpathitem.y2_pt,
+                                                         normsubpathitem.x3_pt, normsubpathitem.y3_pt), self.controlline_attrs)
+                    if self.controlpoint_attrs is not None:
+                        dp.ornaments.fill(path.circle_pt(normsubpathitem.x1_pt, normsubpathitem.y1_pt, self.controlpoint_size_pt), self.controlpoint_attrs)
+                        dp.ornaments.fill(path.circle_pt(normsubpathitem.x2_pt, normsubpathitem.y2_pt, self.controlpoint_size_pt), self.controlpoint_attrs)
+        if self.endpoint_attrs is not None:
+            for normsubpath in dp.path.normsubpaths:
+                for i, normsubpathitem in enumerate(normsubpath.normsubpathitems):
+                    if not i:
+                        x_pt, y_pt = normsubpathitem.atbegin_pt()
+                        dp.ornaments.fill(path.circle_pt(x_pt, y_pt, self.endpoint_size_pt), self.endpoint_attrs)
+                    x_pt, y_pt = normsubpathitem.atend_pt()
+                    dp.ornaments.fill(path.circle_pt(x_pt, y_pt, self.endpoint_size_pt), self.endpoint_attrs)
 
 
 class linehatched(deco, attr.exclusiveattr, attr.clearclass):
