@@ -3,7 +3,7 @@
 #
 # Copyright (C) 2003-2004 Jörg Lehmann <joergl@users.sourceforge.net>
 # Copyright (C) 2003-2004 Michael Schindler <m-schindler@users.sourceforge.net>
-# Copyright (C) 2003-2004 André Wobst <wobsta@users.sourceforge.net>
+# Copyright (C) 2003-2013 André Wobst <wobsta@users.sourceforge.net>
 #
 # This file is part of PyX (http://pyx.sourceforge.net/).
 #
@@ -54,6 +54,15 @@ def checkattrs(attrs, allowedclasses):
                 raise TypeError("instance %r not allowed" % attr1)
         else:
             raise TypeError("instance %r not allowed" % attrs[len(getattrs(attrs, allowedclasses))])
+
+def refineattrs(attrs, defaults, allowedclasses, allow_none=True):
+    """combine the typical handling for attribues passed to a function in a
+    single call"""
+    # TODO the whole attribute handling needs some major documentation
+    if allow_none and attrs is None:
+        return None
+    checkattrs(attrs, allowedclasses)
+    return mergeattrs(defaults + attrs)
 
 #
 # attr class and simple descendants
