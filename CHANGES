@@ -9,6 +9,9 @@
       (reported by Brendon Higgins)
   - normpath module:
     - several stability and precision improvements and bugfixes
+    - cusp removal at normpath construction (and getting rid of invalid
+      results for curvature, rotation, tangent, and trafo methods)
+    - remove curveradius methods as they are invalid for straigt paths
   - deco module:
     - apply text trafos to each character in curvedtext (reported by Hans L)
     - properly apply all textattrs in curvedtext (for example colors or scalings)
