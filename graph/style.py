@@ -389,17 +389,6 @@ class range(_style):
             except (ArithmeticError, ValueError, TypeError):
                 sharedata.vrange[index][1] = None
 
-            # some range checks for data consistency
-            if (sharedata.vrange[index][0] is not None and sharedata.vrange[index][1] is not None and
-                sharedata.vrange[index][0] > sharedata.vrange[index][1] + self.epsilon):
-                raise ValueError("inverse range")
-            # disabled due to missing vpos access:
-            # if (sharedata.vrange[index][0] is not None and sharedata.vpos[index] is not None and
-            #     sharedata.vrange[index][0] > sharedata.vpos[index] + self.epsilon):
-            #     raise ValueError("negative minimum errorbar")
-            # if (sharedata.vrange[index][1] is not None and sharedata.vpos[index] is not None and
-            #     sharedata.vrange[index][1] < sharedata.vpos[index] - self.epsilon):
-            #     raise ValueError("negative maximum errorbar")
 
 
 registerdefaultprovider(range(), range.providesdata)
