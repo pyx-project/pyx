@@ -4,6 +4,8 @@
     - cygwin LaTeX with windows python patch (thanks to Sybren A. Stüvel)
   - graph styles:
     - fix numerical instability of line clippings
+    - remove errorbar range checks, as they fail on a reverse axis, which is
+      correct (reported by Néstor Espinoza)
   - path module:
     - fix internal name clash when generating a normpath from an empty path
       (reported by Brendon Higgins)
