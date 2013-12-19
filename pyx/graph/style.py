@@ -1987,8 +1987,8 @@ class density(_keygraphstyle):
                 data.write(c.to8bitbytes())
         i = bitmap.image(len(values1), len(values2), mode, data.getvalue())
 
-        v1enlargement = (values1[-1]-values1[0])*0.5/len(values1)
-        v2enlargement = (values2[-1]-values2[0])*0.5/len(values2)
+        v1enlargement = (values1[-1]-values1[0])*0.5/(len(values1)-1)
+        v2enlargement = (values2[-1]-values2[0])*0.5/(len(values2)-1)
 
         privatedata.vfixed[sharedata.index1] = values1[0]-v1enlargement
         privatedata.vfixed[sharedata.index2] = values2[-1]+v2enlargement
