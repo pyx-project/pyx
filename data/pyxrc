@@ -59,8 +59,8 @@ texipc = 0
 #
 # Available methods are:
 # - 'local': locates files in the current directory.
-# - 'internal': locates files within the PyX data tree (also inside
-#               of zipped Python eggs for Python 2.6 and above).
+# - 'internal': locates files within the PyX data tree (works inside
+#               of zipped Python eggs too)
 # - 'recursivedir': locates files by searching recursively in a
 #                   space-separated list of directories, which can
 #                   be specified by the option 'recursivedir'.
