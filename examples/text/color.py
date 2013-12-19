@@ -3,7 +3,7 @@ unit.set(uscale=2, xscale=2)
 
 col = color.cmyk.PineGreen
 
-text.set(mode="latex")
+text.set(cls=text.LatexRunner)
 text.preamble(r"\usepackage{color}")
 text.preamble(r"\definecolor{COL}{cmyk}{%g,%g,%g,%g}" % (col.c, col.m, col.y, col.k))
 

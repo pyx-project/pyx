@@ -1527,13 +1527,7 @@ def set(cls=TexRunner, mode=None, *args, **kwargs):
     global default_runner, defaulttexrunner, reset, preamble, text, text_pt
     if mode is not None:
         logger.warning("mode setting is deprecated, use the cls argument instead")
-        mode = mode.lower()
-        if mode == "tex":
-            cls = defaulttexrunner = TexRunner(*args, **kwargs)
-        elif mode == "latex":
-            cls = defaulttexrunner = LatexRunner(*args, **kwargs)
-        else:
-            raise ValueError("mode \"TeX\" or \"LaTeX\" expected")
+        cls = {"tex": TexRunner, "latex": LatexRunner}[mode.lower()]
     default_runner = defaulttexrunner = cls(*args, **kwargs)
     preamble = default_runner.preamble
     text_pt = default_runner.text_pt
