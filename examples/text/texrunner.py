@@ -1,7 +1,7 @@
 from pyx import *
 
 # Set properties of the defaulttexrunner, e.g. switch to LaTeX.
-text.set(cls=LatexRunner)
+text.set(cls=text.LatexRunner)
 
 c = canvas.canvas()
 # The canvas, by default, uses the default_runner from the text module.
