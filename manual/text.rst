@@ -32,39 +32,38 @@ While we only talked about TeX so far (and will continue to do so in the rest
 of this section), it is important to note that the coupling is not limited to
 plain TeX. Currently, PyX can also use LaTeX for typesetting, and other TeX
 variants could be added in the future. What PyX really depends on is the
-ability of the typesetting program to generate dvi\ [#]_.
+ability of the typesetting program to generate DVI\ [#]_.
 
 As soon as some text creation is requested or, even before that, a preamble
 setting or macro definition is submitted, the TeX program is started as a
-separate process. The input and output of TeX is bound to a :class:`texrunner`
+separate process. The input and output is bound to a :class:`SingleRunner`
 instance. Typically, the process will be kept alive and will be reused for all
-future typesetting requests of this :class:`texrunner` instance until the end
-of the PyX process. There are certain situations when the TeX program needs to
-be shutdown early, which are be described in detail in the :ref:`texipc`
-section.
+future typesetting requests until the end of the PyX process. However, there
+are certain situations when the TeX program needs to be shutdown early, which
+are be described in detail in the :ref:`texipc` section.
 
 Whenever PyX sends some commands to the TeX interpreter, it adds an output
 marker at the end, and waits for this output marker to be echoed in the TeX
 output. All intermediate output is attributed to the commands just sent and
 will be analysed for problems. This is done by :class:`texmessage` parsers.
 Here, a problem could be logged to the PyX logger at warning level, thus
-be reported to stderr by default. This happens for over- or underful boxes or
-font warnings emitted by TeX. For other unknown problems (*i.e.* output not
+be reported to ``stderr`` by default. This happens for over- or underful boxes
+or font warnings emitted by TeX. For other unknown problems (*i.e.* output not
 handled by any of the given :class:`texmessage` parsers), a
 :exc:`TexResultError` is raised, which creates a detailed error report
 including the traceback, the commands submitted to TeX and the output returned
 by TeX.
 
 PyX wraps each text to be typeset in a TeX box and adds a shipout of this box
-to the TeX code before forwarding it to TeX. Thus a page in the dvi file is
+to the TeX code before forwarding it to TeX. Thus a page in the DVI file is
 created containing just this output. Furthermore TeX is asked to output the box
 extent. By that PyX will immediately know the size of the text without
-referring to the dvi. This also allows faking the box size by TeX means, as you
+referring to the DVI. This also allows faking the box size by TeX means, as you
 would expect it.
 
-Once the actual output is requested, PyX reads the content of the dvi file,
+Once the actual output is requested, PyX reads the content of the DVI file,
 accessing the page related to the output in question. It then does all the
-necessary steps to transform the dvi content to the requested output format,
+necessary steps to transform the DVI content to the requested output format,
 like searching for virtual font files, font metrices, font mapping files, and
 PostScript Type1 fonts to be used in the final output. Here a present
 limitation has been mentioned: PyX presently can use PostScript Type1 fonts
@@ -76,21 +75,89 @@ installations are alreadily configured to use them by default.
 TeX interface
 =============
 
-.. autoclass:: baserunner
+.. autoclass:: SingleRunner
    :members: preamble, text, text_pt, texmessages_start_default, texmessages_end_default, texmessages_preamble_default, texmessages_run_default
 
-.. autoclass:: texrunner
+.. autoclass:: SingleTexRunner
 
-.. autoclass:: latexrunner
+.. autoclass:: SingleLatexRunner
+   :members: texmessages_docclass_default, texmessages_begindoc_default
+
+The :class:`SingleRunner` classes described above do not handle restarts of the
+interpreter when the actuall DVI result is required and is not available via
+the :ref:`texipc` feature.
+
+The :class:`MultiRunner` classes below are not derived from
+:class:`SingleRunner` even though the provide the same functional interface
+(:meth:`MultiRunner.preamble`, :meth:`MultiRunner.text`, and
+:meth:`MultiRunner.text_pt`), but instead wrap a :class:`SingleRunner`
+instance, and provide an automatic (or manual by the :meth:`MultiRunner.reset`
+function) restart of the interpreter as required.
+
+.. autoclass:: MultiRunner
+   :members: preamble, text, text_pt, reset
+
+.. autoclass:: TexRunner
+
+.. autoclass:: LatexRunner
+
+.. autoclass:: textbox_pt
+   :members: marker
+
+.. unfortunately we cannot list left, right, etc. as members, as they will show up with the value None
+.. see https://bitbucket.org/birkenfeld/sphinx/issue/904/autodocs-does-not-work-well-with-instance
+.. we're using the undocumented autoinstanceattribute as a workaround
+
+.. autoinstanceattribute:: textbox_pt.left
+   :annotation:
+
+.. autoinstanceattribute:: textbox_pt.right
+   :annotation:
+
+.. autoinstanceattribute:: textbox_pt.width
+   :annotation:
+
+.. autoinstanceattribute:: textbox_pt.height
+   :annotation:
+
+.. autoinstanceattribute:: textbox_pt.depth
+   :annotation:
+
+
+Module level functionality
+==========================
+
+The text module provides the public interface of the :class:`SingleRunner`
+class by module level functions. For that, a module level :class:`MultiRunner`
+is created and configured by the :func:`set` function. Each time the
+:func:`set` function is called, the existing module level :class:`MultiRunner`
+is replaced by a new one.
+
+.. autodata:: default_runner
+   :annotation:
+
+.. autodata:: preamble
+   :annotation:
+
+.. autodata:: text_pt
+   :annotation:
+
+.. autodata:: text
+   :annotation:
+
+.. autodata:: reset
+   :annotation:
 
 .. autofunction:: set
+
+.. autofunction:: escapestring
 
 
 TeX output parsers
 ==================
 
 While running TeX (and variants thereof) a variety of information is written to
-stdout like status messages, details about file access, and also warnings
+``stdout`` like status messages, details about file access, and also warnings
 and errors. PyX reads all the output and analyses it. Some of the output is
 triggered as a direct response to the TeX input and is thus easy to understand
 for PyX. This includes page output information, but also workflow control
@@ -110,17 +177,18 @@ of the following actions in response to the TeX output is receives:
 
  3. If the text should be communicated to the user, a message should be written
     the the pyx logger at warning level, thus being reported to the user on
-    stderr by default. Examples are underfull and overfull box warnings or font
-    warnings. In addition, the text should be removed as in 2 above.
+    ``stderr`` by default. Examples are underfull and overfull box warnings or
+    font warnings. In addition, the text should be removed as in 2 above.
 
- 4. If the output contains an error information the user should fix, a
-    TexResultError should be raised.
+ 4. In case of an error, :exc:`TexResultError` should be raised.
 
-This is rather uncommon, that the fourth option is taken. Instead errors can
-just be kept in the output as PyX considers *all* unhandled TeX output as an
-error. In addition to the error message, information about the TeX in- and
-output can be echoed according to the :class:`errordetail` setting in the
-:class:`baserunner`.
+This is rather uncommon, that the fourth option is taken directly. Instead,
+errors can just be kept in the output as PyX considers unhandled TeX output
+left after applying all given :class:`texmessage` parsers as an error. In
+addition to the error message, information about the TeX in- and output will be
+added to the exception description text by the :class:`SingleRunner` according
+to the :class:`errordetail` setting. The following verbosity levels are
+available:
 
 .. autoclass:: errordetail
    :members:
@@ -128,130 +196,11 @@ output can be echoed according to the :class:`errordetail` setting in the
 .. autoexception:: TexResultError
 
 To prevent any unhandled TeX output to be reported as an error,
-:attr:`texmessage.warn` or :attr:`texmessage.ignore` can be used. Here's a list
-of all available :class:`texmessage` parsers:
+:attr:`texmessage.warn` or :attr:`texmessage.ignore` can be used. To complete
+the description, here is a list of all available :class:`texmessage` parsers:
 
 .. autoclass:: texmessage
    :members:
-
-
-.. Instances of the class :class:`texrunner` are responsible for executing and
-.. controling a TeX/LaTeX instance.
-
-.. class:: texrunner(mode="tex", lfs="10pt", docclass="article", docopt=None, usefiles=[], fontmaps=config.get("text", "fontmaps", "psfonts.map"), waitfortex=config.getint("text", "waitfortex", 60), showwaitfortex=config.getint("text", "showwaitfortex", 5), texipc=config.getboolean("text", "texipc", 0), texdebug=None, dvidebug=0, errordebug=1, pyxgraphics=1, texmessagesstart=[], texmessagesdocclass=[], texmessagesbegindoc=[], texmessagesend=[], texmessagesdefaultpreamble=[], texmessagesdefaultrun=[])
-
-   *mode* should the string ``tex`` or ``latex`` and defines whether TeX or LaTeX
-   will be used. *lfs* specifies an ``lfs`` file to simulate LaTeX font size
-   selection macros in plain TeX. PyX comes with a set of ``lfs`` files and a LaTeX
-   script to generate those files. For *lfs* being ``None`` and *mode* equals
-   ``tex`` a list of installed ``lfs`` files is shown.
-
-   *docclass* is the document class to be used in LaTeX mode and *docopt* are the
-   options to be passed to the document class.
-
-   *usefiles* is a list of TeX/LaTeX jobname files. PyX will take care of the
-   creation and storing of the corresponding temporary files. A typical use-case
-   would be *usefiles=["spam.aux"]*, but you can also use it to access TeXs log and
-   dvi file.
-
-   *fontmaps* is a string containing whitespace separated names of font mapping
-   files. *waitfortex* is a number of seconds PyX should wait for TeX/LaTeX to
-   process a request. While waiting for TeX/LaTeX a PyX process might seem to do
-   not perform any work anymore. To give some feedback to the user, a messages is
-   issued each *waitfortex* seconds. The ``texipc`` flag indicates whether PyX
-   should use the ``--ipc`` option of TeX/LaTeX for immediate dvi file access to
-   increase the execution speed of certain operations. See the output of ``tex
-   --help`` whether the option is available at your TeX installation.
-
-   *texdebug* can be set to a filename to store the commands passed to TeX/LaTeX
-   for debugging. The flag *dvidebug* enables debugging output in the dvi parser
-   similar to ``dvitype``. *errordebug* controls the amount of information
-   returned, when an texmessage parser raises an error. Valid values are ``0``,
-   ``1``, and ``2``.
-
-   *pyxgraphics* allows use LaTeXs graphics package without further configuration
-   of ``pyx.def``.
-
-   The TeX message parsers verify whether TeX/LaTeX could properly process its
-   input. By the parameters *texmessagesstart*, *texmessagesdocclass*,
-   *texmessagesbegindoc*, and *texmessagesend* you can set TeX message parsers to
-   be used then TeX/LaTeX is started, when the ``documentclass`` command is issued
-   (LaTeX only), when the ``\\begin{document}`` is sent, and when the TeX/LaTeX is
-   stopped, respectively. The lists of TeX message parsers are merged with the
-   following defaults: ``[texmessage.start]`` for *texmessagesstart*,
-   ``[texmessage.load]`` for *texmessagesdocclass*, ``[texmessage.load,
-   texmessage.noaux]`` for *texmessagesbegindoc*, and ``[texmessage.texend,
-   texmessage.fontwarning]`` for *texmessagesend*.
-
-   Similarily *texmessagesdefaultpreamble* and *texmessagesdefaultrun* take TeX
-   message parser to be merged to the TeX message parsers given in the
-   :meth:`preamble` and :meth:`text` methods. The *texmessagesdefaultpreamble* and
-   *texmessagesdefaultrun* are merged with ``[texmessage.load]`` and
-   ``[texmessage.loaddef, texmessage.graphicsload, texmessage.fontwarning,
-   texmessage.boxwarning]``, respectively.
-
-:class:`texrunner` instances provides several methods to be called by the user:
-
-
-.. method:: texrunner.set(**kwargs)
-
-   This method takes the same keyword arguments as the :class:`texrunner`
-   constructor. Its purpose is to reconfigure an already constructed
-   :class:`texrunner` instance. The most prominent use-case is to alter the
-   configuration of the default :class:`texrunner` instance ``defaulttexrunner``
-   which is created at the time of loading of the :mod:`text` module.
-
-   The ``set`` method fails, when a modification cannot be applied anymore (e.g.
-   TeX/LaTeX has already been started).
-
-
-.. method:: texrunner.preamble(expr, texmessages=[])
-
-   The :meth:`preamble` can be called prior to the :meth:`text` method only or
-   after reseting a texrunner instance by :meth:`reset`. The *expr* is passed to
-   the TeX/LaTeX instance not encapsulated in a group. It should not generate any
-   output to the dvi file. In LaTeX preamble expressions are inserted prior to the
-   ``\\begin{document}`` and a typical use-case is to load packages by
-   ``\\usepackage``. Note, that you may use ``\\AtBeginDocument`` to postpone the
-   immediate evaluation.
-
-   *texmessages* are TeX message parsers to handle the output of TeX/LaTeX. They
-   are merged with the default TeX message parsers for the :meth:`preamble` method.
-   See the constructur description for details on the default TeX message parsers.
-
-
-.. method:: texrunner.text(x, y, expr, textattrs=[], texmessages=[])
-
-   *x* and *y* are the position where a text should be typeset and *expr* is the
-   TeX/LaTeX expression to be passed to TeX/LaTeX.
-
-   *textattrs* is a list of TeX/LaTeX settings as described below, PyX
-   transformations, and PyX fill styles (like colors).
-
-   *texmessages* are TeX message parsers to handle the output of TeX/LaTeX. They
-   are merged with the default TeX message parsers for the :meth:`text` method. See
-   the constructur description for details on the default TeX message parsers.
-
-   The :meth:`text` method returns a :class:`textbox` instance, which is a special
-   :class:`canvas` instance. It has the methods :meth:`width`, :meth:`height`, and
-   :meth:`depth` to access the size of the text. Additionally the :meth:`marker`
-   method, which takes a string *s*, returns a position in the text, where the
-   expression ``\\PyXMarker{s}`` is contained in *expr*. You should not use ``@``
-   within your strings *s* to prevent name clashes with PyX internal macros
-   (although we don't the marker feature internally right now).
-
-Note that for the outout generation and the marker access the TeX/LaTeX instance
-must be terminated except when ``texipc`` is turned on. However, after such a
-termination a new TeX/LaTeX instance is started when the :meth:`text` method is
-called again.
-
-
-.. method:: texrunner.reset(reinit=0)
-
-   This method can be used to manually force a restart of TeX/LaTeX. The flag
-   *reinit* will initialize the TeX/LaTeX by repeating the :meth:`preamble` calls.
-   New :meth:`set` and :meth:`preamble` calls are allowed when *reinit* was not set
-   only.
 
 
 TeX/LaTeX attributes
@@ -514,6 +463,8 @@ material passed in. The appropriate instances ``phantom`` and ``clearphantom``
    Skip the text in the box, but keep its size.
 
 
+.. _pyxgraphics:
+
 Using the graphics-bundle with LaTeX
 ====================================
 
@@ -576,95 +527,96 @@ moment:
    ends rotation.
 
 
-The :attr:`defaulttexrunner` instance
-=====================================
-
-
-.. data:: defaulttexrunner
-
-   The ``defaulttexrunner`` is an instance of :class:`texrunner`. It is created
-   when the :mod:`text` module is loaded and it is used as the default texrunner
-   instance by all :class:`canvas` instances to implement its :meth:`text` method.
-
-
-.. function:: preamble(...)
-
-   ``defaulttexrunner.preamble``
-
-
-.. function:: text(...)
-
-   ``defaulttexrunner.text``
-
-
-.. function:: set(...)
-
-   ``defaulttexrunner.set``
-
-
-.. function:: reset(...)
-
-   ``defaulttexrunner.reset``
-
-
-Some internals on temporary files
-=================================
-
-It is not totally obvious how TeX processes are supervised by PyX and why it's
-done that way. However there are good reasons for it and the following
-description is intended for people wanting and/or needing to understand how
-temporary files are used by PyX. All others don't need to care.
-
-Each time PyX needs to start a new TeX process, it creates a base file name for
-temporary files associated with this process. This file name is used as
-``\jobname`` by TeX. Since TeX does not handle directory names as part of
-``\jobname``, the temporary files will be created in the current directory. The
-PyX developers decided to not change the current directory at all, avoiding all
-kind of issues with accessing files in the local directory, like for loading
-graph data, LaTeX style files etc.
-
-PyX creates a TeX file containing ``\relax`` only. It's only use is to set TeXs
-``\jobname``. Immediately after processing ``\relax`` TeX falls back to stdin to
-read more commands. PyX than uses ``stdin`` and ``stdout`` to avoid various
-buffering issues which would occur when using files (or named pipes). By that
-PyX can fetch TeX errors as soon as they occur while keeping the TeX process
-running (i.e. in a waiting state) for further input. The size of the TeX output
-is also availble immediately without fetching the ``dvi`` file created by TeX,
-since PyX uses some TeX macros to output the extents of the boxes created for
-the requested texts to ``stdout`` immediately. There is a TeX hack ``--ipc``
-which PyX knows to take advantage of to fetch informations from the ``dvi`` file
-immediately as well, but it's not available on all TeXinstallations. Thus this
-feature is disabled by default and fetching informations from the ``dvi`` is
-tried to be limited to those cases, where no other option exists. By that TeX
-usually doesn't need to be started several times.
-
-By default PyX will clean up all temporary files after TeX was stopped. However
-the ``usefiles`` list allows for a renaming of the files from (and to, if
-existing) the temporary ``\jobname`` (+ suffix) handled by PyX. Additionally,
-since PyX does not write a useful TeX input file in a file and thus a
-``usefiles=["example.tex"]`` would not contain the code actually passed to TeX,
-the ``texdebug`` feature of the texrunner can be used instead to get a the full
-input passed to TeX.
-
-In case you need to control the position where the temporary files are created
-(say, you're working on a read-only directory), the suggested solution is to
-switch the current directory before starting with text processing in PyX (i.e.
-an ``os.chdir`` at the beginning of your script will do fine). You than just
-need to take care of specifying full paths when accessing data from your
-original working directory, but that's intended and necessary for that case.
-
 .. _config:
 
 Configuration
 =============
+
+While the PyX configuration technically has nothing to do with the text module,
+we mention it here as part of the text module since its main purpose is the
+configuration of various aspects related to the typesetting of text.
+
+PyX comes with reasonable defaults which should work out of the box on most TeX
+installations. The default values are defined in the PyX source code itself and
+are repeated in the system-wide config file in INI file format located at
+``pyx/data/pyxrc``. This file also contains a description of each of the listed
+config values and is read at PyX startup. Thus the system-wide configuration
+can be adjusted by editing this file.
+
+In addition, a user-specific configuration can be setup by a ``~/.pyxrc`` on
+unix-like Systems (including OS X) or ``pyxrc`` in the directory defined by the
+environment variable ``APPDATA`` on MS Windows. This user-specific
+configuration will overwrite the system-wide settings.
+
 
 .. _texipc:
 
 TeX ipc mode
 ------------
 
+For output generation of typeset text and to calculate the positions of markers
+(see :meth:`textbox_pt.marker`) the DVI output of the TeX interpreter must be
+read. In contrast, the text extent (:attr:`textbox_pt.width`, height, depth) is available without
+accessing the DVI output, as the TeX interpreter is instructed by PyX to output
+it to stdout, which is read and analysed at the typesetting step immediately.
+
+Since TeX interpreters usually buffer the DVI output, the interpreter itself
+needs to be terminated to get the DVI output. As :class:`MultiRunner` instances
+can start a new interpreter when needed, this does not harm the functionality
+and happens more or less unnoticable. Still it generates some penalty in terms
+of execution speed, which can become huge for certain situations (alternation
+between typesetting and marker access).
+
+One of the effects of the ``texipc`` option available in almost all present TeX
+interpreters is to flush the DVI output after each page. As PyX reads the DVI
+output linearily, it can successfully read all output whithout stopping the TeX
+interpreter. It is suggested to enable the ``texipc`` feature in the
+system-wide configuration if available in the TeX interpreter being used.
+
+
+.. _debug:
+
 Debugging
 ---------
+
+PyX provides various functionality to collect details about the typesetting
+process. First off all, PyX reads the output generated by the TeX interpreter
+while it processes the text provided by the user. If the given
+:class:`texmessage` parsers do not validate this output, an
+:exc:`TexResultError` is raised immediately. The verbosity of this output can
+be adjusted by the :class:`errordetail` setting of the :class:`SingleRunner`.
+This might help in some cases to identify an error in the text passed for
+typesetting, but for more complicated problems, other help is required.
+
+One possibility is to output the actual code passed to the TeX interpreter. For
+that you can pass a file name or a file handle to the ``copyinput`` argument of
+the :class:`SingleRunner`. You can then process the text by the TeX interpreter
+yourself to reproduce the issue outside of PyX.
+
+Similarily you can also save the log output from the TeX interpreter. For that
+you need to pass a log file name (with the suffix ``.log``) in the ``usefiles``
+argument (which is a list of files) of the :class:`SingleRunner`. This list of
+files are saved and restored in the temporary directory used by the TeX
+interpreter. While originally it is meant to share, for example, a ``.aux``
+file between several runs (for which the temporary directory is different and
+removed after each run), it can do the same for the ``.log`` file (where the
+restore feature is needless, but does not harm). PyX takes care of the proper
+``\jobname``, hence you can choose the filename arbitrarily with the exception
+of the suffix, as the suffix is kept during the save and restore.
+
+Still, all this might not help to fully understand the problem you're facing.
+For example there might be situations, where it is not clear which TeX
+interpreter is actually used (when several executables are available and the
+path setup within the Python interpreter differs from the one used on the
+shell). In those situations it might help to enable some additional logging
+output created by PyX. PyX uses the logging module from the standard library
+and logs to a logger named ``"pyx"``. By default, various information about
+executing external programms and locating files will not be echoed, as it is
+written at info level, but PyX provides a simple convenience function to enable
+the output of this logging level. Just call the pyxinfo() function defined on
+the package level. This function also adds some general information about the
+Python interpreter, the PyX installation, and the PyX configuration being
+used.
 
 .. rubric:: Footnotes
 
@@ -673,6 +625,6 @@ Debugging
 .. [#] https://en.wikipedia.org/wiki/Device_independent_file_format
 
 .. [#] If you do not know what this is all about, you can just ignore this
-       paragraph. But be sure that the *pyxgraphics* keyword argument is always
-       set!
+       paragraph. But be sure that the ``pyxgraphics`` keyword argument is
+       always set!
 

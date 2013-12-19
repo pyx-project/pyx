@@ -31,7 +31,8 @@
   - style module:
     - fillrules are now fillstyles and handled within the PS/PDF context
   - text module:
-    - new texenc setting (TODO documentation)
+    - new texenc setting
+    - major code reorganization and documentation revision (now using autodoc)
   - font/afmfile module:
     - parse more AFM files, also some with common inconsistencies (thanks to
       Markus Schwienbacher for reporting these issues)
@@ -45,6 +46,8 @@
   - pyxrc:
     - use APPDATA environment variable to locate the pyxrc on windows
     - tex, latex, kpsewhich, and locate executables are now customizable in the pyxrc
+  - manual:
+    - PyX theme and various sphinx tweaks
 
 0.12.1 (2012/10/26):
   - graph styles:

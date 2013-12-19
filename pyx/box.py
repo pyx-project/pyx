@@ -303,16 +303,16 @@ class polygon(polygon_pt):
 
 class rect_pt(polygon_pt):
 
-    def __init__(self, x, y, width, height, relcenter=(0, 0), abscenter=(0, 0),
+    def __init__(self, x_pt, y_pt, width_pt, height_pt, relcenter=(0, 0), abscenter_pt=(0, 0),
                        corners=_marker, center=_marker, **args):
         if corners != _marker or center != _marker:
             raise ValueError
-        polygon_pt.__init__(self, corners=((x, y),
-                                         (x + width, y),
-                                         (x + width, y + height),
-                                         (x, y + height)),
-                                center=(x + relcenter[0] * width + abscenter[0],
-                                        y + relcenter[1] * height + abscenter[1]),
+        polygon_pt.__init__(self, corners=((x_pt, y_pt),
+                                         (x_pt + width_pt, y_pt),
+                                         (x_pt + width_pt, y_pt + height_pt),
+                                         (x_pt, y_pt + height_pt)),
+                                center=(x_pt + relcenter[0] * width_pt + abscenter_pt[0],
+                                        y_pt + relcenter[1] * height_pt + abscenter_pt[1]),
                                 **args)
 
 
@@ -321,5 +321,5 @@ class rect(rect_pt):
     def __init__(self, x, y, width, height, relcenter=(0, 0), abscenter=(0, 0), **args):
         rect_pt.__init__(self, unit.topt(x), unit.topt(y), unit.topt(width), unit.topt(height),
                                relcenter=relcenter,
-                               abscenter=(unit.topt(abscenter[0]), unit.topt(abscenter[1])), **args)
+                               abscenter_pt=(unit.topt(abscenter[0]), unit.topt(abscenter[1])), **args)
 

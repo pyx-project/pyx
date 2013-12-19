@@ -262,6 +262,8 @@ def unprocessed_function_signature(app, what, name, obj, options, sig, retann):
         if obj is None or obj is object.__init__ or not \
            (inspect.ismethod(obj) or inspect.isfunction(obj)):
             return
+    elif hasattr(obj, '__wrapped__'):
+        obj = obj.__wrapped__
     src, line = inspect.findsource(obj)
     code = " ".join(function_signature_lines(src[line:])).split("(", 1)[1][:-2]
     if code.startswith("self, "):
@@ -270,8 +272,14 @@ def unprocessed_function_signature(app, what, name, obj, options, sig, retann):
         code = ""
     return "({})".format(code), retann
 
+def remove_default_constructor_docstring(app, what, name, obj, options, lines):
+    # remove default constructor docstring, i.e. when no own constructor is defined
+    for i, line in enumerate(lines):
+        lines[i] = line.replace("x.__init__(...) initializes x; see help(type(x)) for signature", "")
+
 def setup(app):
     app.connect('autodoc-process-signature', unprocessed_function_signature)
+    app.connect('autodoc-process-docstring', remove_default_constructor_docstring)
 
 
 # -- monkey patch safe_repr for function signatures ----------------------------
