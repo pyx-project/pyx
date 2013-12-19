@@ -156,9 +156,12 @@ def testparallel_1(c):
 
     # test for an empty parallel path:
     move = (5, 5)
-    p = path.circle(0, 0, 0.5)
-    hard_test(c, p, 0.55, parallel(0.0), move, "E", checklens=[[],[],[13],[13]])
-    hard_test(c, p, 0.4999, parallel(0.0, relerr=1.0e-15), move, "E", checklens=[[1],[1],[21],[21]])
+    p = path.circle(0, 0, 0.5).normpath()
+    nspitems = [nspitem for nspitem in p[0] if isinstance(nspitem, normpath.normcurve_pt)]
+    nspitems[-1] = nspitems[-1].modifiedend_pt(*nspitems[0].atbegin_pt())
+    p = normpath.normpath([normpath.normsubpath(nspitems, closed=True)])
+    hard_test(c, p, 0.55, parallel(0.0), move, "E", checklens=[[],[],[9],[9]])
+    hard_test(c, p, 0.4999, parallel(0.0, relerr=1.0e-15), move, "E", checklens=[[1,14,8],[1,14],[17],[17]])
 
     # a degenerate path:
     move = (13, 3)
@@ -277,6 +280,11 @@ def testparallel_1(c):
     p = p11 << p12
     p.append(path.closepath())
     hard_test(c, p, 0.55, parallel(0.0), move, "O", dotests=[True,True,False,False], checklens=[[10],[10],None,None])
+
+    # jump to too large curvature between nspitems
+    move = (-2, 17)
+    p = path.path(path.moveto(0,0), path.arc(2,0.5,0.5,-90,90), path.lineto(0,1)).normpath()
+    hard_test(c, p, 0.55, parallel(0.0), move, "P", dotests=[True,True,True,True], checklens=[[1,1],[1,1],[7],[7]])
 
 def testparallel_2(c):
 
