@@ -40,8 +40,7 @@ class IntersectionError(Exception): pass
 # None has a meaning in linesmoothed
 class _marker: pass
 
-class _inf_curvature_marker: pass
-inf_curvature = _inf_curvature_marker()
+class inf_curvature: pass
 
 def curvescontrols_from_endlines_pt(B, tangent1, tangent2, r1, r2, softness): # <<<
     # calculates the parameters for two bezier curves connecting two lines (curvature=0)
