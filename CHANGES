@@ -46,6 +46,8 @@
   - pyxrc:
     - use APPDATA environment variable to locate the pyxrc on windows
     - tex, latex, kpsewhich, and locate executables are now customizable in the pyxrc
+  - on the package level:
+    - add pyxinfo to enable output of some useful information
   - manual:
     - PyX theme and various sphinx tweaks
 

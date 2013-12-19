@@ -604,6 +604,9 @@ restore feature is needless, but does not harm). PyX takes care of the proper
 ``\jobname``, hence you can choose the filename arbitrarily with the exception
 of the suffix, as the suffix is kept during the save and restore.
 
+.. module:: pyx
+   :synopsis: The PyX package
+
 Still, all this might not help to fully understand the problem you're facing.
 For example there might be situations, where it is not clear which TeX
 interpreter is actually used (when several executables are available and the
@@ -613,10 +616,11 @@ output created by PyX. PyX uses the logging module from the standard library
 and logs to a logger named ``"pyx"``. By default, various information about
 executing external programms and locating files will not be echoed, as it is
 written at info level, but PyX provides a simple convenience function to enable
-the output of this logging level. Just call the pyxinfo() function defined on
-the package level. This function also adds some general information about the
-Python interpreter, the PyX installation, and the PyX configuration being
-used.
+the output of this logging level. Just call the :func:`pyxinfo` function
+defined on the PyX package before actually start using the package in your
+Python program:
+
+.. autofunction:: pyxinfo
 
 .. rubric:: Footnotes
 

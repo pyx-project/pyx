@@ -48,6 +48,13 @@ for module in __all__:
     importlib.import_module('.' + module, package='pyx')
 
 def pyxinfo():
+    """Make PyX a little verbose (for information or debugging)
+
+    This function enables info level on the ``"pyx"`` logger. It also adds some
+    general information about the Python interpreter, the PyX installation, and
+    the PyX configuration to the logger.
+
+    """
     import logging, os, sys
     from . import config
     logging.lastResort.setLevel(logging.INFO)
