@@ -793,6 +793,11 @@ class mynormpathparam(normpath.normpathparam): # <<<
             return True
         return self.is_equiv(mynormpathparam(self.normpath, self.normsubpathindex, self.normsubpathitemindex, 1), epsilon)
 
+    def is_beg_of_nsp(self, epsilon=None):
+        if self.normsubpathitemindex > 0:
+            return False
+        return self.is_equiv(mynormpathparam(self.normpath, self.normsubpathindex, 0, 0), epsilon)
+
     def is_end_of_nsp(self, epsilon=None):
         n = len(self.normpath[self.normsubpathindex]) - 1
         if self.normsubpathitemindex < n:
@@ -915,8 +920,8 @@ class parallel(baseclasses.deformer): # <<<
 
         result = None
         par_to_orig = None
-        join_begin, join_end = None, None
-        prev_joinend = True
+        join_begin = None
+        prev_joinend = None
 
         # iterate over the normsubpath in the following way:
         # * for each item first append the additional arc
@@ -929,22 +934,30 @@ class parallel(baseclasses.deformer): # <<<
 
             # get the next parallel piece for the normpath
             next_parallel_normpath, joinbeg, joinend, par2orig = self.deformsubpathitem(curr_orig_nspitem, epsilon)
+            if result is None:
+                if join_begin is None:
+                    join_begin = joinbeg
+                else:
+                    join_begin = (join_begin and joinbeg)
 
             if not (next_parallel_normpath.normsubpaths and next_parallel_normpath[0].normsubpathitems):
+                if prev_joinend is None:
+                    prev_joinend = joinend
+                else:
+                    prev_joinend = (prev_joinend and joinend)
                 continue
 
             # this starts the whole normpath
             if result is None:
                 result = next_parallel_normpath
-                join_begin = joinbeg
-                prev_joinend = joinend
                 par_to_orig = {}
                 for key in par2orig:
                     par_to_orig[key] = par2orig[key]
+                prev_joinend = joinend
                 continue # there is nothing to join
 
             prev_tangent, next_tangent, is_straight, is_concave = self._get_angles(prev_orig_nspitem, curr_orig_nspitem, epsilon)
-            if not (joinbeg and prev_joinend): # split due to infinite curvature
+            if not (joinbeg and prev_joinend): # split due to loo large curvature
                 result += next_parallel_normpath
             elif is_straight:
                 # The path is quite straight between prev and next item:
@@ -966,7 +979,6 @@ class parallel(baseclasses.deformer): # <<<
                 par_to_orig[key] = par2orig[key]
             prev_joinend = joinend
 
-        join_end = joinend
         # end here if nothing has been found so far
         if result is None:
             return normpath.normpath(), False, False, {}
@@ -974,7 +986,7 @@ class parallel(baseclasses.deformer): # <<<
         # the curve around the closing corner may still be missing
         if orig_nsp.closed:
             prev_tangent, next_tangent, is_straight, is_concave = self._get_angles(orig_nsp.normsubpathitems[-1], orig_nsp.normsubpathitems[0], epsilon)
-            if not (join_end and join_begin): # do not close because of infinite curvature
+            if not (joinend and join_begin): # do not close because of infinite curvature
                 do_close = False
             elif is_straight:
                 # The path is quite straight at end and beginning
@@ -1001,8 +1013,9 @@ class parallel(baseclasses.deformer): # <<<
                     for nspitem in result[0]:
                         result[-1].append(nspitem)
                     result.normsubpaths = result.normsubpaths[1:]
+                join_begin, joinend = False, False
 
-        return result, join_begin, join_end, par_to_orig
+        return result, join_begin, joinend, par_to_orig
         # >>>
     def deformsubpathitem(self, nspitem, epsilon): # <<<
 
@@ -1088,7 +1101,7 @@ class parallel(baseclasses.deformer): # <<<
 
         # the curve is everywhere stronger curved than 1/dist
         # There is nothing to be returned.
-        return normpath.normpath(), True, True, {}
+        return normpath.normpath(), False, False, {}
         # >>>
     def deformnicecurve(self, normcurve, epsilon, startparam=0.0, endparam=1.0, curvA=None, curvD=None): # <<<
         """Returns a parallel normsubpath for the normcurve.
@@ -1416,6 +1429,10 @@ class parallel(baseclasses.deformer): # <<<
 
             while True:
                 # successful and unsuccessful termination conditions:
+                if tried[currentp]:
+                    # we reached a branch that has already been treated
+                    # ==> this is not a valid parallel path
+                    return []
                 if currentp in origintparams:
                     # we cross the original path
                     # ==> this is not a valid parallel path
@@ -1426,28 +1443,21 @@ class parallel(baseclasses.deformer): # <<<
                     return []
                 if currentp is startp:
                     # we have reached again the starting point on a closed subpath.
-                    #assert startp in beginparams
-                    #assert not tried[currentp]
-                    #assert previousp in endparams
+                    assert startp in beginparams
+                    assert previousp in endparams
                     return result
                 if currentp in forwardpairs:
-                    #assert not tried[currentp]
                     result.append((previousp, currentp))
                     if forwardpairs[currentp] is startp:
                         # we have found the same point as the startp (its pair partner)
                         return result
                     previousp = forwardpairs[currentp]
                 if currentp in endparams:
-                    #assert not tried[currentp]
                     result.append((previousp, currentp))
                     if nextp[currentp] is None: # open subpath
                         # we have found the end of a non-closed subpath
                         return result
                     previousp = currentp # closed subpath
-                if tried[currentp]:
-                    # we reached a branch that has already been treated
-                    # ==> this is not a valid parallel path
-                    return []
                 # follow the crossings on valid startpairs
                 tried[currentp] = True
                 tried[previousp] = True
@@ -1486,9 +1496,11 @@ class parallel(baseclasses.deformer): # <<<
                 done[end] = True
 
             # close the path if necessary
-            if add_nsp and (parampairs[-1][-1] in forwardpairs and forwardpairs[parampairs[-1][-1]] is parampairs[0][0]):
-                add_nsp.normsubpathitems[-1] = add_nsp.normsubpathitems[-1].modifiedend_pt(*add_nsp.atbegin_pt())
-                add_nsp.close()
+            if add_nsp:
+                if ((parampairs[-1][-1] in forwardpairs and forwardpairs[parampairs[-1][-1]] is parampairs[0][0]) or
+                    (parampairs[-1][-1] in endparams and parampairs[0][0] in beginparams and parampairs[0][0] is nextp[parampairs[-1][-1]])):
+                    add_nsp.normsubpathitems[-1] = add_nsp.normsubpathitems[-1].modifiedend_pt(*add_nsp.atbegin_pt())
+                    add_nsp.close()
 
             result.extend([add_nsp])
 
@@ -1525,7 +1537,8 @@ class parallel(baseclasses.deformer): # <<<
                                 if nsp_i == nsp_j:
                                     if nspitem_j == nspitem_i+1 and (npp_i.is_end_of_nspitem(epsilon) or npp_j.is_beg_of_nspitem(epsilon)):
                                         continue
-                                    if np[nsp_i].closed and nspitem_i == 0 and nspitem_j==len(np[nsp_j])-1 and (npp_i.is_beg_of_nspitem(epsilon) or npp_j.is_end_of_nspitem(epsilon)):
+                                    if np[nsp_i].closed and ((npp_i.is_beg_of_nsp(epsilon) and npp_j.is_end_of_nsp(epsilon)) or
+                                                             (npp_j.is_beg_of_nsp(epsilon) and npp_i.is_end_of_nsp(epsilon))):
                                         continue
 
                                 # correct the order of the pair, such that we can use it to continue on the path
@@ -1628,14 +1641,21 @@ class parallel(baseclasses.deformer): # <<<
         # one such parameter pair, namely the one with smallest first and
         # largest last param.
         result = False
+        delete_keys = []
+        delete_values = []
         # TODO: improve complexity?
         for pi, pj in parampairs.items():
             if npp_i.is_equiv(pi, epsilon) and npp_j.is_equiv(pj, epsilon):
                 #print("double pair: ", npp_i, npp_j, pi, pj)
                 #print("... replacing ", pi, parampairs[pi], "by", min(npp_i, pi), max(npp_j, pj))
-                del parampairs[pi] # XXX items() iterator is delete-safe
-                parampairs[min(npp_i, pi)] = max(npp_j, pj) # and it is insertion-safe
+                delete_keys.append(pi)
+                delete_values.append(pj)
                 result = True # we have already added this one
+        newkey = min([npp_i] + delete_keys)
+        newval = max([npp_j] + delete_values)
+        for pi in delete_keys:
+            del parampairs[pi]
+        parampairs[newkey] = newval
         return result
     # >>>
     def _elim_intersection_doublets(self, parampairs, epsilon): # <<<
