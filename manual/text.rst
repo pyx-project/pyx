@@ -556,9 +556,11 @@ TeX ipc mode
 
 For output generation of typeset text and to calculate the positions of markers
 (see :meth:`textbox_pt.marker`) the DVI output of the TeX interpreter must be
-read. In contrast, the text extent (:attr:`textbox_pt.width`, height, depth) is available without
-accessing the DVI output, as the TeX interpreter is instructed by PyX to output
-it to stdout, which is read and analysed at the typesetting step immediately.
+read. In contrast, the text extent (:attr:`textbox_pt.left`,
+:attr:`textbox_pt.right`, :attr:`textbox_pt.width`, :attr:`textbox_pt.height`,
+:attr:`textbox_pt.depth`) is available without accessing the DVI output, as the
+TeX interpreter is instructed by PyX to output it to stdout, which is read and
+analysed at the typesetting step immediately.
 
 Since TeX interpreters usually buffer the DVI output, the interpreter itself
 needs to be terminated to get the DVI output. As :class:`MultiRunner` instances
