@@ -46,7 +46,7 @@ notes = {1: {17: r"\PyX{} 0.2 (2003)", 20: r"\PyX{} 0.5 (2004)", 22: r"\PyX{} 0.
          9: {17: r"\PyX{} 0.4.1 (2003)"},
          10: {3: r"\PyX{} 0.10 (2007)", 7: r"\PyX{} 0.1 (2002)", 12: r"\PyX{} 0.12 (2012)",
               21: r"\PyX{} 0.7 (2004)", 26: r"\PyX{} 0.12.1 (2012)"},
-         12: {15: r"\PyX{} 0.7.1 (2004)"}}
+         12: {15: r"\PyX{} 0.7.1 (2004)", 20: r"\PyX{} 0.13 (2013)"}}
 d = graph.data.points([(day,
                         calendar.month_name[month],
                         calendar.day_abbr[calendar.weekday(year, month, day)],
