@@ -275,10 +275,10 @@ As long as you have a font in Type1 format available, this should be no
 problem (even though it may cost you some time to set up things properly).
 
 In the simplest case, your LaTeX system contains everything needed. 
-Including the following line into your code will probably work ::
+Including the following line into your code will probably work::
 
-text.set(mode="latex")
-text.preamble(r"\usepackage{mathptmx}")
+    text.set(mode="latex")
+    text.preamble(r"\usepackage{mathptmx}")
 
 and give you Times as roman font. 
 
