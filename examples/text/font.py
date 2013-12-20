@@ -1,6 +1,6 @@
 from pyx import *
 
-text.set(cls=text.LatexRunner)
+text.set(text.LatexRunner)
 text.preamble(r"\usepackage{times}")
 
 c = canvas.canvas()
