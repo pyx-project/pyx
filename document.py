@@ -188,9 +188,9 @@ class document:
             pdfwriter.PDFwriter(self, f, **kwargs)
 
     def writetofile(self, filename, **kwargs):
-        for suffix, method in [("eps", pswriter.writeEPSfile),
-                               ("ps", pswriter.writePSfile),
-                               ("pdf", pdfwriter.writePDFfile)]:
+        for suffix, method in [("eps", pswriter.EPSwriter),
+                               ("ps", pswriter.PSwriter),
+                               ("pdf", pdfwriter.PDFwriter)]:
             if filename.endswith(".{}".format(suffix)):
                 with open(filename, "wb") as f:
                     method(self, f, **kwargs)
