@@ -33,12 +33,8 @@
         <div class="link" tal:define="htmlname python: 'roadmap.html'; navname python: 'Roadmap'"><span metal:use-macro="options/maintemplate/macros/navlink"></span></div>
         <div class="link" tal:define="htmlname python: 'documentation.html'; navname python: 'Documentation'"><span metal:use-macro="options/maintemplate/macros/navlink"></span></div>
         <div class="link" tal:define="htmlname python: 'examples/index.html'; navname python: 'Examples'"><span metal:use-macro="options/maintemplate/macros/navlink"></span></div>
-        <tal:block repeat="subpage options/subpages" tal:condition="python: options['subtype'] == 'examples'">
+        <tal:block repeat="subpage options/subpages" tal:condition="python: options['pagename'].startswith('examples')">
           <div class="sublink" tal:define="htmlname string:examples/${subpage/dir}/index.html; navname subpage/title">- <span metal:use-macro="options/maintemplate/macros/navlink"></span></div>
-        </tal:block>
-        <div class="link" tal:define="htmlname python: 'gallery/index.html'; navname python: 'Gallery'"><span metal:use-macro="options/maintemplate/macros/navlink"></span></div>
-        <tal:block repeat="subpage options/subpages" tal:condition="python: options['subtype'] == 'gallery'">
-          <div class="sublink" tal:define="htmlname string:gallery/${subpage/dir}/index.html; navname subpage/title">- <span metal:use-macro="options/maintemplate/macros/navlink"></span></div>
         </tal:block>
         <div class="link" tal:define="htmlname python: 'license.html'; navname python: 'License'"><span metal:use-macro="options/maintemplate/macros/navlink"></span></div>
       </div>
@@ -48,6 +44,7 @@
         <div class="link"><a href="https://sourceforge.net/projects/pyx/">Project page</a></div>
         <div class="link"><a href="https://sourceforge.net/projects/pyx/files/">Downloads</a></div>
         <div class="link"><a href="https://sourceforge.net/p/pyx/mailman/">Mailing lists</a></div>
+        <div class="link"><a href="https://sourceforge.net/p/pyx/gallery/">Gallery</a></div>
         <div class="link"><a href="https://sourceforge.net/p/pyx/code/HEAD/tree/trunk/pyx/CHANGES">ChangeLog</a></div>
       </div>
 

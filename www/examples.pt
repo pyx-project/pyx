@@ -9,14 +9,12 @@
       <a class="examplenavigation" href="../index.html">up</a>
       <a class="examplenavigation" tal:attributes="href python: options['mkrellink'](options['next'], options)">next</a>
     </div>
-    <h1 tal:condition="python: options['subtype'] == 'examples'">PyX — Examples: <tal:block content="options/title"/></h1>
-    <h1 tal:condition="python: options['subtype'] == 'gallery'">PyX — Gallery: <tal:block content="options/title"/></h1>
+    <h1>PyX — Examples: <tal:block content="options/title"/></h1>
 
     <tal:block tal:content="structure options/text"/>
 
     <div class="exampleseparator" tal:condition="options/text"></div>
-    <h2 tal:condition="python: options['subtype'] == 'examples'">Example overview for this section</h2>
-    <h2 tal:condition="python: options['subtype'] == 'gallery'">Overview for this section</h2>
+    <h2>Example overview for this section</h2>
     <span class="example" tal:repeat="example options/examples">
       <div class="exampleseparator" tal:condition="not: repeat/example/start"></div>
       <div class="examplethumbnail">

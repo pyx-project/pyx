@@ -25,17 +25,14 @@ copy:
 	cp -r ../manual/_build/html build/manual
 	cp -r ../manual/_build/html/manual.html build/manual/index.html
 	cp -r ../faq/_build/html build/pyxfaq
-	for s in examples gallery; \
+	for d in "" $$(grep / ../examples/INDEX); \
 	do \
-	  for d in "" $$(grep / ../$$s/INDEX); \
+	  mkdir -p build/examples/$$d; \
+	  for t in png py ipynb jpg dat eps pdf; \
 	  do \
-	    mkdir -p build/$$s/$$d; \
-	    for t in png py ipynb jpg dat eps pdf; \
-	    do \
-	      cp ../$$s/$$d*.$$t build/$$s/$$d 2> /dev/null; \
-	    done; \
+	    cp ../examples/$$d*.$$t build/examples/$$d 2> /dev/null; \
 	  done; \
-	done
+	done; \
 
 html:
 	$(PYTHON) pt2html.py

@@ -17,7 +17,8 @@
     learn how to effectively use PyX.</p>
 
     <p>More elaborate PyX drawings together with the corresponding sources can
-    be found in the <a href="gallery/index.html">gallery</a>. </p>
+    be found in the <a href="https://sourceforge.net/p/pyx/gallery/">gallery</a>.
+    This is a wiki and contributions by PyX users are very welcome.</p>
 
     <h2>Manual</h2>
 
@@ -25,8 +26,8 @@
     is available both as PDF and as online HTML version:</p>
 
     <ul>
-      <li><a href="manual.pdf">reference manual (PDF version)</a></li>
-      <li><a href="manual/index.html">online reference manual (HTML version)</a></li>
+      <li><a href="manual/index.html">Manual — HTML version</a></li>
+      <li><a href="manual.pdf">Manual — PDF version</a></li>
     </ul>
 
     <h2>FAQ</h2>
@@ -35,8 +36,8 @@
     contributed by Gert-Ludwig Ingold:</p>
 
     <ul>
-      <li><a href="pyxfaq.pdf">FAQ (PDF version)</a></li>
-      <li><a href="pyxfaq/index.html">FAQ (HTML version)</a></li>
+      <li><a href="pyxfaq/index.html">FAQ — HTML version</a></li>
+      <li><a href="pyxfaq.pdf">FAQ — PDF version</a></li>
     </ul>
 
 

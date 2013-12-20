@@ -196,7 +196,6 @@ for ptname in glob.glob("*.pt"):
         template = PageTemplateFile(ptname)
         content = template(pagename=htmlname,
                            maintemplate=maintemplate,
-                           subtype=None,
                            mkrellink=mkrellink,
                            version=pyx.__version__,
                            news=news)
@@ -257,7 +256,6 @@ def processexamples(basedir):
                            title=title,
                            text=text,
                            examples=examples,
-                           subtype=basedir,
                            subpages=examplepages,
                            mkrellink=mkrellink,
                            prev=prev,
@@ -278,7 +276,6 @@ def processexamples(basedir):
                                           maintemplate=maintemplate,
                                           dir=dir,
                                           example=aexample,
-                                          subtype=basedir,
                                           subpages=examplepages,
                                           mkrellink=mkrellink,
                                           prev=prev,
@@ -288,4 +285,3 @@ def processexamples(basedir):
 
 
 processexamples("examples")
-processexamples("gallery")
