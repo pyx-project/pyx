@@ -11,3 +11,8 @@ from the `path` module here. Once this is done, we write an EPS file and a PDF
 file containing all items inserted into the canvas instance. Since we did not
 pass a filename as argument to the write methods, the resulting files will just
 be named as the Python script - minus the extension, of course.
+
+This rather minimal example is quite useful for debugging your setup. In case
+of problems with your installation, you can add a `pyxinfo()` call immediately
+after the import. PyX will then write various information to `stderr`, which is
+quite helpful for yourself or when asking for help on the mailing list.
