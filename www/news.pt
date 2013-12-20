@@ -9,6 +9,16 @@
     <h1>PyX — News</h1>
 
     <dl>
+      <dt>2013-12-20: PyX 0.13 released</dt>
+      <dd>
+        PyX has been ported to Python 3. It now requires Python 3.2 and above.
+        Python 2 users should continue to use the previous PyX releases. Along
+        with the port the text module was modernized and got a new
+        documentation. In addition, the normpath now removes cusps from
+        normcurves by spliting the curves on instability points such that
+        tangents etc. are always well-defined. Various improvements and bug
+        fixes complete this release.
+      </dd>
       <dt>2012-10-26: PyX 0.12.1 released</dt>
       <dd>
         This release fixes drawing bugs in the gradient style for the recently
