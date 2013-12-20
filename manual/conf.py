@@ -113,7 +113,7 @@ html_title = 'PyX %s Manual' % release
 
 # The name of an image file (relative to this directory) to place at the top
 # of the sidebar.
-html_logo = '../www/png/pyxlogo.png'
+#html_logo = None
 
 # The name of an image file (within the static path) to use as favicon of the
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
