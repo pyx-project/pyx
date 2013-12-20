@@ -6,7 +6,7 @@ sys.path[:0] = [".."]
 import pyx
 from pyx import *
 
-text.set(mode="latex")
+text.set(text.LatexRunner)
 text.preamble(r"\renewcommand{\familydefault}{\ttdefault}")
 
 c = canvas.canvas()
