@@ -1,5 +1,7 @@
 0.13 (2013/??/??):
   - Requires at least Python 3.2
+  - The gallery has been moved to https://sourceforge.net/p/pyx/gallery/, which
+    is a wiki. Contributions are welcome.
   - filelocator module:
     - cygwin LaTeX with windows python patch (thanks to Sybren A. Stüvel)
   - graph styles:
