@@ -16,6 +16,8 @@ Local usage without C extension modules
 PyX can be run without any installation. To test your environment copy the file
 hello.py from the examples directory to the main pyx directory (where the
 subdirectory pyx containing the modules is located) and type 'python hello.py'.
+For debugging, you can call the pyxinfo() method immediately after the import to
+get some details written to stderr.
 
 
 Installation procedure
