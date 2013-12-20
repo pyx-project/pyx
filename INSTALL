@@ -16,10 +16,6 @@ Local usage without C extension modules
 PyX can be run without any installation. To test your environment copy the file
 hello.py from the examples directory to the main pyx directory (where the
 subdirectory pyx containing the modules is located) and type 'python hello.py'.
-When your TeX installation isn't configured to use Type1 fonts by default, you
-may have to insert the line 'text.set(fontmaps="psfonts.cmz")' after the import
-statement and try again. See the FAQ for further details about TeX and font
-configuration issues.
 
 
 Installation procedure
@@ -58,51 +54,10 @@ or install PyX system wide by using
 or an appropriate variant thereof.
 
 
-For Mac OS X users
-------------------
+Installation by easy_install or pip
+-----------------------------------
 
-A complete install of the TeX i-Package (http://ii2.sourceforge.net/) contains
-the kpathsea library. The include files and the library itself can be found in
-/usr/local/teTeX/include and /usr/local/teTeX/lib, respectively. These
-directories should be indicated in the setup.cfg file.
-
-
-Path setup when installing to a non-standard directory layout
--------------------------------------------------------------
-
-PyX places shared data in the directory <install-dir>/share/pyx and the system
-wide configuration in the file <root>/etc/pyxrc. <install-dir> and <root> are
-options to the distutils install-data command. See the distutils documentation
-for details. The final path information is stored in siteconfig.py. While the
-original siteconfig.py calculates the positions relative to its current
-position thus enabling local usage, during install a proper siteconfig.py will
-be created.
-
-To install the complete package at some other place, say /tmp, use the command
-
-    python setup.py install --root=/tmp --install-data=/ --install-lib=/
-
-You can then tell python to use this installation by
-
-    import sys
-    sys.path.insert(0, "/tmp")
-
-or by adjusting your PYTHONPATH environment variable.
-
-
-Compiling the manual
---------------------
-
-For the layout of the manual we have made use of the standard Python
-documentation framework. For building the manual, you will need the script
-"mkhowto" of your Python distribution. Please make a soft-link of this script
-into the manual directory
-
-    cd manual/
-    ln -s </usr/lib/>python/doc/tools/mkhowto mkhowto
-    make
-
-Note that this requires Python version 2.3 and above. When using older Python
-versions you need to get the Python documentation sources separately from
-http://www.python.org/ and try to find the script there. Alternatively you may
-download the manual from the PyX homepage at http://pyx.sourceforge.net/.
+PyX can be installed via easy_install and pip straightforwardly. It can be run
+as an zipped egg. Note that you need to allow the installation of externally
+hosted files. Thus you probably need to add "--allow-external pyx" in future
+versions of pip.
