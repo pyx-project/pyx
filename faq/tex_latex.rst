@@ -117,8 +117,7 @@ On the PyX level, you can specify math mode for the whole string by using
    c.text(0, 0, r"{\alpha}", text.mathmode)
 
 Keep also in mind that the standard Python interpretation of the backslash as 
-introducing escape sequences needs to be prevented 
-:ref:`raw_string`.
+introducing escape sequences needs to be prevented.
 
 On the TeX/LaTeX level you should enclose the commands requiring math mode in
 ``$``'s. As an example, ``$\alpha_i^j$`` will produce a greek letter alpha with
