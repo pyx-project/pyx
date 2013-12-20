@@ -22,13 +22,23 @@ Where do I get the latest version of PyX?
 =========================================
 
 The current release of PyX (as well as older ones) is freely available from
-`pyx.sourceforge.net <http://pyx.sourceforge.net>`_ where also a
-subversion repository with the latest patches can be found. Possibly older
-versions of PyX are also available as package for various Linux distributions:
-see, for instance,  `http://packages.debian.org/testing/python-pyx
-<http://packages.debian.org/testing/python-pyx>`_ for information
-on the \PyX package in Debian GNU/Linux or `http://packages.ubuntu.com/raring/python-pyx
-<http://packages.ubuntu.com/raring/python-pyx>`_ for Ubuntu.
+`http://pyx.sourceforge.net <http://pyx.sourceforge.net>`_ where also a
+subversion repository with the latest patches can be found. In addition, PyX is
+registered on the Python Package Index at
+`https://pypi.python.org/pypi/PyX <https://pypi.python.org/pypi/PyX>`_ and can
+be installed by ``easy_install`` and ``pip``. However, the release files are
+not hosted on PyPI itself and for future versions of ``pip`` you need to allow
+external installation by ``--allow-external pyx``. Please see the
+`pip documentation <http://www.pip-installer.org/>`_ for details.
+
+Possibly older versions of PyX are also available as package for various Linux
+distributions: see, for instance,
+`http://packages.debian.org/testing/python-pyx <http://packages.debian.org/testing/python-pyx>`_
+for information on the PyX package in Debian GNU/Linux or
+`http://packages.ubuntu.com/raring/python-pyx <http://packages.ubuntu.com/raring/python-pyx>`_
+for Ubuntu.
+
+PyX has no dependencies on other Python packages.
 
 How can I determine the version of PyX running on my machine?
 =============================================================
@@ -46,7 +56,7 @@ How can I access older versions of PyX?
 
 There are reasons which might make it necessary to use older versions of PyX.
 If you are using Python 2 you will need PyX version 0.12.1 or earlier (see
-:ref:`_python_requirements`). Furthermore, as at present it is not guaranteed
+:ref:`python_requirements`). Furthermore, as at present it is not guaranteed
 that PyX is backward compatible, it may be desirable to access an older version
 of PyX instead of adapting older code to a more recent version of PyX. In order
 to do that, one needs the corresponding PyX package (see
@@ -122,7 +132,7 @@ X11, ``xpdf`` might be an alternative. It is available from
 `http://www.foolabs.com/xpdf/ <http://www.foolabs.com/xpdf/>`_.
 
 If you want to do interactive development of a PyX graphics, you might consider
-to use an IPython notebook (see :ref:`_pyx_ipython_notebook`).
+to use an IPython notebook (see :ref:`pyx_ipython_notebook`).
 
 .. _pyx_ipython_notebook:
 
