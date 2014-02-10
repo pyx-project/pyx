@@ -1082,7 +1082,7 @@ The class :class:`line` provides a changeable line style. Its definition is:
 
    Density plots can be created by the density style. It is similar to a surface
    plot in 2d, but it does not use a mesh, but a bitmap representation instead.
-   Due to that difference, the file size is smaller and not color interpolation
+   Due to that difference, the file size is smaller and no color interpolation
    takes place. Furthermore the style can be used with equidistantly spaced data
    only (after conversion by the axis, so logarithmic raw data and such are
    possible using proper axes). Further arguments are identical to the
