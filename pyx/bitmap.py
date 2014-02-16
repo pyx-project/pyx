@@ -332,9 +332,9 @@ class bitmap_trafo(baseclasses.canvasitem):
                 bands = data.split()
                 alpha = bands[0]
                 data = image(self.imagewidth, self.imageheight, mode,
-                             "".join(["".join(values)
-                                      for values in zip(*[band.tobytes()
-                                                          for band in bands[1:]])]), palette=data.palette)
+                             b"".join([bytes(values)
+                                       for values in zip(*[band.tobytes()
+                                                           for band in bands[1:]])]), palette=data.palette)
         if mode.endswith("A"):
             bands = data.split()
             bands = list(bands[-1:]) + list(bands[:-1])
@@ -343,15 +343,15 @@ class bitmap_trafo(baseclasses.canvasitem):
                 alpha = True
                 # TODO: this is slow, but we don't want to depend on PIL or anything ... still, its incredibly slow to do it with lists and joins
                 data = image(self.imagewidth, self.imageheight, "A%s" % mode,
-                             "".join(["".join(values)
-                                      for values in zip(*[band.tobytes()
-                                                          for band in bands])]), palette=data.palette)
+                             b"".join([bytes(values)
+                                       for values in zip(*[band.tobytes()
+                                                           for band in bands])]), palette=data.palette)
             else:
                 alpha = bands[0]
                 data = image(self.imagewidth, self.imageheight, mode,
-                             "".join(["".join(values)
-                                      for values in zip(*[band.tobytes()
-                                                          for band in bands[1:]])]), palette=data.palette)
+                             b"".join([bytes(values)
+                                       for values in zip(*[band.tobytes()
+                                                           for band in bands[1:]])]), palette=data.palette)
 
         if mode == "P":
             palettemode, palettedata = data.palette.getdata()
