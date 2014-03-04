@@ -1,3 +1,9 @@
+XXX
+  - bitmap module:
+    - using bytes in image type conversions
+  - text module:
+    - no end of pages test when no dvi is created at all
+
 0.13 (2013/12/20):
   - Requires at least Python 3.2
   - The gallery has been moved to https://sourceforge.net/p/pyx/gallery/, which

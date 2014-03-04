@@ -1197,14 +1197,14 @@ class SingleRunner:
         self.texinput.close()            # close the input queue and
         self.texoutput.done()            # wait for finish of the output
 
-        if not self.texipc:
+        if self.needdvitextboxes:
             dvifilename = os.path.join(self.tmpdir, "texput.dvi")
             self.dvifile = dvifile.DVIfile(dvifilename, debug=self.dvitype)
             page = 1
             for box in self.needdvitextboxes:
                 box.readdvipage(self.dvifile, page)
                 page += 1
-        if self.dvifile.readpage(None) is not None:
+        if self.dvifile is not None and self.dvifile.readpage(None) is not None:
             raise ValueError("end of dvifile expected but further pages follow")
 
         atexit.unregister(self._cleanup)
