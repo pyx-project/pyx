@@ -79,9 +79,6 @@ class gray(color):
         if context.fillattr:
             file.write("%f g\n" % self.g)
 
-    def processCairo(self, ctx, writer, context, registry, bbox):
-        ctx.set_source_rgb(self.g, self.g, self.g)
-
     def cmyk(self):
         return cmyk(0, 0, 0, 1 - self.g)
 
