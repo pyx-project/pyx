@@ -1,6 +1,8 @@
 XXX
   - bitmap module:
     - using bytes in image type conversions
+  - color module:
+    - fix grey class
   - text module:
     - no end of pages test when no dvi is created at all
 

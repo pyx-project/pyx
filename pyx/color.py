@@ -64,39 +64,42 @@ class gray(color):
 
     """grey tones"""
 
-    def __init__(self, gray=0.0):
+    def __init__(self, g=0.0):
         super().__init__()
-        if gray<0 or gray>1:
-            raise ValueError("Value gray out of range [0,1]")
-        self.gray = gray
+        if g<0 or g>1:
+            raise ValueError("Value g out of range [0,1]")
+        self.g = g
 
     def processPS(self, file, writer, context, registry):
-        file.write("%f setgray\n" % self.gray)
+        file.write("%f setgray\n" % self.g)
 
     def processPDF(self, file, writer, context, registry):
         if context.strokeattr:
-            file.write("%f G\n" % self.gray)
+            file.write("%f G\n" % self.g)
         if context.fillattr:
-            file.write("%f g\n" % self.gray)
+            file.write("%f g\n" % self.g)
+
+    def processCairo(self, ctx, writer, context, registry, bbox):
+        ctx.set_source_rgb(self.g, self.g, self.g)
 
     def cmyk(self):
-        return cmyk(0, 0, 0, 1 - self.gray)
+        return cmyk(0, 0, 0, 1 - self.g)
 
     def gray(self):
-        return gray(self.gray)
+        return gray(self.g)
     grey = gray
 
     def hsb(self):
-        return hsb(0, 0, self.gray)
+        return hsb(0, 0, self.g)
 
     def rgb(self):
-        return rgb(self.gray, self.gray, self.gray)
+        return rgb(self.g, self.g, self.g)
 
     def colorspacestring(self):
         return "/DeviceGray"
 
     def to8bitbytes(self):
-        return bytes((int(self.gray*255),))
+        return bytes((int(self.g*255),))
 
 gray.black = gray(0.0)
 gray.white = gray(1.0)
