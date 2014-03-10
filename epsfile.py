@@ -159,7 +159,7 @@ def _readbbox(file):
                     raise IOError("invalid number of bounding box values")
                 return bbox.bbox_pt(*list(map(int, values)))
         elif (line.rstrip() == b"%%EndComments" or
-              (len(line) >= 2 and line[0] != "%" and line[1] not in string.whitespace)):
+              (len(line) >= 2 and chr(line[0]) != "%" and chr(line[1]) not in string.whitespace)):
             # implicit end of comments section
             break
     if not bboxatend:
