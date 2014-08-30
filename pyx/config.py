@@ -280,6 +280,8 @@ if os.name == "nt":
 else:
     user_pyxrc = os.path.expanduser("~/.pyxrc")
 config.read(user_pyxrc, encoding="utf-8")
+if os.environ.get('PYXRC'):
+    config.read(os.environ['PYXRC'], encoding="utf-8")
 
 def get(section, option, default=_marker):
     if default is _marker:

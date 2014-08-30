@@ -548,6 +548,10 @@ unix-like Systems (including OS X) or ``pyxrc`` in the directory defined by the
 environment variable ``APPDATA`` on MS Windows. This user-specific
 configuration will overwrite the system-wide settings.
 
+Yet another configuration can be set by the environment variable ``PYXRC``. The
+given file will is loaded on top of the configuration defined in the previous
+steps.
+
 
 .. _texipc:
 
