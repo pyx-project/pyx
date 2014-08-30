@@ -42,7 +42,7 @@ class TeXfont:
         # according to the VFtoVP documentation, paragraph 40, a check
         # is only performed if TFMfile.checksum > 0. Anyhow, being
         # more generous here seems to be reasonable
-        if self.TFMfile.checksum != c and self.TFMfile.checksum != 0 and c != 0:
+        if self.TFMfile.checksum != c and self.TFMfile.checksum > 0 and c > 0:
             raise TeXFontError("check sums do not agree: %d vs. %d" %
                                (self.TFMfile.checksum, c))
 
