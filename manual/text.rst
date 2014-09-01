@@ -20,13 +20,13 @@ of the whole machinery.
 
 PyX does not apply any limitations on the text submitted by the user. Instead
 the text is directly passed to TeX. This has the implication, that the text to
-be typeset should  come from a trusted source or some security measures should
-have been applied already. PyX just adds a light and transparent wrapper using
-basic TeX functionality for later identification and output extraction. This
-procedure enables full access to all TeX features and makes PyX on the other
-hand dependent on the error handling provided by TeX. However, a detailed and
-immediate control of the TeX output allows PyX to report problems back to the
-user as they occur.
+be typeset should come from a trusted source or some special security measures
+should be applied (see :ref:`chroot`). PyX just adds a light and transparent
+wrapper using basic TeX functionality for later identification and output
+extraction. This procedure enables full access to all TeX features and makes
+PyX on the other hand dependent on the error handling provided by TeX. However,
+a detailed and immediate control of the TeX output allows PyX to report
+problems back to the user as they occur.
 
 While we only talked about TeX so far (and will continue to do so in the rest
 of this section), it is important to note that the coupling is not limited to
@@ -529,6 +529,8 @@ moment:
 
 .. _config:
 
+.. _pyxrc:
+
 Configuration
 =============
 
@@ -628,6 +630,21 @@ Python program:
 
 .. autofunction:: pyxinfo
 
+.. _chroot:
+
+Typesetting insecure text
+-------------------------
+
+When typesetting text it is passed to a TeX interpreter unchanged\ [#]_. This
+is a security problem if the text does not come from a trusted source. While
+full access to all typesetting features is not considered a problem, you should
+bear in mind that TeX code can be used to read data from any other file
+accessible to the TeX process. To surely prevent this process from accessing
+any other data unrelated to the TeX installation, you can setup a chroot
+environment for the TeX interpreter and configure PyX to use it. This can be
+achieved by setting the ``chroot`` option and adjusting the TeX interpreter
+call and the ``filelocator`` configuration in the ``pyxrc``.
+
 .. rubric:: Footnotes
 
 .. [#] https://en.wikipedia.org/wiki/TeX
@@ -637,4 +654,8 @@ Python program:
 .. [#] If you do not know what this is all about, you can just ignore this
        paragraph. But be sure that the ``pyxgraphics`` keyword argument is
        always set!
+
+.. [#] The text is actually passed as an argument of a TeX command defined by
+       PyX, but this is a minor detail and has no effect regarding possible
+       attacks.
 

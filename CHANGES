@@ -4,9 +4,10 @@ XXX
   - color module:
     - fix grey class
   - epsfile module:
-    - fix parsing of bounding box 
+    - fix parsing of bounding box
   - text module:
     - no end of pages test when no dvi is created at all
+    - add chroot config option needed to use a chrooted TeX installation
 
 0.13 (2013/12/20):
   - Requires at least Python 3.2
