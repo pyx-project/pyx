@@ -293,13 +293,13 @@ class texmessage:
         r = remove_nested_brackets(msg)
         r, m = remove_pattern(texmessage.quoted_file_pattern, r)
         while m:
-            if not os.path.isfile(m.group("filename")):
+            if not os.path.isfile(config.get("text", "chroot", "") + m.group("filename")):
                 return msg
             r, m = remove_pattern(texmessage.quoted_file_pattern, r)
         r, m = remove_pattern(texmessage.file_pattern, r, ignore_nl=False)
         while m:
             for filename in itertools.accumulate(m.group("filename").split("\n")):
-                if os.path.isfile(filename):
+                if os.path.isfile(config.get("text", "chroot", "") + filename):
                     break
             else:
                 return msg
@@ -316,7 +316,7 @@ class texmessage:
         for p in [texmessage.quoted_def_pattern, texmessage.def_pattern]:
             r, m = remove_pattern(p, r)
             while m:
-                if not os.path.isfile(m.group("filename")):
+                if not os.path.isfile(config.get("text", "chroot", "") + m.group("filename")):
                     return msg
                 r, m = remove_pattern(texmessage.quoted_file_pattern, r)
         return r
@@ -331,7 +331,7 @@ class texmessage:
         for p in [texmessage.quoted_graphics_pattern, texmessage.graphics_pattern]:
             r, m = remove_pattern(p, r)
             while m:
-                if not os.path.isfile(m.group("filename")):
+                if not os.path.isfile(config.get("text", "chroot", "") + m.group("filename")):
                     return msg
                 r, m = remove_pattern(texmessage.quoted_file_pattern, r)
         return r
@@ -938,7 +938,7 @@ class SingleRunner:
     texmessages_run_default = [texmessage.font_warning, texmessage.box_warning, texmessage.package_warning,
                                       texmessage.load_def, texmessage.load_graphics]
 
-    def __init__(self, executable,
+    def __init__(self, cmd,
                        texenc="ascii",
                        usefiles=[],
                        texipc=config.getboolean("text", "texipc", 0),
@@ -953,11 +953,12 @@ class SingleRunner:
 
         .. note:: This class cannot be used directly. It is the base class for
                   all texrunners and provides most of the implementation.
-                  Still, to the end user the parameters except for *executable*
+                  Still, to the end user the parameters except for *cmd*
                   are important, as they are preserved in derived classes
                   usually.
 
-        :param str executable: command to start the TeX interpreter
+        :param cmd: command and arguments to start the TeX interpreter
+        :type cmd: list of str
         :param str texenc: encoding to use in the communication with the TeX
             interpreter
         :param usefiles: list of supplementary files to be copied to and from
@@ -984,7 +985,7 @@ class SingleRunner:
         :type texmessages_run: list of :class:`texmessage` parsers
 
         """
-        self.executable = executable
+        self.cmd = cmd
         self.texenc = texenc
         self.usefiles = usefiles
         self.texipc = texipc
@@ -1125,7 +1126,14 @@ class SingleRunner:
         assert self.state == STATE_START
         self.state = STATE_PREAMBLE
 
-        self.tmpdir = tempfile.mkdtemp()
+        chroot = config.get("text", "chroot", "")
+        if chroot:
+            chroot_tmpdir = config.get("text", "tmpdir", "/tmp")
+            chroot_tmpdir_rel = os.path.relpath(chroot_tmpdir, os.sep)
+            base_tmpdir = os.path.join(chroot, chroot_tmpdir_rel)
+        else:
+            base_tmpdir = config.get("text", "tmpdir", None)
+        self.tmpdir = tempfile.mkdtemp(prefix="pyx", dir=base_tmpdir)
         atexit.register(self._cleanup)
         for usefile in self.usefiles:
             extpos = usefile.rfind(".")
@@ -1133,7 +1141,11 @@ class SingleRunner:
                 os.rename(usefile, os.path.join(self.tmpdir, "texput" + usefile[extpos:]))
             except OSError:
                 pass
-        cmd = [self.executable, '--output-directory', self.tmpdir]
+        if chroot:
+            tex_tmpdir = os.sep + os.path.relpath(self.tmpdir, chroot)
+        else:
+            tex_tmpdir = self.tmpdir
+        cmd = self.cmd + ['--output-directory', tex_tmpdir]
         if self.texipc:
             cmd.append("--ipc")
         self.popen = config.Popen(cmd, stdin=config.PIPE, stdout=config.PIPE, stderr=config.STDOUT, bufsize=0)
@@ -1289,12 +1301,13 @@ class SingleRunner:
 
 class SingleTexRunner(SingleRunner):
 
-    def __init__(self, executable=config.get("text", "tex", "tex"), lfs="10pt", **kwargs):
+    def __init__(self, cmd=config.getlist("text", "tex", ["tex"]), lfs="10pt", **kwargs):
         """Plain TeX interface.
 
         This class adjusts the :class:`SingleRunner` to use plain TeX.
 
-        :param str executable: command to start the TeX interpreter
+        :param cmd: command and arguments to start the TeX interpreter
+        :type cmd: list of str
         :param lfs: resemble LaTeX font settings within plain TeX by loading a
             lfs-file
         :type lfs: str or None
@@ -1308,7 +1321,7 @@ class SingleTexRunner(SingleRunner):
         options, and style files).
 
         """
-        super().__init__(executable=executable, **kwargs)
+        super().__init__(cmd=cmd, **kwargs)
         self.lfs = lfs
         self.name = "TeX"
 
@@ -1341,14 +1354,16 @@ class SingleLatexRunner(SingleRunner):
     #: default :class:`texmessage` parsers at ``\begin{document}``
     texmessages_begindoc_default = [texmessage.load, texmessage.no_aux]
 
-    def __init__(self, executable=config.get("text", "latex", "latex"),
+    def __init__(self, cmd=config.getlist("text", "latex", ["latex"]),
                        docclass="article", docopt=None, pyxgraphics=True,
                        texmessages_docclass=[], texmessages_begindoc=[], **kwargs):
         """LaTeX interface.
 
         This class adjusts the :class:`SingleRunner` to use LaTeX.
 
-        :param str executable: command to start the TeX interpreter
+        :param cmd: command and arguments to start the TeX interpreter
+            in LaTeX mode
+        :type cmd: list of str
         :param str docclass: document class
         :param docopt: document loading options
         :type docopt: str or None
@@ -1363,7 +1378,7 @@ class SingleLatexRunner(SingleRunner):
         :param kwargs: additional arguments passed to :class:`SingleRunner`
 
         """
-        super().__init__(executable=executable, **kwargs)
+        super().__init__(cmd=cmd, **kwargs)
         self.docclass = docclass
         self.docopt = docopt
         self.pyxgraphics = pyxgraphics
