@@ -114,9 +114,9 @@ def _arctobezierpath(x_pt, y_pt, r_pt, phi1, phi2, dphimax=45):
 
     if r_pt == 0 or phi1-phi2 == 0: return []
 
-    subdivisions = abs(int((1.0*(phi1-phi2))/dphimax))+1
+    subdivisions = int((phi2-phi1)/dphimax)+1
 
-    dphi = (1.0*(phi2-phi1))/subdivisions
+    dphi = (phi2-phi1)/subdivisions
 
     for i in range(subdivisions):
         apath.append(_arctobcurve(x_pt, y_pt, r_pt, phi1+i*dphi, phi1+(i+1)*dphi))
