@@ -1218,7 +1218,7 @@ class ellipse_pt(path):
     and the angle angle of the first axis"""
 
     def __init__(self, x_pt, y_pt, a_pt, b_pt, angle, **kwargs):
-        t = trafo.scale(a_pt, b_pt, epsilon=None).rotated(angle).translated_pt(x_pt, y_pt)
+        t = trafo.scale(a_pt, b_pt).rotated(angle).translated_pt(x_pt, y_pt)
         p = circle_pt(0, 0, 1, **kwargs).normpath(epsilon=None).transformed(t).path()
         path.__init__(self, *p.pathitems)
 
