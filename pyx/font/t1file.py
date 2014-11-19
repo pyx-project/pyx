@@ -938,6 +938,7 @@ class T1file:
                         # as long as any of it is used.
                         for subr in range(len(self.flexhintsubrs)):
                             subrs.add(subr)
+                        subrsmax = max(subrs)
                 else:
                     subrsmax = -1
             else:
