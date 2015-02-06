@@ -741,7 +741,7 @@ class graphxyz(graph):
 
 
     def __init__(self, xpos=0, ypos=0, size=None,
-                 xscale=1, yscale=1, zscale=1/goldenmean,
+                 xscale=1, yscale=1, zscale=1/goldenmean, xy12axesat=None, xy12axesatname="z",
                  projector=central(10, -30, 30), axesdist=0.8*unit.v_cm, key=None,
                  **axes):
         graph.__init__(self)
@@ -758,6 +758,8 @@ class graphxyz(graph):
         self.xscale = xscale
         self.yscale = yscale
         self.zscale = zscale
+        self.xy12axesat = xy12axesat
+        self.xy12axesatname = xy12axesatname
         self.projector = projector
         self.axesdist_pt = unit.topt(axesdist)
         self.key = key
@@ -976,17 +978,23 @@ class graphxyz(graph):
         if self.did(self.doaxispositioner, axisname):
             return
         self.doranges()
+        if self.xy12axesat is not None:
+            self.doaxiscreate(self.xy12axesatname)
+            self.doaxispositioner(self.xy12axesatname)
+            xy12axesatv = self.axes[self.xy12axesatname].convert(self.xy12axesat)
+        else:
+            xy12axesatv = 0
         if axisname == "x":
-            self.axes[axisname].setpositioner(positioner.flexlineaxispos_pt(lambda vx: self.vpos_pt(vx, self.xorder, 0),
-                                                                            lambda vx: self.vtickdirection(vx, self.xorder, 0, vx, 1-self.xorder, 0),
+            self.axes[axisname].setpositioner(positioner.flexlineaxispos_pt(lambda vx: self.vpos_pt(vx, self.xorder, xy12axesatv),
+                                                                            lambda vx: self.vtickdirection(vx, self.xorder, 0, vx, 1-self.xorder, xy12axesatv),
                                                                             self.xvgridpath))
             if self.xorder:
                 self.axes[axisname].hidden = not self.py1show and not self.pz0show
             else:
                 self.axes[axisname].hidden = not self.py0show and not self.pz0show
         elif axisname == "x2":
-            self.axes[axisname].setpositioner(positioner.flexlineaxispos_pt(lambda vx: self.vpos_pt(vx, 1-self.xorder, 0),
-                                                                            lambda vx: self.vtickdirection(vx, 1-self.xorder, 0, vx, self.xorder, 0),
+            self.axes[axisname].setpositioner(positioner.flexlineaxispos_pt(lambda vx: self.vpos_pt(vx, 1-self.xorder, xy12axesatv),
+                                                                            lambda vx: self.vtickdirection(vx, 1-self.xorder, 0, vx, self.xorder, xy12axesatv),
                                                                             self.xvgridpath))
             if self.xorder:
                 self.axes[axisname].hidden = not self.py0show and not self.pz0show
@@ -1009,16 +1017,16 @@ class graphxyz(graph):
             else:
                 self.axes[axisname].hidden = not self.py1show and not self.pz1show
         elif axisname == "y":
-            self.axes[axisname].setpositioner(positioner.flexlineaxispos_pt(lambda vy: self.vpos_pt(self.yorder, vy, 0),
-                                                                            lambda vy: self.vtickdirection(self.yorder, vy, 0, 1-self.yorder, vy, 0),
+            self.axes[axisname].setpositioner(positioner.flexlineaxispos_pt(lambda vy: self.vpos_pt(self.yorder, vy, xy12axesatv),
+                                                                            lambda vy: self.vtickdirection(self.yorder, vy, 0, 1-self.yorder, vy, xy12axesatv),
                                                                             self.yvgridpath))
             if self.yorder:
                 self.axes[axisname].hidden = not self.px1show and not self.pz0show
             else:
                 self.axes[axisname].hidden = not self.px0show and not self.pz0show
         elif axisname == "y2":
-            self.axes[axisname].setpositioner(positioner.flexlineaxispos_pt(lambda vy: self.vpos_pt(1-self.yorder, vy, 0),
-                                                                            lambda vy: self.vtickdirection(1-self.yorder, vy, 0, self.yorder, vy, 0),
+            self.axes[axisname].setpositioner(positioner.flexlineaxispos_pt(lambda vy: self.vpos_pt(1-self.yorder, vy, xy12axesatv),
+                                                                            lambda vy: self.vtickdirection(1-self.yorder, vy, 0, self.yorder, vy, xy12axesatv),
                                                                             self.yvgridpath))
             if self.yorder:
                 self.axes[axisname].hidden = not self.px0show and not self.pz0show
