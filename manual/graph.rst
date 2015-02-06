@@ -332,7 +332,7 @@ except for its additional dimension. In the following documentation only the
 differences to the :class:`graphxy` class are described.
 
 
-.. class:: graphxyz(xpos=0, ypos=0, size=None, xscale=1, yscale=1, zscale=1/goldenmean, projector=central(10, -30, 30), key=None, **axes)
+.. class:: graphxyz(xpos=0, ypos=0, size=None, xscale=1, yscale=1, zscale=1/goldenmean, xy12axesat=None, xy12axesatname="z", projector=central(10, -30, 30), key=None, **axes)
 
    This class provides an x-y-z-graph.
 
@@ -345,6 +345,9 @@ differences to the :class:`graphxy` class are described.
    *yscale*, and *zscale* by the same factor. For the central projector the
    projectors internal distance would also need to be changed by this factor. Thus
    *size* changes the size of the whole graph without changing the projection.
+
+   *xy12axesat* moves the xy-plane of the axes ``x``, ``x2``, ``y``, ``y2`` to the
+   given value at the axis *xy12axesatname*.
 
    *projector* defines the conversion of 3d coordinates to 2d coordinates. It can
    be an instance of :class:`central` or :class:`parallel` described below.

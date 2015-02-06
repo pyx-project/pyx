@@ -8,6 +8,8 @@ XXX
   - text module:
     - no end of pages test when no dvi is created at all
     - add chroot config option needed to use a chrooted TeX installation
+  - graph module:
+    - add xy12axesat feature to graphxyz
 
 0.13 (2013/12/20):
   - Requires at least Python 3.2
