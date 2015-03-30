@@ -113,9 +113,7 @@ class image:
             raise RuntimeError("cannot extract bands from compressed image")
         bands = len(self.mode)
         width, height = self.size
-        return [image(width, height, "L", "".join([self.data[i*bands+band]
-                                                             for i in range(width*height)]))
-                for band in range(bands)]
+        return [image(width, height, "L", bytes(self.data[band::bands])) for band in range(bands)]
 
     def tobytes(self, *args):
         if len(args):
