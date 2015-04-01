@@ -10,6 +10,8 @@ XXX
     - add chroot config option needed to use a chrooted TeX installation
   - graph module:
     - add xy12axesat feature to graphxyz
+  - canvas module:
+    - fix clipping and transformation applied together
 
 0.13 (2013/12/20):
   - Requires at least Python 3.2
