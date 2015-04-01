@@ -122,12 +122,10 @@ class canvas(baseclasses.canvasitem):
         for aattr in reversed(attr.getattrs(attrs, [trafo.trafo_pt, clip])):
             if isinstance(aattr, trafo.trafo_pt):
                 self.trafo = self.trafo * aattr
-                if self.clip is not None:
-                    self.clip = clip(self.clip.path.transformed(aattr))
             else:
                 if self.clip is not None:
                     raise ValueError("single clipping allowed only")
-                self.clip = aattr
+                self.clip = clip(aattr.path.transformed(self.trafo))
 
     def __len__(self):
         return len(self.items)
@@ -166,10 +164,10 @@ class canvas(baseclasses.canvasitem):
                 file.write("gsave\n")
                 for attr in self.styles:
                     attr.processPS(file, writer, context, registry)
-                if self.trafo is not trafo.identity:
-                    self.trafo.processPS(file, writer, context, registry)
                 if self.clip is not None:
                     self.clip.processPS(file, writer, context, registry)
+                if self.trafo is not trafo.identity:
+                    self.trafo.processPS(file, writer, context, registry)
             nbbox = bboxmodule.empty()
             for item in self.items:
                 item.processPS(file, writer, context, registry, nbbox)
@@ -192,10 +190,10 @@ class canvas(baseclasses.canvasitem):
                     if isinstance(attr, style.fillstyle):
                         context.fillstyles.append(attr)
                     attr.processPDF(file, writer, context, registry)
-                if self.trafo is not trafo.identity:
-                    self.trafo.processPDF(file, writer, context, registry)
                 if self.clip is not None:
                     self.clip.processPDF(file, writer, context, registry)
+                if self.trafo is not trafo.identity:
+                    self.trafo.processPDF(file, writer, context, registry)
             nbbox = bboxmodule.empty()
             for item in self.items:
                 if not writer.text_as_path:
