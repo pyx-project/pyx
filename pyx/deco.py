@@ -130,13 +130,6 @@ class decoratedpath(baseclasses.canvasitem):
             for style in styles:
                 style.processPS(file, writer, context, registry)
 
-        if self.strokestyles is None and self.fillstyles is None:
-            if not len(self.ornaments):
-                raise RuntimeError("Path neither to be stroked nor filled nor decorated in another way")
-            # just draw additional elements of decoratedpath
-            self.ornaments.processPS(file, writer, context, registry, bbox)
-            return
-
         strokepath = self.strokepath()
         fillpath = self.path
 
@@ -191,7 +184,7 @@ class decoratedpath(baseclasses.canvasitem):
 
         if self.strokestyles is not None and (strokepath is not fillpath or self.fillstyles is None):
             # this is the only relevant case still left
-            # Note that a possible stroking has already been done.
+            # Note that a possible filling has already been done.
             acontext = context()
             if self.strokestyles:
                 file.write("gsave\n")
@@ -231,13 +224,6 @@ class decoratedpath(baseclasses.canvasitem):
             for style in fillstyles:
                 style.processPDF(file, writer, context, registry)
             context.strokeattr = 1
-
-        if self.strokestyles is None and self.fillstyles is None:
-            if not len(self.ornaments):
-                raise RuntimeError("Path neither to be stroked nor filled nor decorated in another way")
-            # just draw additional elements of decoratedpath
-            self.ornaments.processPDF(file, writer, context, registry, bbox)
-            return
 
         strokepath = self.strokepath()
         fillpath = self.path

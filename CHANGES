@@ -12,6 +12,8 @@ XXX
     - add xy12axesat feature to graphxyz
   - canvas module:
     - fix clipping and transformation applied together
+  - deco module:
+    - remove shortcut for ornaments only to not skip global styles
 
 0.13 (2013/12/20):
   - Requires at least Python 3.2
