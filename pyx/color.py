@@ -156,9 +156,9 @@ class rgb(color):
         return struct.pack("BBB", int(self.r*255), int(self.g*255), int(self.b*255))
 
     def tohexstring(self, cssstrip=1, addhash=1):
-        hexstring = binascii.b2a_hex(self.to8bitbytes())
+        hexstring = binascii.b2a_hex(self.to8bitbytes()).decode('ascii')
         if cssstrip and hexstring[0] == hexstring[1] and hexstring[2] == hexstring[3] and hexstring[4] == hexstring[5]:
-            hexstring = "".join([hexstring[0], hexstring[1], hexstring[2]])
+            hexstring = "".join([hexstring[0], hexstring[2], hexstring[4]])
         if addhash:
             hexstring = "#" + hexstring
         return hexstring

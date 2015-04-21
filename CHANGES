@@ -3,6 +3,7 @@ XXX
     - using bytes in image type conversions and channel extraction
   - color module:
     - fix grey class
+    - fix rgb css binary issue and short code index error
   - epsfile module:
     - fix parsing of bounding box
   - text module:
