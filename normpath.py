@@ -1701,14 +1701,10 @@ class normpath:
 
     @_valueorlistmethod
     def curvature_pt(self, params):
-        """return the curvature in 1/pt at params
-
-        The curvature radius is the inverse of the curvature. Note that this
-        radius can be negative or positive, depending on the sign of the
-        curvature."""
+        """return the curvature in 1/pt at params or arc length(s) in pts"""
 
         result = [None] * len(params)
-        for normsubpathindex, (indices, params) in list(self._distributeparams(params).items()):
+        for normsubpathindex, (indices, params) in list(self._distributeparams(self._convertparams(params, self.arclentoparam_pt)).items()):
             for index, curvature_pt in zip(indices, self.normsubpaths[normsubpathindex].curvature_pt(params)):
                 result[index] = curvature_pt
         return result
