@@ -1021,21 +1021,9 @@ class path:
         """return param corresponding of the beginning of the path"""
         return self.normpath().begin()
 
-    def curveradius_pt(self, params):
-        """return the curvature radius in pts at param(s) or arc length(s) in pts
-
-        The curvature radius is the inverse of the curvature. When the
-        curvature is 0, None is returned. Note that this radius can be negative
-        or positive, depending on the sign of the curvature."""
-        return self.normpath().curveradius_pt(params)
-
-    def curveradius(self, params):
-        """return the curvature radius at param(s) or arc length(s)
-
-        The curvature radius is the inverse of the curvature. When the
-        curvature is 0, None is returned. Note that this radius can be negative
-        or positive, depending on the sign of the curvature."""
-        return self.normpath().curveradius(params)
+    def curvature_pt(self, params):
+        """return the curvature in 1/pts at param(s) or arc length(s) in pts"""
+        return self.normpath().curvature_pt(params)
 
     def end(self):
         """return param corresponding of the end of the path"""
