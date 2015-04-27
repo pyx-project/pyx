@@ -180,11 +180,11 @@ def testtangent(c):
     cc.stroke(p)
     cc = canvas.canvas([canvas.clip(cc.bbox().path())])
     for i in range(points):
-        radius = p.curveradius(arclen*i/points)
-        if radius is not normpath.invalid:
-            radius = unit.tocm(radius)
-            pos = p.trafo(arclen*i/points).apply(0,radius*radius/abs(radius))
-            cc.stroke(circle(0, 0,unit.t_cm * abs(radius)), [color.grey(0.5), trafo.translate(*pos)])
+        curvature_pt = p.curvature_pt(unit.topt(arclen)*i/points)
+        if curvature_pt != 0:
+            radius_pt = 1/curvature_pt
+            x_pt, y_pt = p.trafo(arclen*i/points).apply_pt(0, radius_pt)
+            cc.stroke(circle_pt(x_pt, y_pt, radius_pt), [color.grey(0.5)])
     c.insert(cc)
 
 
