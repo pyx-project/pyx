@@ -464,7 +464,7 @@ def lineargradient_cmyk(mincolor, maxcolor):
                                   lambda x:maxcolor.k * x + mincolor.k * (1-x))
 
 def lineargradient_gray(mincolor, maxcolor):
-     return functiongradient_gray(lambda x:maxcolor.gray * x + mincolor.gray * (1-x))
+     return functiongradient_gray(lambda x:maxcolor.g * x + mincolor.g * (1-x))
 
 def lineargradient_hsb(mincolor, maxcolor):
      return functiongradient_hsb(lambda x:maxcolor.h * x + mincolor.h * (1-x),
