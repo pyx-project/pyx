@@ -551,8 +551,9 @@ class arc_pt(pathitem):
                                                self.angle1, self.angle2)
 
     def createcontext(self):
-        x_pt, y_pt = _arcpoint(self.x_pt, self.y_pt, self.r_pt, self.angle2)
-        return context(x_pt, y_pt, x_pt, y_pt)
+        x1_pt, y1_pt = _arcpoint(self.x_pt, self.y_pt, self.r_pt, self.angle1)
+        x2_pt, y2_pt = _arcpoint(self.x_pt, self.y_pt, self.r_pt, self.angle2)
+        return context(x2_pt, y2_pt, x1_pt, y1_pt)
 
     def createbbox(self):
         return bboxmodule.bbox_pt(*_arcbboxdata(self.x_pt, self.y_pt, self.r_pt,
@@ -608,8 +609,9 @@ class arcn_pt(pathitem):
                                                 self.angle1, self.angle2)
 
     def createcontext(self):
-        x_pt, y_pt = _arcpoint(self.x_pt, self.y_pt, self.r_pt, self.angle2)
-        return context(x_pt, y_pt, x_pt, y_pt)
+        x1_pt, y1_pt = _arcpoint(self.x_pt, self.y_pt, self.r_pt, self.angle1)
+        x2_pt, y2_pt = _arcpoint(self.x_pt, self.y_pt, self.r_pt, self.angle2)
+        return context(x2_pt, y2_pt, x1_pt, y1_pt)
 
     def createbbox(self):
         return bboxmodule.bbox_pt(*_arcbboxdata(self.x_pt, self.y_pt, self.r_pt,
