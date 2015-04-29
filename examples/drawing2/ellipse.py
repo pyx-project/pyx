@@ -14,3 +14,4 @@ c.insert(sc, [trafo.scale(sx=2, sy=0.9), trafo.rotate(45), trafo.translate(5, 0)
 
 c.writeEPSfile("ellipse")
 c.writePDFfile("ellipse")
+c.writeSVGfile("ellipse")

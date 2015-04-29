@@ -16,6 +16,10 @@ all:
 	make $(ipynbfiles)
 	make $(thumbpngfiles)
 
+all_without_remove:
+	make $(ipynbfiles)
+	make $(thumbpngfiles)
+
 %.eps: %.py
 	cd $(dir $^); PYTHONPATH=$(CURDIR)/.. $(PYTHON) -W default $(notdir $^)
 

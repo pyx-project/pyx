@@ -18,3 +18,4 @@ c.fill(mark(*p2.at(p2.end()-0.5)))
 
 c.writeEPSfile("at")
 c.writePDFfile("at")
+c.writeSVGfile("at")

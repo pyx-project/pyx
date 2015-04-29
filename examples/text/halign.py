@@ -26,3 +26,4 @@ c.text(5, 0, r"right: boxright and flushright",
 
 c.writeEPSfile("halign")
 c.writePDFfile("halign")
+c.writeSVGfile("halign")

@@ -481,5 +481,6 @@ dotest(c, 16, 4, "testcycloid")
 dotest(c, 20, -10, "testcornersmoothed")
 c.writeEPSfile("test_deformer", page_paperformat=document.paperformat.A4, page_rotated=0, page_fittosize=1)
 c.writePDFfile("test_deformer")
+c.writeSVGfile("test_deformer")
 
 # vim:foldmethod=marker:foldmarker=<<<,>>>

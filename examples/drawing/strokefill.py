@@ -6,3 +6,4 @@ c.stroke(path.rect(0, 0, 1, 1), [style.linewidth.Thick,
                                  deco.filled([color.rgb.green])])
 c.writeEPSfile("strokefill")
 c.writePDFfile("strokefill")
+c.writeSVGfile("strokefill")

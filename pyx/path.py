@@ -268,6 +268,25 @@ class pathitem:
         """write PS representation of pathitem to file"""
         raise NotImplementedError(self)
 
+    def returnSVGdata(self, inverse_y, first, context):
+        """return SVG representation of pathitem
+
+        :param bool inverse_y: reverts y coordinate as SVG uses a
+            different y direction, but when creating font paths no
+            y inversion is needed.
+        :param bool first: :class:`arc` and :class:`arcn` need to
+            know whether it is first in the path to prepend a line
+            or a move. Note that it can't tell from the context as
+            it is not stored in the context whether it is first.
+        :param context: :class:`arct` need the currentpoint and
+            closepath needs the startingpoint of the last subpath
+            to update the currentpoint
+        :type context: :class:`context`
+        :rtype: string
+
+        """
+        raise NotImplementedError(self)
+
 
 
 ################################################################################
@@ -299,6 +318,9 @@ class closepath(pathitem):
 
     def outputPS(self, file, writer):
         file.write("closepath\n")
+
+    def returnSVGdata(self, inverse_y, first, context):
+        return "Z"
 
 
 class pdfmoveto_pt(normline_pt):
@@ -353,6 +375,13 @@ class moveto_pt(pathitem):
     def outputPS(self, file, writer):
         file.write("%g %g moveto\n" % (self.x_pt, self.y_pt) )
 
+    def returnSVGdata(self, inverse_y, first, context):
+        context.x_pt = context.subfirstx_pt = self.x_pt
+        context.y_pt = context.subfirsty_pt = self.y_pt
+        if inverse_y:
+            return "M%g %g" % (self.x_pt, -self.y_pt)
+        return "M%g %g" % (self.x_pt, self.y_pt)
+
 
 class lineto_pt(pathitem):
 
@@ -380,6 +409,13 @@ class lineto_pt(pathitem):
 
     def outputPS(self, file, writer):
         file.write("%g %g lineto\n" % (self.x_pt, self.y_pt) )
+
+    def returnSVGdata(self, inverse_y, first, context):
+        context.x_pt = self.x_pt
+        context.y_pt = self.y_pt
+        if inverse_y:
+            return "L%g %g" % (self.x_pt, -self.y_pt)
+        return "L%g %g" % (self.x_pt, self.y_pt)
 
 
 class curveto_pt(pathitem):
@@ -422,6 +458,13 @@ class curveto_pt(pathitem):
                                                     self.x2_pt, self.y2_pt,
                                                     self.x3_pt, self.y3_pt))
 
+    def returnSVGdata(self, inverse_y, first, context):
+        context.x_pt = self.x3_pt
+        context.y_pt = self.y3_pt
+        if inverse_y:
+            return "C%g %g %g %g %g %g" % (self.x1_pt, -self.y1_pt, self.x2_pt, -self.y2_pt, self.x3_pt, -self.y3_pt)
+        return "C%g %g %g %g %g %g" % (self.x1_pt, self.y1_pt, self.x2_pt, self.y2_pt, self.x3_pt, self.y3_pt)
+
 
 class rmoveto_pt(pathitem):
 
@@ -458,6 +501,15 @@ class rmoveto_pt(pathitem):
     def outputPS(self, file, writer):
         file.write("%g %g rmoveto\n" % (self.dx_pt, self.dy_pt) )
 
+    def returnSVGdata(self, inverse_y, first, context):
+        context.x_pt += self.dx_pt
+        context.y_pt += self.dy_pt
+        context.subfirstx_pt = context.x_pt
+        context.subfirsty_pt = context.y_pt
+        if inverse_y:
+            return "m%g %g" % (self.dx_pt, -self.dy_pt)
+        return "m%g %g" % (self.dx_pt, self.dy_pt)
+
 
 class rlineto_pt(pathitem):
 
@@ -485,6 +537,13 @@ class rlineto_pt(pathitem):
 
     def outputPS(self, file, writer):
         file.write("%g %g rlineto\n" % (self.dx_pt, self.dy_pt) )
+
+    def returnSVGdata(self, inverse_y, first, context):
+        context.x_pt += self.dx_pt
+        context.y_pt += self.dy_pt
+        if inverse_y:
+            return "l%g %g" % (self.dx_pt, -self.dy_pt)
+        return "l%g %g" % (self.dx_pt, self.dy_pt)
 
 
 class rcurveto_pt(pathitem):
@@ -533,12 +592,21 @@ class rcurveto_pt(pathitem):
                                                      self.dx2_pt, self.dy2_pt,
                                                      self.dx3_pt, self.dy3_pt))
 
+    def returnSVGdata(self, inverse_y, first, context):
+        context.x_pt += self.dx3_pt
+        context.y_pt += self.dy3_pt
+        if inverse_y:
+            return "c%g %g %g %g %g %g" % (self.dx1_pt, -self.dy1_pt, self.dx2_pt, -self.dy2_pt, self.dx3_pt, -self.dy3_pt)
+        return "c%g %g %g %g %g %g" % (self.dx1_pt, self.dy1_pt, self.dx2_pt, self.dy2_pt, self.dx3_pt, self.dy3_pt)
+
 
 class arc_pt(pathitem):
 
     """Append counterclockwise arc (coordinates in pts)"""
 
     __slots__ = "x_pt", "y_pt", "r_pt", "angle1", "angle2"
+
+    sweep = 0
 
     def __init__(self, x_pt, y_pt, r_pt, angle1, angle2):
         self.x_pt = x_pt
@@ -591,12 +659,48 @@ class arc_pt(pathitem):
                                              self.angle1,
                                              self.angle2))
 
+    def returnSVGdata(self, inverse_y, first, context):
+        # move or line to the start point
+        x_pt, y_pt = _arcpoint(self.x_pt, self.y_pt, self.r_pt, self.angle1)
+        if inverse_y:
+            y_pt = -y_pt
+        if first:
+            data = ["M%g %g" % (x_pt, y_pt)]
+        else:
+            data = ["L%g %g" % (x_pt, y_pt)]
+
+        angle1 = self.angle1
+        angle2 = self.angle2
+
+        # make 0 < angle2-angle1 < 2*360
+        if angle2 < angle1:
+            angle2 += (math.floor((angle1-angle2)/360)+1)*360
+        elif angle2 > angle1 + 360:
+            angle2 -= (math.floor((angle2-angle1)/360)-1)*360
+        # svg arcs become unstable when close to 360 degree and cannot
+        # express more than 360 degree at all, so we might need to split.
+        subdivisions = int((angle2-angle1)/350)+1
+
+        # we equal split by subdivisions
+        large = "1" if (angle2-angle1)/subdivisions > 180 else "0"
+        for i in range(subdivisions):
+            x_pt, y_pt = _arcpoint(self.x_pt, self.y_pt, self.r_pt, angle1 + (i+1)*(angle2-angle1)/subdivisions)
+            if inverse_y:
+                y_pt = -y_pt
+            data.append("A%g %g 0 %s 0 %g %g" % (self.r_pt, self.r_pt, large, x_pt, y_pt))
+
+        context.x_pt = x_pt
+        context.y_pt = y_pt
+        return "".join(data)
+
 
 class arcn_pt(pathitem):
 
     """Append clockwise arc (coordinates in pts)"""
 
     __slots__ = "x_pt", "y_pt", "r_pt", "angle1", "angle2"
+
+    sweep = 1
 
     def __init__(self, x_pt, y_pt, r_pt, angle1, angle2):
         self.x_pt = x_pt
@@ -651,6 +755,40 @@ class arcn_pt(pathitem):
                                               self.r_pt,
                                               self.angle1,
                                               self.angle2))
+
+    def returnSVGdata(self, inverse_y, first, context):
+        # move or line to the start point
+        x_pt, y_pt = _arcpoint(self.x_pt, self.y_pt, self.r_pt, self.angle1)
+        if inverse_y:
+            y_pt = -y_pt
+        if first:
+            data = ["M%g %g" % (x_pt, y_pt)]
+        else:
+            data = ["L%g %g" % (x_pt, y_pt)]
+
+        angle1 = self.angle1
+        angle2 = self.angle2
+
+        # make 0 < angle1-angle2 < 2*360
+        if angle1 < angle2:
+            angle1 += (math.floor((angle2-angle1)/360)+1)*360
+        elif angle1 > angle2 + 360:
+            angle1 -= (math.floor((angle1-angle2)/360)-1)*360
+        # svg arcs become unstable when close to 360 degree and cannot
+        # express more than 360 degree at all, so we might need to split.
+        subdivisions = int((angle1-angle2)/350)+1
+
+        # we equal split by subdivisions
+        large = "1" if (angle1-angle2)/subdivisions > 180 else "0"
+        for i in range(subdivisions):
+            x_pt, y_pt = _arcpoint(self.x_pt, self.y_pt, self.r_pt, angle1 + (i+1)*(angle2-angle1)/subdivisions)
+            if inverse_y:
+                y_pt = -y_pt
+            data.append("A%g %g 0 %s 1 %g %g" % (self.r_pt, self.r_pt, large, x_pt, y_pt))
+
+        context.x_pt = x_pt
+        context.y_pt = y_pt
+        return "".join(data)
 
 
 class arct_pt(pathitem):
@@ -745,6 +883,10 @@ class arct_pt(pathitem):
         file.write("%g %g %g %g %g arct\n" % (self.x1_pt, self.y1_pt,
                                               self.x2_pt, self.y2_pt,
                                               self.r_pt))
+
+    def returnSVGdata(self, inverse_y, first, context):
+        # first is always False as arct cannot be first, it has no createcontext method
+        return "".join(pathitem.returnSVGdata(inverse_y, first, context) for pathitem in self._pathitems(context.x_pt, context.y_pt))
 
 #
 # now the pathitems that convert from user coordinates to pts
@@ -881,6 +1023,13 @@ class multilineto_pt(pathitem):
         for point_pt in self.points_pt:
             file.write("%g %g lineto\n" % point_pt )
 
+    def returnSVGdata(self, inverse_y, first, context):
+        if self.points_pt:
+            context.x_pt, context.y_pt = self.points_pt[-1]
+        if inverse_y:
+            return "".join("L%g %g" % (x_pt, -y_pt) for x_pt, y_pt in self.points_pt)
+        return "".join("L%g %g" % point_pt for point_pt in self.points_pt)
+
 
 class multicurveto_pt(pathitem):
 
@@ -915,6 +1064,14 @@ class multicurveto_pt(pathitem):
     def outputPS(self, file, writer):
         for point_pt in self.points_pt:
             file.write("%g %g %g %g %g %g curveto\n" % point_pt)
+
+    def returnSVGdata(self, inverse_y, first, context):
+        if self.points_pt:
+            context.x_pt, context.y_pt = self.points_pt[-1][4:]
+        if inverse_y:
+            return "".join("C%g %g %g %g %g %g" % (x1_pt, -y1_pt, x2_pt, -y2_pt, x3_pt, -y3_pt)
+                           for x1_pt, y1_pt, x2_pt, y2_pt, x3_pt, y3_pt in self.points_pt)
+        return "".join("C%g %g %g %g %g %g" % point_pt for point_pt in self.points_pt)
 
 
 ################################################################################
@@ -1156,6 +1313,13 @@ class path:
         # with epsilon equals None to prevent failure for paths shorter
         # than epsilon
         self.normpath(epsilon=None).outputPDF(file, writer)
+
+    def returnSVGdata(self, inverse_y=True):
+        """return SVG code"""
+        if not self.pathitems:
+            return ""
+        context = self.pathitems[0].createcontext()
+        return "".join(pitem.returnSVGdata(inverse_y, not i, context) for i, pitem in enumerate(self.pathitems))
 
 
 #

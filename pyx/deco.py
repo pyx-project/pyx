@@ -294,6 +294,88 @@ class decoratedpath(baseclasses.canvasitem):
         if self.styles:
             file.write("Q\n") # grestore
 
+    def processSVG(self, xml, writer, context, registry, bbox):
+        def _writestyles(attrs, context):
+            for style in self.styles or []:
+                style.processSVGattrs(attrs, writer, context, registry)
+
+        def _writestrokestyles(attrs, context):
+            context.fillattr = False
+            for style in self.strokestyles or []:
+                style.processSVGattrs(attrs, writer, context, registry)
+            context.fillattr = True
+
+        def _writefillstyles(attrs, context):
+            context.strokeattr = False
+            for style in self.fillstyles or []:
+                style.processSVGattrs(attrs, writer, context, registry)
+            context.strokeattr = True
+
+        strokepath = self.strokepath()
+        fillpath = self.path
+
+        if self.styles:
+            acontext = context()
+            attrs = {}
+            _writestyles(attrs, acontext)
+            xml.startSVGElement("g", attrs)
+        else:
+            acontext = context
+
+        if strokepath is not fillpath:
+            if self.strokestyles is not None:
+                attrs = {"d": strokepath.returnSVGdata()}
+                _writestrokestyles(attrs, acontext)
+                attrs["stroke"] = acontext.strokecolor
+                if acontext.strokeopacity != 1:
+                    attrs["opacity"] = "%f" % acontext.strokeopacity
+                xml.startSVGElement("path", attrs)
+                xml.endSVGElement("path")
+                bbox += strokepath.bbox().enlarged_pt(0.5*acontext.linewidth_pt)
+            if self.fillstyles is not None:
+                attrs = {"d": fillpath.returnSVGdata()}
+                _writefillstyles(attrs, acontext)
+                attrs["fill"] = acontext.fillcolor
+                if acontext.fillopacity != 1:
+                    attrs["opacity"] = "%f" % acontext.fillopacity
+                xml.startSVGElement("path", attrs)
+                xml.endSVGElement("path")
+                bbox += fillpath.bbox()
+        else:
+            attrs = {"d": fillpath.returnSVGdata()}
+            _writestrokestyles(attrs, acontext)
+            _writefillstyles(attrs, acontext)
+            if self.strokestyles is not None:
+                attrs["stroke"] = acontext.strokecolor
+            if self.fillstyles is not None:
+                attrs["fill"] = acontext.fillcolor
+            if acontext.strokeopacity != acontext.fillopacity and self.strokestyles is not None and self.fillstyles is not None:
+                if acontext.strokeopacity != 1:
+                    attrs["opacity"] = "%f" % acontext.strokeopacity
+                attrs["stroke"] = acontext.strokecolor
+                attrs["fill"] = "none"
+                xml.startSVGElement("path", attrs)
+                xml.endSVGElement("path")
+                if acontext.fillopacity != 1:
+                    attrs["opacity"] = "%f" % acontext.fillopacity
+                attrs["stroke"] = "none"
+                attrs["fill"] = acontext.fillcolor
+                xml.startSVGElement("path", attrs)
+                xml.endSVGElement("path")
+            else:
+                if acontext.strokeopacity != 1 and self.strokestyles is not None:
+                    attrs["opacity"] = "%f" % acontext.strokeopacity
+                if acontext.fillopacity != 1 and self.fillstyles is not None:
+                    attrs["opacity"] = "%f" % acontext.fillopacity
+                xml.startSVGElement("path", attrs)
+                xml.endSVGElement("path")
+            bbox += strokepath.bbox().enlarged_pt(0.5*acontext.linewidth_pt)
+
+        self.ornaments.processSVG(xml, writer, acontext, registry, bbox)
+
+        if self.styles:
+            xml.endSVGElement("g")
+
 #
 # Path decorators
 #

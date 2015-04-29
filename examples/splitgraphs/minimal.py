@@ -9,3 +9,4 @@ g.plot(graph.data.points([((0, 0.1), 0.1),
                           ((1, 109), 0.9)], x=1, y=2))
 g.writeEPSfile("minimal")
 g.writePDFfile("minimal")
+g.writeSVGfile("minimal")

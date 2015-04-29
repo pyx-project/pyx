@@ -19,3 +19,4 @@ g.plot(d,
 
 g.writeEPSfile()
 g.writePDFfile()
+g.writeSVGfile()

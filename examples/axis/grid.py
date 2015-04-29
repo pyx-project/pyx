@@ -14,3 +14,4 @@ g.plot(graph.data.function("y(x)=sin(x)/x", points=200))
 
 g.writeEPSfile()
 g.writePDFfile()
+g.writeSVGfile()

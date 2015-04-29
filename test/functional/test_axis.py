@@ -46,4 +46,5 @@ c.insert(pathaxis(path.circle(14, 17, 4),
                         lin(painter=regular(labeldirection=rotatetext.parallel), **lintest)))
 c.writeEPSfile("test_axis", page_paperformat=document.paperformat.A4)
 c.writePDFfile("test_axis", page_paperformat=document.paperformat.A4)
+c.writeSVGfile("test_axis", page_paperformat=document.paperformat.A4)
 

@@ -15,3 +15,4 @@ g = graph.graphxy(width=10,
 
 g.writeEPSfile("log")
 g.writePDFfile("log")
+g.writeSVGfile("log")

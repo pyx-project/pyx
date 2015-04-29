@@ -64,3 +64,4 @@ c.stroke(apply2(trafo2, trafo1, clip).bbox().rect(), [trafo.translate(25, 5)])
 
 c.writeEPSfile()
 c.writePDFfile()
+c.writeSVGfile()

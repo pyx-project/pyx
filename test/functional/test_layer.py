@@ -15,4 +15,5 @@ l1a.stroke(path.line(0.25, -0.25, 0.25, 0.25), [color.rgb.blue])
 
 c.writeEPSfile("test_layer", page_paperformat=document.paperformat.A4, page_fittosize=1)
 c.writePDFfile("test_layer", page_paperformat=document.paperformat.A4, page_fittosize=1)
+c.writeSVGfile("test_layer", page_paperformat=document.paperformat.A4, page_fittosize=1)
 

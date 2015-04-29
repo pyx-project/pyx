@@ -16,3 +16,4 @@ g.plot([graph.data.function("y(x) = x**%d" % i, points=8) for i in range(1, 7)],
        styles=[line, symbol])
 g.writeEPSfile("usesymbol")
 g.writePDFfile("usesymbol")
+g.writeSVGfile("usesymbol")

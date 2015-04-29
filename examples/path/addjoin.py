@@ -20,3 +20,4 @@ c.stroke(p)
 
 c.writeEPSfile("addjoin")
 c.writePDFfile("addjoin")
+c.writeSVGfile("addjoin")

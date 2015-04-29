@@ -10,3 +10,4 @@ c.stroke(p, [deco.curvedtext("\PyX{} is fun!"),
 
 c.writeEPSfile("textalongpath")
 c.writePDFfile("textalongpath")
+c.writeSVGfile("textalongpath")

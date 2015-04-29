@@ -97,4 +97,5 @@ test_split2(c, -7, 14)
 
 c.writeEPSfile("test_graph", page_paperformat=document.paperformat.A4)
 c.writePDFfile("test_graph", page_paperformat=document.paperformat.A4)
+c.writeSVGfile("test_graph", page_paperformat=document.paperformat.A4)
 

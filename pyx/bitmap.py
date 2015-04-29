@@ -1,7 +1,7 @@
 # -*- encoding: utf-8 -*-
 #
 #
-# Copyright (C) 2004-2013 André Wobst <wobsta@users.sourceforge.net>
+# Copyright (C) 2004-2015 André Wobst <wobsta@users.sourceforge.net>
 # Copyright (C) 2011 Michael Schindler<m-schindler@users.sourceforge.net>
 #
 # This file is part of PyX (http://pyx.sourceforge.net/).
@@ -20,7 +20,7 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import binascii, logging, struct
+import binascii, logging, struct, io
 try:
     import zlib
     haszlib = True
@@ -93,12 +93,22 @@ def asciihexstream(file, data):
         file.write("\n")
 
 
+class palette:
+
+    def __init__(self, mode, data):
+        self.mode = mode
+        self.data = data
+
+    def getdata(self):
+        return self.mode, self.data
+
+
 class image:
 
     def __init__(self, width, height, mode, data, compressed=None, palette=None):
         if width <= 0 or height <= 0:
             raise ValueError("valid image size")
-        if mode not in ["L", "RGB", "CMYK", "LA", "RGBA", "CMYKA", "AL", "ARGB", "ACMYK"]:
+        if mode not in ["L", "RGB", "CMYK", "LA", "RGBA", "CMYKA", "AL", "ARGB", "ACMYK", "P"]:
             raise ValueError("invalid mode")
         if compressed is None and len(mode)*width*height != len(data):
             raise ValueError("wrong size of uncompressed data")
@@ -122,6 +132,33 @@ class image:
 
     def convert(self, model):
         raise RuntimeError("color model conversion not supported in this implementation")
+
+    def save(self, file, format=None, **attrs):
+        if format != "png":
+            raise RuntimeError("Uncompressed image can be output as PNG only.", format, file)
+        if not haszlib:
+            raise ValueError("PNG output not available due to missing zlib module.")
+        try:
+            pngmode, bytesperpixel = {"L": (0, 1), "LA": (4, 2), "RGB": (2, 3), "RGBA": (6, 4), "P": (3, 1)}[self.mode]
+        except KeyError:
+            raise RuntimeError("Unsupported mode '%s' for PNG output." % self.mode)
+        width, height = self.size
+        assert len(self.data) == width*height*bytesperpixel
+        # inject filter byte to each scanline
+        data = b"".join(b"\x00" + self.data[bytesperpixel*width*pos:bytesperpixel*width*(pos+1)] for pos in range(0, height))
+        chunk=lambda name, data=b"": struct.pack("!I", len(data)) + name + data + struct.pack("!I", 0xFFFFFFFF & zlib.crc32(name + data))
+        file.write(b"\x89PNG\r\n\x1a\n")
+        file.write(chunk(b"IHDR", struct.pack("!2I5B", width, height, 8, pngmode, 0, 0, 0)))
+        if self.mode == "P":
+            palettemode, palettedata = self.palette.getdata()
+            if palettemode == "L":
+                palettemode = "RGB"
+                palettedata = b"".join(bytes([x, x, x]) for x in palettedata)
+            if palettemode != "RGB":
+                raise RuntimeError("Unsupported palette mode '%s' for PNG output." % palettemode)
+            file.write(chunk(b"PLTE", palettedata))
+        file.write(chunk(b"IDAT", zlib.compress(data, 9)))
+        file.write(chunk(b"IEND"))
 
 
 class jpegimage(image):
@@ -170,6 +207,11 @@ class jpegimage(image):
         except IndexError:
             raise ValueError("end marker expected")
         image.__init__(self, width, height, mode, data[begin:end], compressed="DCT")
+
+    def save(self, file, format=None, **attrs):
+        if format != "jpeg":
+            raise RuntimeError("JPG image can be output as JPG only.")
+        file.write(self.data)
 
 
 class PSimagedata(pswriter.PSresource):
@@ -279,6 +321,8 @@ class PDFimage(pdfwriter.PDFobject):
         file.write("\n"
                    "endstream\n")
 
+
+
 class bitmap_trafo(baseclasses.canvasitem):
 
     def __init__(self, trafo, image,
@@ -313,10 +357,13 @@ class bitmap_trafo(baseclasses.canvasitem):
             self.compressmode = None
 
     def imagedata(self, interleavealpha):
-        """internal function
+        """ Returns a tuple (mode, data, alpha, palettemode, palettedata)
+        where mode does not contain the alpha channel anymore.
 
-        returns a tuple (mode, data, alpha, palettemode, palettedata)
-        where mode does not contain antialiasing anymore
+        If there is an alpha channel, for interleavealpha == False it is
+        returned as a band in alpha itself. For interleavealpha == True
+        alpha will be True and the channel is interleaved in front of each
+        pixel in data.
         """
 
         alpha = palettemode = palettedata = None
@@ -335,26 +382,25 @@ class bitmap_trafo(baseclasses.canvasitem):
                                                            for band in bands[1:]])]), palette=data.palette)
         if mode.endswith("A"):
             bands = data.split()
-            bands = list(bands[-1:]) + list(bands[:-1])
             mode = mode[:-1]
             if interleavealpha:
                 alpha = True
-                # TODO: this is slow, but we don't want to depend on PIL or anything ... still, its incredibly slow to do it with lists and joins
+                bands = list(bands[-1:]) + list(bands[:-1])
                 data = image(self.imagewidth, self.imageheight, "A%s" % mode,
                              b"".join([bytes(values)
                                        for values in zip(*[band.tobytes()
                                                            for band in bands])]), palette=data.palette)
             else:
-                alpha = bands[0]
+                alpha = bands[-1]
                 data = image(self.imagewidth, self.imageheight, mode,
                              b"".join([bytes(values)
                                        for values in zip(*[band.tobytes()
-                                                           for band in bands[1:]])]), palette=data.palette)
+                                                           for band in bands[:-1]])]), palette=data.palette)
 
         if mode == "P":
             palettemode, palettedata = data.palette.getdata()
             if palettemode not in ["L", "RGB", "CMYK"]:
-                logger.warning("image with unknown palette mode '%s' converted to rgb image" % palettemode)
+                logger.warning("image with invalid palette mode '%s' converted to rgb image" % palettemode)
                 data = data.convert("RGB")
                 mode = "RGB"
                 palettemode = None
@@ -365,7 +411,7 @@ class bitmap_trafo(baseclasses.canvasitem):
                 data = data.convert("L")
                 mode = "L"
         elif mode not in ["CMYK", "RGB"]:
-            logger.warning("image with unknown mode converted to rgb")
+            logger.warning("image with invalid mode converted to rgb")
             data = data.convert("RGB")
             mode = "RGB"
 
@@ -376,10 +422,10 @@ class bitmap_trafo(baseclasses.canvasitem):
         else:
             data = data.tobytes()
         if alpha and not interleavealpha:
+            # we might want a separate alphacompressmode
             if self.compressmode == "Flate":
                 alpha = zlib.compress(alpha.tobytes(), self.flatecompresslevel)
             elif self.compressmode == "DCT":
-                # well, this here is strange, we might want a alphacompressmode ...
                 alpha = alpha.tobytes("jpeg", mode, self.dctquality, self.dctoptimize, self.dctprogression)
             else:
                 alpha = alpha.tobytes()
@@ -508,6 +554,22 @@ class bitmap_trafo(baseclasses.canvasitem):
         self.pdftrafo.processPDF(file, writer, context, registry)
         file.write("/%s Do\n" % name)
         file.write("Q\n")
+
+    def processSVG(self, xml, writer, context, registry, bbox):
+        if self.compressmode == "Flate":
+            f = io.BytesIO()
+            self.image.save(f, "png")
+            inlinedata = "data:image/png;base64," + binascii.b2a_base64(f.getvalue()).decode('ascii').replace("\n", "")
+        elif self.compressmode == "DCT" or self.imagecompressed == "DCT":
+            f = io.BytesIO()
+            self.image.save(f, "jpeg")
+            inlinedata = "data:image/jpeg;base64," + binascii.b2a_base64(f.getvalue()).decode('ascii').replace("\n", "")
+        else:
+            raise ValueError("SVG cannot store uncompressed image data.")
+        attrs = {"preserveAspectRatio": "none", "x": "0", "y": "-1", "width": "1", "height": "1", "xlink:href": inlinedata}
+        self.pdftrafo.processSVGattrs(attrs, writer, context, registry)
+        xml.startSVGElement("image", attrs)
+        xml.endSVGElement("image")
 
 
 class bitmap_pt(bitmap_trafo):

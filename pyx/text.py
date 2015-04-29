@@ -887,6 +887,11 @@ class textbox_pt(box.rect, baseclasses.canvasitem):
         self.dvicanvas.processPDF(file, writer, context, registry, abbox)
         bbox += box.rect.bbox(self)
 
+    def processSVG(self, xml, writer, context, registry, bbox):
+        abbox = bboxmodule.empty()
+        self.dvicanvas.processSVG(xml, writer, context, registry, abbox)
+        bbox += box.rect.bbox(self)
+
 
 class _marker:
     pass

@@ -8,3 +8,4 @@ c.stroke(path.line(0, -1, 4, -1),
 c.fill(path.rect(0, -3, 4, 1), [color.rgb.blue])
 c.writeEPSfile("style")
 c.writePDFfile("style")
+c.writeSVGfile("style")

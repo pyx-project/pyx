@@ -6,3 +6,4 @@ g = graph.graphxy(width=8,
 g.plot(graph.data.function("y(x)=tan(log(1/x))**2"))
 g.writeEPSfile("axis")
 g.writePDFfile("axis")
+g.writeSVGfile("axis")

@@ -7,3 +7,4 @@ c.stroke(path.curve(0, 0, 0, 4, 2, 4, 3, 3),
                        deco.filled([color.rgb.green])], size=1)])
 c.writeEPSfile("arrow")
 c.writePDFfile("arrow")
+c.writeSVGfile("arrow")

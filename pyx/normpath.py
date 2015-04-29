@@ -150,6 +150,10 @@ class normsubpathitem:
         """write PDF code corresponding to normsubpathitem to file"""
         pass
 
+    def returnSVGdata(self, inverse_y):
+        """return SVG code corresponding to normsubpathitem"""
+        pass
+
 
 class normline_pt(normsubpathitem):
 
@@ -351,6 +355,11 @@ class normline_pt(normsubpathitem):
 
     def outputPDF(self, file, writer):
         file.write("%f %f l\n" % (self.x1_pt, self.y1_pt))
+
+    def returnSVGdata(self, inverse_y):
+        if inverse_y:
+            return "L%g %g" % (self.x1_pt, -self.y1_pt)
+        return "L%g %g" % (self.x1_pt, self.y1_pt)
 
 
 class normcurve_pt(normsubpathitem):
@@ -668,6 +677,11 @@ class normcurve_pt(normsubpathitem):
 
     def outputPDF(self, file, writer):
         file.write("%f %f %f %f %f %f c\n" % (self.x1_pt, self.y1_pt, self.x2_pt, self.y2_pt, self.x3_pt, self.y3_pt))
+
+    def returnSVGdata(self, inverse_y):
+        if inverse_y:
+            return "C%g %g %g %g %g %g" % (self.x1_pt, -self.y1_pt, self.x2_pt, -self.y2_pt, self.x3_pt, -self.y3_pt)
+        return "C%g %g %g %g %g %g" % (self.x1_pt, self.y1_pt, self.x2_pt, self.y2_pt, self.x3_pt, self.y3_pt)
 
     def x_pt(self, t):
         return (((  self.x3_pt-3*self.x2_pt+3*self.x1_pt-self.x0_pt)*t +
@@ -1409,6 +1423,27 @@ class normsubpath:
         if self.closed:
             file.write("h\n")
 
+    def returnSVGdata(self, inverse_y):
+        # if the normsubpath is closed, we must not output a normline at
+        # the end
+        if not self.normsubpathitems:
+            return ""
+        if self.closed and isinstance(self.normsubpathitems[-1], normline_pt):
+            assert len(self.normsubpathitems) > 1, "a closed normsubpath should contain more than a single normline_pt"
+            normsubpathitems = self.normsubpathitems[:-1]
+        else:
+            normsubpathitems = self.normsubpathitems
+        x_pt, y_pt = self.atbegin_pt()
+        if inverse_y:
+            y_pt = -y_pt
+        data = ["M%g %g" % (x_pt, y_pt)]
+        for anormsubpathitem in normsubpathitems:
+            data.append(anormsubpathitem.returnSVGdata(inverse_y))
+        if self.closed:
+            data.append("Z")
+        return "".join(data)
+
+
 
 ################################################################################
 # normpath
@@ -1955,3 +1990,7 @@ class normpath:
     def outputPDF(self, file, writer):
         for normsubpath in self.normsubpaths:
             normsubpath.outputPDF(file, writer)
+
+    def returnSVGdata(self, inverse_y=True):
+        return "".join(normsubpath.returnSVGdata(inverse_y) for normsubpath in self.normsubpaths)
+

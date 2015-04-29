@@ -9,3 +9,4 @@ c.stroke(p2)
 
 c.writeEPSfile("arclen")
 c.writePDFfile("arclen")
+c.writeSVGfile("arclen")

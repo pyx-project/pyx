@@ -23,4 +23,5 @@ else:
     g.plot(d)
     g.writeEPSfile("test_timeaxis")
     g.writePDFfile("test_timeaxis")
+    g.writeSVGfile("test_timeaxis")
 

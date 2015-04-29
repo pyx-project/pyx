@@ -19,3 +19,4 @@ c.stroke(rect3, [style.linewidth.THICK])
 
 c.writeEPSfile("pathitem")
 c.writePDFfile("pathitem")
+c.writeSVGfile("pathitem")

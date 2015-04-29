@@ -15,3 +15,4 @@ c.insert(plaintex.text(0, -1, r"This is plain \TeX."))
 
 c.writeEPSfile("texrunner")
 c.writePDFfile("texrunner")
+c.writeSVGfile("texrunner")

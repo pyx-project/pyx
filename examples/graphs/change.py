@@ -12,3 +12,4 @@ g.plot([graph.data.function("x(y)=y**4", title=r"$x = y^4$"),
        [graph.style.line([color.gradient.Rainbow])])
 g.writeEPSfile("change")
 g.writePDFfile("change")
+g.writeSVGfile("change")

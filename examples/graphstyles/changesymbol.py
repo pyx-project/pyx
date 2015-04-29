@@ -41,3 +41,4 @@ g.plot(graph.data.points([[random.random() for i in range(4)]
        [changesymbol()])
 g.writeEPSfile("changesymbol")
 g.writePDFfile("changesymbol")
+g.writeSVGfile("changesymbol")

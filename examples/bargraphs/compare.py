@@ -6,3 +6,4 @@ g.plot([graph.data.file("minimal.dat", xname="$0, 0", y=2),
        [graph.style.bar()])
 g.writeEPSfile("compare")
 g.writePDFfile("compare")
+g.writeSVGfile("compare")

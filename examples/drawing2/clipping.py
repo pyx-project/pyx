@@ -13,3 +13,4 @@ c.stroke(clippath)
 
 c.writeEPSfile("clipping")
 c.writePDFfile("clipping")
+c.writeSVGfile("clipping")

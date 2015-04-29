@@ -89,4 +89,5 @@ dotest(c, 25,30, "testcurve")
 dotest(c,  0,20, "testtwolines")
 c.writeEPSfile("test_connector", page_paperformat=document.paperformat.A4, page_rotated=0, page_fittosize=1)
 c.writePDFfile("test_connector", page_paperformat=document.paperformat.A4, page_rotated=0, page_fittosize=1)
+c.writeSVGfile("test_connector", page_paperformat=document.paperformat.A4, page_rotated=0, page_fittosize=1)
 

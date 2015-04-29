@@ -12,3 +12,4 @@ c.insert(graph.axis.pathaxis(p.transformed(trafo.translate(4, 0)),
                              texter=graph.axis.texter.rational())))
 c.writeEPSfile("parter")
 c.writePDFfile("parter")
+c.writeSVGfile("parter")

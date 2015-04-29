@@ -19,3 +19,4 @@ c.stroke(closedpath, [trafo.translate(2, 0)])
 
 c.writeEPSfile("metapost")
 c.writePDFfile("metapost")
+c.writeSVGfile("metapost")

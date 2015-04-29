@@ -9,3 +9,4 @@ g.plot(graph.data.file("minimal.dat", xname=0, y=2, stack=3),
         graph.style.text("stack")])
 g.writeEPSfile("stacked")
 g.writePDFfile("stacked")
+g.writeSVGfile("stacked")

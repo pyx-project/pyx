@@ -48,4 +48,5 @@ test_bar4(c, 0, -14)
 test_bar5(c, 7, -19)
 c.writeEPSfile("test_bargraph", page_paperformat=document.paperformat.A4)
 c.writePDFfile("test_bargraph", page_paperformat=document.paperformat.A4)
+c.writeSVGfile("test_bargraph", page_paperformat=document.paperformat.A4)
 

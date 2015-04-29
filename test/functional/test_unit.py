@@ -15,4 +15,5 @@ c.stroke(path(moveto(0,0), lineto(unit.u_cm+unit.t_cm, unit.u_cm)), [color.rgb.b
 
 c.writeEPSfile("test_unit")
 c.writePDFfile("test_unit")
+c.writeSVGfile("test_unit")
 

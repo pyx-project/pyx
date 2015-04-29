@@ -37,3 +37,4 @@ g.plot(graph.data.points(d, x=1, y=2, color=3, title="iterations"),
        [graph.style.density(gradient=color.rgbgradient.Rainbow)])
 g.writeEPSfile()
 g.writePDFfile()
+g.writeSVGfile()

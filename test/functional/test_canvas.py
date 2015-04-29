@@ -23,4 +23,5 @@ c.stroke(p, [color.rgb.red, style.linestyle.dotted, t3, t2, t1])
 
 c.writeEPSfile("test_canvas", page_paperformat=document.paperformat.A4)
 c.writePDFfile("test_canvas", page_paperformat=document.paperformat.A4)
+c.writeSVGfile("test_canvas", page_paperformat=document.paperformat.A4)
 

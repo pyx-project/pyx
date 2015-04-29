@@ -12,3 +12,4 @@ g2.plot(graph.data.function("y(x)=cos(20*x)*exp(-2*x)"))
 
 c.writeEPSfile("link")
 c.writePDFfile("link")
+c.writeSVGfile("link")

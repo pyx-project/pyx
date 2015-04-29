@@ -8,3 +8,4 @@ g.plot(pf("k", -1, 1,
           points=1000))
 g.writeEPSfile("splitatvalue")
 g.writePDFfile("splitatvalue")
+g.writeSVGfile("splitatvalue")

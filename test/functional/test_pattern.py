@@ -20,3 +20,4 @@ c.draw(path.rect(-1, -1, 1, 1), [deco.filled([pa2]), deco.stroked])
 
 c.writeEPSfile("test_pattern", page_paperformat=document.paperformat.A4)
 c.writePDFfile("test_pattern", page_paperformat=document.paperformat.A4)
+c.writeSVGfile("test_pattern", page_paperformat=document.paperformat.A4)

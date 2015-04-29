@@ -12,3 +12,4 @@ for i in range(10):
     c.insert(cc, [trafo.rotate(i*angle), trafo.scale(factor**i)])
 c.writeEPSfile("insert")
 c.writePDFfile("insert")
+c.writeSVGfile("insert")

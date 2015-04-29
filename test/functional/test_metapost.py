@@ -394,6 +394,7 @@ def checkone(knots, refpoints): # <<<
     c.stroke(mypath(knots), [deco.shownormpath(), deco.earrow.normal])
     c.writePDFfile(bboxenlarge=unit.t_cm)
     c.writeEPSfile(bboxenlarge=unit.t_cm)
+    c.writeSVGfile(bboxenlarge=unit.t_cm)
 
     check(knots, refpoints)
 # >>>
@@ -418,6 +419,7 @@ def checkall(): # <<<
         check(knots, refpoints)
     c.writePDFfile()
     c.writeEPSfile()
+    c.writeSVGfile()
 # >>>
 
 # test of the user interface:
@@ -458,6 +460,7 @@ def interface(): # <<<
             c.insert(cc, [trafo.translate(c.bbox().right() - cc.bbox().left() + 0.5, 0)])
     c.writePDFfile()
     c.writeEPSfile()
+    c.writeSVGfile()
 # >>>
 
 

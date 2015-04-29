@@ -6,3 +6,4 @@ g.plot(graph.data.data(graph.data.points([[1, 1, 1.4], [1, 2, 1.8], [2, 1, -0.5]
        [graph.style.barpos(fromvalue=0, frompathattrs=None), graph.style.bar(barattrs=[style.linejoin.bevel])])
 g.writeEPSfile("bar")
 g.writePDFfile("bar")
+g.writeSVGfile("bar")

@@ -9,3 +9,4 @@ c.stroke(path.line(center[0]-1, center[1], center[0]+1, center[1]), [color.rgb.r
 c.stroke(path.line(center[0], center[1]-1, center[0], center[1]+1), [color.rgb.red])
 c.writeEPSfile("marker")
 c.writePDFfile("marker")
+c.writeSVGfile("marker")

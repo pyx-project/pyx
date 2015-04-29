@@ -9,4 +9,4 @@ g.plot(graph.data.values(x=list(range(10)), y=list(range(10))))
 g.plot(graph.data.points(list(zip(list(range(10)), list(range(10)))), x=1, y=2))
 g.writeEPSfile("points")
 g.writePDFfile("points")
-
+g.writeSVGfile("points")

@@ -113,6 +113,7 @@ sc.stroke(p, [deco.curvedtext("\PyX{} is fun!", textattrs=[trafo.mirror(), trafo
 c.insert(sc, [trafo.translate(12, 12)])
 
 c.writePDFfile("test_text", page_paperformat=document.paperformat.A4)
+c.writeSVGfile("test_text", page_paperformat=document.paperformat.A4)
 
 c.insert(c.text(10, 4, r"""%
     \fbox{\includegraphics[%

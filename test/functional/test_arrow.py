@@ -123,4 +123,5 @@ linehatched(c)
 testbrace(c)
 c.writeEPSfile("test_arrow", page_paperformat=document.paperformat.A4, page_rotated=0, page_fittosize=1)
 c.writePDFfile("test_arrow", page_paperformat=document.paperformat.A4)
+c.writeSVGfile("test_arrow", page_paperformat=document.paperformat.A4)
 

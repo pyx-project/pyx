@@ -35,4 +35,5 @@ test_surface2d(c, -3, -20)
 
 c.writeEPSfile("test_graph3d", page_paperformat=document.paperformat.A4)
 c.writePDFfile("test_graph3d", page_paperformat=document.paperformat.A4)
+c.writeSVGfile("test_graph3d", page_paperformat=document.paperformat.A4)
 
