@@ -250,7 +250,7 @@ class pathitem:
         the bbox information. Both, the bbox and context are updated
         inplace. Does not return anything.
         """
-        raise NotImplementedError()
+        raise NotImplementedError(self)
 
     def updatenormpath(self, normpath, context):
         """update the normpath to contain the pathitem for the given
@@ -262,10 +262,11 @@ class pathitem:
         normpath.normsubpath[-1].append to add normsubpathitem(s).
         Does not return anything.
         """
-        raise NotImplementedError()
+        raise NotImplementedError(self)
 
     def outputPS(self, file, writer):
         """write PS representation of pathitem to file"""
+        raise NotImplementedError(self)
 
 
 
