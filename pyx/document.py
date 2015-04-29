@@ -199,7 +199,8 @@ class document:
     def writetofile(self, filename, **kwargs):
         for suffix, method in [("eps", pswriter.EPSwriter),
                                ("ps", pswriter.PSwriter),
-                               ("pdf", pdfwriter.PDFwriter)]:
+                               ("pdf", pdfwriter.PDFwriter),
+                               ("svg", svgwriter.SVGwriter)]:
             if filename.endswith(".{}".format(suffix)):
                 with open(filename, "wb") as f:
                     method(self, f, **kwargs)
