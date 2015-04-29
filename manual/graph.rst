@@ -61,13 +61,12 @@ following line::
    g.plot(graph.data.function("y(x)=x**2"))
 
 You can plot different data in a single graph by calling :meth:`plot` several
-times before :meth:`writeEPSfile` or :meth:`writePDFfile`. Note that a calling
-:meth:`plot` will fail once a graph was forced to "finish" itself. This happens
+times before writing the output to a file. Note that a calling :meth:`plot`
+will fail once a graph was forced to "finish" itself. This happens
 automatically, when the graph is written to a file. Thus it is not an option to
-call :meth:`plot` after :meth:`writeEPSfile` or :meth:`writePDFfile`. The topic
-of the finalization of a graph is addressed in more detail in section
-:mod:`graph.graph`. As you can see in figure :ref:`fig_graph2`, a function is
-plotted as a line by default.
+call :meth:`plot` after writing the output. The topic of the finalization of a
+graph is addressed in more detail in section :mod:`graph.graph`. As you can see
+in figure :ref:`fig_graph2`, a function is plotted as a line by default.
 
 .. _fig_graph2:
 .. figure:: graph2.*

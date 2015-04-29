@@ -51,9 +51,13 @@ In order to draw the path on the canvas, we use the :meth:`stroke` method of the
 To complete the example, we have added a :meth:`writeEPSfile` call, which writes
 the contents of the canvas to the file :file:`line.eps`. Note that an extension
 :file:`.eps` is added automatically, if not already present in the given
-filename. Similarly, if you want to  generate a PDF file instead, use  ::
+filename. Similarly, if you want to  generate a PDF or SVG file instead, use  ::
 
    c.writePDFfile("line")
+
+or
+
+   c.writeSVGfile("line")
 
 As a second example, let us define a path which consists of more than  one
 subpath::

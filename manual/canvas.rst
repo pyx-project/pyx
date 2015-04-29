@@ -101,14 +101,16 @@ The contents of the canvas can be written to a file using the following
 convenience methods, which wrap the canvas into a single page document.
 
 
-.. method:: canvas.writeEPSfile(file, *args, **kwargs)
+.. method:: canvas.writeEPSfile(file, **kwargs)
 
    Writes the canvas to *file* using the EPS format. *file* either has to provide a
    write method or it is used as a string containing the filename (the extension
    ``.eps`` is appended automatically, if it is not present). This method
-   constructs a single page document, passing *args* and *kwargs* to the
-   :class:`document.page` constructor and calls the :meth:`writeEPSfile` method
-   of this :class:`document.document` instance passing the *file*.
+   constructs a single page document, passing *kwargs* to the
+   :class:`document.page` constructor for all *kwargs* starting with ``page_``
+   (without this prefix) and calls the :meth:`writeEPSfile` method of this
+   :class:`document.document` instance passing the *file* and all *kwargs*
+   starting with ``write_`` (without this prefix).
 
 
 .. method:: canvas.writePSfile(file, *args, **kwargs)
@@ -121,9 +123,14 @@ convenience methods, which wrap the canvas into a single page document.
    Similar to :meth:`writeEPSfile` but using the PDF format.
 
 
+.. method:: canvas.writeSVGfile(file, *args, **kwargs)
+
+   Similar to :meth:`writeEPSfile` but using the SVG format.
+
+
 .. method:: canvas.writetofile(filename, *args, **kwargs)
 
-   Determine the file type (EPS, PS, or PDF) from the file extension of *filename*
+   Determine the file type (EPS, PS, PDF, or SVG) from the file extension of *filename*
    and call the corresponding write method with the given arguments *arg* and
    *kwargs*.
 

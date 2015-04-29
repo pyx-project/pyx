@@ -71,9 +71,19 @@ A :class:`document` can be written to a file using one of the following methods:
    parameters are identical to the :meth:`writeEPSfile`.
 
 
+.. method:: document.writeSVGfile(file, text_as_path=True, mesh_as_bitmap_resolution=300)
+
+   Write :class:`document` to a SVG file or to stdout if *file* is set to *-*.
+   The *text_as_path* and *mesh_as_bitmap_resolution* have the same meaning as
+   in :meth:`writeEPSfile`. However, not the different default for
+   *text_as_path* due to the missing SVG font support by current browsers.
+   In addition, there is no *mesh_as_bitmap* flag, as meshs are always stored
+   using bitmaps in SVG.
+
+
 .. method:: document.writetofile(filename, *args, **kwargs)
 
-   Determine the file type (EPS, PS, or PDF) from the file extension of *filename*
+   Determine the file type (EPS, PS, PDF, or SVG) from the file extension of *filename*
    and call the corresponding write method with the given arguments *arg* and
    *kwargs*.
 
