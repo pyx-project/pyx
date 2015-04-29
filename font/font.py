@@ -451,7 +451,9 @@ class T1text_pt(text_pt):
         if not self.ignorebbox:
             bbox += self.bbox()
 
-        if writer.text_as_path:
+        if writer.text_as_path and not self.font.t1file:
+            logger.warning("Cannot output text as path when font not given by a font file (like for builtin fonts).")
+        if writer.text_as_path and self.font.t1file:
             deco.decoratedpath(self.textpath(), fillstyles=[]).processPS(file, writer, context, registry, bbox)
         else:
             # register resources
@@ -514,7 +516,9 @@ class T1text_pt(text_pt):
         if not self.ignorebbox:
             bbox += self.bbox()
 
-        if writer.text_as_path:
+        if writer.text_as_path and not self.font.t1file:
+            logger.warning("Cannot output text as path when font not given by a font file (like for builtin fonts).")
+        if writer.text_as_path and self.font.t1file:
             deco.decoratedpath(self.textpath(), fillstyles=[]).processPDF(file, writer, context, registry, bbox)
         else:
             if self.decode:
