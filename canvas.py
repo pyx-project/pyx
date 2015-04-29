@@ -26,7 +26,7 @@ A canvas holds a collection of all elements and corresponding attributes to be
 displayed. """
 
 import io, logging, os, sys, string, tempfile
-from . import attr, baseclasses, config, document, style, trafo
+from . import attr, baseclasses, config, document, style, trafo, svgwriter
 from . import bbox as bboxmodule
 
 logger = logging.getLogger("pyx")
@@ -54,6 +54,21 @@ def _wrappedindocument(method):
 # clipping class
 #
 
+class SVGclippath(svgwriter.SVGresource):
+
+    def __init__(self, path):
+        self.svgid = "clippath%d" % id(path)
+        super().__init__("clip-path", self.svgid)
+        self.path = path
+
+    def output(self, xml, writer, registry):
+        xml.startSVGElement("clipPath", {"id": self.svgid})
+        # TODO: clip-rule missing (defaults to nonzero)
+        xml.startSVGElement("path", {"d": self.path.returnSVGdata()})
+        xml.endSVGElement("path")
+        xml.endSVGElement("clipPath")
+
+
 class clip(attr.attr):
 
     """class for use in canvas constructor which clips to a path"""
@@ -70,6 +85,11 @@ class clip(attr.attr):
     def processPDF(self, file, writer, context, registry):
         self.path.outputPDF(file, writer)
         file.write("W n\n")
+
+    def processSVGattrs(self, attrs, writer, context, registry):
+        clippath = SVGclippath(self.path)
+        registry.add(clippath)
+        attrs["clip-path"] = "url(#%s)" % clippath.svgid
 
 
 #
@@ -219,6 +239,37 @@ class canvas(baseclasses.canvasitem):
             if self.modifies_state:
                 file.write("Q\n") # grestore
 
+    def processSVG(self, xml, writer, context, registry, bbox):
+        if self.items:
+            if self.modifies_state:
+                context = context()
+                attrs = {}
+                for attr in self.styles:
+                    attr.processSVGattrs(attrs, writer, context, registry)
+                if self.clip is not None:
+                    self.clip.processSVGattrs(attrs, writer, context, registry)
+                    if self.trafo is not trafo.identity:
+                        # trafo needs to be applied after clipping
+                        # thus write g and start anew
+                        xml.startSVGElement("g", attrs)
+                        attrs = {}
+                        self.trafo.processSVGattrs(attrs, writer, context, registry)
+                elif self.trafo is not trafo.identity:
+                    self.trafo.processSVGattrs(attrs, writer, context, registry)
+                xml.startSVGElement("g", attrs)
+            nbbox = bboxmodule.empty()
+            for item in self.items:
+                item.processSVG(xml, writer, context, registry, nbbox)
+            # update bounding bbox
+            nbbox.transform(self.trafo)
+            if self.clip is not None:
+                nbbox *= self.clip.path.bbox()
+            bbox += nbbox
+            if self.modifies_state:
+                xml.endSVGElement("g")
+                if self.clip is not None and self.trafo is not trafo.identity:
+                    xml.endSVGElement("g")
+
     def layer(self, name, above=None, below=None):
         """create or get a layer with name
 
@@ -361,6 +412,7 @@ class canvas(baseclasses.canvasitem):
     writeEPSfile = _wrappedindocument(document.document.writeEPSfile)
     writePSfile = _wrappedindocument(document.document.writePSfile)
     writePDFfile = _wrappedindocument(document.document.writePDFfile)
+    writeSVGfile = _wrappedindocument(document.document.writeSVGfile)
     writetofile = _wrappedindocument(document.document.writetofile)
 
 

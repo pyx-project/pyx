@@ -39,7 +39,7 @@ if sys.hexversion < 0x03020000:
 del sys
 
 __all__ = ["attr", "box", "bitmap", "canvas", "color", "connector", "deco", "deformer", "document",
-           "epsfile", "graph", "mesh", "metapost", "path", "pattern", "pdfextra", "style", "trafo", "text", "unit"]
+           "epsfile", "svgfile", "graph", "mesh", "metapost", "path", "pattern", "pdfextra", "style", "trafo", "text", "unit"]
 
 import importlib
 

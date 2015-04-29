@@ -22,7 +22,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 import logging
-from pyx import bbox, baseclasses, deco, path, pswriter, pdfwriter, trafo, unit
+from pyx import bbox, baseclasses, deco, path, pswriter, pdfwriter, svgwriter, trafo, unit
 from . import t1file, afmfile
 
 logger = logging.getLogger("pyx")
@@ -308,6 +308,89 @@ class PDFencoding(pdfwriter.PDFobject):
             file.write("/%s" % glyphname)
         file.write("]\n"
                    ">>\n")
+
+
+##############################################################################
+# SVG resources
+##############################################################################
+
+
+_glyphnames = {glyphname: str for str, glyphname in afmfile.unicodestring.items()}
+_charcodes = {i: chr(i) for i in range(32, 127)} # 0x20 (space) to 0x7e (tilde)
+
+
+class SVGT1mapping:
+
+    def __init__(self, glyphnames, charcodes):
+        # glyphnames and charcodes are not stored as sets, but are dicts
+        # mapping the values to unicode characters. If the glyphnames and
+        # charcodes are contained in _glyphnames and _charcodes, use those
+        # values, otherwise use the private use areas A and B.
+        self.private_glyphname = 0xf0000
+        self.private_charcode = 0x100000
+        self.glyphnames = {}
+        self.charcodes = {}
+        self.merge_glyphnames(glyphnames)
+        self.merge_charcodes(charcodes)
+
+    def merge_glyphnames(self, glyphnames):
+        for glyphname in glyphnames:
+            if glyphname not in self.glyphnames:
+                if glyphname in _glyphnames:
+                    self.glyphnames[glyphname] = _glyphnames[glyphname]
+                else:
+                    self.glyphnames[glyphname] = chr(self.private_glyphname)
+                    self.private_glyphname += 1
+
+    def merge_charcodes(self, charcodes):
+        for charcode in charcodes:
+            if charcode not in self.charcodes:
+                if charcode in _charcodes:
+                    self.charcodes[charcode] = _charcodes[charcode]
+                else:
+                    self.charcodes[charcode] = chr(self.private_charcode)
+                    self.private_charcode += 1
+
+
+class SVGT1file(svgwriter.SVGresource, SVGT1mapping):
+
+    """ PostScript font definition included in the prolog """
+
+    def __init__(self, t1file, glyphnames, charcodes):
+        """ include type 1 font t1file stripped to the given glyphnames"""
+        self.t1file = t1file
+        svgwriter.SVGresource.__init__(self, "t1file", t1file.name)
+        SVGT1mapping.__init__(self, glyphnames, charcodes)
+
+    def merge(self, other):
+        # Note that merging the glyphnames and charcodes does not alter
+        # any existing mapping to the private use areas for self (but for
+        # other). If you merge before use, the mapping by self.glyphnames
+        # and self.charcodes is already updated and also copied to "other".
+        self.merge_glyphnames(other.glyphnames.keys())
+        self.merge_charcodes(other.charcodes.keys())
+        other.glyphnames = self.glyphnames
+        other.charcodes = self.charcodes
+
+    def output(self, xml, writer, registry):
+        xml.startSVGElement("font", {})
+        xml.startSVGElement("font-face", {"font-family": self.t1file.name})
+        xml.endSVGElement("font-face")
+        for glyphname in self.glyphnames:
+            glyphpath = self.t1file.getglyphpath_pt(0, 0, glyphname, 1000, convertcharcode=False)
+            attrs = {"unicode": self.glyphnames[glyphname],
+                     "horiz-adv-x": "%f" % glyphpath.wx_pt,
+                     "d": glyphpath.path.returnSVGdata(inverse_y=False)}
+            xml.startSVGElement("glyph", attrs)
+            xml.endSVGElement("glyph")
+        for charcode in self.charcodes:
+            glyphpath = self.t1file.getglyphpath_pt(0, 0, charcode, 1000, convertcharcode=True)
+            attrs = {"unicode": self.charcodes[charcode],
+                     "horiz-adv-x": "%f" % glyphpath.wx_pt,
+                     "d": glyphpath.path.returnSVGdata(inverse_y=False)}
+            xml.startSVGElement("glyph", attrs)
+            xml.endSVGElement("glyph")
+        xml.endSVGElement("font")
 
 
 ##############################################################################
@@ -605,3 +688,74 @@ class T1text_pt(text_pt):
                 file.write(")] TJ\n")
             else:
                 file.write(") Tj\n")
+
+    def processSVG(self, xml, writer, context, registry, bbox):
+        if not self.ignorebbox:
+            bbox += self.bbox()
+
+        # this is too common to be warned about as text_as_path is the
+        # default for svg due to the missing font support by current browsers
+        #
+        # if writer.text_as_path and not self.font.t1file:
+        #     logger.warning("Cannot output text as path when font not given by a font file (like for builtin fonts).")
+
+        if writer.text_as_path and self.font.t1file:
+            deco.decoratedpath(self.textpath(), fillstyles=[]).processSVG(xml, writer, context, registry, bbox)
+        else:
+            if self.font.t1file is not None:
+                if self.decode:
+                    t1mapping = SVGT1file(self.font.t1file, self.glyphnames, [])
+                else:
+                    t1mapping = SVGT1file(self.font.t1file, [], self.charcodes)
+                registry.add(t1mapping)
+            else:
+                if self.decode:
+                    t1mapping = SVGT1mapping(self.glyphnames, [])
+                else:
+                    t1mapping = SVGT1mapping([], self.charcodes)
+
+            fontname = self.font.name
+
+            if self.decode:
+                if self.kerning:
+                    data = self.font.metric.resolvekernings(self.glyphnames, self.size_pt)
+                else:
+                    data = self.glyphnames
+            else:
+                data = self.charcodes
+            attrs = {"x": "%f" % self.x_pt,
+                     "y": "%f" % -self.y_pt,
+                     "font-size": "%f" % self.size_pt,
+                     "font-family": fontname,
+                     "fill": context.fillcolor}
+            if context.fillopacity:
+                attrs["opacity"] = "%f" % context.fillopacity
+            if self.slant:
+                trafo.trafo_pt(matrix=((1, self.slant), (0, 1))).outputSVGattrs(attrs, writer, context, registry)
+            xml.startSVGElement("text", attrs)
+            tspan = False
+            for i, value in enumerate(data):
+                if self.kerning and i % 2:
+                    if value is not None:
+                        if tspan:
+                            xml.endSVGElement("tspan")
+                        xml.startSVGElement("tspan", {"dx": "%f" % (value + self.spaced_pt)})
+                        tspan = True
+                    elif self.spaced_pt:
+                        if tspan:
+                            xml.endSVGElement("tspan")
+                        xml.startSVGElement("tspan", {"dx": "%f" % (self.spaced_pt)})
+                        tspan = True
+                else:
+                    if i and not self.kerning and self.spaced_pt:
+                        if tspan:
+                            xml.endSVGElement("tspan")
+                        xml.startSVGElement("tspan", {"dx": "%f" % (self.spaced_pt)})
+                        tspan = True
+                    if self.decode:
+                        xml.characters(t1mapping.glyphnames[value])
+                    else:
+                        xml.characters(t1mapping.charcodes[value])
+            if tspan:
+                xml.endSVGElement("tspan")
+            xml.endSVGElement("text")

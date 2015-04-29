@@ -192,3 +192,7 @@ class TeXtext_pt(font.text_pt):
         bbox += self.bbox()
         self._text(writer).processPDF(file, writer, context, registry, bbox)
 
+    def processSVG(self, xml, writer, context, registry, bbox):
+        bbox += self.bbox()
+        self._text(writer).processSVG(xml, writer, context, registry, bbox)
+

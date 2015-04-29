@@ -56,6 +56,10 @@ class linecap(attr.exclusiveattr, strokestyle):
     def processPDF(self, file, writer, context, registry):
         file.write("%d J\n" % self.value)
 
+    def processSVGattrs(self, attrs, writer, context, registry):
+        attrs["stroke-linecap"] = {0: "butt", 1: "round", 2: "square"}[self.value]
+
+
 linecap.butt = linecap(0)
 linecap.round = linecap(1)
 linecap.square = linecap(2)
@@ -76,6 +80,9 @@ class linejoin(attr.exclusiveattr, strokestyle):
     def processPDF(self, file, writer, context, registry):
         file.write("%d j\n" % self.value)
 
+    def processSVGattrs(self, attrs, writer, context, registry):
+        attrs["stroke-linejoin"] = {0: "miter", 1: "round", 2: "bevel"}[self.value]
+
 linejoin.miter = linejoin(0)
 linejoin.round = linejoin(1)
 linejoin.bevel = linejoin(2)
@@ -95,6 +102,9 @@ class miterlimit(attr.exclusiveattr, strokestyle):
 
     def processPDF(self, file, writer, context, registry):
         file.write("%f M\n" % self.value)
+
+    def processSVGattrs(self, attrs, writer, context, registry):
+        attrs["stroke-miterlimit"] = "%f" % self.value
 
 miterlimit.lessthan180deg = miterlimit(1/math.sin(math.pi*180/360))
 miterlimit.lessthan90deg = miterlimit(1/math.sin(math.pi*90/360))
@@ -126,14 +136,25 @@ class dash(attr.exclusiveattr, strokestyle):
             patternstring = " ".join(["%f" % (element * context.linewidth_pt/_defaultlinewidth_pt) for element in self.pattern])
         else:
             patternstring = " ".join(["%f" % element for element in self.pattern])
-        file.write("[%s] %d setdash\n" % (patternstring, self.offset))
+        file.write("[%s] %f setdash\n" % (patternstring, self.offset))
 
     def processPDF(self, file, writer, context, registry):
         if self.rellengths:
             patternstring = " ".join(["%f" % (element * context.linewidth_pt/_defaultlinewidth_pt) for element in self.pattern])
         else:
             patternstring = " ".join(["%f" % element for element in self.pattern])
-        file.write("[%s] %d d\n" % (patternstring, self.offset))
+        file.write("[%s] %f d\n" % (patternstring, self.offset))
+
+    def processSVGattrs(self, attrs, writer, context, registry):
+        if self.rellengths:
+            patternstring = " ".join(["%f" % (element * context.linewidth_pt/_defaultlinewidth_pt) for element in self.pattern])
+        else:
+            patternstring = " ".join(["%f" % element for element in self.pattern])
+        if patternstring:
+            attrs["stroke-dasharray"] = patternstring
+            attrs["stroke-dashoffset"] = "%f" % self.offset
+        else:
+            attrs["stroke-dasharray"] = "none"
 
 dash.clear = attr.clearclass(dash)
 
@@ -157,6 +178,10 @@ class linestyle(attr.exclusiveattr, strokestyle):
         self.c.processPDF(file, writer, context, registry)
         self.d.processPDF(file, writer, context, registry)
 
+    def processSVGattrs(self, attrs, writer, context, registry):
+        self.c.processSVGattrs(attrs, writer, context, registry)
+        self.d.processSVGattrs(attrs, writer, context, registry)
+
 linestyle.solid = linestyle(linecap.butt, dash([]))
 linestyle.dashed = linestyle(linecap.butt, dash([2]))
 linestyle.dotted = linestyle(linecap.round, dash([0, 2]))
@@ -173,12 +198,16 @@ class linewidth(attr.sortbeforeexclusiveattr, strokestyle):
         self.width = width
 
     def processPS(self, file, writer, context, registry):
-        file.write("%f setlinewidth\n" % unit.topt(self.width))
         context.linewidth_pt = unit.topt(self.width)
+        file.write("%f setlinewidth\n" % context.linewidth_pt)
 
     def processPDF(self, file, writer, context, registry):
-        file.write("%f w\n" % unit.topt(self.width))
         context.linewidth_pt = unit.topt(self.width)
+        file.write("%f w\n" % context.linewidth_pt)
+
+    def processSVGattrs(self, attrs, writer, context, registry):
+        context.linewidth_pt = unit.topt(self.width)
+        attrs["stroke-width"] = "%f" % context.linewidth_pt
 
 linewidth.THIN = linewidth(_defaultlinewidth/math.sqrt(32))
 linewidth.THIn = linewidth(_defaultlinewidth/math.sqrt(16))
@@ -208,6 +237,9 @@ class fillrule(attr.exclusiveattr, fillstyle):
 
     def processPDF(self, file, writer, context, registry):
         context.fillrule = self.even_odd
+
+    def processSVGattrs(self, attrs, writer, context, registry):
+        attrs["fill-rule"] = {0: "nonzero", 1: "evenodd"}[self.even_odd]
 
 fillrule.nonzero_winding = fillrule(0)
 fillrule.even_odd = fillrule(1)

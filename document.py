@@ -21,7 +21,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 import logging, sys
-from . import bbox, pswriter, pdfwriter, writer, trafo, style, unit
+from . import bbox, pswriter, pdfwriter, svgwriter, trafo, style, unit
 
 logger = logging.getLogger("pyx")
 
@@ -121,7 +121,9 @@ class page:
         else:
             cc = self.canvas
 
-        getattr(style.linewidth.normal, processMethod)(contentfile, writer, context, registry)
+        if processMethod != "processSVG":
+            # for SVG we write the pyx defaults as part of the svg node attributes in the writer
+            getattr(style.linewidth.normal, processMethod)(contentfile, writer, context, registry)
         if self.pagebbox:
             bbox = bbox.copy() # don't alter the bbox provided to the constructor -> use a copy
         getattr(cc, processMethod)(contentfile, writer, context, registry, bbox)
@@ -131,6 +133,9 @@ class page:
 
     def processPDF(self, *args):
         self._process("processPDF", *args)
+
+    def processSVG(self, *args):
+        self._process("processSVG", *args)
 
 
 class _noclose:
@@ -186,6 +191,10 @@ class document:
     def writePDFfile(self, file=None, **kwargs):
         with _outputstream(file, "pdf") as f:
             pdfwriter.PDFwriter(self, f, **kwargs)
+
+    def writeSVGfile(self, file=None, **kwargs):
+        with _outputstream(file, "svg") as f:
+            svgwriter.SVGwriter(self, f, **kwargs)
 
     def writetofile(self, filename, **kwargs):
         for suffix, method in [("eps", pswriter.EPSwriter),

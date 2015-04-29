@@ -21,7 +21,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 import io, logging, math
-from . import attr, canvas, path, pdfwriter, pswriter, style, unit, trafo
+from . import attr, canvas, path, pdfwriter, pswriter, svgwriter, style, unit, trafo
 from . import writer as writermodule
 from . import bbox as bboxmodule
 
@@ -34,7 +34,7 @@ class _marker: pass
 class pattern(canvas.canvas, attr.exclusiveattr, style.fillstyle):
 
     def __init__(self, painttype=1, tilingtype=1, xstep=None, ystep=None,
-                 bbox=None, trafo=None, bboxenlarge=5*unit.t_pt, **kwargs):
+                 bbox=None, trafo=None, bboxenlarge=None, **kwargs):
         canvas.canvas.__init__(self, **kwargs)
         attr.exclusiveattr.__init__(self, pattern)
         self.id = "pattern%d" % id(self)
@@ -53,19 +53,19 @@ class pattern(canvas.canvas, attr.exclusiveattr, style.fillstyle):
 
     def __call__(self, painttype=_marker, tilingtype=_marker, xstep=_marker, ystep=_marker,
                  bbox=_marker, trafo=_marker, bboxenlarge=_marker):
-        if painttype is _marker:
+        if painttype is not _marker:
             painttype = self.painttype
-        if tilingtype is _marker:
+        if tilingtype is not _marker:
             tilingtype = self.tilingtype
-        if xstep is _marker:
+        if xstep is not _marker:
             xstep = self.xstep
-        if ystep is _marker:
+        if ystep is not _marker:
             ystep = self.ystep
-        if bbox is _marker:
+        if bbox is not _marker:
             bbox = self.bbox
-        if trafo is _marker:
+        if trafo is not _marker:
             trafo = self.trafo
-        if bboxenlarge is _marker:
+        if bboxenlarge is not _marker:
             bboxenlarge = self.bboxenlarge
         return pattern(painttype, tilingtype, xstep, ystep, bbox, trafo, bboxenlarge)
 
@@ -88,7 +88,12 @@ class pattern(canvas.canvas, attr.exclusiveattr, style.fillstyle):
             raise ValueError("xstep in pattern cannot be zero")
         if not ystep:
             raise ValueError("ystep in pattern cannot be zero")
-        patternbbox = self.patternbbox or realpatternbbox.enlarged(self.bboxenlarge)
+        if self.patternbbox:
+            patternbbox = self.patternbbox
+        else:
+            patternbbox = realpatternbbox
+            if self.bboxenlarge:
+                patternbbox.enlarge(self.bboxenlarge)
 
         patternprefix = "\n".join(("<<",
                                    "/PatternType %d" % self.patterntype,
@@ -130,7 +135,12 @@ class pattern(canvas.canvas, attr.exclusiveattr, style.fillstyle):
             raise ValueError("xstep in pattern cannot be zero")
         if not ystep:
             raise ValueError("ystep in pattern cannot be zero")
-        patternbbox = self.patternbbox or realpatternbbox.enlarged(5*unit.pt)
+        if self.patternbbox:
+            patternbbox = self.patternbbox
+        else:
+            patternbbox = realpatternbbox
+            if self.bboxenlarge:
+                patternbbox.enlarge(self.bboxenlarge)
         patterntrafo = self.patterntrafo or trafo.trafo()
 
         registry.add(PDFpattern(self.id, self.patterntype, self.painttype, self.tilingtype,
@@ -147,6 +157,21 @@ class pattern(canvas.canvas, attr.exclusiveattr, style.fillstyle):
             logger.warning("ignoring stroke color for patterns in PDF")
         if context.fillattr:
             file.write("/%s scn\n"% self.id)
+
+    def processSVGattrs(self, attrs, writer, context, registry):
+        assert self.patterntype == 1
+        if self.painttype != 1:
+            raise ValueError("grayscale patterns not supported")
+        # tilingtype is an implementation detail in PS and PDF and is ignored
+        if self.xstep is not None or self.ystep is not None or self.bboxenlarge is not None:
+            raise ValueError("step and bbox modifications not supported")
+
+        svgpattern = SVGpattern(self)
+        registry.add(svgpattern)
+        if context.strokeattr:
+            context.strokecolor = "url(#%s)" % svgpattern.svgid
+        if context.fillattr:
+            context.fillcolor = "url(#%s)" % svgpattern.svgid
 
 
 pattern.clear = attr.clearclass(pattern)
@@ -327,3 +352,36 @@ class PDFpattern(pdfwriter.PDFobject):
                    "stream\n")
         file.write_bytes(content)
         file.write("endstream\n")
+
+
+class SVGpattern(svgwriter.SVGresource):
+
+    def __init__(self, pattern):
+        self.svgid = "pattern%d" % id(pattern)
+        super().__init__("pattern", self.svgid)
+        self.pattern = pattern
+
+    def output(self, xml, writer, registry):
+        if self.pattern.patternbbox:
+            patternbbox = self.pattern.patternbbox
+        else:
+            patternfile = io.BytesIO()
+            patternxml = svgwriter.SVGGenerator(patternfile)
+            patternbbox = bboxmodule.empty()
+            patternxml.startSVGDocument()
+            self.pattern.processSVG(patternxml, writer, svgwriter.context(), svgwriter.SVGregistry(), patternbbox)
+
+        attrs = {"id": self.svgid, "patternUnits": "userSpaceOnUse"}
+        llx, lly, urx, ury = patternbbox.highrestuple_pt()
+        attrs["viewBox"] = "%g %g %g %g" % (llx, -ury, urx-llx, ury-lly)
+        attrs["width"] = "%g" % (urx-llx)
+        attrs["height"] = "%g" % (ury-lly)
+        if self.pattern.patterntrafo:
+            self.pattern.patterntrafo.processSVGattrs(attrs, self, svgwriter.context(), registry)
+            attrs["patternTransform"] = attrs["transform"]
+            del attrs["transform"]
+
+        xml.startSVGElement("pattern", attrs)
+        self.pattern.processSVG(xml, writer, svgwriter.context(), registry, bboxmodule.empty())
+        xml.endSVGElement("pattern")
+

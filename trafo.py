@@ -106,6 +106,13 @@ class trafo_pt(baseclasses.deformer):
                       self.matrix[0][1], self.matrix[1][1],
                       self.vector[0], self.vector[1] ) )
 
+    def processSVGattrs(self, attrs, writer, context, registry):
+        assert "transform" not in attrs
+        attrs["transform"] = "matrix(%f,%f,%f,%f,%f,%f)" % \
+                    ( self.matrix[0][0], -self.matrix[1][0],
+                      -self.matrix[0][1], self.matrix[1][1],
+                      self.vector[0], -self.vector[1] )
+
     def apply_pt(self, x_pt, y_pt):
         """apply transformation to point (x_pt, y_pt) in pts"""
         return ( self.matrix[0][0]*x_pt + self.matrix[0][1]*y_pt + self.vector[0],

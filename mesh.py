@@ -178,3 +178,17 @@ stream
             registry.add(shading)
             registry.addresource("Shading", name, shading)
             file.write("/%s sh\n" % name)
+
+    def processSVG(self, xml, writer, context, registry, bbox):
+        from pyx import bitmap, canvas
+        from PIL import Image
+        c = canvas.canvas()
+        c.insert(self)
+        i = Image.open(c.pipeGS("pngalpha", resolution=writer.mesh_as_bitmap_resolution))
+        i.load()
+        b = bitmap.bitmap_pt(self.bbox().llx_pt, self.bbox().lly_pt, i)
+        # we slightly shift the bitmap to re-center it, as the bitmap might contain some additional border
+        # unfortunately we need to construct another bitmap instance for that ...
+        b = bitmap.bitmap_pt(self.bbox().llx_pt + 0.5*(self.bbox().width_pt()-b.bbox().width_pt()),
+                             self.bbox().lly_pt + 0.5*(self.bbox().height_pt()-b.bbox().height_pt()), i)
+        b.processSVG(xml, writer, context, registry, bbox)

@@ -56,6 +56,12 @@ class color(attr.exclusiveattr, style.strokestyle, style.fillstyle):
     def __init__(self):
         super().__init__(color)
 
+    def processSVGattrs(self, attrs, writer, context, registry):
+        if context.strokeattr:
+            context.strokecolor = self.rgb().tohexstring()
+        if context.fillattr:
+            context.fillcolor = self.rgb().tohexstring()
+
 
 clear = attr.clearclass(color)
 
@@ -605,4 +611,10 @@ class transparency(attr.exclusiveattr, style.strokestyle, style.fillstyle):
             registry.add(PDFextgstate("Transparency-Fill-%f" % self.value,
                                       "<< /Type /ExtGState /ca %f >>" % self.value, registry))
             file.write("/Transparency-Fill-%f gs\n" % self.value)
+
+    def processSVGattrs(self, attrs, writer, context, registry):
+        if context.strokeattr:
+            context.strokeopacity = self.value
+        if context.fillattr:
+            context.fillopacity = self.value
 
