@@ -571,7 +571,10 @@ class T1text_pt(text_pt):
                 context.selectedfont = sf
                 sf.outputPDF(file, writer)
 
-            if self.kerning:
+            # convert inter-character spacing to font units
+            spaced = self.spaced_pt*1000/self.size_pt
+
+            if self.kerning or spaced:
                 file.write("1 0 %f 1 %f %f Tm [(" % (slantvalue, self.x_pt, self.y_pt))
             else:
                 file.write("1 0 %f 1 %f %f Tm (" % (slantvalue, self.x_pt, self.y_pt))
@@ -582,22 +585,23 @@ class T1text_pt(text_pt):
                     data = self.glyphnames
             else:
                 data = self.charcodes
+
             for i, value in enumerate(data):
                 if self.kerning and i % 2:
                     if value is not None:
-                        file.write(")%f(" % (-value-self.spaced_pt))
-                    elif self.spaced_pt:
-                        file.write(")%f(" % (-self.spaced_pt))
+                        file.write(")%f(" % (-value-spaced))
+                    elif spaced:
+                        file.write(")%f(" % (-spaced))
                 else:
-                    if i and not self.kerning and self.spaced_pt:
-                        file.write(")%f(" % (-self.spaced_pt))
+                    if i and not self.kerning and spaced:
+                        file.write(")%f(" % (-spaced))
                     if self.decode:
                         value = encoding[value]
                     if 32 <= value <= 127 and chr(value) not in "()[]<>\\":
                         file.write("%s" % chr(value))
                     else:
                         file.write("\\%03o" % value)
-            if self.kerning:
+            if self.kerning or spaced:
                 file.write(")] TJ\n")
             else:
                 file.write(") Tj\n")
