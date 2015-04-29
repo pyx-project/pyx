@@ -394,9 +394,13 @@ class T1text_pt(text_pt):
             return self.textpath().bbox()
         if not self.decode:
             raise ValueError("decoding required for font metric access (bbox)")
+        if self.kerning:
+            kerning_correction = sum(value or 0 for i, value in enumerate(self.font.metric.resolvekernings(self.glyphnames, self.size_pt)) if i%2)
+        else:
+            kerning_correction = 0
         return bbox.bbox_pt(self.x_pt,
                             self.y_pt+self.font.metric.depth_pt(self.glyphnames, self.size_pt),
-                            self.x_pt+self.font.metric.width_pt(self.glyphnames, self.size_pt),
+                            self.x_pt+self.font.metric.width_pt(self.glyphnames, self.size_pt) + (len(self.glyphnames)-1)*self.spaced_pt + kerning_correction,
                             self.y_pt+self.font.metric.height_pt(self.glyphnames, self.size_pt))
 
     def getencodingname(self, encodings):
