@@ -1,4 +1,13 @@
-XXX
+0.14 (2015/04/30):
+  - new svgwriter module:
+    - complete SVG output
+    - SVG font output disabled by default due to missing support by
+      most browsers, fallback by rendering fonts as paths
+  - new svgfile module:
+    - SVG reader
+    - unparsed mode: embedd svg in other svg
+    - parsed mode: supports reading paths (including styles,
+      tranformations, etc.) into a PyX canvas
   - bitmap module:
     - using bytes in image type conversions and channel extraction
   - color module:
