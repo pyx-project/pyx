@@ -33,7 +33,7 @@ from pyx import trafo, reader, writer
 from pyx.path import path, moveto_pt, lineto_pt, curveto_pt, closepath
 
 try:
-    from _t1code import *
+    from ._t1code import *
 except:
     from .t1code import *
 
