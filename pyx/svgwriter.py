@@ -127,7 +127,7 @@ class SVGGenerator(xml.sax.saxutils.XMLGenerator):
         super().startDocument()
         super().startPrefixMapping(None, svg_uri)
         if self.xlink_enabled:
-            super().startPrefixMapping("xlink", "http://www.w3.org/1999/xlink")
+            super().startPrefixMapping("xlink", xlink_uri)
         self.indent = 0
         self.newline = True
         self.xlink_used = False
