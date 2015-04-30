@@ -14,8 +14,6 @@ description = re.sub(bendpattern, lambda m: bendcode*(m.end()-m.start()), descri
 code = open("{}.py".format(filename), encoding="utf-8").read()
 code = re.sub('\.writeEPSfile\(("[a-z]+")?\)\n.*writePDFfile\(("[a-z]+")?\)\n.*writeSVGfile\(("[a-z]+")?\)\n', "", code)
 
-print(description)
-
 nb = nbf.new_notebook()
 cells = []
 cells.append(nbf.new_markdown_cell(source="# " + title))
