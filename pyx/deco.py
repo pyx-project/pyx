@@ -369,7 +369,10 @@ class decoratedpath(baseclasses.canvasitem):
                     attrs["opacity"] = "%f" % acontext.fillopacity
                 xml.startSVGElement("path", attrs)
                 xml.endSVGElement("path")
-            bbox += strokepath.bbox().enlarged_pt(0.5*acontext.linewidth_pt)
+            if self.strokestyles is not None:
+                bbox += strokepath.bbox().enlarged_pt(0.5*acontext.linewidth_pt)
+            else:
+                bbox += strokepath.bbox()
 
         self.ornaments.processSVG(xml, writer, acontext, registry, bbox)
 
