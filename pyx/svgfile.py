@@ -102,26 +102,29 @@ class svgBaseHandler(xml.sax.ContentHandler):
                       "cm": 72/2.54,
                       "in": 72}
 
-    def toFloat(self, arg, relative=None, single=False):
+    def toFloat(self, arg, relative=None, single=False, units=True):
         match = _svgFloatPattern.match(arg)
         if not match:
             raise svgValueError("could not match float for '%s'" % arg)
+        if match.group("unit") and not units:
+            raise svgValueError("no units allowed for '%s'" % arg)
+        value = float(match.group("value"))
         if match.group("unit") == "%":
             if relative is not None:
-                value = float(match.group("value")) * 0.01 * relative
+                value *= 0.01 * relative
             else:
                 raise svgValueError("missing support for relative coordinates")
-        else:
-            value = float(match.group("value")) * self.units[match.group("unit")]
+        elif units:
+            value *= self.units[match.group("unit")]
         if single:
             if match.end() < len(arg):
                 raise svgValueError("could not match single float for '%s'" % arg)
             return value
         return value, arg[match.end():]
 
-    def toFloats(self, args):
+    def toFloats(self, args, units=True):
         while args:
-            float, args = self.toFloat(args)
+            float, args = self.toFloat(args, units=units)
             yield float
 
 
@@ -241,27 +244,40 @@ class svgHandler(svgBaseHandler):
         t = trafo.identity
         for match in reversed(list(re.finditer("(?P<cmd>matrix|translate|scale|rotate|skewX|skewY)\((?P<args>[^)]*)\)", svgTrafo))):
             cmd = match.group("cmd")
-            args = list(self.toFloats(match.group("args")))
+            args = match.group("args")
             if cmd == "matrix":
-                t = t * trafo.trafo_pt(((args[0], args[1]), (args[2], args[3])), (args[4], args[5]))
+                a, args = self.toFloat(args, units=False)
+                b, args = self.toFloat(args, units=False)
+                c, args = self.toFloat(args, units=False)
+                d, args = self.toFloat(args, units=False)
+                e, args = self.toFloat(args)
+                f = self.toFloat(args, single=True)
+                t = t * trafo.trafo_pt(((a, b), (c, d)), (e, f))
             elif cmd == "translate":
+                args = list(self.toFloats(args))
                 if len(args) == 1:
                     args.append(0)
+                assert len(args) == 2
                 t = t.translated_pt(args[0], args[1])
             elif cmd == "scale":
+                args = list(self.toFloats(args, units=False))
                 if len(args) == 1:
                     args.append(args[0])
+                assert len(args) == 2
                 t = t.scaled(args[0], args[1])
             elif cmd == "rotate":
-                if len(args) == 1:
-                    args.append(0)
-                    args.append(0)
-                t = t.rotated_pt(args[0], args[1], args[2])
+                a, args = self.toFloat(args, units=False)
+                if args:
+                    b, args = self.toFloat(args)
+                    c = self.toFloat(args, single=True)
+                else:
+                    b, c = 0, 0
+                t = t.rotated_pt(a, b, c)
             elif cmd == "skewX":
-                t = t * trafo.trafo_pt(((1, math.tan(args[0]*math.pi/180)), (0, 1)))
+                t = t * trafo.trafo_pt(((1, math.tan(self.toFloat(args, units=False, single=True)*math.pi/180)), (0, 1)))
             else:
                 assert cmd == "skewY"
-                t = t * trafo.trafo_pt(((1, 0), (math.tan(args[0]*math.pi/180), 1)))
+                t = t * trafo.trafo_pt(((1, 0), (math.tan(self.toFloat(args, units=False, single=True)*math.pi/180), 1)))
         return t
 
     def toColor(self, name, inherit):
@@ -474,10 +490,16 @@ class svgBboxHandler(svgBaseHandler):
             raise ValueError("SVG width and height missing, which is required for unparsed SVG inclusion")
         outer_x = self.toFloat(attributes.get((None, "x"), "0"), single=True)
         outer_y = self.toFloat(attributes.get((None, "y"), "0"), single=True)
-        outer_width = self.toFloat(attributes.get((None, "width")), single=True)
-        outer_height = self.toFloat(attributes.get((None, "height")), single=True)
+        try:
+            outer_width = self.toFloat(attributes.get((None, "width")), single=True)
+            outer_height = self.toFloat(attributes.get((None, "height")), single=True)
+            self.trafo = trafo.translate_pt(0, outer_height) * trafo.scale(72/self.resolution)
+        except svgValueError:
+            inner_x, inner_y, inner_width, inner_height = self.toFloats(attributes[None, "viewBox"])
+            outer_width = self.toFloat(attributes.get((None, "width")), relative=inner_width, single=True)
+            outer_height = self.toFloat(attributes.get((None, "height")), relative=inner_height, single=True)
+            self.trafo = trafo.translate_pt(-0.5*outer_width, outer_height)
         self.bbox = bbox.bbox_pt(outer_x, -outer_y, outer_x+outer_width, -outer_y+outer_height)
-        self.trafo = trafo.translate_pt(0, outer_height) # vertical shift for PyX coordinates
         raise svgBboxDoneException()
 
 
@@ -559,7 +581,7 @@ class svgfile_pt(baseclasses.canvasitem):
         if self.parsed:
             self.canvas.processSVG(svg, writer, context, registry, bbox)
         else:
-            t = self.trafo * self.svg.trafo * trafo.scale(72/self.resolution)
+            t = self.trafo * self.svg.trafo
             attrs = {"fill": "black"}
             t.processSVGattrs(attrs, writer, context, registry)
             svg.startSVGElement("g", attrs)
