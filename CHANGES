@@ -22,6 +22,8 @@
     - add xy12axesat feature to graphxyz
   - canvas module:
     - fix clipping and transformation applied together
+    - provide _repr_svg_ in canvas for use by IPython
+    - new constructor argument ipython_bboxenlarge
   - deco module:
     - remove shortcut for ornaments only to not skip global styles
 

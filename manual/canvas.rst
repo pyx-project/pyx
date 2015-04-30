@@ -20,13 +20,14 @@ visual elements like paths, other canvases, TeX or LaTeX elements. A canvas may
 also be embedded in another one using its ``insert`` method. This may be useful
 when you want to apply a transformation on a whole set of operations.
 
-.. class:: canvas(attrs=[], texrunner=None)
+.. class:: canvas(attrs=[], texrunner=None, ipython_bboxenlarge=1*unit.t_pt)
 
    Construct a new canvas, applying the given *attrs*, which can be instances of
    :class:`trafo.trafo`, :class:`canvas.clip`, :class:`style.strokestyle` or
    :class:`style.fillstyle`.  The *texrunner* argument can be used to specify the
    texrunner instance used for the :meth:`text` method of the canvas.  If not
-   specified, it defaults to *text.defaulttexrunner*.
+   specified, it defaults to *text.defaulttexrunner*. *ipython_bboxenlarge* defines
+   the `bboxenlarge` :class:`document.page` for IPython's `_repr_png_` and `_repr_svg_`.
 
 Paths can be drawn on the canvas using one of the following methods:
 
