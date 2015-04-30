@@ -483,8 +483,7 @@ class svgBboxHandler(svgBaseHandler):
 
 class svgfile_pt(baseclasses.canvasitem):
 
-    def __init__(self, x_pt, y_pt, filename, width_pt=None, height_pt=None, ratio=None, parsed=False, resolution=90):
-        # resolution=90 is used as an example in the SVG doc and in various applications like in inkscape, but not by Illustrator, which uses 72
+    def __init__(self, x_pt, y_pt, filename, width_pt=None, height_pt=None, ratio=None, parsed=False, resolution=96):
         self.filename = filename
         self.parsed = parsed
         self.resolution = resolution
