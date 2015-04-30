@@ -38,6 +38,8 @@
 
    epsfile
 
+   svgfile
+
    bitmap
 
    bbox
