@@ -204,7 +204,7 @@ class SVGwriter:
 
         x = SVGGenerator(file, xlink=pagesvg.xlink_used)
         x.startSVGDocument()
-        attrs = {"fill": "none"}
+        attrs = {"fill": "none", "version": "1.1"}
         if pagebbox:
             # note that svg uses an inverse y coordinate; to compansate this
             # PyX writes negative y coordinates and the viewbox needs to be
@@ -212,6 +212,8 @@ class SVGwriter:
             # a text remains upright).
             llx, lly, urx, ury = pagebbox.highrestuple_pt()
             attrs["viewBox"] = "%g %g %g %g" % (llx, -ury, urx-llx, ury-lly)
+            attrs["x"] = "%gpt" % llx
+            attrs["y"] = "%gpt" % -ury
             attrs["width"] = "%gpt" % (urx-llx)
             attrs["height"] = "%gpt" % (ury-lly)
         style.linewidth.normal.processSVGattrs(attrs, self, acontext, registry)
