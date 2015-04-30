@@ -150,7 +150,7 @@ class example:
         self.thumbpng = "%s_thumb.png" % basename
         self.thumbwidth, self.thumbheight = Image.open("%s_thumb.png" % relname).size
         self.downloads = []
-        for suffix in ["py", "ipynb", "dat", "jpg", "eps", "pdf"]:
+        for suffix in ["py", "ipynb", "dat", "jpg", "eps", "pdf", "svg"]:
             try:
                 filesize = "%.1f KB" % (os.path.getsize("%s.%s" % (relname, suffix)) / 1024.0)
             except OSError:

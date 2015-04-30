@@ -28,7 +28,7 @@ copy:
 	for d in "" $$(grep / ../examples/INDEX); \
 	do \
 	  mkdir -p build/examples/$$d; \
-	  for t in png py ipynb jpg dat eps pdf; \
+	  for t in png py ipynb jpg dat eps pdf svg; \
 	  do \
 	    cp ../examples/$$d*.$$t build/examples/$$d 2> /dev/null; \
 	  done; \
