@@ -83,7 +83,7 @@ class svgValueError(ValueError): pass
 
 class _marker: pass
 
-_svgFloatPattern = re.compile("(?P<value>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?)(?P<unit>(px|pt|pc|mm|cm|in)?)\s*,?\s*")
+_svgFloatPattern = re.compile("(?P<value>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?)(?P<unit>(px|pt|pc|mm|cm|in|%)?)\s*,?\s*")
 _svgBoolPattern = re.compile("(?P<bool>[01])\s*,?\s*")
 _svgPathPattern = re.compile("(?P<cmd>[mlhvcsqtaz])\s*(?P<args>(([^mlhvcsqtaz]|pt|pc|mm|cm)*))", re.IGNORECASE)
 _svgColorAbsPattern = re.compile("rgb\(\s*(?P<red>[0-9]+)\s*,\s*(?P<green>[0-9]+)\s*,\s*(?P<blue>[0-9]+)\s*\)$", re.IGNORECASE)
@@ -94,19 +94,30 @@ class svgBaseHandler(xml.sax.ContentHandler):
 
     def __init__(self, resolution):
         self.resolution = resolution
-        self.units = {"": 1,
-                      "px": 1,
-                      "pt": self.resolution/72,
-                      "pc": self.resolution/6,
-                      "mm": self.resolution/25.4,
-                      "cm": self.resolution/2.54,
-                      "in": self.resolution}
+        self.units = {"": 72/self.resolution,
+                      "px": 72/self.resolution,
+                      "pt": 1,
+                      "pc": 12,
+                      "mm": 72/25.4,
+                      "cm": 72/2.54,
+                      "in": 72}
 
-    def toFloat(self, arg):
+    def toFloat(self, arg, relative=None, single=False):
         match = _svgFloatPattern.match(arg)
         if not match:
             raise svgValueError("could not match float for '%s'" % arg)
-        return float(match.group("value")) * self.units[match.group("unit")], arg[match.end():]
+        if match.group("unit") == "%":
+            if relative is not None:
+                value = float(match.group("value")) * 0.01 * relative
+            else:
+                raise svgValueError("missing support for relative coordinates")
+        else:
+            value = float(match.group("value")) * self.units[match.group("unit")]
+        if single:
+            if match.end() < len(arg):
+                raise svgValueError("could not match single float for '%s'" % arg)
+            return value
+        return value, arg[match.end():]
 
     def toFloats(self, args):
         while args:
@@ -360,16 +371,29 @@ class svgHandler(svgBaseHandler):
         namespace, localname = name
         if namespace == "http://www.w3.org/2000/svg":
             if localname == "svg":
-                attrs = pathAttrs([style.linewidth(1*unit.t_pt), style.miterlimit(4), trafo.scale(72/self.resolution)]) # scaling makes 1px == 1pt
+                attrs = pathAttrs([style.linewidth(1*unit.t_pt), style.miterlimit(4)])
+                outer_x = self.toFloat(attributes.get((None, "x"), 0), single=True)
+                outer_y = self.toFloat(attributes.get((None, "y"), 0), single=True)
                 if (None, "viewBox") in attributes:
-                    x, y, width, height = self.toFloats(attributes[None, "viewBox"])
+                    inner_x, inner_y, inner_width, inner_height = self.toFloats(attributes[None, "viewBox"])
                     if attributes.get((None, "clip"), "auto") == "auto":
-                        attrs.append(canvas.clip(path.rect(x, y, width, height)))
-                    self.bbox = bbox.bbox_pt(*map(lambda x: x*72/self.resolution, (x, y, x+width, y+height)))
-                    attrs.append(trafo.translate_pt(0, -height*72/self.resolution))
+                        attrs.append(canvas.clip(path.rect(inner_x, inner_y, inner_width, inner_height)))
+                    outer_width = self.toFloat(attributes.get((None, "width"), "100%"), single=True, relative=inner_width)
+                    outer_height = self.toFloat(attributes.get((None, "height"), "100%"), single=True, relative=inner_height)
+                    self.bbox = bbox.bbox_pt(outer_x, -outer_y, outer_x+outer_width, -outer_y+outer_height)
+                    attrs.append(trafo.translate_pt(-inner_x, -inner_y))
+                    attrs.append(trafo.scale(outer_width/inner_width, outer_height/inner_height))
+                    attrs.append(trafo.translate_pt(outer_x, outer_y))
+                    attrs.append(trafo.translate_pt(0, -outer_height))
+                elif (None, "width") in attributes and (None, "height") in attributes:
+                    outer_width = self.toFloat(attributes.get((None, "width"), "100%"), single=True)
+                    outer_height = self.toFloat(attributes.get((None, "height"), "100%"), single=True)
+                    self.bbox = bbox.bbox_pt(outer_x, -outer_y, outer_x+outer_width, -outer_y+outer_height)
+                    attrs.append(trafo.translate_pt(outer_x, outer_y))
+                    attrs.append(trafo.translate_pt(0, -outer_height))
                 else:
                     self.bbox = None
-                    logger.warning("SVG has no viewbox, align by SVG coordinates (top-left) instead of PyX-like (bottom-left) and get bbox from the SVG content")
+                    raise ValueError("SVG viewbox or width and height missing, we continue by aligning by SVG coordinates (top-left) instead of PyX-like (bottom-left) and calculate the bbox from the SVG content")
                 attrs.append(trafo.mirror(0))
                 self.canvas = canvas.canvas(attrs)
             elif localname == "g":
@@ -446,10 +470,14 @@ class svgBboxHandler(svgBaseHandler):
     def startElementNS(self, name, qname, attributes):
         if name != ("http://www.w3.org/2000/svg", "svg"):
             raise ValueError("not an SVG file")
-        if (None, "viewBox") not in attributes:
-            raise ValueError("SVG viewbox missing, which is required for unparsed SVG inclusion")
-        x, y, width, height = self.toFloats(attributes[None, "viewBox"])
-        self.bbox = bbox.bbox_pt(*map(lambda x: x*72/self.resolution, (x, y, x+width, y+height)))
+        if (None, "width") not in attributes or (None, "height") not in attributes:
+            raise ValueError("SVG width and height missing, which is required for unparsed SVG inclusion")
+        outer_x = self.toFloat(attributes.get((None, "x"), 0), single=True)
+        outer_y = self.toFloat(attributes.get((None, "y"), 0), single=True)
+        outer_width = self.toFloat(attributes.get((None, "width")), single=True)
+        outer_height = self.toFloat(attributes.get((None, "height")), single=True)
+        self.bbox = bbox.bbox_pt(outer_x, -outer_y, outer_x+outer_width, -outer_y+outer_height)
+        self.trafo = trafo.translate_pt(0, outer_height) # vertical shift for PyX coordinates
         raise svgBboxDoneException()
 
 
@@ -503,10 +531,12 @@ class svgfile_pt(baseclasses.canvasitem):
                     height_pt = (1.0/ratio) * width_pt
             elif ratio is not None:
                 raise ValueError("can't specify a ratio when setting width_pt and height_pt")
-            self.trafo *= trafo.scale(width_pt/svgwidth_pt, height_pt/svgheight_pt)
+            self.trafo *= trafo.scale_pt(width_pt/svgwidth_pt, height_pt/svgheight_pt)
         else:
             if ratio is not None:
                 raise ValueError("must specify width_pt or height_pt to set a ratio")
+
+        self.trafo *= trafo.translate_pt(-self.svg.bbox.llx_pt, -self.svg.bbox.lly_pt)
 
         self._bbox = self.svg.bbox.transformed(self.trafo)
         if self.parsed:
@@ -530,7 +560,7 @@ class svgfile_pt(baseclasses.canvasitem):
         if self.parsed:
             self.canvas.processSVG(svg, writer, context, registry, bbox)
         else:
-            t =  self.trafo * trafo.scale(72/self.resolution).translated_pt(0, self.svg.bbox.height_pt())
+            t = self.trafo * self.svg.trafo * trafo.scale(72/self.resolution)
             attrs = {"fill": "black"}
             t.processSVGattrs(attrs, writer, context, registry)
             svg.startSVGElement("g", attrs)
