@@ -63,14 +63,14 @@ to do that, one needs the corresponding PyX package (see
 :ref:`where_do_I_get_PyX` if you need to download it), which should be unpacked
 below a directory, e.g.  ``/home/xyz/Python``,  where you want to keep the
 various PyX versions.  This will result in a subdirectory with a name like
-``PyX-0.13`` which contains the contents of the corresponding package. You
+``PyX-0.14`` which contains the contents of the corresponding package. You
 can then ask Python to first look in the appropriate directory before looking
 for the current version of PyX by inserting the following code (appropriately
 modified according to your needs) at the beginning of your program before
 importing the PyX module::
 
    import sys
-   sys.path.insert(0, "/home/xyz/Python/PyX-0.13")
+   sys.path.insert(0, "/home/xyz/Python/PyX-0.14")
 
 Including appropriate lines even if the current version of PyX is used, might
 turn out to be helpful when the current version has become an old version
@@ -81,7 +81,7 @@ If your operating system supports path expansion, you might use as an
 alternative::
 
    import sys, os
-   sys.path.insert(0, os.path.expanduser("~/Python/PyX-0.13"))
+   sys.path.insert(0, os.path.expanduser("~/Python/PyX-0.14"))
 
 which will expand the tilde to your home directory.
 
@@ -113,8 +113,9 @@ Does PyX provide a GUI to view the produced image?
 
 No, PyX itself does not provide a means to view the produced image. The result
 of a PyX run is an EPS (= Encapsulated PostScript) file, a PS (= PostScript)
-file or a PDF (= Portable Document Format) file, which can be viewed, printed
-or imported into other applications.
+file, a PDF (= Portable Document Format) file or a SVG (= Scalable Vector
+Graphics) file, which can be viewed, printed or imported into other
+applications.
 
 There are several means of viewing PS and EPS files. A common way would be to
 use ``ghostview`` which provides a user interface to the PostScript interpreter
@@ -131,6 +132,11 @@ PDF files can be viewed by means of the ``Adobe Reader ®`` available from
 X11, ``xpdf`` might be an alternative. It is available from
 `http://www.foolabs.com/xpdf/ <http://www.foolabs.com/xpdf/>`_.
 
+SVG files can be viewed by webbrowsers like Firefox available at
+`https://www.mozilla.org/en-US/firefox
+<https://www.mozilla.org/en-US/firefox>`_ or Chrome available at
+`https://www.google.com/chrome/ <https://www.google.com/chrome/>`_.
+
 If you want to do interactive development of a PyX graphics, you might consider
 to use an IPython notebook (see :ref:`pyx_ipython_notebook`).
 
@@ -143,8 +149,10 @@ Yes, PyX canvas object and objects inheriting from the canvas class, in particul
 graphs and text, can be embedded into an IPython notebook. Suppose you have a 
 canvas object called ``c`` on which you have done some drawing. Then entering ``c``
 in an IPython notebook cell and executing that cell will automatically produce
-a PNG representation and embed it into the notebook. For more information on
-IPython and working with its notebooks see `http://www.ipython.org/ <http://www.ipython.org/>`_.
+a SVG representation and embed it into the notebook. (Alternatively, also PNG
+is available by means of ghostscript, but the default display_order of IPython
+prefers SVG over PNG.) For more information on IPython and working with its
+notebooks see `http://www.ipython.org/ <http://www.ipython.org/>`_.
 
 I am a Gnuplot user and want to try PyX. Where can I get some help?
 ===================================================================
