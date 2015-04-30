@@ -9,6 +9,16 @@
     <h1>PyX — News</h1>
 
     <dl>
+      <dt>2015-04-30: PyX 0.14 released</dt>
+      <dd>
+        This version adds SVG (Scaleable Vector Graphics) as an output format
+        to PyX. SVG can also be read to include it unchanged to into the SVG
+        output. In addition, even though with quite some limitations, SVG can
+        be read, parsed, and then represented on the PyX graphics level. Here
+        it can be modified and output not just to SVG, but also to the other
+        output formats. Various improvements and bug fixes complete this
+        release.
+      </dd>
       <dt>2013-12-20: PyX 0.13 released</dt>
       <dd>
         PyX has been ported to Python 3. It now requires Python 3.2 and above.
