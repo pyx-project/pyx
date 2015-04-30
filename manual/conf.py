@@ -282,12 +282,12 @@ def setup(app):
     app.connect('autodoc-process-docstring', remove_default_constructor_docstring)
 
 
-# -- monkey patch safe_repr for function signatures ----------------------------
+# -- monkey patch object_description for function signatures -------------------
 
 import re
 import sphinx.util.inspect
 
-old_safe_repr = sphinx.util.inspect.safe_repr
+old_object_description = sphinx.util.inspect.object_description
 function_pattern = re.compile(r"<function (\S+) at 0x[0-9a-f]+>")
-sphinx.util.inspect.safe_repr = lambda obj: re.sub(function_pattern, r"\1",
-                                                   old_safe_repr(obj))
+sphinx.util.inspect.object_description = lambda obj: re.sub(function_pattern, r"\1",
+                                                            old_object_description(obj))
