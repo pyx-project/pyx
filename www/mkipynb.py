@@ -1,5 +1,5 @@
 import base64, os, re, sys
-from IPython.nbformat.current import reads, write, new_output
+import IPython.nbformat.v4 as nbf
 
 filename = os.path.splitext(sys.argv[1])[0]
 
@@ -9,21 +9,20 @@ except IOError:
     title, description = filename, ""
 description = description.replace("...", "").replace("'''", "**").replace("''", "*")
 bendpattern = re.compile("^!+", re.MULTILINE)
-bendcode = "![bend](http://pyx.sourceforge.net/bend.png)"
-description = re.sub(bendpattern, lambda m: "![bend](http://pyx.sourceforge.net/bend.png)"*(m.end()-m.start()), description)
+bendcode = '<img src="http://pyx.sourceforge.net/bend.png" align="left">'
+description = re.sub(bendpattern, lambda m: bendcode*(m.end()-m.start()), description)
 code = open("{}.py".format(filename), encoding="utf-8").read()
-code = re.sub('\.writeEPSfile\(("[a-z]+")?\)\n.*writePDFfile\(("[a-z]+")?\)', "", code)
-input = """# <headingcell level=1>
-{title}
-# <codecell>
-{code}
-# <markdowncell>
-{description}
-# <codecell>
-""".format(title=title, code=code, description=description)
+code = re.sub('\.writeEPSfile\(("[a-z]+")?\)\n.*writePDFfile\(("[a-z]+")?\)\n.*writeSVGfile\(("[a-z]+")?\)\n', "", code)
 
-nb = reads(input, "py")
-codecell, = [cell for ws in nb.worksheets for cell in ws.cells if cell.cell_type == "code"]
-codecell.outputs.append(new_output(output_type="pyout",
-                                   output_png=base64.encodebytes(open("{}.png".format(filename), "rb").read())))
-write(nb, open("{}.ipynb".format(filename), "w"), "ipynb")
+print(description)
+
+nb = nbf.new_notebook()
+cells = []
+cells.append(nbf.new_markdown_cell(source="# " + title))
+cells.append(nbf.new_code_cell(source=code, execution_count=1,
+                               outputs=[nbf.new_output(output_type=u'execute_result', execution_count=1,
+                                                       data={'image/png': base64.encodebytes(open("{}.png".format(filename), "rb").read()).decode("ascii"),
+                                                             'image/svg+xml': open("{}.svg".format(filename), "r", encoding="utf-8").read()})]))
+cells.append(nbf.new_markdown_cell(source=description))
+nb = nbf.new_notebook(cells=cells, metadata={'language': 'python'})
+open("{}.ipynb".format(filename), "w").write(nbf.writes(nb))
