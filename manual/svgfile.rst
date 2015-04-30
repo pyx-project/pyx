@@ -46,27 +46,28 @@ are summarized in the following table:
 | ``resolution=96``   | SVG resolution in "dpi", see below.           |
 +---------------------+-----------------------------------------------+
 
-The parsed mode creates a filled PyX canvas from the SVG data. At the moment
-it properly parses paths with styles, transformations, canvas nesting etc. but
-no other SVG constructs. While some features might be added in the future, it
-will probably always have rather strong limitations, like not being able to
-take into account CSS styling and other things. However, on the other hand
-parsed mode still has some major advantages. You can access the paths as PyX
-paths from the canvas and you can output the parsed SVG data to PostScript and
-PDF.
+In parsed mode a filled PyX canvas containing the SVG data is created. At the
+moment the parser handles paths with styles, transformations, canvas nesting
+etc. but no other SVG constructs. While some features might be added in the
+future, the parsed mode will probably always have limitations, like not being
+able to take into account CSS styling and other things. On the other hand the
+parsed mode has some major advantages. You can access the paths as PyX paths
+within the canvas and you can output the parsed SVG data to PostScript and PDF.
 
-SVG files have a resolution, even though SVG is a vector format. The resolution
-defines the unit scale, when no unit like ``pt``, ``in``, ``mm``, or ``cm`` is
-used. This user unit is meant to be pixels, thus viewer programs are adviced
-and typically use the screen resolution. Tools to SVG files often use 90 dpi as
-in the w3.org SVG Recommendation. However, note that Adobe Illustrator (r) uses
-72 dpi. In Browsers we found 96 dpi to be used, which we thus took as the
-default. However, all this might vary between plattforms and configurations.
+Even though SVG is a vector format, inserting an SVG file depends on a
+resolution most of the time. This resolution defines the unit scale, when no
+unit like ``pt``, ``in``, ``mm``, or ``cm`` is used. This user unit is meant to
+be pixels, thus viewer programs are adviced to use the screen resolution. Tools
+to SVG files often use 90 dpi as in the w3.org SVG Recommendation. However,
+note that Adobe (R) Illustrator (R) uses 72 dpi. In browsers 96 dpi is commonly
+used, which is thus set as the default. However, all this might vary between
+plattforms and configurations.
 
-Note that the PyX SVG output defines the size of the output in ``pt``. However,
-even when reading such a file in un-parsed mode we need to make assumtions on
-how the final viewer will insert (i.e. scale and position) the SVG file, thus
-needing a resolution. In parsed mode it becomes resolution independent.
+Note that the SVG output of PyX defines the its size using units. Still, when
+reading such a file in un-parsed mode PyX need to make assumtions on how the
+final viewer will insert (i.e. scale and position) the SVG file, thus needing a
+resolution. Only in parsed mode it becomes resolution independent.
+
 Unfortunately it is rather uncommon to store the size of the SVG in coordinates
 with units. You then need to provide the correct resolution in both modes,
 parsed and unparsed, to get proper alignment.
