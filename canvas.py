@@ -26,7 +26,7 @@ A canvas holds a collection of all elements and corresponding attributes to be
 displayed. """
 
 import io, logging, os, sys, string, tempfile
-from . import attr, baseclasses, config, document, style, trafo, svgwriter
+from . import attr, baseclasses, config, document, style, trafo, svgwriter, unit
 from . import bbox as bboxmodule
 
 logger = logging.getLogger("pyx")
@@ -100,7 +100,7 @@ class canvas(baseclasses.canvasitem):
 
     """a canvas holds a collection of canvasitems"""
 
-    def __init__(self, attrs=None, texrunner=None):
+    def __init__(self, attrs=None, texrunner=None, ipython_bboxenlarge=1*unit.t_pt):
 
         """construct a canvas
 
@@ -130,6 +130,7 @@ class canvas(baseclasses.canvasitem):
             # prevent cyclic imports
             from . import text
             self.texrunner = text.defaulttexrunner
+        self.ipython_bboxenlarge = ipython_bboxenlarge
 
         attr.checkattrs(attrs, [trafo.trafo_pt, clip, style.style])
         attrs = attr.mergeattrs(attrs)
@@ -157,7 +158,15 @@ class canvas(baseclasses.canvasitem):
         """
         Automatically represent as PNG graphic when evaluated in IPython notebook.
         """
-        return self.pipeGS(device="png16m").getvalue()
+        return self.pipeGS(device="png16m", page_bboxenlarge=self.ipython_bboxenlarge).getvalue()
+
+    def _repr_svg_(self):
+        """
+        Automatically represent as SVG graphic when evaluated in IPython notebook.
+        """
+        f = io.BytesIO()
+        self.writeSVGfile(f, page_bboxenlarge=self.ipython_bboxenlarge)
+        return f.getvalue().decode("utf-8")
 
     def bbox(self):
         """returns bounding box of canvas
