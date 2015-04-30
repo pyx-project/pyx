@@ -372,8 +372,8 @@ class svgHandler(svgBaseHandler):
         if namespace == "http://www.w3.org/2000/svg":
             if localname == "svg":
                 attrs = pathAttrs([style.linewidth(1*unit.t_pt), style.miterlimit(4)])
-                outer_x = self.toFloat(attributes.get((None, "x"), 0), single=True)
-                outer_y = self.toFloat(attributes.get((None, "y"), 0), single=True)
+                outer_x = self.toFloat(attributes.get((None, "x"), "0"), single=True)
+                outer_y = self.toFloat(attributes.get((None, "y"), "0"), single=True)
                 if (None, "viewBox") in attributes:
                     inner_x, inner_y, inner_width, inner_height = self.toFloats(attributes[None, "viewBox"])
                     if attributes.get((None, "clip"), "auto") == "auto":
@@ -472,8 +472,8 @@ class svgBboxHandler(svgBaseHandler):
             raise ValueError("not an SVG file")
         if (None, "width") not in attributes or (None, "height") not in attributes:
             raise ValueError("SVG width and height missing, which is required for unparsed SVG inclusion")
-        outer_x = self.toFloat(attributes.get((None, "x"), 0), single=True)
-        outer_y = self.toFloat(attributes.get((None, "y"), 0), single=True)
+        outer_x = self.toFloat(attributes.get((None, "x"), "0"), single=True)
+        outer_y = self.toFloat(attributes.get((None, "y"), "0"), single=True)
         outer_width = self.toFloat(attributes.get((None, "width")), single=True)
         outer_height = self.toFloat(attributes.get((None, "height")), single=True)
         self.bbox = bbox.bbox_pt(outer_x, -outer_y, outer_x+outer_width, -outer_y+outer_height)
