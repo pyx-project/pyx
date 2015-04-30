@@ -14,7 +14,7 @@
     <h2>Summary</h2>
 
     <p>
-       PyX is a Python package for the creation of PostScript and PDF files. It
+       PyX is a Python package for the creation of PostScript, PDF, and SVG files. It
        combines an abstraction of the PostScript drawing model with a TeX/LaTeX
        interface. Complex tasks like 2d and 3d plots in publication-ready quality are
        built out of these primitives.
@@ -23,7 +23,7 @@
     <h2>Features</h2>
 
     <ul>
-      <li>PostScript and PDF output for device independent, freely scalable figures</li>
+      <li>PostScript, PDF, and SVG output for device independent, freely scalable figures</li>
       <li>seamless TeX/LaTeX integration</li>
       <li>full access to PostScript features like paths, linestyles, fill patterns, transformations, clipping, bitmap inclusion, etc.</li>
       <li>advanced geometric operations on paths like intersections, transformations, splitting, smoothing, etc.</li>
