@@ -136,7 +136,7 @@ convenience methods, which wrap the canvas into a single page document.
    *kwargs*.
 
 
-.. method:: canvas.pipeGS(device, resolution=100, gs="gs", gsoptions=[], textalphabits=4, graphicsalphabits=4, ciecolor=False, input="eps", **kwargs)
+.. method:: canvas.pipeGS(device, resolution=100, gscmd="gs", gsoptions=[], textalphabits=4, graphicsalphabits=4, ciecolor=False, input="eps", **kwargs)
 
    This method pipes the content of a canvas to the ghostscript interpreter
    to generate other output formats. The output is returned by means of a
