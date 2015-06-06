@@ -1316,6 +1316,9 @@ class normsubpath:
 
         if len(params) < 2:
             raise ValueError("at least two parameters needed in segments")
+        if not self.normsubpathitems:
+            assert not self.closed # "empty" normsubpath cannot be closed
+            return [self]*(len(params)-1)
 
         result = [normsubpath(epsilon=self.epsilon)]
 
