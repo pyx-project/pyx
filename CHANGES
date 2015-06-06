@@ -1,3 +1,7 @@
+0.15 (xxxx/xx/xx):
+  - normpath:
+    - fix intersect with empty normsubpaths (bug #62, thanks to Florent Hivert)
+
 0.14 (2015/04/30):
   - new svgwriter module:
     - complete SVG output
