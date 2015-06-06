@@ -280,14 +280,3 @@ def remove_default_constructor_docstring(app, what, name, obj, options, lines):
 def setup(app):
     app.connect('autodoc-process-signature', unprocessed_function_signature)
     app.connect('autodoc-process-docstring', remove_default_constructor_docstring)
-
-
-# -- monkey patch object_description for function signatures -------------------
-
-import re
-import sphinx.util.inspect
-
-old_object_description = sphinx.util.inspect.object_description
-function_pattern = re.compile(r"<function (\S+) at 0x[0-9a-f]+>")
-sphinx.util.inspect.object_description = lambda obj: re.sub(function_pattern, r"\1",
-                                                            old_object_description(obj))
