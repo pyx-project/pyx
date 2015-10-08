@@ -1268,7 +1268,7 @@ class path:
 
     def split_pt(self, params):
         """split normpath at param(s) or arc length(s) in pts and return list of normpaths"""
-        return self.normpath().split(params)
+        return self.normpath().split_pt(params)
 
     def split(self, params):
         """split normpath at param(s) or arc length(s) and return list of normpaths"""
