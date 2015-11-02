@@ -36,7 +36,7 @@ class daystyle(graph.style._style):
             graph.text_pt(x1_pt+3, y1_pt+3, point["note"], [text.size.tiny])
 
 # create calendar data
-year = 2012
+year = 2015
 notes = {1: {17: r"\PyX{} 0.2 (2003)", 20: r"\PyX{} 0.5 (2004)", 22: r"\PyX{} 0.5.1 (2004)"},
          3: {30: r"\PyX{} 0.6 (2004)", 31: r"\PyX{} 0.3 ('03), \PyX{} 0.6.1 ('04)"},
          4: {4: r"\PyX{} 0.3.1 (2003)", 7: r"\PyX{} 0.6.2 (2004)", 27: r"\PyX{} 0.6.3 (2004)", 30: r"\PyX{} 0.14 (2015)"},
@@ -46,6 +46,7 @@ notes = {1: {17: r"\PyX{} 0.2 (2003)", 20: r"\PyX{} 0.5 (2004)", 22: r"\PyX{} 0.
          9: {17: r"\PyX{} 0.4.1 (2003)"},
          10: {3: r"\PyX{} 0.10 (2007)", 7: r"\PyX{} 0.1 (2002)", 12: r"\PyX{} 0.12 (2012)",
               21: r"\PyX{} 0.7 (2004)", 26: r"\PyX{} 0.12.1 (2012)"},
+         11: {2: r"\PyX{} 0.14.1 (2015)"},
          12: {15: r"\PyX{} 0.7.1 (2004)", 20: r"\PyX{} 0.13 (2013)"}}
 d = graph.data.points([(day,
                         calendar.month_name[month],
