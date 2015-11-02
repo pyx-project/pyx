@@ -9,6 +9,12 @@
     <h1>PyX — News</h1>
 
     <dl>
+      <dt>2015-11-02: PyX 0.14.1 released</dt>
+      <dd>
+        PyX source distribution is now hosted on PyPI. We also uploaded all
+        old releases to PyPI. At the same time we removed the downloads from
+        sourceforge. A few bug fixes are also included in this release.
+      </dd>
       <dt>2015-04-30: PyX 0.14 released</dt>
       <dd>
         This version adds SVG (Scaleable Vector Graphics) as an output format
