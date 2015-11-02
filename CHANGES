@@ -1,4 +1,7 @@
-0.15 (xxxx/xx/xx):
+0.14.1 (2015/11/02):
+  - distribution:
+    - upload to PyPI (including old releases)
+    - remove old releases from sourceforge
   - normpath:
     - fix intersect with empty normsubpaths (bug #62, thanks to Florent Hivert)
 
