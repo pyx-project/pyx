@@ -74,6 +74,5 @@ setup(name="PyX",
                    "Topic :: Multimedia :: Graphics",
                    "Topic :: Scientific/Engineering :: Visualization",
                    "Topic :: Software Development :: Libraries :: Python Modules"],
-      download_url="https://downloads.sourceforge.net/project/pyx/pyx/%(version)s/PyX-%(version)s.tar.gz" % {"version": pyx.version.version},
       platforms="OS independent",
       **setuptools_args)
