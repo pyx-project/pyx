@@ -318,7 +318,7 @@ class texmessage:
             while m:
                 if not os.path.isfile(config.get("text", "chroot", "") + m.group("filename")):
                     return msg
-                r, m = remove_pattern(texmessage.quoted_file_pattern, r)
+                r, m = remove_pattern(p, r)
         return r
 
     quoted_graphics_pattern = re.compile(r'<"(?P<filename>[^"]+\.eps)">')

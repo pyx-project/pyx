@@ -2,6 +2,8 @@
   - distribution:
     - upload to PyPI (including old releases)
     - remove old releases from sourceforge
+  - text module:
+    - fix load_def message parser (reported by Mico Filós)
   - normpath:
     - fix intersect with empty normsubpaths (bug #62, thanks to Florent Hivert)
 
