@@ -26,9 +26,8 @@ The current release of PyX (as well as older ones) is freely available from
 subversion repository with the latest patches can be found. In addition, PyX is
 registered on the Python Package Index at
 `https://pypi.python.org/pypi/PyX <https://pypi.python.org/pypi/PyX>`_ and can
-be installed by ``easy_install`` and ``pip``. However, the release files are
-not hosted on PyPI itself and for future versions of ``pip`` you need to allow
-external installation by ``--allow-external pyx``. Please see the
+be installed by ``easy_install`` and ``pip``. As PyX is hosted on PyPI, it can
+be directly downloaded and installed by ``pip``. Please see the
 `pip documentation <http://www.pip-installer.org/>`_ for details.
 
 Possibly older versions of PyX are also available as package for various Linux

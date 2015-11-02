@@ -60,6 +60,5 @@ Installation by easy_install or pip
 -----------------------------------
 
 PyX can be installed via easy_install and pip straightforwardly. It can be run
-as an zipped egg. Note that you need to allow the installation of externally
-hosted files. Thus you probably need to add "--allow-external pyx" in future
-versions of pip.
+as an zipped egg. As PyX is hosted on PyPI, it can be directly downloaded and
+installed by pip.
