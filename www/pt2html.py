@@ -252,6 +252,7 @@ def processexamples(basedir):
             next = os.path.join(nextdir, "index.html")
         content = template(pagename=htmlname,
                            maintemplate=maintemplate,
+                           version=pyx.__version__,
                            dir=dir,
                            title=title,
                            text=text,
@@ -274,6 +275,7 @@ def processexamples(basedir):
                 htmlname = os.path.join(destdir, "%s.html" % aexample.basename)
                 content = exampletemplate(pagename=htmlname,
                                           maintemplate=maintemplate,
+                                          version=pyx.__version__,
                                           dir=dir,
                                           example=aexample,
                                           subpages=examplepages,

@@ -42,10 +42,15 @@
       <div class="box">
         <div class="title">SourceForge</div>
         <div class="link"><a href="https://sourceforge.net/projects/pyx/">Project page</a></div>
-        <div class="link"><a href="https://sourceforge.net/projects/pyx/files/">Downloads</a></div>
         <div class="link"><a href="https://sourceforge.net/p/pyx/mailman/">Mailing lists</a></div>
         <div class="link"><a href="https://sourceforge.net/p/pyx/gallery/">Gallery</a></div>
         <div class="link"><a href="https://sourceforge.net/p/pyx/code/HEAD/tree/trunk/pyx/CHANGES">ChangeLog</a></div>
+      </div>
+
+      <div class="box">
+        <div class="title">PyPI</div>
+        <div class="link"><a href="https://pypi.python.org/pypi/PyX">Project page</a></div>
+        <div class="link"><a tal:attributes="href string:https://pypi.python.org/packages/source/P/PyX/PyX-${options/version}.tar.gz">Download</a></div>
       </div>
 
       <div class="box">
