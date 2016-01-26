@@ -26,10 +26,9 @@ additional properties of the page.
    page. If *centered* is set, the output is centered on the given paperformat. If
    *fittosize* is set, the output is scaled to fill the full page except for a
    given *margin*.  Normally, the bounding box of the canvas is calculated
-   automatically from the bounding box of its elements.  Alternatively, you may
-   specify the *bbox* manually. In any case, the bounding box is enlarged on all
-   sides by *bboxenlarge*.
-
+   automatically from the bounding box of its elements. In any case, the bounding
+   box is enlarged on all sides by *bboxenlarge*. Alternatively, you may specify
+   the *bbox* manually.
 
 Class :class:`document`
 -----------------------
