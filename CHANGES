@@ -1,3 +1,7 @@
+0.15 (2016/xx/xx):
+  - text module:
+    - improve error handling when input cannot be encoded by texenc
+
 0.14.1 (2015/11/02):
   - distribution:
     - upload to PyPI (including old releases)

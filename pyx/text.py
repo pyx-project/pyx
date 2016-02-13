@@ -1064,6 +1064,12 @@ class SingleRunner:
             self.texoutput.expect(None)
             self.texinput.write(expr)
         else:
+
+            # test to encode expr early to not pile up expected results
+            # if the expression won't make it to the texinput at all
+            # (which would otherwise harm a proper cleanup)
+            expr.encode(self.texenc)
+
             if oldstate == newstate == STATE_TYPESET:
                 self.page += 1
                 expr = "\\ProcessPyXBox{%s%%\n}{%i}" % (expr, self.page)
