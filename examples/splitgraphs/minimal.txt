@@ -1,0 +1,8 @@
+Minimal split-axis example
+
+This minimal example creates a split-axis by two simple modifications. ...
+First a splitaxis instance is passed to the graph constructor and secondly the
+data provided for this axis is modified to contain a tuple of two items. The
+first item is used as a dictionary key to identify the subaxis, to which the
+presented data belongs to. The second item in the tuple is used as the value on
+this subaxis.

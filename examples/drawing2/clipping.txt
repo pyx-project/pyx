@@ -1,0 +1,11 @@
+Clipping a canvas
+
+This example shows how drawing on a canvas can be clipped to a predefined
+region. The thick line is drawn two times, first in black onto an ordinary
+canvas, the second time in red onto a canvas which is clipped to the indicated
+circle. ...
+
+The clipping property of a canvas must be specified on creation with an
+instance of `canvas.clip`, which takes a path as an argument. Note that this
+way of clipping will probably be removed in future releases of PyX. Instead, it
+will become part of the [box concept ../../roadmap.html].

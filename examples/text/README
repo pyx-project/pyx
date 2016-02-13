@@ -1,0 +1,9 @@
+Creating text
+
+One of the major features of PyX is to use the TeX typesetting engine to create
+text. PyX will start a single TeX or LaTeX instance as soon as text needs to be
+typeset. It passes the texts to this instance and directly reads the typeset
+information (dvi file) as created by the TeX interpreter. By this seamless and
+as far as we know unique integration, all advanced features of the TeX
+typesetting system like its high quality paragraph builder or the highly
+advanced math mode become available to PyX users.

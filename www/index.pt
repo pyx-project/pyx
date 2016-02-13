@@ -1,0 +1,75 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+            "http://www.w3.org/TR/html4/strict.dtd">
+<html metal:use-macro="options/maintemplate/macros/page">
+
+  <div metal:fill-slot="body">
+
+    <h1>PyX — Python graphics package</h1>
+
+    <div class="image">
+      <img src="example.png" alt="3d plot example" width=374 height=129>
+      <div>3d plot example</div>
+    </div>
+
+    <h2>Summary</h2>
+
+    <p>
+       PyX is a Python package for the creation of PostScript, PDF, and SVG files. It
+       combines an abstraction of the PostScript drawing model with a TeX/LaTeX
+       interface. Complex tasks like 2d and 3d plots in publication-ready quality are
+       built out of these primitives.
+    </p>
+
+    <h2>Features</h2>
+
+    <ul>
+      <li>PostScript, PDF, and SVG output for device independent, freely scalable figures</li>
+      <li>seamless TeX/LaTeX integration</li>
+      <li>full access to PostScript features like paths, linestyles, fill patterns, transformations, clipping, bitmap inclusion, etc.</li>
+      <li>advanced geometric operations on paths like intersections, transformations, splitting, smoothing, etc.</li>
+      <li>sophisticated graph generation: modular design, pluggable axes, axes partitioning based on rational number arithmetics, flexible graph styles, etc.</li>
+    </ul>
+
+    <h2>Status and Availability</h2>
+
+    <p>
+      PyX is in steady development.
+      Planned features are listed on the <a href="roadmap.html">roadmap</a>.
+      The current release,
+      PyX&nbsp;<span tal:content="options/version" tal:omit-tag="">version</span>,
+      is available at the
+      <a href="https://pypi.python.org/pypi/PyX">PyPI project page</a>.
+    </p>
+
+    <h2>News</h2>
+
+    <dl tal:content="structure options/news"></dl>
+
+    <p>
+      For a full record of all news consult the <a href="news.html">news page</a>.
+    </p>
+
+    <h2>Authors and License</h2>
+
+    <p>
+      PyX is written by
+      <a href="http://theorie5.physik.unibas.ch/lehmann/">Jörg Lehmann</a>,
+      <a href="http://www.pct.espci.fr/~michael/">Michael Schindler</a>, and
+      <a href="http://www.wobsta.de/">André Wobst</a>. PyX is free
+      software licensed under the GNU GPL Version&nbsp;2 or
+      (at your option) any later version. Other licensing
+      schemes might be available upon request. Refer to the
+      <a href="license.html">license page</a> for further information.
+    </p>
+
+    <h2>Thanks</h2>
+
+    <p>
+      The authors kindly acknowledge financial support from the German Speaking TeX User Group
+      <a href="http://www.dante.de/">DANTE&nbsp;e.V.</a>
+    </p>
+
+  </div>
+
+</html>
+<!-- vim:set syntax=html: -->

@@ -1,0 +1,11 @@
+Using the functionality of existing graph styles
+
+This example demonstrates how linestyles, symboltypes, colors, and other
+decorations can be changed in existing graph styles. ... We make use of the
+`changelist` feature as an argument when using a style. Generally, all items in
+the attribute lists can be iterable `changelists`. If the end of such a list is
+reached, the changelist restarts from its beginning (see e.g. the colors which
+are used several times).
+
+The `attr.stroked.clear' in the symbol deletes the default property of the
+symbols, which says to stroke the symbol outline.

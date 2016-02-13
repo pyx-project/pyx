@@ -1,0 +1,43 @@
+Vertical alignment
+
+The example demonstrates the effect of several text attributes for vertical
+alignment.
+
+In the first line of the output, the extent of the whole text box is taken into
+account by various versions of valign. While in this case, the valign attributes
+are combined with a parbox each, the valign technique also perfectly works for
+single line text. ...
+
+In contrast, in the second line of the output a parbox is shown with different
+values for the baseline. Note that by default, text is vertically aligned at
+its baseline, that is, the line the letters are typed upon. For a parbox
+containing several lines, there are several choices. PyX allows you to use the
+top-most baseline (which is, by the way, the default when skipping the baseline
+keyword argument of the parbox completely), and the bottom-most baseline in
+your paragraph. Additionally you can also use the position just in the middle
+of these two cases. Since the alignment along a baseline does not depend on the
+size of the characters in your output, it is preferable to valign in most
+use-cases.
+
+In the last line of the output, the text.vshift is used to create some vertical
+shift of the output corresponding to certain criteria. The universal case is
+to use a certain fraction of a character height (or the height of any TeX
+expression). For `vshift.topzero` the full height of the character `0` is used,
+for `vshift.middlezero` half of the height of the character `0` is used and for
+`vshift.bottomzero`, no shift will be done at all and the usual alignment at the
+baseline will take place. Another interesting vertical shift value is the
+`vshift.mathaxis`, which shifts the material by the height of the mathematical
+axis. This axis is used by TeX to vertically align the mathematical operators
+and the equal sign but also brackets and objects like the sum and integral
+symbols. This shift typically is a little less in height as compared to
+`vshift.middlezero` and fits well in various cases to visually center a single
+line output in vertical direction. It is also useful to align text, although
+the value of the shift is based on the configuration of the mathematical mode.
+This means that the alignment might not be suitable for cases, where the
+text mode of TeX was reconfigured without also adapting the math mode configuration.
+
+! Please don't get confused by the additional text.mathmode attribute in this
+vshift example, which leads the text to be rendered in TeX's mathematical mode.
+The `text.mathmode` attribute is by the way similar but not identical (due to the
+use of `\displaystyle`) to encapsulating your expression in TeX's mathmode
+delimiters `$`.

@@ -1,0 +1,232 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+            "http://www.w3.org/TR/html4/strict.dtd">
+<html xmlns:tal="http://xml.zope.org/namespaces/tal"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      metal:use-macro="options/maintemplate/macros/page">
+
+  <div metal:fill-slot="body">
+
+    <h1>PyX — News</h1>
+
+    <dl>
+      <dt>2015-11-02: PyX 0.14.1 released</dt>
+      <dd>
+        PyX source distribution is now hosted on PyPI. We also uploaded all
+        old releases to PyPI. At the same time we removed the downloads from
+        sourceforge. A few bug fixes are also included in this release.
+      </dd>
+      <dt>2015-04-30: PyX 0.14 released</dt>
+      <dd>
+        This version adds SVG (Scaleable Vector Graphics) as an output format
+        to PyX. SVG can also be read to include it unchanged to into the SVG
+        output. In addition, even though with quite some limitations, SVG can
+        be read, parsed, and then represented on the PyX graphics level. Here
+        it can be modified and output not just to SVG, but also to the other
+        output formats. Various improvements and bug fixes complete this
+        release.
+      </dd>
+      <dt>2013-12-20: PyX 0.13 released</dt>
+      <dd>
+        PyX has been ported to Python 3. It now requires Python 3.2 and above.
+        Python 2 users should continue to use the previous PyX releases. Along
+        with the port the text module was modernized and got a new
+        documentation. In addition, the normpath now removes cusps from
+        normcurves by spliting the curves on instability points such that
+        tangents etc. are always well-defined. Various improvements and bug
+        fixes complete this release.
+      </dd>
+      <dt>2012-10-26: PyX 0.12.1 released</dt>
+      <dd>
+        This release fixes drawing bugs in the gradient style for the recently
+        introduced key graph.
+      </dd>
+      <dt>2012-10-17: PyX 0.12 released</dt>
+      <dd>
+        This release adds a density graph style to create density plots. The color
+        scale is shown by a separate key graph. The key graph feature has been
+        integrated in existing styles where appropriate, like the 3d surface style.
+        A rather large set of other additions and bug fixes all over the place
+        completes this release.
+      </dd>
+      <dt>2011-05-20: PyX 0.11.1 released</dt>
+      <dd>
+        This release fixes a few bugs, most importantly the extension build process.
+        The manual has been been ported to <a href="http://sphinx.pocoo.org/">Sphinx</a>.
+      </dd>
+      <dt>2011-05-15: PyX 0.11 released</dt>
+      <dd>
+        This release contains a major reorganization of the text output code.
+        Transparency in bitmaps is now supported and limited functionality of the bar
+        style is available in 3d graphs. Various bugs have been fixed and there are
+        small improvements all over the place.
+      </dd>
+      <dt>2007-10-03: PyX 0.10 released</dt>
+      <dd>
+        This release adds 3d plotting facilities to PyX using parallel or central
+        projection. Two new graph styles grids and surfaces can be used in 3d
+        graphs as well as some existing generic graph styles (symbols, lines,
+        errorbars etc.). Several new examples, various other improvements
+        requested by PyX users and some bugfixes complete this release.
+      </dd>
+      <dt>2006-09-14: Talk about Type1 fonts and PyX in Rosenheim</dt>
+      <dd>
+        A talk about Type1 fonts and PyX was presented at the
+        <a href="http://www.dante.de/dante/events/mv35/">fall meeting</a> of the <a href="http://www.dante.de/dante/events/mv35/">German Speaking TeX User Group DANTE e.V.</a> (September 14th and 15th, Rosenheim).
+        The presentation is available in
+        <a href="presentation_dantemv35_de.pdf">German (pdf, 19 pages, 226 KB)</a> and
+        in a crude <a href="presentation_dantemv35_en.pdf">english translation</a>.
+      </dd>
+      <dt>2006-09-11: First public version of PyXPlot released</dt>
+      <dd>
+        Dominic Ford released the first public version of <a
+        href="http://www.pyxplot.org.uk/">PyXPlot</a>, which provides a
+        Gnuplot-style interface to PyX. PyXPlot already supports a large subset
+        of Gnuplot's original functionality, always combined with the
+        high-quality output of PyX.
+      </dd>
+      <dt>2006-05-24: PyX 0.9 released</dt>
+      <dd>
+        This release features a new set of deformers for path manipulations
+        like smoothing, shifting, etc. A new set of extensively documented
+        examples describing various aspects of PyX in a cookbook-like fashion
+        have been written. Type 1 font-stripping is now handled by a newly
+        written Python module. The evaluation of functions for graph plotting
+        is now left to Python. Thereby some obscure data manipulation could be
+        removed from the bar style for handling of nested bar graphs.
+        Transparency is now supported for PDF output. Many more small
+        improvements and bug fixes top off this release.
+      </dd>
+      <dt>2006-01-20: New PyX tutorial for Gnuplot users</dt>
+      <dd>
+        Titus Winters wrote a very nice <a href="http://www.cs.ucr.edu/~titus/pyxTutorial/">tutorial</a>
+        explaining the basics of PyX's graph-plotting facilities for users familiar with Gnuplot.
+      </dd>
+      <dt>2005-08-13: PyX 0.8.1 released</dt>
+      <dd>
+        This release fixes some bugs in the path module and the output of decorated
+        paths. The fallback for kpathsea was considerably improved in speed (it was
+        unintensionally slowed down in 0.8). The inclusion of the bounding box
+        information in PS and PDF files is now optional. It is suppressed by default
+        when a paperformat is specified. A new path example completes the release.
+      </dd>
+      <dt>2005-07-13: PyX 0.8 released</dt>
+      <dd>
+        PyX now supports PDF output and also the generation of multi-page PS/PDF
+        documents. The internals of the path system have been cleaned up and the
+        external interface has been streamlined. The axis data handling of the graph
+        component has undergone a major revision. Many other improvements and bug fixes
+        are included in this release.
+      </dd>
+      <dt>2004-12-15: PyX 0.7.1 released</dt>
+      <dd>
+        This release fixes some bugs in the graph system, the canvas module and
+        the kpsewhich support. The tipa package is no longer required to build
+        the FAQ. The index files to sort the examples are now included in the
+        distribution. Two new examples complete this maintenance release.
+      </dd>
+      <dt>2004-10-29: PyX presentation in Hannover</dt>
+      <dd>
+        PyX was presented at the
+        <a href="http://www.dante.de/dante/events/mv31/">fall meeting of the German Speaking TeX User Group DANTE e.V. (October 29nd to 30th, Hannover)</a>.
+        The presentation is available in
+        <a href="presentation_dantemv31_de.pdf">German (pdf, 16 Pages, 346 KB)</a> only.
+      </dd>
+      <dt>2004-10-21: PyX 0.7 released</dt>
+      <dd>
+        This release adds support for the inclusion of bitmaps. The internals of the path system
+        have undergone a major revision and cleanup. The handling of short
+        path elements has been enhanced considerably to prevent numerical
+        instabilities. The data and style handling in the graph system has been
+        completely reorganized. It is now possible to combine several graph
+        styles within a single plot instruction.
+      </dd>
+      <dt>2004-04-27: PyX 0.6.3 released</dt>
+      <dd>
+        PyX 0.6.3 contains a few bug fixes and includes the source for the FAQ
+        and the manual as requested by a package maintainer.
+      </dd>
+      <dt>2004-04-07: PyX 0.6.2 released</dt>
+      <dd>
+        PyX 0.6.2 fixes a few bugs in the graph system.
+      </dd>
+      <dt>2004-03-31: PyX 0.6.1 released</dt>
+      <dd>
+        PyX 0.6.1 fixes a brown paper bag bug in the distribtion which missed
+        to contain the new directories for the graph and the axis system.
+      </dd>
+      <dt>2004-03-30: PyX 0.6 released</dt>
+      <dd>
+        This release further improves the internal design and visible interfaces
+        of PyX. The path system has undergone a major revision and cleanup.
+        The graph module has been split into several smaller modules,
+        reflecting its component architecture. Moreover, PyX now makes use of
+        the attribute system introduced in the previous release. Graph styles
+        and data handling have been largely revised. Major parts of the
+        documentation have been rewritten and are now based on the standard
+        Python documentation style. Bug-fixes and speed improvements complete
+        this release.
+      </dd>
+      <dt>2004-03-05: PyX presentation in Darmstadt</dt>
+      <dd>
+        PyX was presented at the
+        <a href="http://www.dante.de/dante2004/">annual meeting of the German Speaking TeX User Group DANTE e.V. (March 2nd to 6th, Darmstadt)</a>.
+        The presentation is available in
+        <a href="presentation_dante2004_de.pdf">German (pdf, 18 Pages, 425 KB)</a> and
+        <a href="presentation_dante2004_en.pdf">English</a>.
+      </dd>
+      <dt>2004-01-22: PyX 0.5.1 released</dt>
+      <dd>
+        This release fixed a distribution error (missing C files) and a
+        PostScript DSC bug.
+      </dd>
+      <dt>2004-01-20: PyX 0.5 released</dt>
+      <dd>
+        PyX 0.5 introduces a more consistent and flexible attribute system is
+        included. The TeX integration has been improved: native support for
+        virtual fonts has been added. Markers allow the gathering of
+        positions within the text. TeX's inter-process-communication option
+        can be used to speed up the TeX interface. The install process has
+        been streamlined. Lots of other small improvements and bugfixes were
+        made.
+      </dd>
+      <dt>2003-09-17: PyX 0.4.1 released</dt>
+      <dd>
+        This release fixed some bugs mostly releated to the additions in the
+        TeX/LaTeX handling.
+      </dd>
+      <dt>2003-08-22: PyX 0.4 released</dt>
+      <dd>
+        This release improves the special and font handling of the TeX/LaTeX
+        interface. The graph module has undergone extensive restructuring of
+        the axis component. Furthermore, various known bugs and shortcomings
+        have been fixed.
+      </dd>
+      <dt>2003-04-04: PyX 0.3.1 released</dt>
+      <dd>
+        This release adds the examples to the tarball and fixes various bugs.
+      </dd>
+      <dt>2003-03-31: PyX 0.3 released</dt>
+      <dd>
+        PyX 0.3 features a new seamless TeX/LaTeX integration (internal
+        dvi reader), nice examples, and huge improvements all over the
+        place.
+      </dd>
+      <dt>2003-01-17: PyX 0.2 released</dt>
+      <dd>
+        PyX 0.2 contains a variety of bug fixes and improvements. In
+        particular the axis handling of the graph module was enhanced
+        considerably.
+      </dd>
+      <dt>2002-10-07: PyX 0.1 released</dt>
+      <dd>
+        The first public release, PyX 0.1, has been uploaded to SourceForge.
+        It allows the creation of encapsulated PostScript drawings
+        and uses TeX/LaTeX + dvips for the text creation. A graph module for
+        the creation of x-y-plots is included.
+      </dd>
+    </dl>
+
+  </div>
+
+</html>
+<!-- vim:set syntax=html: -->

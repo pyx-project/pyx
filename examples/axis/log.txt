@@ -1,0 +1,15 @@
+Logarithmic axes
+
+Logarithmic axes are quite similar to linear axes and differ only in a very few
+properties, namely a non-linear mapping of values to axis positions. They also
+have different default partitioners and raters (see below). ... While the
+partitioner really is quite different - it implements a logarithmic positioning
+of the ticks - the rater just alters some defaults in favour of using more
+subticks to improve the visualization of the logarithmic nature of the axis.
+
+! Besides presenting a standard logarithmic axis, we also show you how to alter
+the base used by the logarithmic axis. Since the functionality of a logarithmic
+axis is independent of the base, all we need to adjust are the components for
+creating ticks (see `log2parter`) and the texts for the labels (see
+`log2texter`). More details about the parters and texters components are given
+below in the corresponding examples.

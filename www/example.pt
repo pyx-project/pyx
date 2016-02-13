@@ -1,0 +1,33 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+            "http://www.w3.org/TR/html4/strict.dtd">
+<html metal:use-macro="options/maintemplate/macros/page">
+
+  <div metal:fill-slot="body">
+
+    <div class="examplenavigations">
+      <a class="examplenavigation" tal:attributes="href python: options['mkrellink'](options['prev'], options)">prev</a>
+      <a class="examplenavigation" href="index.html">up</a>
+      <a class="examplenavigation" tal:attributes="href python: options['mkrellink'](options['next'], options)" tal:condition="options/next">next</a>
+    </div>
+    <h1>PyX — Example: <tal:block content="options/example/filename"/></h1>
+
+    <div class="exampledownloads">
+      <div tal:repeat="download options/example/downloads" class="exampledownload">
+        <div><a tal:attributes="href download/filename" tal:content="download/suffixname">.xxx</a></div>
+        <div class="exampledownloadsize" tal:content="download/filesize"/>
+      </div>
+    </div>
+    <h2 tal:content="options/example/title">filename</h2>
+    <div class="exampleimage">
+      <img tal:attributes="alt options/example/png; src options/example/png; width options/example/width; height options/example/height">
+    </div>
+    <div class="examplecode" tal:content="structure options/example/code">Code</div>
+    <tal:block tal:condition="options/example/text">
+        <h3>Description</h3>
+        <div class="exampletext" tal:content="structure options/example/text">Code</div>
+    </tal:block>
+
+  </div>
+
+</html>
+<!-- vim:set syntax=html: -->

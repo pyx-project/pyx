@@ -1,0 +1,22 @@
+Plotting data contained in one or more lists
+
+Here, we explain how to plot data which has been calculated before and which is
+available in a list. ...
+
+The procedure is quite the same as for plotting a data file or a function in
+the above examples. It differs in that we use an instance of
+`graph.data.values` or `graph.data.points` in the `plot` method of the graph.
+The choice of one or the other variant depends on convenience and how the data
+has been generated: In `graph.data.values` the coordinate values are provided
+as individual lists. Alternatively, `graph.data.points` takes a list of data
+points which come as coordinate tuples. You will then have to say something
+like `x=1, y=2` to specify which entry in your tuples is to be used on which
+axis.
+
+Similarly to the plotting of a data file, the default plotting style here are
+symbols.
+
+Caution: This feature has been renamed/introduced between versions 0.9 and
+0.10. In versions 0.9 and before the functionality of `graph.data.points` was
+provided by `graph.data.list`.
+

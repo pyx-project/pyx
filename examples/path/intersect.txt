@@ -1,0 +1,19 @@
+Intersection points between paths
+
+The `intersect` method of a path allows for the calculation of intersection
+points between this path and the second path passed to the `intersect` method. ...
+The return value of the intersect method is a tuple of two lists, where each
+list contains parametrization instances for the intersection points. The first
+list are the parameters for the path the `intersect` method was called for. The
+second list are the parameter values for the path passed to the `intersect`
+method. Thus we can calculate the first intersection point `x1, y1` by
+
+    x1, y1 = p1.at(a1)
+
+as done in the example or alternatively by
+
+    x1, y1 = p2.at(b1)
+
+! When several intersections between two paths occur, the order of the
+intersection points is defined by the order in which the points are passed when
+walking along the first path.

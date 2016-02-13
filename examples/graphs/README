@@ -1,0 +1,23 @@
+Basic plotting
+
+One of PyX's major strengths are its graph-plotting capabilities. PyX offers
+you a flexible system which, while providing sensible defaults, allows you to
+customize almost every aspect of the graph output. Such a flexibility comes at
+a price, though: you need to learn at least a little bit about the different
+components playing together in order to produce a graph. In this section, we
+try to give you a gentle introduction to one component after the other by by
+demonstrating how to plot various kind of data (from a file, a function mapping
+x values to y values, a parametric function). Furthermore, we explain
+how to do simple modifications to the axes of the graph and show how to add
+a graph key. 
+
+After having gone through the introductory examples you should be able to
+freely go through the following sections of the examples, which examples will
+be devoted to a more detailed explanation of PyX's graph-plotting facilities.
+In particular, you might want to learn about the customization of the graph
+axes (see section [ Graph axes ../axis/index.html]), about further available
+graph styles (see section [Graph styles ../styles/index.html]) and about
+bar graphs (see section [Bar graphs ../bargraphs/index.html]).
+
+
+

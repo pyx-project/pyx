@@ -1,0 +1,29 @@
+Stroke and fill attributes
+
+The previous example anticipated a simple case of setting an attribute when
+stroking paths. This example shows a few more use-cases.
+
+Attributes can be passed in a list as the second optional argument of the
+`stroke` or `fill` methods of a canvas instance. ... The attributes themselves are
+instances of certain attribute classes. A full list is available in the manual.
+
+In general, some useful attribute instances are predefined as class attributes
+of the corresponding attribute class. In the given example, the
+`style.linewidth.THICK`, `style.linestyle.dashed`, `style.linecap.round`,
+`color.rgb.red`, `color.rgb.green`, and `color.rgb.blue` are just some examples of
+this type of attribute instances. In contrast, `style.linewidth(0.2)` creates a
+new style instance for the given parameters.
+
+!! The linewidth instance created by `style.linewidth(0.2)` is different from the
+predefined linewidth instances in PyX in its use of ''user'' units. In the example
+''Adding and joining paths'' of section ''Path features'', the linewidth is
+scaled independently of the ''user'' units, but if you try to double all linewidth
+by
+
+    unit.set(wscale=2)
+
+in the beginning of the script, our self-defined linewidth will not be scaled.
+To obtain the proper scaling behaviour it would be necessary to attach the
+''width'' unit by using
+
+    style.linewidth(0.2*unit.w_cm)

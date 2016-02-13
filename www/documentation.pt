@@ -1,0 +1,53 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+            "http://www.w3.org/TR/html4/strict.dtd">
+<html metal:use-macro="options/maintemplate/macros/page">
+
+  <div metal:fill-slot="body">
+
+    <h1>PyX — Documentation</h1>
+
+
+    <h2>Examples and gallery</h2>
+
+    <p>For a quick introduction to PyX, we recommend having a look on our <a
+    href="examples/index.html">examples</a> page. There you find lots of small
+    cookbook-like examples describing how to solve common drawing and plotting
+    tasks in PyX. Every example is accompanied by a detailed description of the
+    concepts it makes use of. By taking a tour through the examples, you should, thus,
+    learn how to effectively use PyX.</p>
+
+    <p>More elaborate PyX drawings together with the corresponding sources can
+    be found in the <a href="https://sourceforge.net/p/pyx/gallery/">gallery</a>.
+    This is a wiki and contributions by PyX users are very welcome.</p>
+
+    <h2>Manual</h2>
+
+    <p>Detailed information about PyX can be found in the PyX reference manual, which
+    is available both as PDF and as online HTML version:</p>
+
+    <ul>
+      <li><a href="manual/index.html">Manual — HTML version</a></li>
+      <li><a href="manual.pdf">Manual — PDF version</a></li>
+    </ul>
+
+    <h2>FAQ</h2>
+
+    <p>A further resource containing tips and tricks for PyX users is the FAQ
+    contributed by Gert-Ludwig Ingold:</p>
+
+    <ul>
+      <li><a href="pyxfaq/index.html">FAQ — HTML version</a></li>
+      <li><a href="pyxfaq.pdf">FAQ — PDF version</a></li>
+    </ul>
+
+
+    <h2>External resources</h2>
+
+    <ul> 
+      <li><a href="http://www.cs.ucr.edu/~titus/pyxTutorial/">PyX tutorial for Gnuplot users</a> by Titus Winters</li>
+    </ul>
+
+  </div>
+
+</html>
+<!-- vim:set syntax=html: -->

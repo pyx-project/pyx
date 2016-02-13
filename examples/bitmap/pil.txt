@@ -1,0 +1,11 @@
+Using image instances from the PIL
+
+You can use image instances from the [Python Image Library
+http://www.pythonware.com/products/pil] to create bitmaps. You then have an
+easy access to all the bitmap formats available in PIL, you may also use PIL
+features to create/load/modify bitmaps etc. ... In order to create an image
+pixel by pixel, the PIL is not necessary (by the way, it is slow to use
+putpixel for that).
+
+!! Using PIL image instances you can also pass indexed images
+to PyX's `bitmap` class.

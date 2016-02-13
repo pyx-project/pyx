@@ -1,0 +1,19 @@
+Joing multiple datasets for grouping in the graph key
+
+If you want to group datasets in the graph key, e.g., to compare simulation
+results with measurement data ... or some approximate results with results from
+a more detailed calculation, you can pass a list of datasets to the
+`graph.data.join` class.
+
+When doing so, you have to assign unique names to the corresponding datasets.
+In the example, we have used `x_a` and `y_a` as well as `x_b` and
+`y_b` as names. Subsequently, one has to tell the graph style which data
+columns—identified by the given name—it has to plot. This can be done
+by inserting `graph.style.pos` instances before the respective graph style. By
+passing a dictionary to the `usenames` argument, one specifies the
+mapping from the data columns to the corresponding graph axes `x`, `y`, `x2`,
+and so on.
+
+! When using the standard names `x`, `y`, etc. for the data columns, as is done
+in most cases, PyX does insert the `graph.style.pos` instance mapping those
+data columns to the axis with the same name, automatically.

@@ -1,0 +1,25 @@
+Paths with constant distance
+
+This example shows how to use the `deformer.parallel` class. It provides the
+path which has always constant (signed) distance to an original path. ...
+
+The correct geometrical solution to the "constant distance" problem is that a
+corner of the original curve gets surrounded by an arc. As an alternative, you
+can make the deformer deviate from the strict geometrical interpretation with
+the argument `sharpoutercorners=1`. The resulting parallel path will then
+exhibit corners with the same angle as the original path does.
+
+!! The parallel deformer tries to find the parallel path which consists of as
+few path elements as possible. This is a striking feature of the parallel
+deformer, resulting in small EPS and PDF files, as well as in paths which can
+be processed further in PyX. In the example, the parallel curves for the curved
+right part of the original path consists of a single Bézier curve only.
+
+! Note that the order of the deformer attributes is not arbitrary, since the
+deforming operations do not commute. If you want first to smooth and then get
+the parallel curve to the smoothed curve, you have to say
+
+    [deformer.smoothed(radius), deformer.parallel(dist)]
+
+since the stroke attributes are evaluated from left to right.
+

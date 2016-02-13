@@ -1,0 +1,17 @@
+PyX examples
+
+The following examples are part of the PyX release __version__. For each PyX
+example the source code and the corresponding output are shown. You can take a
+guided tour through all examples by the ''prev'' and ''next'' links on the
+upper right. All the examples and their descriptions are included in the source
+distribution of PyX in the examples subdirectory.
+
+! Some paragraphs (like the one you're just reading) are marked with a
+''dangerous bend sign''. Some people will recognize this classification from
+the TeXbook by D.E. Knuth and we use it at the PyX example pages for the same
+purpose. The bend marks parts of the description, which require some experiences
+with PyX. On the other hand, those parts can savely be ignored by PyX beginners.
+
+!! There are even some paragraphs marked as ''doubly dangerous''. The explanations
+given in those paragraphs provide some deeper insights of what's really going
+on, but are not important for the average PyX user.

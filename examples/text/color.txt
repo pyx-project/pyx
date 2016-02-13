@@ -1,0 +1,27 @@
+Using the same color in PyX and in LaTeX
+
+! This example shows three different methods how to use a color defined in PyX
+also in LaTeX.... In the example code, we first define a cmyk color `col`,
+which is then used to define a color `COL` in LaTeX. The latter is then used in
+a LaTeX expression.
+
+! The same behavior can be achieved by two different methods in `c.text`,
+
+    r"\textcolor[named]{PineGreen}{Text} and outline ..."
+    r"\textcolor[pyx]{color.cmyk.PineGreen}{Text} and outline ..."
+
+They are not as elegant as the above shown, since we need to insert the color
+definition `PineGreen` explicitly. The first alternative makes use of the
+`named` color model of color.sty. All colors of this model are predefined also
+in PyX. The other alternative allows to use PyX colors directly.
+
+!! Note that no graphics driver has been used for the color.sty LaTeX package.
+PyX performs a hack to enforce the use of its own LaTeX driver file pyx.def. In
+case that you have installed the three files `pyx.def`, `color.cfg`, and
+`graphics.cfg` from the PyX distribution somewhere in the LaTeX search path, it is
+possible to use
+
+    text.set(mode="latex", pyxgraphics=0)
+    text.preamble(r"\usepackage[pyx]{color}")
+
+which is the more aesthetic variant.

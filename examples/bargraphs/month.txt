@@ -1,0 +1,12 @@
+Naming bars
+
+To name the bars you just need to use a proper data column (instead of column
+0, which is the line number in `data.file` instances). ... Beside that we show
+in this example how to adjust the bar axis painter to properly show the names.
+
+! The internals of a bar axis are quite different from a continuous axis (like
+a linear or logarithmic) axis. A bar axis just handles a set of subaxes - one
+for each discrete value. The painting of a bar axis can only draw the names for
+the subaxes and some ticks between the subaxes. Other axes features known from
+continous axes like ticks and labels, partitioners, texters, raters are
+non-existent for bar axes.

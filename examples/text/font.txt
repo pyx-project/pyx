@@ -1,0 +1,30 @@
+Customize fonts
+
+In LaTeX, there are nice packages allowing to switch fonts. Hence, for a simple
+example we change the mode of the default texrunner instance to LaTeX and use
+the `preamble` method to load the `times` package. ...
+
+!! In general, it is also favourable to employ LaTeX when using your own Type1
+fonts. Still you can also use different fonts in plain TeX if you are familiar
+with the topic. However, LaTeX's NFSS (new font selection scheme) is preferable
+for the ordinary user and has great advantages in daily use. All you need to do
+is to integrate the fonts into your LaTeX system. PyX and LaTeX both require
+a font map file containing the specification and the names of the font files.
+Probably you will need to create your own LaTeX font adaptation, where the
+`fontinst` utility is of great help. Try your favorite search engine on that
+topic to learn more about it and find some step by step guides. As soon as
+your LaTeX system is configured to use your fonts, they will also be available
+to PyX.
+
+!! The `times` package loads the Times New Roman and the Helvetica fonts, which
+are part of any valid Acrobat Reader and Ghostscript installation. These fonts
+are therefore not explicitly included in the output of PyX. This behaviour is
+<> from LaTeX, where these standard 35 fonts usually are not contained in the
+standard font-map file `psfonts.map`.
+If you say in the PyX configuration file
+
+    psfontmaps = psfonts.map download35.map
+    pdffontmaps = pdftex.map download35.map
+
+then PyX finds the corresponding fonts in the map-file and includes the fonts
+in the output EPS and PDF files.

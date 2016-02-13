@@ -1,0 +1,671 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{array}
+\usepackage{graphicx}
+\newcommand{\sign}{\operatorname{sign}}
+
+\begin{document}
+
+\section{B\'ezier curves with prescribed tangent directions and curvatures at the endpoints}
+
+% <<<
+Parameterization of the B\'ezier curve, for $x(t)$ and $y(t)$ equivalently,
+%
+\begin{align}
+  x(t) &= x_0(1-t)^3 + 3x_1t(1-t)^2 + 3x_2t^2(1-t) + x_3 t^3\\
+  \dot x(t) &= 3(x_1-x_0)(1-t)^2 + 3(x_3-x_2)t^2 + 6(x_2-x_1)t(1-t) \\
+  \ddot x(t) &= 6(x_0 - 2x_1 + x_2)(1-t) + 6(x_1-2x_2+x_3) t \\
+  \dddot x(t) &= 6(x_3-x_0) + 18(x_1-x_2)
+\end{align}
+%
+The curvature is
+\begin{equation}
+  \kappa(t) = \frac{\dot x\ddot y - \ddot x\dot y}{[\dot x^2 + \dot y^2]^{3/2}}
+\end{equation}
+%
+with the sign
+%
+\begin{equation}
+  \begin{aligned}
+    \sign\kappa &> 0 \quad\text{for left bendings}\\
+    \sign\kappa &< 0 \quad\text{for right bendings.}
+  \end{aligned}
+\end{equation}
+%
+At the endpoints we can summarize:
+%
+\begin{align}
+  \dot x(0)  &= 3(x_1 - x_0) \\
+  \dot x(1)  &= 3(x_3 - x_2) \\
+  \ddot x(0) &= 6(x_0 - 2x_1 + x_2) = -4\dot x(0) - 2\dot x(1) + 6(x_3 - x_0) \\
+  \ddot x(1) &= 6(x_1 - 2x_2 + x_3) = +4\dot x(1) + 2\dot x(0) - 6(x_3 - x_0)
+\end{align}
+%
+and the same for the $y$ coordinates.
+The equations for the $\ddot x$ contain a convenient parameterization for this
+problem, with given endpoints and tangent directions. We now introduce two
+parameters for the distances between the first and the last pair of control
+points:
+%
+\begingroup
+\arraycolsep=0pt
+\begin{align}
+  \left(\begin{array}{cc}
+    x_1-x_0 \\ y_1-y_0
+  \end{array}\right)
+  &= \frac{1}{3}
+  \left(\begin{array}{cc}
+    \dot x(0) \\ \dot y(0)
+  \end{array}\right)
+  =: \alpha
+  \left(\begin{array}{cc}
+    t_x(0) \\ t_y(0)
+  \end{array}\right) \\
+  \left(\begin{array}{cc}
+    x_3-x_2 \\ y_3-y_2
+  \end{array}\right)
+  &= \frac{1}{3}
+  \left(\begin{array}{cc}
+    \dot x(1) \\ \dot y(1)
+  \end{array}\right)
+  =: \beta
+  \left(\begin{array}{cc}
+    t_x(1) \\ t_y(1)
+  \end{array}\right) \qquad
+\end{align}
+\endgroup
+%
+Here, the externally prescribed tangent vectors are expected to be parallel to
+the tangent vectors of the parameterization and normalized to 1. This implies
+$\alpha>0$ and $\beta>0$ are the distances between the endpoints and their
+corresponding control points.
+
+The problem to now to find proper parameters $\alpha>0$ and $\beta>0$ for a given set of
+endpoints $(x_0,y_0)$, $(x_3, y_3)$,
+normalized tangent vectors $\mathbf{t}(0)$, $\mathbf{t}(1)$ and of
+curvatures $\kappa(0), \kappa(1)$.
+The rest of the control points is then given by
+%
+\begin{equation}
+  x_1 = x_0 + \alpha t_x(0) \quad\text{and}\quad
+  x_2 = x_3 - \beta  t_x(1).
+\end{equation}
+%
+For the curvatures at the endpoints we get a nonlinear equation,
+%
+\begin{align}
+  \kappa(0) (\dot x^2(0) + \dot y^2(0))^{3/2}
+  &= \dot x(0) \ddot y(0) - \ddot x(0) \dot y(0) \\
+  = 27 \kappa(0) |\alpha|^3
+  &= \begin{aligned}[t]
+      &+\dot x(0) \bigl[- 4\dot y(0) - 2\dot y(1) + 6(y_3-y_0)\bigr] \\
+      &-\dot y(0) \bigl[- 4\dot x(0) - 2\dot x(1) + 6(x_3-x_0)\bigr]
+     \end{aligned}\\
+  &= \begin{aligned}[t]
+      &-2 \bigl[\dot x(0) \dot y(1) - \dot y(0)\dot x(1)\bigr] \\
+      &+6 \bigl[\dot x(0) (y_3-y_0) - \dot y(0) (x_3-x_0)\bigr]
+     \end{aligned}\\
+  &= \begin{aligned}[t]
+      &-18 \alpha\beta \bigl[t_x(0)t_y(1) - t_y(0)t_x(1)\bigr] \\
+      &+18 \alpha \bigl[t_x(0) (y_3-y_0) - t_y(0) (x_3-x_0)\bigr]
+     \end{aligned}
+\end{align}
+%
+And short,
+%
+\begin{equation}
+  0 = \frac{3}{2}\kappa(0) \alpha^2 \sign(\alpha)
+    + \beta \bigl[t_x(0)t_y(1) - t_y(0)t_x(1)\bigr]
+    - \bigl[t_x(0) (y_3-y_0) - t_y(0) (x_3-x_0)\bigr]
+\end{equation}
+%
+A similar calculation can be done for the end curvature,
+%
+\begin{align}
+  \kappa(1) (\dot x^2(1) + \dot y^2(1))^{3/2}
+  &= \dot x(1) \ddot y(1) - \ddot x(1) \dot y(1) \\
+  = 27 \kappa(1) |\beta|^3
+  &= \begin{aligned}[t]
+       &+\dot x(1) \bigl[ 4\dot y(1) + 2\dot y(0) - 6(y_3-y_0)\bigr] \\
+       &-\dot y(1) \bigl[ 4\dot x(1) + 2\dot x(0) - 6(x_3-x_0)\bigr]
+     \end{aligned}\\
+  &= \begin{aligned}[t]
+       &-2 \bigl[\dot x(0) \dot y(1) - \dot y(0)\dot x(1)\bigr] \\
+       &-6 \bigl[\dot x(1) (y_3-y_0) - \dot y(1) (x_3-x_0)\bigr]
+     \end{aligned}\\
+  &= \begin{aligned}[t]
+       &-18 \alpha\beta \bigl[t_x(0)t_y(1) - t_y(0)t_x(1)\bigr] \\
+       &-18 \beta \bigl[t_x(1) (y_3-y_0) - t_y(1) (x_3-x_0)\bigr]
+     \end{aligned}
+\end{align}
+\begin{equation}
+  0 = \frac{3}{2}\kappa(1) \beta^2 \sign(\beta)
+    + \alpha \bigl[t_x(0)t_y(1) - t_y(0)t_x(1)\bigr]
+    + \bigl[t_x(1) (y_3-y_0) - t_y(1) (x_3-x_0)\bigr]
+\end{equation}
+%
+Alltogether, we find the system of equations that is to be solved.
+%
+\begin{gather}
+  \begin{aligned}
+    0 &= \frac{3}{2} \kappa(0) \alpha^2 \sign(\alpha) + \beta T - D \\
+    0 &= \frac{3}{2} \kappa(1) \beta^2 \sign(\beta) + \alpha T - E
+  \end{aligned}\\[\medskipamount]
+  \begin{aligned}
+    T &:= t_x(0)t_y(1) - t_y(0)t_x(1) \\
+    D &:= \bigl[t_x(0) (y_3-y_0) - t_y(0) (x_3-x_0)\bigr]\\
+    E &:= \bigl[t_x(1) (y_0-y_3) - t_y(1) (x_0-x_3)\bigr]
+  \end{aligned}
+\end{gather}
+%
+Decoupling the two equations causes problems with the absolute values,
+%
+\begin{align}
+  \alpha = \frac{1}{T}\left(E - \frac{3}{2}\kappa(1)\beta |\beta |\right)\quad\text{and}\quad
+  \beta  = \frac{1}{T}\left(D - \frac{3}{2}\kappa(0)\alpha|\alpha|\right)
+\end{align}
+%
+Thus, for $\alpha>0$ and $\beta>0$ we need also
+%
+\begin{align}
+  \frac{1}{T}\left(E - \frac{3}{2}\kappa(1)\beta |\beta |\right) > 0\quad\text{and}\quad
+  \frac{1}{T}\left(D - \frac{3}{2}\kappa(0)\alpha|\alpha|\right) > 0
+\end{align}
+%
+which is not always guaranteed. E.g. the combination
+%
+\begin{equation}
+  T>0,\quad E<0\quad\text{and}\quad \kappa(1)>0
+\end{equation}
+%
+is not compatible with a positive value of $\beta$. Under what circumstances do
+we get such geometrically invalid results? Tests show that even allowing
+arbitrary signs of the curvatures $\kappa(0)$~and $\kappa(1)$ does not help in
+all cases.
+
+The decoupled equations can be constructed by inserting $\alpha$~and $\beta$
+into the equations for the curvatures. This reads
+\begin{align}
+  0 &= \frac{3}{2}\kappa(0)\sign(\alpha)
+       \left(E - \frac{3}{2}\kappa(1)\beta |\beta |\right)^2
+     + \beta T^3 - D T^2 \\
+    &= \begin{aligned}[t]
+         \frac{27}{8} \kappa(0) \kappa^2(1) \sign(\alpha) \beta^4
+       - \frac{9}{2} E \kappa(0) \kappa(1) \sign(\alpha)\sign(\beta) \beta^2
+       + \beta T^3 \\
+     {}+ \frac{3}{2} \kappa(0) \sign(\alpha) E^2 - D T^2
+       \end{aligned}\\
+  0 &= \begin{aligned}[t]
+         \frac{27}{8} \kappa^2(0) \kappa(1) \sign(\beta) \alpha^4
+       - \frac{9}{2} D \kappa(0) \kappa(1) \sign(\alpha)\sign(\beta) \alpha^2
+       + \alpha T^3 \\
+     {}+ \frac{3}{2} \kappa(1) \sign(\beta) D^2 - E T^2
+       \end{aligned}
+\end{align}
+%
+% >>>
+
+\section{Bounding boxes for B\'ezier curves}
+
+% <<<
+The bounding box is defined by the minimal and maximal values of a
+curve. Hence the problem decouples for the two coordintes $x$ and $y$.
+We can search for the minima and maxima within the valid range for the
+parameter $t$ together with taking into account the values at the
+boundaries at $t=0$ and $t=1$.
+
+For the $x$ coordinate we have:
+\begin{align}
+  x(t) & = x_0(1-t)^3 + 3x_1t(1-t)^2 + 3x_2t^2(1-t) + x_3 t^3\\
+       & = (x_3-3x_2+3x_1-x_0)t^3 + (3x_0-6x_1+3x_2)t^2 + (3x_1-3x_0)t + x_0\\
+       & = a\,t^3 + \frac{3}{2}\,b\,t^2 + 3\,c\,t + x_0
+\end{align}
+%
+The constants $a$, $b$, and $c$ are
+%
+\begin{align}
+  a & = x_3-3x_2+3x_1-x_0 \\
+  b & = 2x_0-4x_1+2x_2 \\
+  c & = x_1-x_0
+\end{align}
+%
+Now $\dot x(t)$ is
+%
+\begin{equation}
+  \dot x(t) = 3\left[\,a\,t^2 + b\,t + c\,\right]
+\end{equation}
+%
+For a numerically stable calculation of the roots of the function, we
+first compute
+%
+\begin{equation}
+  q = -\frac{1}{2}\left[\,b+\mathrm{sgn}(b)\sqrt{b^2-4ac}\right]\, .
+\end{equation}
+%
+In case the square root is negative, we only need to take into account
+the values at the boundaries. Otherwise we need to take into account
+the two solutions
+%
+\begin{equation}
+  t_1 = \frac{q}{a} \quad\text{and}\quad t_2 = \frac{c}{q}
+\end{equation}
+%
+Again, for numerical failures (divisions by zero), we just need to skip
+the particular solution. The minima and maxima for $x(t)$ can now
+occur at $t=0$, $t=t_1$, $t=t_2$ and $t=1$.
+
+% >>>
+
+\section{Replacing B\'ezier curves by straight lines}
+
+% <<<
+\begin{figure}
+\centerline{\includegraphics{beziertoline}}
+\caption{Example for a replacement of a B\'ezier curve by a straight
+line.}
+\label{fig:beziertoline}
+\end{figure}
+
+To solve certain geometrical tasks like measuring the length of a
+path or finding intersection points between paths, B\'ezier curves
+are recusively reduced to smaller B\'ezier curves by splitting the
+curves at the parameter value 0.5 until the parts become almost
+straight. Using the notation shown in fig.~\ref{fig:beziertoline} the
+straightness is expressed by a length measurement summing up the
+distances $\overline{AB}=l_1$, $\overline{BC}=l_2$ and
+$\overline{CD}=l_3$ and comparing this to the direct connection
+$\overline{AD}$. When the difference becomes smaller than a threshold
+$\epsilon$, the curve is adequately expressed by a straight line
+either because the curve is almost straight or it is very short.
+
+However, although the geometric changes are limited to distances of
+$\epsilon$, the parametrization $t$ of the B\'ezier curve might be
+mistakenly represented by the straight line on a much larger scale.
+In the shown example, the point $X$ on the B\'ezier curve and $Y$ on
+the straight line are both taken at the parameter value $t=0.5$, but
+clearly are more separated from each other than one would expect from
+the geometric distance of the two paths. While the parametrization on
+a line is proportional to the arc length, a non-linear behaviour is
+found on a B\'ezier curve. This non-linearity is originated in
+considerably different lengths $l_1$, $l_2$ and $l_3$ and the mapping
+of the non-linear parameter to a linear parametrization (in terms of
+the arc length) can be reduced to a one-dimensional problem upon an
+error $\epsilon$:
+%
+\begin{equation}
+  x_0(1-t')+x_3t' = x_0(1-t)^3 + 3x_1t(1-t)^2 + 3x_2t^2(1-t) + x_3 t^3\,.
+\end{equation}
+%
+In this one-dimensional approximation the parameter $t'$ performs a
+linear mapping as for any straight line while $t$ represents the usual
+B\'ezier curve parametrization. It now becomes a matter of expressing
+$t$ by $t'$. The polynomial in $t$ to be solved is:
+%
+\begin{equation}
+  0 = at^3+bt^2+ct+d
+\end{equation}
+%
+with
+%
+\begin{align}
+  a & = x_3-3x_2+3x_1-x_0 = l_1-2l_2+l_3 \\
+  b & = 3x_0-6x_1+3x_2 = -3l_1+3l_2 \\
+  c & = 3x_1-3x_0 = 3l_1 \\
+  d & = t'(x_0-x_3) = -t'(l_1+l_2+l_3)\,.
+\end{align}
+%
+For $0\le t'\le1$ there will be at least one solution $0\le t\le1$.
+Several solutions are possible as well, although they should be close
+to each other since otherwise the straight line approximation would
+not be valid at all.
+% >>>
+
+\section{Relative coordinates}
+
+% <<<
+A B\'ezier curve is given by
+\begin{equation}
+  \vec b(t) = (1-t)^3\vec p_0 + 3t(1-t)^2\vec p_1 + 3t^2(1-t)\vec p_2 + t^3\vec p_3
+\end{equation}
+where $\vec p_0 = (x_0, y_0)$, $\vec p_1 = (x_1, y_1)$, $\vec p_2 =
+(x_2, y_2)$, and $\vec p_3 = (x_3, y_3)$ are the control points.
+
+When $\vec p_0$ differs from $\vec p_3$ we can express the B\'ezier
+curve in relative coordinates $r(t)$ and $s(t)$ by
+\begin{equation}
+  \vec b(t) = \vec q + r(t)\vec r + s(t)\vec s
+\end{equation}
+with
+\begin{align}
+  \vec q & = \vec p_0\\
+  \vec r & = \vec p_3 - \vec p_0 = \left(\begin{array}{c} x_3 - x_0 \\ y_3 - y_0 \end{array}\right)\\
+  \vec s & = \left(\begin{array}{c} y_3 - y_0 \\ x_0 - x_3 \end{array}\right)
+\end{align}
+
+Note that
+\begin{equation}
+  \vec r\cdot\vec r = \vec s\cdot\vec s := l^2
+\end{equation}
+where $l$ is the distance between $\vec p_0$ and $\vec p_3$.
+
+In addition $\vec r$ and $\vec s$ are perpendicular:
+\begin{equation}
+  \vec r\cdot\vec s = 0
+\end{equation}
+
+We can express the control points in the new coordinates:
+\begin{align}
+  \vec p_0 & = \vec q\\
+  \vec p_1 & = \vec q + r_1\vec r + s_1\vec s\\
+  \vec p_2 & = \vec q + r_2\vec r + s_2\vec s\\
+  \vec p_3 & = \vec q + \vec r
+\end{align}
+
+The coefficients $r_1$, $r_2$, $s_1$, $s_2$ are given by scalar
+products due to the properties of $\vec r$ and $\vec s$ given above:
+\begin{align}
+  r_1 l^2 & = (\vec p_1 - \vec p_0)\cdot\vec r\\
+  r_2 l^2 & = (\vec p_2 - \vec p_0)\cdot\vec r\\
+  s_1 l^2 & = (\vec p_1 - \vec p_0)\cdot\vec s\\
+  s_2 l^2 & = (\vec p_2 - \vec p_0)\cdot\vec s
+\end{align}
+
+The parametric functions $r(t)$ and $s(t)$ become
+\begin{align}
+  r(t) & = 3t(1-t)^2 r_1 + 3t^2(1-t) r_2 + t^3\\
+  s(t) & = 3t(1-t)^2 s_1 + 3t^2(1-t) s_2
+\end{align}
+
+\emph{Note:} Originally the idea was to use relative coordinates to
+remove unstabilities in B\'ezier curves (especially cusps) considering
+all points with $\dot r(t)$ being zero or extremal. This idea works
+very well in general, and could, for example, also remove
+self-intersections. (You can get rid of any backwards directed curve
+sections, i.e. where $\dot r(t)<0$.) However, the whole idea has been
+discarded as $\dot r(t)$ could be close to zero for $t=0$ and $t=1$.
+The pre-removal of such problems would introduce major defects to the
+B\'ezier curve (like changing the direction of the tangential vector
+at the beginning and the end point).
+% >>>
+
+\section{Invalid parametrisation}
+
+% <<<
+If the derivative of the parametrisation vanishes (both coordinates) at a
+parameter~$t\in[0,1]$, the parametrisation is considered to be invalid at this
+point. Under which circumstances can this occur? We search for solutions~$t$ for
+the quadratic equations
+%
+\begin{equation}
+  \label{zeroderiv}
+  \begin{aligned}
+    0 = x(t)/3 &= t^2\bigl[(x_3-x_0) - 3(x_2-x_1)\bigr] + 2t\bigl[(x_2-x_1)-(x_1-x_0)\bigr] + (x_1-x_0) \\
+    0 = y(t)/3 &= t^2\bigl[(y_3-y_0) - 3(y_2-y_1)\bigr] + 2t\bigl[(y_2-y_1)-(y_1-y_0)\bigr] + (y_1-y_0)
+  \end{aligned}
+\end{equation}
+%
+Using the usual formula for a quadratic equation $0=at^2 + bt + c$, we get the
+same parameter for $x$- and $y$-coordinates, and the two inequalities from
+$0\leq t\leq1$,
+%
+\begin{equation}
+  \label{samet}
+  t_{1,2} = \frac{1}{2a_x} \Bigl(-b_x \pm^1 \sqrt{b_x^2 - 4a_xc_x}\Bigr)
+          = \frac{1}{2a_y} \Bigl(-b_y \pm^2 \sqrt{b_y^2 - 4a_yc_y}\Bigr)
+\end{equation}
+%
+The two sign choices are independent of each other.
+
+For the moment, we put aside the special cases $p_3=p_0$ and $p_1=p_0$. As
+affine transformations cannot change the degeneracy of the parametrisation, we
+can fix three points without loss of generality:
+%
+\begin{equation}
+  \begin{aligned}
+    (x_0, y_0) = (0, 0),\quad
+    (x_1, y_1) = (0, 1),\quad
+    (x_3, y_3) = (1, 0).
+  \end{aligned}
+\end{equation}
+%
+Thus, the only remaining true parameters are $(x_2, y_2)$. We will use $\Delta x
+= x_2$ and $\Delta y = y_2 - 1$. Equation~\eqref{samet} now becomes
+%
+\begin{equation}
+%   a_y \Bigl(-b_x/2 \pm^1 \sqrt{(b_x/2)^2 - a_xc_x}\Bigr)
+% = a_x \Bigl(-b_y/2 \pm^2 \sqrt{(b_y/2)^2 - a_yc_y}\Bigr)
+%
+%   ( -3\Delta y) \Bigl(-(\Delta x  ) \pm^1 \sqrt{(\Delta x  )^2            }\Bigr)
+% = (1-3\Delta x) \Bigl(-(\Delta y-1) \pm^2 \sqrt{(\Delta y-1)^2 + 3\Delta y}\Bigr)
+%
+ \label{samet2}
+   ( -3\Delta y) \Bigl(-\Delta x  \pm^1 \sqrt{(\Delta x  )^2           }\Bigr)
+ = (1-3\Delta x) \Bigl(1-\Delta y \pm^2 \sqrt{1 + \Delta y + \Delta y^2}\Bigr)
+\end{equation}
+%
+Special care has to be taken if $a_x=0$ or $a_y=0$. For the inequalities, we
+have to consider the signs of $a_x$ and $a_y$ explicitly:
+\arraycolsep=0pt
+%
+\begin{equation}
+  \begin{aligned}
+  0 \leq -\Delta x \pm^1 \sqrt{\Delta x^2} \leq 1-3\Delta x &\quad\text{if $\Delta x < 1/3$ (or $a_x > 0$)} \\
+  0 \leq  \Delta x \mp^1 \sqrt{\Delta x^2} \leq 3\Delta x-1 &\quad\text{if $1/3 < \Delta x$ (or $a_x < 0$)}
+  \end{aligned}
+\end{equation}
+%
+which can be reduced to
+%
+\begin{equation}
+  \label{constr1}
+  \begin{aligned}
+  \text{no constraint} &\quad\text{if $\Delta x \leq 0$} \\
+  \text{only the upper sign of $\pm^1$ is allowed} &\quad\text{if $0 < \Delta x < 1$} \\
+  \text{no constraint} &\quad\text{if $\Delta x \geq 1$}
+  \end{aligned}
+\end{equation}
+%
+Between $0$ and $1$ the upper sign makes the inequality to be trivially
+satisfied, because $-\Delta x + |\Delta x| = 0$.
+
+The inequality constraint can equivalently be formulated for $\Delta y$,
+%
+\begin{equation}
+  \begin{aligned}
+  0 \leq 1-\Delta y \pm^2 \sqrt{1+\Delta y+\Delta y^2} \leq -3\Delta y &\quad\text{if $\Delta y < 0$ (or $a_y > 0$)} \\
+  0 \leq \Delta y-1 \mp^2 \sqrt{1+\Delta y+\Delta y^2} \leq  3\Delta y &\quad\text{if $\Delta y > 0$ (or $a_y < 0$)}
+  \end{aligned}
+\end{equation}
+%
+In the first line, the comparison with~$0$ is always true. In the right
+comparison, the lower sign is always possible and does not yield a constraint,
+whereas the upper sign is only possible for $\Delta y \leq -1$. In the second
+line, the upper sign is incompatible with the left comparison, and the lower
+sign is always possible. We can reduce the conditions to
+%
+\begin{equation}
+  \label{constr2}
+  \begin{aligned}
+  \text{no constraint} &\quad\text{if $\Delta y \leq -1$} \\
+  \text{only the lower sign of $\pm^2$ is allowed} &\quad\text{if $\Delta y > -1$} \\
+  \end{aligned}
+\end{equation}
+%
+
+Equation~\eqref{samet2} with the two constraints \eqref{constr1} and
+\eqref{constr2} is the system of equations that gives us the values $\Delta x,
+\Delta y$ for which the parametrisation could be invalid.
+
+First, let us check that the classic case for a cusp is well described. It has
+$\Delta x=-1, \Delta y=0$. We have no constraint on $x$, and we have to take the
+lower sign on $y$. Indeed, the left-hand side of eq.~\eqref{samet2} vanishes due
+for the lower sign, and the right one vanishes also for the lower sign. This
+case is shown among the examples in figure~\ref{fig:invalid3}.
+
+%
+\begin{figure}[ht]
+  \centering
+  \includegraphics{invalid2}%
+  \caption{Absolute value of the difference between left- and right-hand side of
+  eq.~\eqref{samet2}. The dotted lines are given by eqs.~\eqref{leftcurve} and
+  \eqref{rightcurve}.}%
+  \label{fig:invalid2}%
+\end{figure}%
+%
+\begin{figure}[ht]
+  \centering
+  \includegraphics{invalid3}%
+  \caption{Some examples of invalid parametrisations from the general
+  (non-degenerate) case described by eqs.~\eqref{samet2}, \eqref{constr1},
+  \eqref{constr2}.}%
+  \label{fig:invalid3}%
+\end{figure}%
+%
+Figure~\ref{fig:invalid2} shows the difference between left- and right-hand side
+of Eq.~\eqref{samet2} for all valid signs, respecting the constraints. The
+horizontal and vertical lines are those special cases where $a_x=0$ or $a_y=0$
+and need further considerations. The zero-level curve at $\Delta x < 0$ (dotted
+curve in the figure) is well described by the equation
+%
+\begin{equation}
+  \label{leftcurve}
+  \Delta x = \frac{1}{3}\Bigl(-1-2\Delta y - \sqrt{(2\Delta y+1)^2 + 3}\Bigr)
+\end{equation}
+%
+which is obtained by taking the upper sign of $\pm^1$ in eq.~\eqref{samet2}:
+With negative values of $\Delta x$ the left-hand side becomes $6\Delta x\Delta
+y$. Isolating the square-root and then taking the square leads to a quadratic
+equation for $\Delta x$, of which eq.~\eqref{leftcurve} is the negative
+solution. A numerical check shows that this solution corresponds to the lower
+sign of $\pm^2$ and has thus no restriction in $\Delta y$. The second solution
+(dotted curve in the figure for $\Delta x>0$) of the mentioned quadratic
+equation,
+%
+\begin{equation}
+  \label{rightcurve}
+  \Delta x = \frac{1}{3}\Bigl(-1-2\Delta y + \sqrt{(2\Delta y+1)^2 + 3}\Bigr)
+\end{equation}
+%
+corresponds to the upper sign of $\pm^2$ and is thus subject to the constraint
+\hbox{$\Delta y \leq -1$}.
+
+Apart from the general cases on the two curves, we must treat some special cases
+separately:
+%
+\begin{itemize}
+\item $a_y=0$: This appears as a zero-level line in figure~\ref{fig:invalid2},
+    but this is an artefact coming from both sides of eq.~\eqref{samet2} being
+    zero. We have to go back to the original set of
+    equations~\eqref{zeroderiv}: We have in the lower line $\Delta y=0$, thus
+    $t=1/2$. Going back to the upper line with this value, we obtain $\Delta
+    x=-1$. This parameter point is already covered by the general treatment.
+\item $a_x=0$: This implies $\Delta x=1/3$, and the upper line gives $t=0$.
+    This, however, contradicts the lower line. We do not get an invalid
+    parametrisation point from $a_x=0$.
+\item $p_1=p_0$: This is either an even more degenerate case (see below), or it
+    can be mapped to the reverse situation of $\Delta x=1, \Delta y=-1$ which
+    was $p_2=p_3$.
+\item $p_1=p_0$ and $p_2=p_3$: This is a line.
+\item $p_3=p_0$: There are invalid parametrisation points if all four
+    $p_0,p_1,p_2,p_3$ are collinear. Depending on the sign of
+    $(p_1-p_0)\cdot(p_3-p_2)$ there are one or two invalid points.
+\item $p_1=p_0=p_2=p_3$: This is a point.
+\end{itemize}
+%
+% >>>
+
+\section{Self-intersections}
+
+% <<<
+In order to determine the control points which lead to self-intersections, we
+could analyse the set of equations
+%
+\begin{equation}
+    x(t_1) = x(t_2)\quad\text{and}\quad
+    y(t_1) = y(t_2) \quad\text{for}\quad t_1\neq t_2.
+\end{equation}
+%
+To solve the problem, we could express the solutions $t(\Delta x, \bar x)$ of
+the cubic equation $\bar x = x(t)$, test their number via Cardano's equation,
+and, if they are more than one, use a pair of them in the $y$-equation to see
+whether we get two times the same $y$-value. This would be a formidable task.
+
+We here take a different route. As for the invalid parametrisation above, we
+exclude some degenerate cases and use affine transformations, such that only the
+parameters $\Delta x=x_2$ and $\Delta y=y_2-1$ are left. It is geometrically
+evident that a little left and right of the two relevant curves in
+figure~\ref{fig:invalid2} we must have different situations as far as
+self-intersections are concerned. Either we find one a little left or a little
+right of the curves, and none on the respective other side. Further, a
+self-intersection can clear away when parameters change such that the curve
+passes through one of its endpoints. These two conditions boil down to the phase
+diagram in figure~\ref{fig:selfinter2}. In the gray shaded areas,
+self-intersections are possible.
+%
+\begin{figure}[t]
+  \includegraphics{selfinter2}%
+  \caption{Self-intersections are possible in the gray-shaded areas. The black,
+  red, green, blue curves are from eqs.~\eqref{leftcurve}, \eqref{rightcurve},
+  \eqref{pass00}, \eqref{pass10}, respectively.}%
+  \label{fig:selfinter2}%
+\end{figure}
+%
+
+We first calculate the parameters $0<t<t$ for which the curve passes through
+$(0,0)$. The $x$-coordinate leads to $t=3\Delta x/(3\Delta x - 1)$, and the
+$y$-coordinate to $t=-1/\Delta y$. From the latter we know that again $\Delta
+y\leq 1$. Setting both parameters equal allows to express $\Delta x(\Delta y)$
+or inverse,
+%
+\begin{align}
+  \label{pass00}
+  \Delta x &= \frac{1}{3(\Delta y+1)} \\
+  \Delta y &= \frac{1-3\Delta x}{3\Delta x}
+\end{align}
+%
+
+The calculation for passing through $(1,0)$ is a little more complicated, since
+the cubic equation for $x$ (which had a double root at $t=0$ before) now reads
+$0 = 3\Delta xt^2(1-t) + t^3 - 1$. The equation for~$y$ has not changed and
+leads to the same solution with the same constraint. Using $t=-1/\Delta y$ in
+the cubic equation for $x$ leads us to
+%
+\begin{align}
+  \label{pass10}
+  \Delta x &= \frac{1+\Delta y^3}{3(\Delta y+1)}.
+\end{align}
+%
+% >>>
+
+\section{Removing cusps}
+
+A cusp is a point on a B\'ezier curve $\vec b(t)$, where
+$\mathrm{d}\vec b(t)/\mathrm{d}t=\dot{\vec b}(t)$ vanishs.
+For stability we don't want it to be almost zero either.
+For comparison, a straight line
+$\vec l(t)=\vec p_0 + (\vec p_3-\vec p_0)t$ has the constant derivative
+$\mathrm{d}\vec l(t)/\mathrm{d}t = \dot{\vec l}(t) = \vec p_3-\vec p_0$.
+As lines shorter than $\epsilon$ are forbidden, we have
+$|\dot{\vec l}(t)| \ge \epsilon$. We want to enforce
+this limit to B\'ezier curves as well, \emph{i.e.}
+$|\dot{\vec b}(t)| \ge \epsilon$.
+
+First we have to take into account the beginning ($t=0$) and end point
+($t=1$) of the B\'ezier curve. Here, the derivates are given by
+$\dot{\vec b}(0) = 3(\vec p_1-\vec p_0)$ and
+$\dot{\vec b}(1) = 3(\vec p_3-\vec p_2)$. In case the absolute value
+of the derivatives are smaller than $\epsilon$, we need to shift
+$\vec p_1$ and $\vec p_2$, respectively. For $\vec p_1$ a new value is
+choosen in the direction of $\vec p_2$ with respect to $\vec p_0$ if
+$\vec p_2$ is more distant than $\epsilon/3$, otherwise the direction
+of $\vec p_3$ is used. The distance of the new point is choosen such
+that the absolute value of the derivate becomes $\epsilon$. $\vec p_2$
+is shifted similarly using the unshifted position for $\vec p_1$.
+
+Once the derivatives at the boundary fulfil the requirement, we need
+to search for minimal values of the absolute value (or the square) of
+the derivate within the valid parameter range. If the absolute value
+is smaller at an extrema, the curve is split at that point.
+\end{document}
+
+% vim:foldmethod=marker:foldmarker=<<<,>>>

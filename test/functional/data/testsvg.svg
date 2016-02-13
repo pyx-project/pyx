@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<svg x="-50pt" y="-80pt" width="300pt" height="200pt" version="1.1"
+     viewBox="-1500 0 3000 1000" preserveAspectRatio="none"
+     xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="1500" height="1000" 
+        fill="yellow" stroke="blue" stroke-width="12"  />
+  <path fill="red"  d="M 750,100 L 250,900 L 1250,900 z"/>
+</svg>
