@@ -1,6 +1,7 @@
 0.15 (2016/xx/xx):
   - text module:
     - improve error handling when input cannot be encoded by texenc
+    - add support for virtual fonts in virtual fonts
 
 0.14.1 (2015/11/02):
   - distribution:

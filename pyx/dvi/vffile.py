@@ -79,9 +79,13 @@ class vffile:
                 #        (fontname, self.scale, self.ds, s, reals)
                 #        )
 
-                # XXX allow for virtual fonts here too
+                from pyx import config
                 from . import texfont
-                self.fonts[num] =  texfont.TeXfont(fontname, c, reals, d, self.tfmconv, self.pyxconv, self.debug > 1)
+                try:
+                    with config.open(fontname, [config.format.vf]) as fontfile:
+                        self.fonts[num] = texfont.virtualfont(fontname, fontfile, c, reals, d, self.tfmconv, self.pyxconv, self.debug>1)
+                except EnvironmentError:
+                    self.fonts[num] = texfont.TeXfont(fontname, c, reals, d, self.tfmconv, self.pyxconv, self.debug>1)
             elif cmd == _VF_LONG_CHAR:
                 # character packet (long form)
                 pl = afile.readuint32()   # packet length
