@@ -1,0 +1,8 @@
+Typesetting non-ASCII characters with TeX
+
+TeX can typeset an enormous amount of characters. Historically it uses special
+TeX commands for individual characters. To directly use Unicode characters
+instead, the input encoding package of LaTeX can be used. To tell PyX to
+communicate with LaTeX in a certain character encoding differently from the
+default ASCII encoding, a `texenc` argument has to be passed to the `text.set`
+method as shown in the example for the UTF-8 encoding.

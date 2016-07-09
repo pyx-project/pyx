@@ -1,6 +1,7 @@
 halign
 valign
 font
+encoding
 marker
 color
 texrunner

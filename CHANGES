@@ -2,6 +2,8 @@
   - text module:
     - improve error handling when input cannot be encoded by texenc
     - add support for virtual fonts in virtual fonts
+  - new examples
+    - non-ASCII TeX encoding
 
 0.14.1 (2015/11/02):
   - distribution:
