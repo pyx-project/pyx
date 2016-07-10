@@ -1229,10 +1229,10 @@ def from_PFB_filename(filename):
     return t1file
 
 def from_PF_bytes(bytes):
-    #try:
+    try:
         return from_PFB_bytes(bytes)
-    #except FontFormatError:
-    #    return from_PFA_bytes(bytes)
+    except FontFormatError:
+        return from_PFA_bytes(bytes)
 
 def from_PF_filename(filename):
     """create a T1file instance from PFA or PFB font file of given name"""
