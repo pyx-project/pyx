@@ -784,8 +784,10 @@ class MonitorOutput(threading.Thread):
             raise ValueError("{} finished unexpectedly".format(self.name))
 
 
-class textbox_pt(box.rect, baseclasses.canvasitem):
+class textbox_pt(box.rect, baseclasses.canvasitem): pass
 
+
+class textextbox_pt(textbox_pt):
 
     def __init__(self, x_pt, y_pt, left_pt, right_pt, height_pt, depth_pt, do_finish, fontmap, singlecharmode, fillstyles):
         """Text output.
@@ -826,10 +828,12 @@ class textbox_pt(box.rect, baseclasses.canvasitem):
         self.fillstyles = fillstyles
 
         self.texttrafo = trafo.scale(unit.scale["x"]).translated_pt(x_pt, y_pt)
-        box.rect_pt.__init__(self, x_pt - left_pt*unit.scale["x"], y_pt - depth_pt*unit.scale["x"],
-                                   (left_pt + right_pt)*unit.scale["x"],
-                                   (depth_pt + height_pt)*unit.scale["x"],
-                                   abscenter_pt = (left_pt*unit.scale["x"], depth_pt*unit.scale["x"]))
+#         box.rect_pt.__init__(self, x_pt - left_pt*unit.scale["x"], y_pt - depth_pt*unit.scale["x"],
+#                                    (left_pt + right_pt)*unit.scale["x"],
+#                                    (depth_pt + height_pt)*unit.scale["x"],
+#                                    abscenter_pt = (left_pt*unit.scale["x"], depth_pt*unit.scale["x"]))
+        box.rect.__init__(self, -self.left, -self.depth, self.left+self.right, self.depth+self.height, abscenter = (self.left, self.depth))
+        box.rect.transform(self, self.texttrafo)
 
         self._dvicanvas = None
 
@@ -1266,7 +1270,7 @@ class SingleRunner:
         :type fontmap: None or fontmap
         :param bool singlecharmode: position each character separately
         :returns: text output insertable into a canvas.
-        :rtype: :class:`textbox_pt`
+        :rtype: :class:`textextbox_pt`
         :raises: :exc:`TexDoneError`: when the TeX interpreter has been
             terminated already.
 
@@ -1284,7 +1288,7 @@ class SingleRunner:
         left_pt, right_pt, height_pt, depth_pt = self.do_typeset(expr, self.texmessages_run_default + self.texmessages_run + texmessages)
         if self.texipc and first:
             self.dvifile = dvifile.DVIfile(os.path.join(self.tmpdir, "texput.dvi"), debug=self.dvitype)
-        box = textbox_pt(x_pt, y_pt, left_pt, right_pt, height_pt, depth_pt, self.do_finish, fontmap, singlecharmode, fillstyles)
+        box = textextbox_pt(x_pt, y_pt, left_pt, right_pt, height_pt, depth_pt, self.do_finish, fontmap, singlecharmode, fillstyles)
         for t in trafos:
             box.reltransform(t) # TODO: should trafos really use reltransform???
                                 #       this is quite different from what we do elsewhere!!!
@@ -1509,6 +1513,78 @@ class LatexRunner(MultiRunner):
 
         """
         super().__init__(SingleLatexRunner, *args, **kwargs)
+
+
+from pyx.config import open, format
+from pyx.font import T1font
+from pyx.font.t1file import from_PF_bytes
+from pyx.font.afmfile import AFMfile
+
+class unicodetextbox_pt(textbox_pt):
+
+    def __init__(self, x_pt, y_pt, text, font, size):
+        self.text = text
+        self.font = font
+        self.size = size
+        self.texttrafo = trafo.scale(unit.scale["x"]).translated_pt(x_pt, y_pt)
+        bbox = self.font.text_pt(0, 0, text, size).bbox()
+        box.rect_pt.__init__(self, -bbox.llx_pt, -bbox.lly_pt, -bbox.llx_pt+bbox.urx_pt, -bbox.lly_pt+bbox.ury_pt, abscenter_pt = (-bbox.llx_pt, -bbox.lly_pt))
+        box.rect.transform(self, self.texttrafo)
+
+    def transform(self, *trafos):
+        box.rect.transform(self, *trafos)
+        for trafo in trafos:
+            self.texttrafo = trafo * self.texttrafo
+
+    def bbox(self):
+        scale, x_pt, y_pt = self.homothety()
+        return self.font.text_pt(x_pt, y_pt, self.text, scale*self.size).bbox()
+
+    def homothety(self):
+        assert self.texttrafo.matrix[0][0] == self.texttrafo.matrix[1][1]
+        assert self.texttrafo.matrix[0][1] == 0
+        assert self.texttrafo.matrix[1][0] == 0
+        return self.texttrafo.matrix[0][0], self.texttrafo.vector[0], self.texttrafo.vector[1]
+
+    def textpath(self):
+        scale, x_pt, y_pt = self.homothety()
+        return self.font.text_pt(x_pt, y_pt, self.text, scale*self.size).textpath()
+
+    def requiretextregion(self):
+        return True
+
+    def processPS(self, file, writer, context, registry, bbox):
+        scale, x_pt, y_pt = self.homothety()
+        self.font.text_pt(x_pt, y_pt, self.text, scale*self.size).processPS(file, writer, context, registry, bbox)
+
+    def processPDF(self, file, writer, context, registry, bbox):
+        scale, x_pt, y_pt = self.homothety()
+        self.font.text_pt(x_pt, y_pt, self.text, scale*self.size).processPDF(file, writer, context, registry, bbox)
+
+    def processSVG(self, xml, writer, context, registry, bbox):
+        scale, x_pt, y_pt = self.homothety()
+        self.font.text_pt(x_pt, y_pt, self.text, scale*self.size).processSVG(xml, writer, context, registry, bbox)
+
+
+class UnicodeText:
+
+    def __init__(self, fontname="cmr10", size=10):
+        self.font = T1font(from_PF_bytes(open(fontname, [format.type1]).read()), 
+                           AFMfile(open(fontname, [format.afm], ascii=True)))
+        self.size = size
+
+    def preamble(self):
+        raise NotImplemented()
+
+    def reset(self):
+        raise NotImplemented()
+
+    def text_pt(self, x_pt, y_pt, text, textattrs=[], texmessages=[], fontmap=None, singlecharmode=False):
+    # def text_pt(self, x_pt, y_pt, text, *args, **kwargs):
+        return unicodetextbox_pt(x_pt, y_pt, text, self.font, self.size)
+
+    def text(self, x, y, *args, **kwargs):
+        return self.text_pt(unit.topt(x), unit.topt(y), *args, **kwargs)
 
 
 # old, deprecated names:
