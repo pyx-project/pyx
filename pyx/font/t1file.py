@@ -1069,12 +1069,12 @@ class T1file:
                 file.write("/Flags 32\n")
             else:
                 file.write("/Flags 4\n")
-            file.write("/FontBBox [0 %f %f %f]\n" % (glyphinfo_y[3], glyphinfo_W[0], glyphinfo_H[5]))
-            file.write("/ItalicAngle %f\n" % math.degrees(math.atan2(glyphinfo_period[4]-glyphinfo_colon[4], glyphinfo_colon[5]-glyphinfo_period[5])))
-            file.write("/Ascent %f\n" % glyphinfo_H[5])
-            file.write("/Descent %f\n" % glyphinfo_y[3])
-            file.write("/CapHeight %f\n" % glyphinfo_h[5])
-            file.write("/StemV %f\n" % (glyphinfo_period[4]-glyphinfo_period[2]))
+            file.write("/FontBBox [0 %d %d %d]\n" % (glyphinfo_y[3], glyphinfo_W[0], glyphinfo_H[5]))
+            file.write("/ItalicAngle %d\n" % math.degrees(math.atan2(glyphinfo_period[4]-glyphinfo_colon[4], glyphinfo_colon[5]-glyphinfo_period[5])))
+            file.write("/Ascent %d\n" % glyphinfo_H[5])
+            file.write("/Descent %d\n" % glyphinfo_y[3])
+            file.write("/CapHeight %d\n" % glyphinfo_h[5])
+            file.write("/StemV %d\n" % (glyphinfo_period[4]-glyphinfo_period[2]))
 
     def getglyphinfo(self, glyph, flex=True):
         logger.warning("We are about to extract font information for the Type 1 font '%s' from its pfb file. This is bad practice (and it's slow). You should use an afm file instead." % self.name)

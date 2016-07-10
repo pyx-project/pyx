@@ -4,6 +4,8 @@
     - add support for virtual fonts in virtual fonts
   - new examples
     - non-ASCII TeX encoding
+  - t1font
+    - use integers in auto-guessed font descriptors to prevent an issue in pdftex
 
 0.14.1 (2015/11/02):
   - distribution:
