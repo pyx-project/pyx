@@ -389,7 +389,7 @@ class PFMfile(metric.metric):
         if self.dfItalic:
             flags += 1<<6
         file.write("/Flags %d\n" % flags)
-        file.write("/ItalicAngles %d\n" % (self.etmSlant/10))
+        file.write("/ItalicAngle %d\n" % (self.etmSlant/10))
         file.write("/Ascent %d\n" % self.dfAscent)
         file.write("/Descent %d\n" % -self.etmLowerCaseDescent)
         file.write("/FontBBox [%s]\n" % fontbboxpattern.search(self.t1file.data1).groups('fontbbox')[0])

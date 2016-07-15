@@ -1419,7 +1419,7 @@ class AFMfile(metric.metric):
             flags += 1<<6
         file.write("/Flags %d\n" % flags)
         if self.italicangles[0] is not None:
-            file.write("/ItalicAngles %d\n" % self.italicangles[0])
+            file.write("/ItalicAngle %d\n" % self.italicangles[0])
         if self.ascender is not None:
             ascent = self.ascender
         elif self.fontbbox is not None:

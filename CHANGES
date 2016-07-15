@@ -6,6 +6,7 @@
     - non-ASCII TeX encoding
   - t1font
     - use integers in auto-guessed font descriptors to prevent an issue in pdftex
+    - fix typo: ItalicAngles -> ItalicAngle (thanks to Ross Moore)
 
 0.14.1 (2015/11/02):
   - distribution:
