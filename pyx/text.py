@@ -1515,7 +1515,6 @@ class LatexRunner(MultiRunner):
         super().__init__(SingleLatexRunner, *args, **kwargs)
 
 
-from pyx.config import open, format
 from pyx.font import T1font
 from pyx.font.t1file import from_PF_bytes
 from pyx.font.afmfile import AFMfile
@@ -1569,8 +1568,8 @@ class unicodetextbox_pt(textbox_pt):
 class UnicodeText:
 
     def __init__(self, fontname="cmr10", size=10):
-        self.font = T1font(from_PF_bytes(open(fontname, [format.type1]).read()), 
-                           AFMfile(open(fontname, [format.afm], ascii=True)))
+        self.font = T1font(from_PF_bytes(config.open(fontname, [config.format.type1]).read()), 
+                           AFMfile(config.open(fontname, [config.format.afm], ascii=True)))
         self.size = size
 
     def preamble(self):
