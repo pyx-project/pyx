@@ -1037,7 +1037,7 @@ class SingleRunner:
                 for usefile in self.usefiles:
                     extpos = usefile.rfind(".")
                     try:
-                        os.rename(os.path.join(self.tmpdir, "texput" + usefile[extpos:]), usefile)
+                        shutil.move(os.path.join(self.tmpdir, "texput" + usefile[extpos:]), usefile)
                     except EnvironmentError:
                         logger.warning("Could not save '{}'.".format(usefile))
                         if os.path.isfile(usefile):
