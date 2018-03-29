@@ -1023,7 +1023,7 @@ class SingleRunner:
         try:
             if self.state > STATE_START:
                 if self.state < STATE_DONE:
-                    self.do_finish()
+                    self.do_finish(cleanup=False)
                     if self.state < STATE_DONE: # cleanup while TeX is still running?
                         self.texoutput.expect(None)
                         self.force_done()
@@ -1213,8 +1213,11 @@ class SingleRunner:
             self.go_typeset()
         return self._execute(expr, texmessages, STATE_TYPESET, STATE_TYPESET)
 
-    def do_finish(self):
-        """Teardown TeX interpreter and cleanup environment."""
+    def do_finish(self, cleanup=True):
+        """Teardown TeX interpreter and cleanup environment.
+
+        :param bool cleanup: use _cleanup regularly/explicitly (not via atexit)
+        """
         if self.state == STATE_DONE:
             return
         if self.state < STATE_TYPESET:
@@ -1233,9 +1236,9 @@ class SingleRunner:
                 page += 1
         if self.dvifile is not None and self.dvifile.readpage(None) is not None:
             raise ValueError("end of dvifile expected but further pages follow")
-
-        atexit.unregister(self._cleanup)
-        self._cleanup()
+        if cleanup:
+            atexit.unregister(self._cleanup)
+            self._cleanup()
 
     def preamble(self, expr, texmessages=[]):
         """Execute a preamble.
