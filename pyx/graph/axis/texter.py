@@ -21,31 +21,30 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
+from fractions import Fraction
 
-from pyx import text
-from pyx.graph.axis import tick
+from pyx import text, utils
+from pyx.graph.axis.tick import tick as Tick
 
 
-class _Itexter:
-
+class _texter:
     def labels(self, ticks):
         """fill the label attribute of ticks
         - ticks is a list of instances of tick
         - for each element of ticks the value of the attribute label is set to
-          a string appropriate to the attributes num and denom of that tick
-          instance
+          a string or MultiEngineText instance appropriate to the attributes
+          num and denom of that tick instance
         - label attributes of the tick instances are just kept, whenever they
           are not equal to None
         - the method might modify the labelattrs attribute of the ticks; be sure
           to not modify it in-place!"""
+        raise NotImplementedError
 
 
-class decimal:
+class decimal(_texter):
     "a texter creating decimal labels (e.g. '1.234' or even '0.\overline{3}')"
 
-    __implements__ = _Itexter
-
-    def __init__(self, prefix="", infix="", suffix="", equalprecision=0,
+    def __init__(self, prefix="", infix="", suffix="", equalprecision=False,
                        decimalsep=".", thousandsep="", thousandthpartsep="",
                        plus="", minus="-", period=r"\overline{%s}",
                        labelattrs=[text.mathmode]):
@@ -53,6 +52,8 @@ class decimal:
         - prefix, infix, and suffix (strings) are added at the begin,
           immediately after the minus, and at the end of the label,
           respectively
+        - equalprecision forces the same number of digits after decimalsep,
+          even when the tailing digits are zero
         - decimalsep, thousandsep, and thousandthpartsep (strings)
           are used as separators
         - plus or minus (string) is inserted for non-negative or negative numbers
@@ -133,169 +134,141 @@ class decimal:
             # del tick.temp_decprecision  # we've inserted this temporary variable ... and do not care any longer about it
 
 
-class exponential:
-    "a texter creating labels with exponentials (e.g. '2\cdot10^5')"
 
-    __implements__ = _Itexter
+class skipmantissaunity:
+    pass
 
-    def __init__(self, plus="", minus="-",
-                       mantissaexp=r"{{%s}\cdot10^{%s}}",
-                       skipexp0=r"{%s}",
-                       skipexp1=None,
-                       nomantissaexp=r"{10^{%s}}",
-                       minusnomantissaexp=r"{-10^{%s}}",
-                       mantissamin=tick.rational((1, 1)), mantissamax=tick.rational((10, 1)),
-                       skipmantissa1=0, skipallmantissa1=1,
-                       mantissatexter=decimal()):
+skipmantissaunity.never = 0
+skipmantissaunity.each = 1
+skipmantissaunity.all = 2
+
+
+class default(_texter):
+
+    "a texter creating regular (e.g. '2') and exponential (e.g. '2\cdot10^5') labels"
+
+    def __init__(self, multiplication_tex=r"\cdot{}", multiplication_unicode="·", base=Fraction(10),
+                       skipmantissaunity=skipmantissaunity.all, minusunity="-",
+                       minexponent=4, minnegexponent=None, uniformexponent=True,
+                       mantissatexter=decimal(), basetexter=decimal(), exponenttexter=decimal(),
+                       labelattrs=[text.mathmode]):
+                       # , **kwargs): # future
         r"""initializes the instance
-        - plus or minus (string) is inserted for non-negative or negative exponents
-        - mantissaexp (string) is taken as a format string generating the exponent;
-          it has to contain exactly two string insert operators "%s" --
-          the first for the mantissa and the second for the exponent;
-          examples are r"{{%s}\cdot10^{%s}}" and r"{{%s}{\rm e}{%s}}"
-        - skipexp0 (string) is taken as a format string used for exponent 0;
-          exactly one string insert operators "%s" for the mantissa;
-          None turns off the special handling of exponent 0;
-          an example is r"{%s}"
-        - skipexp1 (string) is taken as a format string used for exponent 1;
-          exactly one string insert operators "%s" for the mantissa;
-          None turns off the special handling of exponent 1;
-          an example is r"{{%s}\cdot10}"
-        - nomantissaexp (string) is taken as a format string generating the exponent
-          when the mantissa is one and should be skipped; it has to contain
-          exactly one string insert operators "%s" for the exponent;
-          an examples is r"{10^{%s}}"
-        - minusnomantissaexp (string) is taken as a format string generating the exponent
-          when the mantissa is minus one and should be skipped; it has to contain
-          exactly one string insert operators "%s" for the exponent;
-          None turns off the special handling of mantissa -1;
-          an examples is r"{-10^{%s}}"
-        - mantissamin and mantissamax are the minimum and maximum of the mantissa;
-          they are rational instances greater than zero and mantissamin < mantissamax;
-          the sign of the tick is ignored here
-        - skipmantissa1 (boolean) turns on skipping of any mantissa equals one
-          (and minus when minusnomantissaexp is set)
-        - skipallmantissa1 (boolean) as above, but all mantissas must be 1 (or -1)
-        - mantissatexter is the texter for the mantissa
-        - the skipping of a mantissa is stronger than the skipping of an exponent"""
-        self.plus = plus
-        self.minus = minus
-        self.mantissaexp = mantissaexp
-        self.skipexp0 = skipexp0
-        self.skipexp1 = skipexp1
-        self.nomantissaexp = nomantissaexp
-        self.minusnomantissaexp = minusnomantissaexp
-        self.mantissamin = mantissamin
-        self.mantissamax = mantissamax
-        self.mantissamindivmax = self.mantissamin / self.mantissamax
-        self.mantissamaxdivmin = self.mantissamax / self.mantissamin
-        self.skipmantissa1 = skipmantissa1
-        self.skipallmantissa1 = skipallmantissa1
+        - multiplication_tex and multiplication_unicode are the strings to
+          indicate the multiplication between the mantissa and the base
+          number for the TexEngine and the UnicodeEngine, respecitvely
+        - base is the number of the base of the exponent
+        - skipmantissaunity is either skipmantissaunity.never (never skip the
+          unity mantissa), skipmantissaunity.each (skip the unity mantissa
+          whenever it occurs for each label separately), or skipmantissaunity.all
+          (skip the unity mantissa whenever if all labels happen to be
+          mantissafixed with unity)
+        - minusunity is used as the output of -unity for the mantissa
+        - minexponent is the minimal positive exponent value to be printed by
+          exponential notation
+        - minnegexponent is the minimal negative exponent value to be printed by
+          exponential notation, for None it is considered to be equal to minexponent
+        - uniformexponent forces all numbers to be written in exponential notation
+          when at least one label excets the limits for non-exponential
+          notiation
+        - mantissatexter, basetexter, and exponenttexter generate the texts
+          for the mantissa, basetexter, and exponenttexter
+        - labelattrs is a list of attributes to be added to the label attributes
+          given in the painter"""
+        self.multiplication_tex = multiplication_tex
+        self.multiplication_unicode = multiplication_unicode
+        self.base = base
+        self.skipmantissaunity = skipmantissaunity
+        self.minusunity = minusunity
+        self.minexponent = minexponent
+        self.minnegexponent = minnegexponent if minnegexponent is not None else minexponent
+        self.uniformexponent = uniformexponent
         self.mantissatexter = mantissatexter
+        self.basetexter = basetexter
+        self.exponenttexter = exponenttexter
+        self.labelattrs = labelattrs
+
+        # future:
+        # kwargs = utils.kwsplit(kwargs, ['mantissatexter', 'basetexter', 'exponenttexter'])
+        # self.mantissatexter = mantissatexter(a=1, **kwargs['mantissatexter'])
+        # self.basetexter = basetexter(**kwargs['basetexter'])
+        # self.exponenttexter = exponenttexter(**kwargs['exponenttexter'])
 
     def labels(self, ticks):
         labeledticks = []
         for tick in ticks:
             if tick.label is None and tick.labellevel is not None:
-                tick.temp_orgnum, tick.temp_orgdenom = tick.num, tick.denom
                 labeledticks.append(tick)
-                tick.temp_exp = 0
+
+                tick.labelattrs = tick.labelattrs + self.labelattrs
+
                 if tick.num:
-                    while abs(tick) >= self.mantissamax:
-                        tick.temp_exp += 1
-                        x = tick * self.mantissamindivmax
-                        tick.num, tick.denom = x.num, x.denom
-                    while abs(tick) < self.mantissamin:
-                        tick.temp_exp -= 1
-                        x = tick * self.mantissamaxdivmin
-                        tick.num, tick.denom = x.num, x.denom
-                if tick.temp_exp < 0:
-                    tick.temp_exp = "%s%i" % (self.minus, -tick.temp_exp)
+                    # express tick = tick.temp_sign * tick.temp_mantissa * self.base ** tick.temp_exponent with 1 <= temp_mantissa < self.base 
+                    # and decide whether a tick is to be written in exponential notation
+                    tick.temp_sign = 1 if tick >= 0 else -1
+                    tick.temp_mantissa = abs(Fraction(tick.num, tick.denom))
+                    tick.temp_exponent = 0
+                    while tick.temp_mantissa >= self.base:
+                        tick.temp_exponent += 1
+                        tick.temp_mantissa /= self.base
+                    while tick.temp_mantissa < 1:
+                        tick.temp_exponent -= 1
+                        tick.temp_mantissa *= self.base
+                    tick.temp_wantexponent = not (-self.minnegexponent < tick.temp_exponent < self.minexponent)
                 else:
-                    tick.temp_exp = "%s%i" % (self.plus, tick.temp_exp)
-        self.mantissatexter.labels(labeledticks)
-        if self.minusnomantissaexp is not None:
-            allmantissa1 = len(labeledticks) == len([tick for tick in labeledticks if abs(tick.num) == abs(tick.denom)])
-        else:
-            allmantissa1 = len(labeledticks) == len([tick for tick in labeledticks if tick.num == tick.denom])
+                    tick.temp_mantissa = tick.temp_exponent = 0
+                    tick.temp_sign = 1
+                    tick.temp_wantexponent = not (-self.minnegexponent < 0 < self.minexponent)
+
+        # make decision on exponential notation uniform if requested
+        if self.uniformexponent and any(tick.temp_wantexponent for tick in labeledticks):
+            for tick in labeledticks:
+                if tick.num:
+                    tick.temp_wantexponent = True
+
+        # mark mantissa == 1 to be not labeled
+        if self.skipmantissaunity == skipmantissaunity.each:
+            for tick in labeledticks:
+                if tick.temp_wantexponent and tick.temp_mantissa == 1:
+                    tick.temp_mantissa = None
+        elif self.skipmantissaunity == skipmantissaunity.all and all(tick.temp_mantissa == 1 for tick in labeledticks if tick.temp_wantexponent):
+            for tick in labeledticks:
+                if tick.temp_wantexponent:
+                    tick.temp_mantissa = None
+
+        # construct labels
+        basetick = Tick(self.base, labellevel=0)
+        self.basetexter.labels([basetick])
         for tick in labeledticks:
-            if (self.skipallmantissa1 and allmantissa1 or
-                (self.skipmantissa1 and (tick.num == tick.denom or
-                                         (tick.num == -tick.denom and self.minusnomantissaexp is not None)))):
-                if tick.num == tick.denom:
-                    tick.label = self.nomantissaexp % tick.temp_exp
-                else:
-                    tick.label = self.minusnomantissaexp % tick.temp_exp
+            if tick.temp_wantexponent:
+                if tick.temp_mantissa is not None:
+                    tick.temp_mantissatick = Tick(tick.temp_sign * tick.temp_mantissa, labellevel=0)
+                tick.temp_exponenttick = Tick(tick.temp_exponent, labellevel=0)
             else:
-                if tick.temp_exp == "0" and self.skipexp0 is not None:
-                    tick.label = self.skipexp0 % tick.label
-                elif tick.temp_exp == "1" and self.skipexp1 is not None:
-                    tick.label = self.skipexp1 % tick.label
+                tick.temp_mantissatick = tick
+
+        self.mantissatexter.labels([tick.temp_mantissatick for tick in labeledticks if tick.temp_mantissa is not None])
+        self.exponenttexter.labels([tick.temp_exponenttick for tick in labeledticks if tick.temp_wantexponent])
+        for tick in labeledticks:
+            if tick.temp_wantexponent:
+                if tick.temp_mantissa is not None:
+                    mantissalabel_tex = tick.temp_mantissatick.label + self.multiplication_tex
+                    mantissalabel_unicode = tick.temp_mantissatick.label + self.multiplication_unicode
                 else:
-                    tick.label = self.mantissaexp % (tick.label, tick.temp_exp)
-            tick.num, tick.denom = tick.temp_orgnum, tick.temp_orgdenom
-
-            # del tick.temp_orgnum    # we've inserted those temporary variables ... and do not care any longer about them
-            # del tick.temp_orgdenom
-            # del tick.temp_exp
+                    mantissalabel_tex = self.minusunity if tick.temp_sign == -1 else ""
+                    mantissalabel_unicode = self.minusunity if tick.temp_sign == -1 else ""
+                tick.label = text.MultiEngineText("%s%s^{%s}" % (mantissalabel_tex, basetick.label, tick.temp_exponenttick.label), [mantissalabel_unicode + basetick.label, text.Text(tick.temp_exponenttick.label, scale=0.8, shift=0.5)])
 
 
-class mixed:
-    "a texter creating decimal or exponential labels"
-
-    __implements__ = _Itexter
-
-    def __init__(self, smallestdecimal=tick.rational((1, 1000)),
-                       biggestdecimal=tick.rational((9999, 1)),
-                       equaldecision=1,
-                       decimal=decimal(),
-                       exponential=exponential()):
-        """initializes the instance
-        - smallestdecimal and biggestdecimal are the smallest and
-          biggest decimal values, where the decimal texter should be used;
-          they are rational instances; the sign of the tick is ignored here;
-          a tick at zero is considered for the decimal texter as well
-        - equaldecision (boolean) uses decimal texter or exponential texter
-          globaly (set) or for each tick separately (unset)
-        - decimal and exponential are texters to be used"""
-        self.smallestdecimal = smallestdecimal
-        self.biggestdecimal = biggestdecimal
-        self.equaldecision = equaldecision
-        self.decimal = decimal
-        self.exponential = exponential
-
-    def labels(self, ticks):
-        decticks = []
-        expticks = []
-        for tick in ticks:
-            if tick.label is None and tick.labellevel is not None:
-                if not tick.num or (abs(tick) >= self.smallestdecimal and abs(tick) <= self.biggestdecimal):
-                    decticks.append(tick)
-                else:
-                    expticks.append(tick)
-        if self.equaldecision:
-            if len(expticks):
-                self.exponential.labels(ticks)
-            else:
-                self.decimal.labels(ticks)
-        else:
-            for tick in decticks:
-                self.decimal.labels([tick])
-            for tick in expticks:
-                self.exponential.labels([tick])
-
-
-class rational:
+class rational(_texter):
     "a texter creating rational labels (e.g. 'a/b' or even 'a \over b')"
-    # XXX: we use divmod here to be more expicit
-
-    __implements__ = _Itexter
+    # we use divmod here to be more explicit
 
     def __init__(self, prefix="", infix="", suffix="",
                        numprefix="", numinfix="", numsuffix="",
                        denomprefix="", denominfix="", denomsuffix="",
                        plus="", minus="-", minuspos=0, over=r"{{%s}\over{%s}}",
-                       equaldenom=0, skip1=1, skipnum0=1, skipnum1=1, skipdenom1=1,
+                       equaldenom=False, skip1=True, skipnum0=True, skipnum1=True, skipdenom1=True,
                        labelattrs=[text.mathmode]):
         r"""initializes the instance
         - prefix, infix, and suffix (strings) are added at the begin,
@@ -436,11 +409,11 @@ class rational:
                 else:
                     tick.temp_rationalnum = "%s%s%s%i%s" % (self.numprefix, rationalnumminus, self.numinfix, tick.temp_rationalnum, self.numsuffix)
                 if self.skipdenom1 and tick.temp_rationaldenom == 1 and not len(rationaldenomminus) and not len(self.denomprefix) and not len(self.denominfix) and not len(self.denomsuffix):
-                    rational = tick.temp_rationalnum
+                    tick.label = "%s%s%s%s%s" % (self.prefix, rationalminus, self.infix, tick.temp_rationalnum, self.suffix)
                 else:
                     tick.temp_rationaldenom = "%s%s%s%i%s" % (self.denomprefix, rationaldenomminus, self.denominfix, tick.temp_rationaldenom, self.denomsuffix)
-                    rational = self.over % (tick.temp_rationalnum, tick.temp_rationaldenom)
-                tick.label = "%s%s%s%s%s" % (self.prefix, rationalminus, self.infix, rational, self.suffix)
+                    tick.label = text.MultiEngineText("%s%s%s%s%s" % (self.prefix, rationalminus, self.infix, self.over % (tick.temp_rationalnum, tick.temp_rationaldenom), self.suffix),
+                                                      ["%s%s%s" % (self.prefix, rationalminus, self.infix)] + [text.StackedText([text.Text(tick.temp_rationalnum, shift=0.3), text.Text(tick.temp_rationaldenom, shift=-0.9)], frac=True, align=0.5)] + [self.suffix])
             tick.labelattrs = tick.labelattrs + self.labelattrs
 
             # del tick.temp_rationalnum    # we've inserted those temporary variables ... and do not care any longer about them

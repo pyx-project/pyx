@@ -84,7 +84,7 @@ Underfull \vbox (badness 10000) detected at line 0"""))
         os.remove(testfilename + ".eps")
 
     def setUp(self):
-        text.set(mode="latex")
+        text.set(engine=text.LatexEngine)
         text.preamble(r"\usepackage{graphicx}")
 
 if __name__ == "__main__":

@@ -5,7 +5,7 @@ import math
 from pyx import *
 from pyx.graph.axis.parter import linear as linparter
 from pyx.graph.axis.painter import regular, ticklength, rotatetext
-from pyx.graph.axis.texter import rational, exponential
+from pyx.graph.axis.texter import rational, default
 from pyx.graph.axis.axis import lin, pathaxis
 
 c = canvas.canvas()
@@ -27,7 +27,7 @@ c.insert(pathaxis(path.path(path.moveto(11, 0), path.lineto(11, 8)),
 c.insert(pathaxis(path.path(path.moveto(12, 0), path.lineto(12, 8)),
                         lin(painter=regular(tickattrs=[attr.changelist([None, color.rgb.green])]), **lintest)))
 c.insert(pathaxis(path.path(path.moveto(16, 0), path.lineto(16, 8)),
-                        lin(texter=exponential(), **lintest),
+                        lin(texter=default(), **lintest),
                         direction=-1))
 c.insert(pathaxis(path.path(path.moveto(18, 0), path.lineto(18, 8)),
                         lin(texter=rational(), **lintest),

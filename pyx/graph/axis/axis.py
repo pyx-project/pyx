@@ -63,7 +63,7 @@ class _regularaxis(_axis):
     logarithmic axes, time axes etc."""
 
     def __init__(self, min=None, max=None, reverse=0, divisor=None, title=None,
-                       painter=painter.regular(), texter=texter.mixed(), linkpainter=painter.linked(),
+                       painter=painter.regular(), texter=texter.default(), linkpainter=painter.linked(),
                        density=1, maxworse=2, manualticks=[], fallbackrange=None):
         if min is not None and max is not None and min > max:
             min, max, reverse = max, min, not reverse

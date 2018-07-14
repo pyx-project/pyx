@@ -1,5 +1,5 @@
 import base64, os, re, sys
-import IPython.nbformat.v4 as nbf
+import nbformat.v4 as nbf
 
 filename = os.path.splitext(sys.argv[1])[0]
 

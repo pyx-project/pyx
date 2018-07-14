@@ -124,7 +124,7 @@ class MAPline:
         if self._font is None:
             if self.fontfilename is not None:
                 with config.open(self.fontfilename, [config.format.type1]) as fontfile:
-                    t1font = t1file.from_PF_bytes(fontfile.read())
+                    t1font = t1file.T1File.from_PF_bytes(fontfile.read())
                 assert self.basepsname == t1font.name, "corrupt MAP file"
                 try:
                     with config.open(os.path.splitext(self.fontfilename)[0], [config.format.afm], ascii=True) as metricfile:

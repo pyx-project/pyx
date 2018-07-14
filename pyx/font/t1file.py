@@ -631,7 +631,10 @@ T1setcurrentpoint = _T1setcurrentpoint()
 
 ######################################################################
 
-class T1file:
+class FontFormatError(Exception):
+    pass
+
+class T1File:
 
     eexecr = 55665
     charstringr = 4330
@@ -1000,7 +1003,7 @@ class T1file:
         # when UniqueID is commented out (as in modern latin), prepare to remove the comment character as well
 
     def getstrippedfont(self, glyphs, charcodes):
-        """create a T1file instance containing only certain glyphs
+        """create a T1File instance containing only certain glyphs
 
         glyphs is a set of the glyph names. It might be modified *in place*!
         """
@@ -1038,7 +1041,7 @@ class T1file:
         data3 = self.newlinepattern.subn("\n", self.data3)[0]
 
         # create and return the new font instance
-        return T1file(data1.rstrip() + "\n", self._eexecencode(data2), data3.rstrip() + "\n")
+        return T1File(data1.rstrip() + "\n", self._eexecencode(data2), data3.rstrip() + "\n")
 
     # The following two methods, writePDFfontinfo and getglyphinfo,
     # extract informtion which should better be taken from the afm file.
@@ -1085,7 +1088,7 @@ class T1file:
         return context.wx, context.wy, bbox.llx_pt, bbox.lly_pt, bbox.urx_pt, bbox.ury_pt
 
     def outputPFA(self, file, remove_UniqueID_lookup=False):
-        """output the T1file in PFA format"""
+        """output the T1File in PFA format"""
         data1 = self.data1
         data3 = self.data3
         if remove_UniqueID_lookup:
@@ -1106,7 +1109,7 @@ class T1file:
         file.write(data3)
 
     def outputPFB(self, file):
-        """output the T1file in PFB format"""
+        """output the T1File in PFB format"""
         data2eexec = self.getdata2eexec()
         def pfblength(data):
             l = len(data)
@@ -1126,7 +1129,7 @@ class T1file:
         file.write("\200\3")
 
     def outputPS(self, file, writer):
-        """output the PostScript code for the T1file to the file file"""
+        """output the PostScript code for the T1File to the file file"""
         self.outputPFA(file, remove_UniqueID_lookup=True)
 
     def outputPDF(self, file, writer):
@@ -1156,86 +1159,87 @@ class T1file:
         file.write("\n"
                    "endstream\n")
 
-# factory functions
+    @classmethod
+    def from_PFA_bytes(cls, bytes):
+        """create a T1File instance from a string of bytes corresponding to a PFA file"""
+        try:
+            m1 = bytes.index("eexec") + 6
+            m2 = bytes.index("0"*40)
+        except ValueError:
+           raise FontFormatError
 
-class FontFormatError(Exception):
-    pass
+        data1 = bytes[:m1].decode("ascii", errors="surrogateescape")
+        data2eexec = binascii.a2b_hex(bytes[m1: m2].replace(" ", "").replace("\r", "").replace("\n", ""))
+        data3 = bytes[m2:].decode("ascii", errors="surrogateescape")
+        return cls(data1, data2eexec, data3)
 
-def from_PFA_bytes(bytes):
-    """create a T1file instance from a string of bytes corresponding to a PFA file"""
-    try:
-        m1 = bytes.index("eexec") + 6
-        m2 = bytes.index("0"*40)
-    except ValueError:
-       raise FontFormatError
+    @classmethod
+    def from_PFA_filename(cls, filename):
+        """create a T1File instance from PFA font file of given name"""
+        with open(filename, "rb") as file:
+            t1file = cls.from_PFA_bytes(file.read())
+        return t1file
 
-    data1 = bytes[:m1].decode("ascii", errors="surrogateescape")
-    data2eexec = binascii.a2b_hex(bytes[m1: m2].replace(" ", "").replace("\r", "").replace("\n", ""))
-    data3 = bytes[m2:].decode("ascii", errors="surrogateescape")
-    return T1file(data1, data2eexec, data3)
+    @classmethod
+    def from_PFB_bytes(cls, bytes):
+        """create a T1File instance from a string of bytes corresponding to a PFB file"""
 
-def from_PFA_filename(filename):
-    """create a T1file instance from PFA font file of given name"""
-    with open(filename, "rb") as file:
-        t1file = from_PFA_bytes(file.read())
-    return t1file
+        def pfblength(s):
+            if len(s) != 4:
+                raise ValueError("invalid string length")
+            return (s[0] +
+                    s[1]*256 +
+                    s[2]*256*256 +
+                    s[3]*256*256*256)
+        class consumer:
+            def __init__(self, bytes):
+                self.bytes = bytes
+                self.pos = 0
+            def __call__(self, n):
+                result = self.bytes[self.pos:self.pos+n]
+                self.pos += n
+                return result
 
-def from_PFB_bytes(bytes):
-    """create a T1file instance from a string of bytes corresponding to a PFB file"""
-
-    def pfblength(s):
-        if len(s) != 4:
-            raise ValueError("invalid string length")
-        return (s[0] +
-                s[1]*256 +
-                s[2]*256*256 +
-                s[3]*256*256*256)
-    class consumer:
-        def __init__(self, bytes):
-            self.bytes = bytes
-            self.pos = 0
-        def __call__(self, n):
-            result = self.bytes[self.pos:self.pos+n]
-            self.pos += n
-            return result
-
-    consume = consumer(bytes)
-    mark = consume(2)
-    if mark != b"\200\1":
-        raise FontFormatError
-    data1 = consume(pfblength(consume(4))).decode("ascii", errors="surrogateescape")
-    mark = consume(2)
-    if mark != b"\200\2":
-        raise FontFormatError
-    data2eexec = b""
-    while mark == b"\200\2":
-        data2eexec = data2eexec + consume(pfblength(consume(4)))
+        consume = consumer(bytes)
         mark = consume(2)
-    if mark != b"\200\1":
-        raise FontFormatError
-    data3 = consume(pfblength(consume(4))).decode("ascii", errors="surrogateescape")
-    mark = consume(2)
-    if mark != b"\200\3":
-        raise FontFormatError
-    if consume(1):
-        raise FontFormatError
+        if mark != b"\200\1":
+            raise FontFormatError
+        data1 = consume(pfblength(consume(4))).decode("ascii", errors="surrogateescape")
+        mark = consume(2)
+        if mark != b"\200\2":
+            raise FontFormatError
+        data2eexec = b""
+        while mark == b"\200\2":
+            data2eexec = data2eexec + consume(pfblength(consume(4)))
+            mark = consume(2)
+        if mark != b"\200\1":
+            raise FontFormatError
+        data3 = consume(pfblength(consume(4))).decode("ascii", errors="surrogateescape")
+        mark = consume(2)
+        if mark != b"\200\3":
+            raise FontFormatError
+        if consume(1):
+            raise FontFormatError
 
-    return T1file(data1, data2eexec, data3)
+        return cls(data1, data2eexec, data3)
 
-def from_PFB_filename(filename):
-    """create a T1file instance from PFB font file of given name"""
-    with open(filename, "rb") as file:
-        t1file = from_PFB_bytes(file.read())
-    return t1file
+    @classmethod
+    def from_PFB_filename(cls, filename):
+        """create a T1File instance from PFB font file of given name"""
+        with open(filename, "rb") as file:
+            t1file = cls.from_PFB_bytes(file.read())
+        return t1file
 
-def from_PF_bytes(bytes):
-    try:
-        return from_PFB_bytes(bytes)
-    except FontFormatError:
-        return from_PFA_bytes(bytes)
+    @classmethod
+    def from_PF_bytes(cls, bytes):
+        try:
+            return cls.from_PFB_bytes(bytes)
+        except FontFormatError:
+            return cls.from_PFA_bytes(bytes)
 
-def from_PF_filename(filename):
-    """create a T1file instance from PFA or PFB font file of given name"""
-    with open(filename, "rb") as file:
-        t1file = from_PF_bytes(file.read())
-    return t1file
+    @classmethod
+    def from_PF_filename(cls, filename):
+        """create a T1File instance from PFA or PFB font file of given name"""
+        with open(filename, "rb") as file:
+            t1file = cls.from_PF_bytes(file.read())
+        return t1file

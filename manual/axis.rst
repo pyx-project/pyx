@@ -499,12 +499,16 @@ label, but for which no label text has been specified so far. A typical case are
 ticks created by partitioners described above.
 
 
-.. class:: decimal(prefix="", infix="", suffix="", equalprecision=0, decimalsep=".", thousandsep="", thousandthpartsep="", plus="", minus="-", period=r"\\overline{%s}", labelattrs=[text.mathmode])
+.. class:: decimal(prefix="", infix="", suffix="", equalprecision=False, decimalsep=".", thousandsep="", thousandthpartsep="", plus="", minus="-", period=r"\\overline{%s}", labelattrs=[text.mathmode])
 
    Instances of this class create decimal formatted labels.
 
    The strings *prefix*, *infix*, and *suffix* are added to the label at the
    beginning, immediately after the plus or minus, and at the end, respectively.
+
+   *equalprecision* forces the same number of digits after *decimalsep*, even
+   when the tailing digits are zero.
+
    *decimalsep*, *thousandsep*, and *thousandthpartsep* are strings used to
    separate integer from fractional part and three-digit groups in the integer and
    fractional part. The strings *plus* and *minus* are inserted in front of the
@@ -518,55 +522,40 @@ ticks created by partitioners described above.
    Text format options like ``text.size`` should instead be set at the painter.
 
 
-.. class:: exponential(plus="", minus="-", mantissaexp=r"{{%s}\\cdot10^{%s}}", skipexp0=r"{%s}", skipexp1=None, nomantissaexp=r"{10^{%s}}", minusnomantissaexp=r"{-10^{%s}}", mantissamin=tick.rational((1, 1)), mantissamax=tick.rational((10L, 1)), skipmantissa1=0, skipallmantissa1=1, mantissatexter=decimal())
+.. class:: default(multiplication_tex=r"\cdot{}", multiplication_unicode="·", base=Fraction(10), skipmantissaunity=skipmantissaunity.all, minusunity="-", minexponent=4, minnegexponent=None, uniformexponent=True, mantissatexter=decimal(), basetexter=decimal(), exponenttexter=decimal(), labelattrs=[text.mathmode])
 
    Instances of this class create decimal formatted labels with an exponential.
 
-   The strings *plus* and *minus* are inserted in front of the unsigned value of
-   the exponent.
+   multiplication_tex and multiplication_unicode are the strings to indicate
+   the multiplication between the mantissa and the base number for the
+   TexEngine and the UnicodeEngine, respecitvely
 
-   The format string *mantissaexp* should generate the exponent. It must contain
-   two string insert operators ``%s``, the first for the mantissa and the second
-   for the exponent. An alternative to the default is ``r"{{%s}{\rm e}{%s}}"``.
+   base is the number of the base of the exponent
 
-   The format string *skipexp0* is used to skip exponent ``0`` and must contain one
-   string insert operator ``%s`` for the mantissa. ``None`` turns off the special
-   handling of exponent ``0``. The format string *skipexp1* is similar to
-   *skipexp0*, but for exponent ``1``.
+   skipmantissaunity is either skipmantissaunity.never (never skip the unity
+   mantissa), skipmantissaunity.each (skip the unity mantissa whenever it occurs
+   for each label separately), or skipmantissaunity.all (skip the unity mantissa
+   whenever if all labels happen to be mantissafixed with unity)
 
-   The format string *nomantissaexp* is used to skip the mantissa ``1`` and must
-   contain one string insert operator ``%s`` for the exponent. ``None`` turns off
-   the special handling of mantissa ``1``. The format string *minusnomantissaexp*
-   is similar to *nomantissaexp*, but for mantissa ``-1``.
+   minusunity is used as the output of -unity for the mantissa
 
-   The :class:`tick.rational` instances *mantissamin*< *mantissamax* are minimum
-   (including) and maximum (excluding) of the mantissa.
+   minexponent is the minimal positive exponent value to be printed by exponential
+   notation
 
-   The boolean *skipmantissa1* enables the skipping of any mantissa equals ``1``
-   and ``-1``, when *minusnomantissaexp* is set. When the boolean
-   *skipallmantissa1* is set, a mantissa equals ``1`` is skipped only, when all
-   mantissa values are ``1``. Skipping of a mantissa is stronger than the skipping
-   of an exponent.
+   minnegexponent is the minimal negative exponent value to be printed by
+   exponential notation, for None it is considered to be equal to minexponent
 
-   *mantissatexter* is a texter instance for the mantissa.
+   uniformexponent forces all numbers to be written in exponential notation when at
+   least one label excets the limits for non-exponential notiation
 
+   mantissatexter, basetexter, and exponenttexter generate the texts for the
+   mantissa, basetexter, and exponenttexter
 
-.. class:: mixed(smallestdecimal=tick.rational((1, 1000)), biggestdecimal=tick.rational((9999, 1)), equaldecision=1, decimal=decimal(), exponential=exponential())
-
-   Instances of this class create decimal formatted labels with an exponential,
-   when the unsigned values are small or large compared to *1*.
-
-   The rational instances *smallestdecimal* and *biggestdecimal* are the smallest
-   and biggest decimal values, where the decimal texter should be used. The sign of
-   the value is ignored here. For a tick at zero the decimal texter is considered
-   best as well. *equaldecision* is a boolean to indicate whether the decision for
-   the decimal or exponential texter should be done globally for all ticks.
-
-   *decimal* and *exponential* are a decimal and an exponential texter instance,
-   respectively.
+   labelattrs is a list of attributes to be added to the label attributes given
+   in the painter"""
 
 
-.. class:: rational(prefix="", infix="", suffix="", numprefix="", numinfix="", numsuffix="", denomprefix="", denominfix="", denomsuffix="", plus="", minus="-", minuspos=0, over=r"%s\\over%s", equaldenom=0, skip1=1, skipnum0=1, skipnum1=1, skipdenom1=1, labelattrs=[text.mathmode])
+.. class:: rational(prefix="", infix="", suffix="", numprefix="", numinfix="", numsuffix="", denomprefix="", denominfix="", denomsuffix="", plus="", minus="-", minuspos=0, over=r"%s\\over%s", equaldenom=False, skip1=True, skipnum0=True, skipnum1=True, skipdenom1=True, labelattrs=[text.mathmode])
 
    Instances of this class create labels formated as fractions.
 

@@ -396,4 +396,7 @@ format.tex_ps_header = format("PostScript header", [".pro"])                    
 format.type1 = format("type1 fonts", [".pfa", ".pfb"])
 format.vf = format("vf", [".vf"])
 format.dvips_config = format("dvips config", [])
+format.ttf = format("truetype fonts", [".ttf", ".ttc", ".TTF", ".TTC", ".dfont"])
+format.t42 = format("type42 fonts", [".t42", ".T42"])
+format.otf = format("opentype fonts", [".otf"])
 

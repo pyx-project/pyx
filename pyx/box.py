@@ -22,6 +22,8 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 
+### TODO: rename center to anchor
+
 import types, math
 from . import bbox, path, unit, trafo
 
@@ -58,9 +60,9 @@ class polygon_pt:
         pathitems.append(path.closepath())
         return path.path(*pathitems)
 
-    def transform(self, *trafos):
+    def transform(self, *trafos, keep_anchor=False):
         for trafo in trafos:
-            if self.center is not None:
+            if self.center is not None and not keep_anchor:
                 self.center = trafo.apply_pt(*self.center)
             self.corners = [trafo.apply_pt(*point) for point in self.corners]
 

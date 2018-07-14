@@ -1,7 +1,7 @@
 PYTHON ?= python3
 
 pyfiles = $(wildcard *.py)
-# pyfiles = $(filter-out test_connector.py test_deformer.py,$(wildcard *.py))
+pyfiles = $(filter-out test_connector.py test_deformer.py,$(wildcard *.py))
 epsfiles = $(patsubst %.py, %.eps, $(pyfiles))
 
 all:

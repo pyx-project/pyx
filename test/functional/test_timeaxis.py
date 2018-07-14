@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import sys; sys.path[:0] = ["../.."]
 
-import time
+import time, datetime
 from pyx import *
 from pyx.graph.axis import timeaxis
 from pyx.graph import data

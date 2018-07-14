@@ -21,7 +21,7 @@
 import atexit, errno, functools, glob, inspect, io, itertools, logging, os
 import queue, re, shutil, sys, tempfile, textwrap, threading
 
-from pyx import config, unit, box, baseclasses, trafo, version, attr, style, path
+from pyx import config, unit, box, baseclasses, trafo, version, attr, style, path, canvas
 from pyx import bbox as bboxmodule
 from pyx.dvi import dvifile
 
@@ -451,6 +451,9 @@ class halign(boxhalign, flushhalign, _localattr):
     def apply(self, expr):
         return r"\gdef\PyXBoxHAlign{%.5f}\gdef\PyXFlushHAlign{%.5f}\PyXragged{}%s" % (self.boxhalign, self.flushhalign, expr)
 
+    def apply_trafo(self, textbox):
+        return textbox.transform(trafo.translate_pt(-self.boxhalign*textbox.bbox().width_pt(), 0), keep_anchor=True)
+
 halign.left = halign(0, 0)
 halign.center = halign(0.5, 0.5)
 halign.right = halign(1, 1)
@@ -463,11 +466,17 @@ halign.flushcenter = halign.raggedcenter = flushhalign.center
 halign.flushright = halign.raggedleft = flushhalign.right
 
 
-class _mathmode(attr.attr, textattr, _localattr):
+class _mathmode(attr.exclusiveattr, textattr, _localattr):
     "math mode"
+
+    def __init__(self):
+        attr.exclusiveattr.__init__(self, _mathmode)
 
     def apply(self, expr):
         return r"$\displaystyle{%s}$" % expr
+
+    def apply_trafo(self, textbox):
+        pass
 
 mathmode = _mathmode()
 clearmathmode = attr.clearclass(_mathmode)
@@ -559,6 +568,9 @@ class _vshiftmathaxis(_vshift):
 
     def setheightexpr(self):
         return r"\setbox0\hbox{$\vcenter{\vrule width0pt}$}\PyXDimenVShift=\ht0"
+
+    def apply_trafo(self, textbox):
+        return textbox.transform(trafo.translate_pt(0, -textbox.mathaxis_pt*unit.scale["x"]), keep_anchor=True)
 
 
 vshift.bottomzero = vshift(0)
@@ -828,17 +840,15 @@ class textextbox_pt(textbox_pt):
         self.fillstyles = fillstyles
 
         self.texttrafo = trafo.scale(unit.scale["x"]).translated_pt(x_pt, y_pt)
-#         box.rect_pt.__init__(self, x_pt - left_pt*unit.scale["x"], y_pt - depth_pt*unit.scale["x"],
-#                                    (left_pt + right_pt)*unit.scale["x"],
-#                                    (depth_pt + height_pt)*unit.scale["x"],
-#                                    abscenter_pt = (left_pt*unit.scale["x"], depth_pt*unit.scale["x"]))
-        box.rect.__init__(self, -self.left, -self.depth, self.left+self.right, self.depth+self.height, abscenter = (self.left, self.depth))
-        box.rect.transform(self, self.texttrafo)
+        box.rect_pt.__init__(self, x_pt - left_pt*unit.scale["x"], y_pt - depth_pt*unit.scale["x"],
+                                   (left_pt + right_pt)*unit.scale["x"],
+                                   (depth_pt + height_pt)*unit.scale["x"],
+                                   abscenter_pt = (left_pt*unit.scale["x"], depth_pt*unit.scale["x"]))
 
         self._dvicanvas = None
 
-    def transform(self, *trafos):
-        box.rect.transform(self, *trafos)
+    def transform(self, *trafos, keep_anchor=False):
+        box.rect.transform(self, *trafos, keep_anchor=keep_anchor)
         for trafo in trafos:
             self.texttrafo = trafo * self.texttrafo
         if self._dvicanvas is not None:
@@ -1262,7 +1272,8 @@ class SingleRunner:
 
         :param float x_pt: x position in pts
         :param float y_pt: y position in pts
-        :param str expr: text to be typeset
+        :param expr: text to be typeset
+        :type expr: str or :class:`MultiEngineText`
         :param textattrs: styles and attributes to be applied to the text
         :type textattrs: list of  :class:`textattr, :class:`trafo.trafo_pt`,
             and :class:`style.fillstyle`
@@ -1285,6 +1296,8 @@ class SingleRunner:
         trafos = attr.getattrs(textattrs, [trafo.trafo_pt])
         fillstyles = attr.getattrs(textattrs, [style.fillstyle])
         textattrs = attr.getattrs(textattrs, [textattr])
+        if isinstance(expr, MultiEngineText):
+            expr = expr.tex
         for ta in textattrs[::-1]:
             expr = ta.apply(expr)
         first = self.state < STATE_TYPESET
@@ -1494,7 +1507,7 @@ class MultiRunner:
             self.preambles = []
 
 
-class TexRunner(MultiRunner):
+class TexEngine(MultiRunner):
 
     def __init__(self, *args, **kwargs):
         """A restartable :class:`SingleTexRunner` class
@@ -1506,7 +1519,7 @@ class TexRunner(MultiRunner):
         super().__init__(SingleTexRunner, *args, **kwargs)
 
 
-class LatexRunner(MultiRunner):
+class LatexEngine(MultiRunner):
 
     def __init__(self, *args, **kwargs):
         """A restartable :class:`SingleLatexRunner` class
@@ -1518,60 +1531,158 @@ class LatexRunner(MultiRunner):
         super().__init__(SingleLatexRunner, *args, **kwargs)
 
 
+from pyx import deco
 from pyx.font import T1font
-from pyx.font.t1file import from_PF_bytes
+from pyx.font.t1file import T1File
 from pyx.font.afmfile import AFMfile
+
+
+class MultiEngineText:
+
+    def __init__(self, tex, unicode):
+        self.tex = tex
+        self.unicode = unicode
+
+
+class Text:
+
+    def __init__(self, text, scale=1, shift=0):
+        self.text = text
+        self.scale = scale
+        self.shift = shift
+
+
+class StackedText:
+
+    def __init__(self, texts, frac=False, align=0):
+        assert not frac or len(texts) == 2
+        self.texts = texts
+        self.frac = frac
+        self.align = align
+
 
 class unicodetextbox_pt(textbox_pt):
 
-    def __init__(self, x_pt, y_pt, text, font, size):
-        self.text = text
+    def __init__(self, x_pt, y_pt, texts, font, size, mathmode=False):
         self.font = font
         self.size = size
+        self.canvas = canvas.canvas()
         self.texttrafo = trafo.scale(unit.scale["x"]).translated_pt(x_pt, y_pt)
-        bbox = self.font.text_pt(0, 0, text, size).bbox()
-        box.rect_pt.__init__(self, -bbox.llx_pt, -bbox.lly_pt, -bbox.llx_pt+bbox.urx_pt, -bbox.lly_pt+bbox.ury_pt, abscenter_pt = (-bbox.llx_pt, -bbox.lly_pt))
+
+        if isinstance(texts, (str, Text, StackedText)):
+            texts = [texts]
+
+        x_pt = 0
+        for text in texts:
+            if isinstance(text, str):
+                text = Text(text)
+            if isinstance(text, Text):
+                if mathmode:
+                    text_fragments = text.text.split('-')
+                else:
+                    text_fragments = [text.text]
+                for i, text_fragment in enumerate(text_fragments):
+                    if i:
+                        self.canvas.fill(path.rect_pt(x_pt+0.5*(self.minuswidth_pt-self.minuslength_pt), self.mathaxis_pt-0.5*self.minusthickness_pt, self.minuslength_pt, self.minusthickness_pt))
+                        x_pt += self.minuswidth_pt
+                    if text_fragment:
+                        try:
+                            t = self.font.text_pt(x_pt, text.shift*self.size, text_fragment, text.scale*self.size)
+                            x_pt += t.bbox().width_pt()
+                        except:
+                            assert '·' in text_fragment
+                            t = self.font.text_pt(x_pt, text.shift*self.size, text_fragment.replace('·', 'x'), text.scale*self.size)
+                            x_pt += t.bbox().width_pt()
+                        self.canvas.insert(t)
+            else:
+                assert isinstance(text, StackedText)
+                shift = self.mathaxis_pt if text.frac else 0
+                ts = [self.font.text_pt(x_pt, text.shift*self.size+shift, text.text, text.scale*self.size)
+                      for text in text.texts]
+                width_pt = max(t.bbox().width_pt() for t in ts)
+                if text.frac:
+                    self.canvas.fill(path.rect_pt(x_pt, self.mathaxis_pt-0.5*self.minusthickness_pt, width_pt, self.minusthickness_pt))
+                for t in ts:
+                    self.canvas.insert(t, [trafo.translate_pt(text.align*(width_pt-t.bbox().width_pt()), 0)] if text.align else [])
+                x_pt += width_pt
+
+        bbox = self.canvas.bbox()
+        bbox.includepoint_pt(0, 0)
+        bbox.includepoint_pt(x_pt, 0)
+        box.rect_pt.__init__(self, bbox.llx_pt, bbox.lly_pt, bbox.urx_pt-bbox.llx_pt, bbox.ury_pt-bbox.lly_pt, abscenter_pt = (0, 0))
         box.rect.transform(self, self.texttrafo)
 
-    def transform(self, *trafos):
-        box.rect.transform(self, *trafos)
+    def _extract_minus_properties(self):
+        minus_path = self.font.text_pt(0, 0, '=', 1).textpath().normpath()
+        minus_path.normsubpaths = [normsubpath for normsubpath in minus_path.normsubpaths if normsubpath]
+        self.font.minusthickness_pt = max(normsubpath.bbox().height_pt() for normsubpath in minus_path.normsubpaths)
+        self.font.halfminuswidth_pt, self.font.mathaxis_pt = minus_path.bbox().center_pt()
+        self.font.minuslength_pt = minus_path.bbox().width_pt()
+
+    @property
+    def mathaxis_pt(self):
+        if not hasattr(self.font, "mathaxis_pt"):
+            self._extract_minus_properties()
+        return self.font.mathaxis_pt*self.size
+
+    @property
+    def minuswidth_pt(self):
+        if not hasattr(self.font, "halfminuswidth_pt"):
+            self._extract_minus_properties()
+        return 2*self.font.halfminuswidth_pt*self.size
+
+    @property
+    def minuslength_pt(self):
+        if not hasattr(self.font, "minuslength_pt"):
+            self._extract_minus_properties()
+        return self.font.minuslength_pt*self.size
+
+    @property
+    def minusthickness_pt(self):
+        if not hasattr(self.font, "minusthickness_pt"):
+            self._extract_minus_properties()
+        return self.font.minusthickness_pt*self.size
+
+    def transform(self, *trafos, keep_anchor=False):
+        box.rect.transform(self, *trafos, keep_anchor=keep_anchor)
         for trafo in trafos:
             self.texttrafo = trafo * self.texttrafo
 
     def bbox(self):
-        scale, x_pt, y_pt = self.homothety()
-        return self.font.text_pt(x_pt, y_pt, self.text, scale*self.size).bbox()
-
-    def homothety(self):
-        assert self.texttrafo.matrix[0][0] == self.texttrafo.matrix[1][1]
-        assert self.texttrafo.matrix[0][1] == 0
-        assert self.texttrafo.matrix[1][0] == 0
-        return self.texttrafo.matrix[0][0], self.texttrafo.vector[0], self.texttrafo.vector[1]
+        return self.canvas.bbox().transformed(self.texttrafo)
 
     def textpath(self):
-        scale, x_pt, y_pt = self.homothety()
-        return self.font.text_pt(x_pt, y_pt, self.text, scale*self.size).textpath()
-
-    def requiretextregion(self):
-        return True
+        r = path.path()
+        for item in self.canvas.items:
+            if isinstance(item, canvas.canvas):
+                for subitem in item.items:
+                    r += subitem.textpath().transformed(item.trafo)
+            elif isinstance(item, deco.decoratedpath):
+                r += item.path
+            else:
+                r += item.textpath()
+        return r.transformed(self.texttrafo)
 
     def processPS(self, file, writer, context, registry, bbox):
-        scale, x_pt, y_pt = self.homothety()
-        self.font.text_pt(x_pt, y_pt, self.text, scale*self.size).processPS(file, writer, context, registry, bbox)
+        c = canvas.canvas([self.texttrafo])
+        c.insert(self.canvas)
+        c.processPS(file, writer, context, registry, bbox)
 
     def processPDF(self, file, writer, context, registry, bbox):
-        scale, x_pt, y_pt = self.homothety()
-        self.font.text_pt(x_pt, y_pt, self.text, scale*self.size).processPDF(file, writer, context, registry, bbox)
+        c = canvas.canvas([self.texttrafo])
+        c.insert(self.canvas)
+        c.processPDF(file, writer, context, registry, bbox)
 
     def processSVG(self, xml, writer, context, registry, bbox):
-        scale, x_pt, y_pt = self.homothety()
-        self.font.text_pt(x_pt, y_pt, self.text, scale*self.size).processSVG(xml, writer, context, registry, bbox)
+        c = canvas.canvas([self.texttrafo])
+        c.insert(self.canvas)
+        c.processSVG(xml, writer, context, registry, bbox)
 
 
-class UnicodeText:
+class UnicodeEngine:
 
     def __init__(self, fontname="cmr10", size=10):
-        self.font = T1font(from_PF_bytes(config.open(fontname, [config.format.type1]).read()), 
+        self.font = T1font(T1File.from_PF_bytes(config.open(fontname, [config.format.type1]).read()), 
                            AFMfile(config.open(fontname, [config.format.afm], ascii=True)))
         self.size = size
 
@@ -1582,16 +1693,51 @@ class UnicodeText:
         raise NotImplemented()
 
     def text_pt(self, x_pt, y_pt, text, textattrs=[], texmessages=[], fontmap=None, singlecharmode=False):
-    # def text_pt(self, x_pt, y_pt, text, *args, **kwargs):
-        return unicodetextbox_pt(x_pt, y_pt, text, self.font, self.size)
+
+        textattrs = attr.mergeattrs(textattrs) # perform cleans
+        attr.checkattrs(textattrs, [textattr, trafo.trafo_pt, style.fillstyle])
+        trafos = attr.getattrs(textattrs, [trafo.trafo_pt])
+        fillstyles = attr.getattrs(textattrs, [style.fillstyle])
+        textattrs = attr.getattrs(textattrs, [textattr])
+        mathmode = bool(attr.getattrs(textattrs, [_mathmode]))
+
+        if isinstance(text, MultiEngineText):
+            text = text.unicode
+        output = unicodetextbox_pt(x_pt, y_pt, text, self.font, self.size, mathmode=mathmode)
+        for ta in textattrs: # reverse?!
+            ta.apply_trafo(output)
+
+        return output
 
     def text(self, x, y, *args, **kwargs):
         return self.text_pt(unit.topt(x), unit.topt(y), *args, **kwargs)
 
 
+# from pyx.font.otffile import OpenTypeFont
+# 
+# class OTFUnicodeText:
+# 
+#     def __init__(self, fontname, size=10):
+#         self.font = OpenTypeFont(config.open(fontname, [config.format.ttf]))
+#         self.size = size
+# 
+#     def preamble(self):
+#         raise NotImplemented()
+# 
+#     def reset(self):
+#         raise NotImplemented()
+# 
+#     def text_pt(self, x_pt, y_pt, text, textattrs=[], texmessages=[], fontmap=None, singlecharmode=False):
+#     # def text_pt(self, x_pt, y_pt, text, *args, **kwargs):
+#         return unicodetextbox_pt(x_pt, y_pt, text, self.font, self.size)
+# 
+#     def text(self, x, y, *args, **kwargs):
+#         return self.text_pt(unit.topt(x), unit.topt(y), *args, **kwargs)
+
+
 # old, deprecated names:
-texrunner = TexRunner
-latexrunner = LatexRunner
+texrunner = TexRunner = TexEngine
+latexrunner = LatexRunner = LatexEngine
 
 # module level interface documentation for autodoc
 # the actual values are setup by the set function
@@ -1611,7 +1757,7 @@ text = None
 #: default_runner.reset (bound method)
 reset = None
 
-def set(cls=TexRunner, mode=None, *args, **kwargs):
+def set(engine=None, cls=None, mode=None, *args, **kwargs):
     """Setup a new module level :class:`MultiRunner`
 
     :param cls: the module level :class:`MultiRunner` to be used, i.e.
@@ -1627,19 +1773,25 @@ def set(cls=TexRunner, mode=None, *args, **kwargs):
     :param dict kwargs: keyword args at at class instantiation
 
     """
-    # note: defaulttexrunner is deprecated
-    global default_runner, defaulttexrunner, reset, preamble, text, text_pt
+    # note: default_runner and defaulttexrunner are deprecated
+    global default_engine, default_runner, defaulttexrunner, reset, preamble, text, text_pt
     if mode is not None:
-        logger.warning("mode setting is deprecated, use the cls argument instead")
-        cls = {"tex": TexRunner, "latex": LatexRunner}[mode.lower()]
-    default_runner = defaulttexrunner = cls(*args, **kwargs)
+        logger.warning("mode setting is deprecated, use the engine argument instead")
+        assert cls is None
+        assert engine is None
+        engine = {"tex": TexEngine, "latex": LatexEngine}[mode.lower()]
+    elif cls is not None:
+        logger.warning("cls setting is deprecated, use the engine argument instead")
+        assert not engine
+        engine = cls
+    default_engine = default_runner = defaulttexrunner = engine(*args, **kwargs)
     preamble = default_runner.preamble
     text_pt = default_runner.text_pt
     text = default_runner.text
     reset = default_runner.reset
 
 # initialize default_runner
-set()
+set({"TexEngine": TexEngine, "LatexEngine": LatexEngine, "UnicodeEngine": UnicodeEngine}[config.get('text', 'default_engine', 'TexEngine')])
 
 
 def escapestring(s, replace={" ": "~",
