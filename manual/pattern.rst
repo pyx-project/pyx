@@ -5,7 +5,7 @@
 Module :mod:`pattern`
 *********************
 
-.. sectionauthor:: Jörg Lehmann <joergl@users.sourceforge.net>
+.. sectionauthor:: Jörg Lehmann <joerg@pyx-project.org>
 
 
 This module contains the :class:`pattern.pattern` class, whichs allows the definition of

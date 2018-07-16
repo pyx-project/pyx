@@ -5,7 +5,7 @@
 Module :mod:`canvas`
 ====================
 
-.. sectionauthor:: Jörg Lehmann <joergl@users.sourceforge.net>
+.. sectionauthor:: Jörg Lehmann <joerg@pyx-project.org>
 
 
 In addition it

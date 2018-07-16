@@ -207,7 +207,7 @@ latex_documents = [
 # Additional stuff for the LaTeX preamble.
 latex_preamble = r'''
   \hypersetup{pdftitle={PyX Manual},
-              pdfauthor={Joerg Lehmann <joergl@users.sourceforge.net>, Michael Schindler <m-schindler@users.sourceforge.net>, Andre Wobst <wobsta@users.sourceforge.net>},
+              pdfauthor={Joerg Lehmann <joerg@pyx-project.org>, Michael Schindler <m-schindler@users.sourceforge.net>, Andre Wobst <wobsta@pyx-project.org>},
               pdfsubject={PyX Manual},
               pdfkeywords={PyX, graphics, manual}}
 '''

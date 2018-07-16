@@ -5,7 +5,7 @@
 Module :mod:`path`
 ==================
 
-.. sectionauthor:: Jörg Lehmann <joergl@users.sourceforge.net>
+.. sectionauthor:: Jörg Lehmann <joerg@pyx-project.org>
 
 
 The :mod:`path` module defines several important classes which are documented in

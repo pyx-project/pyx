@@ -5,7 +5,7 @@
 Basic graphics
 **************
 
-.. sectionauthor:: Jörg Lehmann <joergl@users.sourceforge.net>
+.. sectionauthor:: Jörg Lehmann <joerg@pyx-project.org>
 
 
 Introduction

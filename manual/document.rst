@@ -5,7 +5,7 @@
 Module :mod:`document`
 ======================
 
-.. sectionauthor:: Jörg Lehmann <joergl@users.sourceforge.net>
+.. sectionauthor:: Jörg Lehmann <joerg@pyx-project.org>
 
 The document module contains two classes: :class:`document` and :class:`page`. A
 :class:`document` consists of one or several :class:`page`\ s.

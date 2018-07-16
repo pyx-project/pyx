@@ -1,7 +1,7 @@
 # -*- encoding: utf-8 -*-
 #
 #
-# Copyright (C) 2006-2011 André Wobst <wobsta@users.sourceforge.net>
+# Copyright (C) 2006-2011 André Wobst <wobsta@pyx-project.org>
 #
 # This file is part of PyX (http://pyx.sourceforge.net/).
 #

@@ -2,7 +2,7 @@
 #
 #
 # Copyright (C) 2005-2006 Michael Schindler <m-schindler@users.sourceforge.net>
-# Copyright (C) 2006 André Wobst <wobsta@users.sourceforge.net>
+# Copyright (C) 2006 André Wobst <wobsta@pyx-project.org>
 #
 # This file is part of PyX (http://pyx.sourceforge.net/).
 #

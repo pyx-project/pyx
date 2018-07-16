@@ -1,6 +1,6 @@
-# Copyright (C) 2002-2013 Jörg Lehmann <joergl@users.sourceforge.net>
+# Copyright (C) 2002-2013 Jörg Lehmann <joerg@pyx-project.org>
 # Copyright (C) 2003-2011 Michael Schindler <m-schindler@users.sourceforge.net>
-# Copyright (C) 2002-2013 André Wobst <wobsta@users.sourceforge.net>
+# Copyright (C) 2002-2013 André Wobst <wobsta@pyx-project.org>
 #
 # This file is part of PyX (http://pyx.sourceforge.net/).
 #
