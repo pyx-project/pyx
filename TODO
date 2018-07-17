@@ -30,6 +30,8 @@ Code:
     this depends on the plattform and is not only an issue within the graph system)
 - graph.style module:
   - add styles using curves instead of lines
+  - rework graph.style.arrow: size argument should be called length and arrowsize should be able to be controlled separately.
+    one might also want to color-code the arrows
 - graph.texter module:
   - rename period argument of decimal texters to recurring_decimal or something similar (as pointed out
     by Tim Head)
