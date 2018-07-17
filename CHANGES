@@ -10,6 +10,8 @@
       deprecation warning in place)
     - improve error handling when input cannot be encoded by texenc
     - add support for virtual fonts in virtual fonts
+    - font maps: treat font files without extension as Type 1 (to
+      prevent warnings occuring especially with Minion or Libertine fonts)
   - new examples
     - non-ASCII TeX encoding
   - t1font

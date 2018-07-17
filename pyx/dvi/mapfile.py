@@ -91,7 +91,10 @@ class MAPline:
                 elif token.endswith(".t42"):
                     raise UnsupportedFontFormat("Type 42 font")
                 else:
-                    raise ParseError("Unknown token '%s'" % token)
+                    # Assume (as in pdftex's mapfile.c) that we are dealing with a Type 1 font.
+                    # Note that this case has in particular appeared with the MinLibertine fonts,
+                    # for which this heuristics seems to work well.
+                    self.fontfilename = token[1:]
             elif token.startswith('"'):
                 pscode = token[1:-1].split()
                 # parse standard postscript code fragments
