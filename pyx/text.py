@@ -1182,7 +1182,7 @@ class SingleRunner:
                 self.texinput = Tee(open(self.copyinput, "w", encoding=self.texenc), self.texinput)
             else:
                 self.texinput = Tee(self.copyinput, self.texinput)
-        self.texoutput = MonitorOutput(self.name, io.TextIOWrapper(self.popen.stdout, encoding=self.texenc))
+        self.texoutput = MonitorOutput(self.name, io.TextIOWrapper(self.popen.stdout, encoding=self.texenc, errors="surrogateescape"))
         self._execute("\\scrollmode\n\\raiseerror%\n" # switch to and check scrollmode
                       "\\def\\PyX{P\\kern-.3em\\lower.5ex\hbox{Y}\kern-.18em X}%\n" # just the PyX Logo
                       "\\gdef\\PyXBoxHAlign{0}%\n" # global PyXBoxHAlign (0.0-1.0) for the horizontal alignment, default to 0
