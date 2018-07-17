@@ -1,5 +1,13 @@
 0.15 (2016/xx/xx):
   - text module:
+    - introduce UnicodeEngine
+    - MultiEngineText to express combined text data for TeX based engines and
+      the new UnicodeEngine
+    - Text and StackedText classes for simple typesetting operations on
+      UnicodeEngine text
+    - rename TexRunner and LatexRunner to TexEngine and LatexEngine
+    - rename cls argument of text.set to engine (with fallback and
+      deprecation warning in place)
     - improve error handling when input cannot be encoded by texenc
     - add support for virtual fonts in virtual fonts
   - new examples
@@ -7,6 +15,9 @@
   - t1font
     - use integers in auto-guessed font descriptors to prevent an issue in pdftex
     - fix typo: ItalicAngles -> ItalicAngle (thanks to Ross Moore)
+  - graph.axis.texter
+    - unify exponential and mixed texter to default texter
+    - use MultiEngineText in all texters (decimal, default, factional)
 
 0.14.1 (2015/11/02):
   - distribution:
