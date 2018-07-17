@@ -12,11 +12,13 @@
     - add support for virtual fonts in virtual fonts
     - font maps: treat font files without extension as Type 1 (to
       prevent warnings occuring especially with Minion or Libertine fonts)
-    - fix UnicodeDecodeError for invalide character responses by TeX/LaTeX
+    - fix UnicodeDecodeError for invalid character responses by TeX/LaTeX
+      (reported by Gert Ingold)
   - new examples
     - non-ASCII TeX encoding
   - t1font
     - use integers in auto-guessed font descriptors to prevent an issue in pdftex
+      (reported by Michael Hartmann)
     - fix typo: ItalicAngles -> ItalicAngle (thanks to Ross Moore)
   - graph.axis.texter
     - unify exponential and mixed texter to default texter
