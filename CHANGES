@@ -23,6 +23,8 @@
   - graph.axis.texter
     - unify exponential and mixed texter to default texter
     - use MultiEngineText in all texters (decimal, default, factional)
+  - version control:
+    - switched to git on 2018/07/16 with main repository on GitHub
 
 0.14.1 (2015/11/02):
   - distribution:
