@@ -22,7 +22,7 @@ Where do I get the latest version of PyX?
 =========================================
 
 The current release of PyX (as well as older ones) is freely available from
-`https://pyx-project.org <http://pyx.sourceforge.net>`_ where also a
+`https://pyx-project.org <https://pyx-project.org>`_ where also a
 subversion repository with the latest patches can be found. In addition, PyX is
 registered on the Python Package Index at
 `https://pypi.python.org/pypi/PyX <https://pypi.python.org/pypi/PyX>`_ and can
@@ -165,7 +165,7 @@ Where can I get help if my question is not answered in this FAQ?
 ================================================================
 
 The PyX sources contain a reference manual which is also available online at
-`https://pyx-project.org/manual/ <http://pyx.sourceforge.net/manual/>`_.
+`https://pyx-project.org/manual/ <https://pyx-project.org/manual/>`_.
 Furthermore, there exists a set of examples demonstrating various features of
 PyX, which is available in the sources or can be browsed at
 `https://pyx-project.org/examples.html

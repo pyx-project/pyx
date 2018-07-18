@@ -15,8 +15,8 @@ Documentation
 -------------
 
 A prebuilt version of the manual can be found on the PyX webpage under
-http://pyx.sourceforge.net/manual.pdf. For answers to frequently asked
-questions, we refer to http://pyx.sourceforge.net/pyxfaq.pdf. We also recommend
+https://pyx-project.org/manual.pdf. For answers to frequently asked
+questions, we refer to https://pyx-project.org/pyxfaq.pdf. We also recommend
 taking a look on the nice examples for the use of PyX, which can be found in
 the examples directory.
 
