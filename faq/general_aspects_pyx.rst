@@ -22,7 +22,7 @@ Where do I get the latest version of PyX?
 =========================================
 
 The current release of PyX (as well as older ones) is freely available from
-`http://pyx.sourceforge.net <http://pyx.sourceforge.net>`_ where also a
+`https://pyx-project.org <http://pyx.sourceforge.net>`_ where also a
 subversion repository with the latest patches can be found. In addition, PyX is
 registered on the Python Package Index at
 `https://pypi.python.org/pypi/PyX <https://pypi.python.org/pypi/PyX>`_ and can
@@ -165,11 +165,11 @@ Where can I get help if my question is not answered in this FAQ?
 ================================================================
 
 The PyX sources contain a reference manual which is also available online at
-`http://pyx.sourceforge.net/manual/ <http://pyx.sourceforge.net/manual/>`_.
+`https://pyx-project.org/manual/ <http://pyx.sourceforge.net/manual/>`_.
 Furthermore, there exists a set of examples demonstrating various features of
 PyX, which is available in the sources or can be browsed at
-`http://pyx.sourceforge.net/examples.html
-<http://pyx.sourceforge.net/examples.html>`_.  If the feature you are looking
+`https://pyx-project.org/examples.html
+<https://pyx-project.org/examples.html>`_.  If the feature you are looking
 for is among them, using the appropriate part of the example code or adapting
 it for your purposes may help.
 
@@ -180,7 +180,7 @@ discussion list is available at
 `http://sourceforge.net/mailarchive/forum.php?forum_name=pyx-user
 <http://sourceforge.net/mailarchive/forum.php?forum_name=pyx-user>`_.
 
-Finally, it might be worth checking `http://pyx.sourceforge.net/pyxfaq.pdf
-<http://pyx.sourceforge.net/pyxfaq.pdf>`_ for an updated version of this FAQ.
+Finally, it might be worth checking `https://pyx-project.org/pyxfaq.pdf
+<https://pyx-project.org/pyxfaq.pdf>`_ for an updated version of this FAQ.
 
 .. [#texbook] D.Knuth, *The TeX book* (Addison-Wesley, 1984) 

@@ -3,7 +3,7 @@
 #
 # Copyright (C) 2015 André Wobst <wobsta@pyx-project.org>
 #
-# This file is part of PyX (http://pyx.sourceforge.net/).
+# This file is part of PyX (https://pyx-project.org/).
 #
 # PyX is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by

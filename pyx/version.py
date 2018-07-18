@@ -5,7 +5,7 @@
 # Copyright (C) 2002-2012 André Wobst <wobsta@pyx-project.org>
 # Copyright (C) 2011 Michael Schindler <m-schindler@users.sourceforge.net>
 #
-# This file is part of PyX (http://pyx.sourceforge.net/).
+# This file is part of PyX (https://pyx-project.org/).
 #
 # PyX is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
