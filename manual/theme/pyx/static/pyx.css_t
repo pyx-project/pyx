@@ -1,0 +1,83 @@
+@import url("default.css");
+
+div.document {
+    background-image: url(navbg.png);
+    background-repeat: repeat-y;
+}
+
+div.bodywrapper {
+    border-left: 1px solid #88a;
+}
+
+div.body {
+    max-width: none;
+}
+
+div.sidebarbox {
+    width: 140px;
+    margin-top: 20px;
+    margin-left: 9px;
+    padding: 10px;
+    border: 1px dashed #88a;
+    background-color: #dcf;
+}
+
+div.relatedtop {
+    border-bottom: 1px solid #88a;
+}
+
+div.relatedbottom {
+    border-top: 1px solid #88a;
+    border-bottom: 1px solid #88a;
+}
+
+div.sphinxsidebar {
+    font-size: 10pt;
+}
+
+div.sphinxsidebar h3 {
+    border-bottom: 1px solid #88a;
+    font-weight: bold;
+    margin: 0 0 10px 0;
+    padding: 0;
+    font-size: 13pt;
+}
+
+div.sphinxsidebar ul {
+    margin: 0;
+}
+
+div.body h1,
+div.body h2,
+div.body h3,
+div.body h4,
+div.body h5,
+div.body h6 {
+    font-weight: bolder;
+    border-bottom: 1px solid #88a;
+    margin: 20px 0px 10px 0px;
+    padding: 3px 0;
+}
+
+div.body h1 { margin-top: 0; font-size: 150%; }
+div.body h2 { font-size: 130%; }
+div.body h3 { font-size: 120%; }
+div.body h4 { font-size: 110%; }
+div.body h5 { font-size: 100%; }
+div.body h6 { font-size: 90%; }
+
+div.topic {
+    background-color: #eed;
+}
+
+th {
+    background-color: {{ theme_bgcolor }};
+}
+
+code {
+    background-color: {{ theme_bgcolor }};
+}
+
+div.sphinxsidebar #searchbox input[type="submit"] {
+    float: none;
+}
