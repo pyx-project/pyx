@@ -23,6 +23,11 @@
   - graph.axis.texter
     - unify exponential and mixed texter to default texter
     - use MultiEngineText in all texters (decimal, default, factional)
+  - pdfwriter, pswriter, svgwriter:
+    - removed underscore in  PS and PDF and SVG writer options strip_fonts,
+      text_as_path, mesh_as_bitmap, mesh_as_bitmap_resolution
+      (new: stripfonts, textaspath, meshasbitmap and meshasbitmapresolution)
+      to prevent ambiquity with write_ prefixes.
   - version control:
     - switched to git on 2018/07/16 with main repository on GitHub
 

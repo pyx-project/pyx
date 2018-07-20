@@ -175,10 +175,16 @@ class SVGGenerator(xml.sax.saxutils.XMLGenerator):
 
 class SVGwriter:
 
-    def __init__(self, document, file, text_as_path=True, mesh_as_bitmap_resolution=300):
+    def __init__(self, document, file, textaspath=True, meshasbitmapresolution=300, text_as_path=None, mesh_as_bitmap_resolution=None):
         self._fontmap = None
-        self.text_as_path = text_as_path
-        self.mesh_as_bitmap_resolution = mesh_as_bitmap_resolution
+        if text_as_path is not None:
+            logger.warning("SVGwriter: text_as_path deprecated, use textaspath instead")
+            textaspath = text_as_path
+        self.textaspath = textaspath
+        if mesh_as_bitmap_resolution is not None:
+            logger.warning("SVGwriter: mesh_as_bitmap_resolution deprecated, use meshasbitmapresolution instead")
+            meshasbitmapresolution = mash_as_bitmap_resolution
+        self.meshasbitmapresolution = meshasbitmapresolution
 
         # dictionary mapping font names to dictionaries mapping encoding names to encodings
         # encodings themselves are mappings from glyphnames to codepoints

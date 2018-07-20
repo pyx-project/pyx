@@ -41,25 +41,25 @@ Class :class:`document`
 A :class:`document` can be written to a file using one of the following methods:
 
 
-.. method:: document.writeEPSfile(file, title=None, strip_fonts=True, text_as_path=False, mesh_as_bitmap=False, mesh_as_bitmap_resolution=300)
+.. method:: document.writeEPSfile(file, title=None, stripfonts=True, textaspath=False, meshasbitmap=False, meshasbitmapresolution=300)
 
    Write a single page :class:`document` to an EPS file or to stdout if *file* is
-   set to *-*. *title* is used as the document title, *strip_fonts* enabled
-   font stripping (removal of unused glyphs), *text_as_path* converts all text
-   to paths instead of using fonts in the output, *mesh_as_bitmap* converts
+   set to *-*. *title* is used as the document title, *stripfonts* enabled
+   font stripping (removal of unused glyphs), *textaspath* converts all text
+   to paths instead of using fonts in the output, *meshasbitmap* converts
    meshs (like 3d surface plots) to bitmaps (to reduce complexity in the
-   output) and *mesh_as_bitmap_resolution* is the resolution of this conversion
+   output) and *meshasbitmapresolution* is the resolution of this conversion
    in dots per inch.
 
 
-.. method:: document.writePSfile(file, writebbox=False, title=None, strip_fonts=True, text_as_path=False, mesh_as_bitmap=False, mesh_as_bitmap_resolution=300)
+.. method:: document.writePSfile(file, writebbox=False, title=None, stripfonts=True, textaspath=False, meshasbitmap=False, meshasbitmapresolution=300)
 
    Write :class:`document` to a PS file or to to stdout if *file* is set to
    *-*. *writebbox* add the page bounding boxes to the output. All other
    parameters are identical to the :meth:`writeEPSfile` method.
 
 
-.. method:: document.writePDFfile(file, title=None, author=None, subject=None, keywords=None, fullscreen=False, writebbox=False, compress=True, compresslevel=6, strip_fonts=True, text_as_path=False, mesh_as_bitmap=False, mesh_as_bitmap_resolution=300)
+.. method:: document.writePDFfile(file, title=None, author=None, subject=None, keywords=None, fullscreen=False, writebbox=False, compress=True, compresslevel=6, stripfonts=True, textaspath=False, meshasbitmap=False, meshasbitmapresolution=300)
 
    Write :class:`document` to a PDF file or to stdout if *file* is set to *-*.
    *author*, *subject*, and *keywords* are used for the document author,
@@ -70,13 +70,13 @@ A :class:`document` can be written to a file using one of the following methods:
    parameters are identical to the :meth:`writeEPSfile`.
 
 
-.. method:: document.writeSVGfile(file, text_as_path=True, mesh_as_bitmap_resolution=300)
+.. method:: document.writeSVGfile(file, textaspath=True, meshasbitmapresolution=300)
 
    Write :class:`document` to a SVG file or to stdout if *file* is set to *-*.
-   The *text_as_path* and *mesh_as_bitmap_resolution* have the same meaning as
+   The *textaspath* and *meshasbitmapresolution* have the same meaning as
    in :meth:`writeEPSfile`. However, not the different default for
-   *text_as_path* due to the missing SVG font support by current browsers.
-   In addition, there is no *mesh_as_bitmap* flag, as meshs are always stored
+   *textaspath* due to the missing SVG font support by current browsers.
+   In addition, there is no *meshasbitmap* flag, as meshs are always stored
    using bitmaps in SVG.
 
 

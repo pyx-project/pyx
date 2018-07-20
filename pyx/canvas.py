@@ -225,7 +225,7 @@ class canvas(baseclasses.canvasitem):
                     self.trafo.processPDF(file, writer, context, registry)
             nbbox = bboxmodule.empty()
             for item in self.items:
-                if not writer.text_as_path:
+                if not writer.textaspath:
                     if item.requiretextregion():
                         if not textregion:
                             file.write("BT\n")

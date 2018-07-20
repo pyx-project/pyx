@@ -49,7 +49,7 @@ class PST1file(pswriter.PSresource):
 
     def output(self, file, writer, registry):
         file.write("%%%%BeginFont: %s\n" % self.t1file.name)
-        if writer.strip_fonts:
+        if writer.stripfonts:
             if self.glyphnames:
                 file.write("%%Included glyphs: %s\n" % " ".join(self.glyphnames))
             if self.charcodes:
@@ -274,7 +274,7 @@ class PDFfontfile(pdfwriter.PDFobject):
         self.charcodes.update(other.charcodes)
 
     def write(self, file, writer, registry):
-        if writer.strip_fonts:
+        if writer.stripfonts:
             self.t1file.getstrippedfont(self.glyphnames, self.charcodes).outputPDF(file, writer)
         else:
             self.t1file.outputPDF(file, writer)
@@ -538,9 +538,9 @@ class T1text_pt(text_pt):
         if not self.ignorebbox:
             bbox += self.bbox()
 
-        if writer.text_as_path and not self.font.t1file:
+        if writer.textaspath and not self.font.t1file:
             logger.warning("Cannot output text as path when font not given by a font file (like for builtin fonts).")
-        if writer.text_as_path and self.font.t1file:
+        if writer.textaspath and self.font.t1file:
             deco.decoratedpath(self.textpath(), fillstyles=[]).processPS(file, writer, context, registry, bbox)
         else:
             # register resources
@@ -603,9 +603,9 @@ class T1text_pt(text_pt):
         if not self.ignorebbox:
             bbox += self.bbox()
 
-        if writer.text_as_path and not self.font.t1file:
+        if writer.textaspath and not self.font.t1file:
             logger.warning("Cannot output text as path when font not given by a font file (like for builtin fonts).")
-        if writer.text_as_path and self.font.t1file:
+        if writer.textaspath and self.font.t1file:
             deco.decoratedpath(self.textpath(), fillstyles=[]).processPDF(file, writer, context, registry, bbox)
         else:
             if self.decode:
@@ -693,13 +693,13 @@ class T1text_pt(text_pt):
         if not self.ignorebbox:
             bbox += self.bbox()
 
-        # this is too common to be warned about as text_as_path is the
+        # this is too common to be warned about as textaspath is the
         # default for svg due to the missing font support by current browsers
         #
-        # if writer.text_as_path and not self.font.t1file:
+        # if writer.textaspath and not self.font.t1file:
         #     logger.warning("Cannot output text as path when font not given by a font file (like for builtin fonts).")
 
-        if writer.text_as_path and self.font.t1file:
+        if writer.textaspath and self.font.t1file:
             deco.decoratedpath(self.textpath(), fillstyles=[]).processSVG(xml, writer, context, registry, bbox)
         else:
             if self.font.t1file is not None:

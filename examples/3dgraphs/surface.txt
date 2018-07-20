@@ -9,11 +9,11 @@ hole in the surface.
 you may want to replace the mesh by a bitmap rasterized on a different (i.e.
 lower) resolution. This can reduce the file size and may also resolve various
 printing problems (unfortunately those are quite common with mesh data). To
-enable the mesh by bitmap replacement feature use the option `mesh_as_bitmap`
-(together with its `mesh_as_bitmap_resolution` option)::
+enable the mesh by bitmap replacement feature use the option `meshasbitmap`
+(together with its `meshasbitmapresolution` option)::
 
-    g.writeEPSfile(write_mesh_as_bitmap=True)
-    g.writePDFfile(write_mesh_as_bitmap=True)
+    g.writeEPSfile(write_meshasbitmap=True)
+    g.writePDFfile(write_meshasbitmap=True)
 
 !! The underlying rectangular grid is created by the gridpos style. By changing
 its parameters you can also create the base rectangular grid from others than

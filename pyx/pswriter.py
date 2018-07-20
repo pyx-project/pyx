@@ -95,13 +95,26 @@ class PSdefinition(PSresource):
 
 class _PSwriter:
 
-    def __init__(self, title=None, strip_fonts=True, text_as_path=False, mesh_as_bitmap=False, mesh_as_bitmap_resolution=300):
+    def __init__(self, title=None, 
+                 stripfonts=True, textaspath=False, meshasbitmap=False, meshasbitmapresolution=300,
+                 strip_fonts=None, text_as_path=None, mesh_as_bitmap=None, mesh_as_bitmap_resolution=None):
         self._fontmap = None
         self.title = title
-        self.strip_fonts = strip_fonts
-        self.text_as_path = text_as_path
-        self.mesh_as_bitmap = mesh_as_bitmap
-        self.mesh_as_bitmap_resolution = mesh_as_bitmap_resolution
+        if strip_fonts is not None:
+            logger.warning("(E)PSwriter: strip_fonts deprecated, use stripfonts instead")
+            stripfonts = strip_fonts
+        self.stripfonts = stripfonts
+        if text_as_path is not None:
+            logger.warning("(E)PSwriter: text_as_path deprecated, use textaspath instead")
+            textaspath = text_as_path
+        self.textaspath = textaspath
+        if mesh_as_bitmap is not None:
+            logger.warning("(E)PSwriter: mesh_as_bitmap deprecated, use meshasbitmap instead")
+            meshasbitmap = mash_as_bitmap
+        self.meshasbitmap = meshasbitmap
+        if mesh_as_bitmap_resolution is not None:
+            logger.warning("PSwriter: mesh_as_bitmap_resolution deprecated, use meshasbitmapresolution instead")
+            meshasbitmapresolution = mash_as_bitmap_resolution
 
         # dictionary mapping font names to dictionaries mapping encoding names to encodings
         # encodings themselves are mappings from glyphnames to codepoints
