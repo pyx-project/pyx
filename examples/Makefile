@@ -6,19 +6,23 @@ pyfiles = $(addsuffix .py, $(files))
 epsfiles = $(addsuffix .eps, $(files))
 pdffiles = $(addsuffix .pdf, $(files))
 pngfiles = $(addsuffix .png, $(files))
+svgfiles = $(addsuffix .svg, $(files))
 ipynbfiles = $(addsuffix .ipynb, $(files))
 thumbpngfiles = $(addsuffix _thumb.png, $(files))
 
 .PRECIOUS: $(epsfiles) $(pngfiles)
 
 all:
-	rm -f $(epsfiles) $(pdffiles) $(pngfiles) $(ipynbfiles) $(thumbpngfiles)
-	make $(ipynbfiles)
-	make $(thumbpngfiles)
+	$(MAKE) clean
+	$(MAKE) $(ipynbfiles)
+	$(MAKE) $(thumbpngfiles)
+
+clean:
+	rm -f $(epsfiles) $(pdffiles) $(pngfiles) $(svgfiles) $(ipynbfiles) $(thumbpngfiles)
 
 all_without_remove:
-	make $(ipynbfiles)
-	make $(thumbpngfiles)
+	$(MAKE) $(ipynbfiles)
+	$(MAKE) $(thumbpngfiles)
 
 %.eps: %.py
 	cd $(dir $^); PYTHONPATH=$(CURDIR)/.. $(PYTHON) -W default $(notdir $^)
