@@ -8,7 +8,7 @@ texter2 = axis.texter.rational()
 class piaxis(axis.linear):
 
     def __init__(self, divisor=math.pi,
-                 texter=axis.texter.rational(suffix="\pi"), **kwargs):
+                 texter=axis.texter.rational(suffix=r"\pi"), **kwargs):
         axis.linear.__init__(self, divisor=divisor, texter=texter, **kwargs)
 
 p1 = path.path(path.moveto(0, 0), path.curveto(3, 0, 1, 4, 4, 4))
