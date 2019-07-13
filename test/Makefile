@@ -1,14 +1,22 @@
 PYTHON ?= python3
 
-.PHONY:unit functional doc
+.PHONY:unit functional svg doctest
 
-all:unit functional doc
+all:unit functional svg doctest
+
+clean:
+	cd functional; $(MAKE) clean
+	cd svg; $(MAKE) clean
 
 unit:
 	cd unit; $(PYTHON) test.py
 
 functional:
-	cd functional; make
+	cd functional; $(MAKE)
 
-doc:
-	cd ../pyx; nosetests --with-doctest
+svg:
+	cd svg; $(MAKE)
+
+doctest:
+	cd ../manual; $(MAKE) doctest
+
