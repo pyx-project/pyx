@@ -18,6 +18,7 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
+
 import atexit, errno, functools, glob, inspect, io, itertools, logging, os
 import queue, re, shutil, sys, tempfile, textwrap, threading
 
@@ -43,6 +44,11 @@ def remove_string(p, s):
     :returns: tuple of the result string and a success boolean (``True`` when
         the string was removed)
     :rtype: tuple of str and bool
+
+    .. testsetup::
+
+        import re
+        from pyx.text import *
 
     Example:
         >>> remove_string("XXX", "abcXXXdefXXXghi")
@@ -116,13 +122,6 @@ def index_all(c, s):
 
 
 def pairwise(i):
-    """Returns iterator over pairs of data from an iterable.
-
-    Example:
-        >>> list(pairwise([1, 2, 3]))
-        [(1, 2), (2, 3)]
-
-    """
     a, b = itertools.tee(i)
     next(b, None)
     return zip(a, b)
