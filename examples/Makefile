@@ -25,7 +25,7 @@ all_without_remove:
 	$(MAKE) $(thumbpngfiles)
 
 %.eps: %.py
-	cd $(dir $^); PYTHONPATH=$(CURDIR)/.. $(PYTHON) -W default $(notdir $^)
+	cd $(dir $^); $(PYTHON) -W default $(notdir $^)
 
 %.ipynb: %.png
 	$(PYTHON) $(CURDIR)/../www/mkipynb.py $@

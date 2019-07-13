@@ -30,13 +30,13 @@ html: figs
 latexpdf: figs
 	$(SPHINXBUILD) -b latex $(ALLSPHINXOPTS) $(BUILDDIR)/latex
 	@echo "Running LaTeX files through pdflatex..."
-	make -C $(BUILDDIR)/latex all-pdf
+	$(MAKE) -C $(BUILDDIR)/latex all-pdf
 	@echo "pdflatex finished; the PDF files are in $(BUILDDIR)/latex."
 
 figs: $(patsubst %.py, %.png, $(filter-out conf.py,$(wildcard *.py)))
 
 %.pdf: %.py
-	export PYTHONPATH=$(CURDIR)/.. ; $(PYTHON) $^
+	$(PYTHON) $^
 
 %.png: %.pdf
 	$(GS) -r100 -dNOPAUSE -dQUIET -dBATCH -sDEVICE=pngalpha -dTextAlphaBits=4 -dGraphicsAlphaBits=4 -sOutputFile=$@ $^

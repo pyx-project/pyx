@@ -9,6 +9,6 @@ clean:
 	-rm $(pngfiles)
 
 %.png: %.py
-	export PYTHONPATH=$(CURDIR)/../.. ; cd $(dir $^) ; $(PYTHON) $(notdir $^)
+	$(PYTHON) $^
 	$(GS) -r100 -dEPSCrop -dNOPAUSE -dQUIET -dBATCH -sDEVICE=pngalpha -dTextAlphaBits=4 -dGraphicsAlphaBits=4 -sOutputFile=$@ $*.eps
 	rm $*.eps

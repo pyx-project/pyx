@@ -2,12 +2,12 @@ PYTHON ?= python3
 
 default: build
 
-publicserver = web.sourceforge.net
-publicpath = /home/groups/p/py/pyx/htdocs
+publicserver = my
+publicpath = pyx/www
 
 all:
-	make clean
-	make build
+	$(MAKE) clean
+	$(MAKE) build
 
 clean:
 	rm -r build
