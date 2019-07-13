@@ -40,18 +40,52 @@ except ImportError:
 # returned can be called (multiple times) and return an open file. The
 # opening of the file might fail with a IOError which indicates, that the
 # file could not be found at the given location.
-# names is a list of kpsewhich format names to be used for searching where as
-# extensions is a list of file extensions to be tried (including the dot). Note
-# that the list of file extenions should include an empty string to not add
-# an extension at all.
+# formats is a list of kpsewhich formats to be used for searching.
+
+class format:
+    def __init__(self, name, extensions):
+        self.name = name
+        self.extensions = extensions
+
+format.tfm = format("tfm", [".tfm"])
+format.afm = format("afm", [".afm"])
+format.fontmap = format("map", [".map"])
+format.pict = format("graphic/figure", [".eps", ".epsi"])
+format.tex_ps_header = format("PostScript header", ["", ".pro"])                    # contains also: enc files
+format.type1 = format("type1 fonts", [".pfa", ".pfb"])
+format.vf = format("vf", [".vf"])
+format.dvips_config = format("dvips config", [])
+format.ttf = format("truetype fonts", [".ttf", ".ttc", ".TTF", ".TTC", ".dfont"])
+format.t42 = format("type42 fonts", [".t42", ".T42"])
+format.otf = format("opentype fonts", [".otf"])
+format.pyx = format("PyX", [])
 
 locator_classes = {}
+
+def full_filenames(filename, formats):
+    # If filename ends with one of the extensions, return the filename.
+    for format in formats:
+        for extension in format.extensions:
+            if filename.endswith(extension):
+                yield filename
+                return
+
+    # Otherwise return all possible combinations of filename and extensions.
+    # When no extention is defined, the unchanged filename is included.
+    result = []
+    for format in formats:
+        if format.extensions:
+            for extension in format.extensions:
+                yield filename+extension
+        else:
+            yield filename
+
 
 class local:
     """locates files in the current directory"""
 
-    def openers(self, filename, names, extensions):
-        return [lambda extension=extension: builtinopen(filename+extension, "rb") for extension in extensions]
+    def openers(self, filename, formats):
+        return [lambda: builtinopen(full_filename, "rb") for full_filename in full_filenames(filename, formats)]
 
 locator_classes["local"] = local
 
@@ -59,9 +93,8 @@ locator_classes["local"] = local
 class internal:
     """locates files within the PyX data tree"""
 
-    def openers(self, filename, names, extensions):
-        for extension in extensions:
-            full_filename = filename+extension
+    def openers(self, filename, formats):
+        for full_filename in full_filenames(filename, formats):
             dir = os.path.splitext(full_filename)[1][1:]
             try:
                 data = pkgutil.get_data("pyx", "data/%s/%s" % (dir, full_filename))
@@ -80,12 +113,14 @@ class recursivedir:
 
     def __init__(self):
         self.dirs = getlist("filelocator", "recursivedir")
-        self.full_filenames = {}
+        self.path_cache = {}
 
-    def openers(self, filename, names, extensions):
-        for extension in extensions:
-            if filename+extension in self.full_filenames:
-                return [lambda: builtinopen(self.full_filenames[filename+extension], "rb")]
+    def openers(self, filename, formats):
+        filenames = list(full_filenames(filename, formats))
+        for filename in filenames:
+            if filename in self.path_cache:
+                return [lambda: builtinopen(self.path_cache[filename], "rb")]
+        found = None
         while self.dirs:
             dir = self.dirs.pop(0)
             for item in os.listdir(dir):
@@ -93,10 +128,11 @@ class recursivedir:
                 if os.path.isdir(full_item):
                     self.dirs.insert(0, full_item)
                 else:
-                    self.full_filenames[item] = full_item
-            for extension in extensions:
-                if filename+extension in self.full_filenames:
-                    return [lambda: builtinopen(self.full_filenames[filename+extension], "rb")]
+                    self.path_cache[item] = full_item
+                    if item in filenames:
+                        found = item
+            if found:
+                return [lambda: builtinopen(self.path_cache[found], "rb")]
         return []
 
 locator_classes["recursivedir"] = recursivedir
@@ -106,35 +142,27 @@ class ls_R:
     """locates files by searching a list of ls-R files"""
 
     def __init__(self):
-        self.ls_Rs = getlist("filelocator", "ls-R")
-        self.full_filenames = {}
+        self.path_cache = {}
 
-    def openers(self, filename, names, extensions):
-        while self.ls_Rs and not any([filename+extension in self.full_filenames for extension in extensions]):
-            lsr = self.ls_Rs.pop(0)
-            base_dir = os.path.dirname(lsr)
-            dir = None
-            first = True
-            with builtinopen(lsr, "r", encoding="ascii", errors="surrogateescape") as lsrfile:
-                for line in lsrfile:
-                    line = line.rstrip()
-                    if first and line.startswith("%"):
-                        continue
-                    first = False
-                    if line.endswith(":"):
-                        dir = os.path.join(base_dir, line[:-1])
-                    elif line:
-                        self.full_filenames[line] = os.path.join(dir, line)
-        for extension in extensions:
-            if filename+extension in self.full_filenames:
-                def _opener():
-                    try:
-                        return builtinopen(self.full_filenames[filename+extension], "rb")
-                    except IOError:
-                        logger.warning("'%s' should be available at '%s' according to the ls-R file, "
-                                    "but the file is not available at this location; "
-                                    "update your ls-R file" % (filename, self.full_filenames[filename+extension]))
-                return [_opener]
+    def openers(self, filename, formats):
+        if not self.path_cache:
+            for lsr in getlist("filelocator", "ls-R"):
+                base_dir = os.path.dirname(lsr)
+                first = True
+                with builtinopen(lsr, "r", encoding="ascii", errors="surrogateescape") as lsrfile:
+                    for line in lsrfile:
+                        line = line.rstrip()
+                        if first and line.startswith("%"):
+                            continue
+                        first = False
+                        if line.endswith(":"):
+                            dir = os.path.join(base_dir, line[:-1])
+                            # TODO: remove this line from the path_cache
+                        elif line and line not in self.path_cache:
+                            self.path_cache[line] = os.path.join(dir, line)
+        for filename in full_filenames(filename, formats):
+            if filename in self.path_cache:
+                return [lambda: builtinopen(self.path_cache[filename], "rb")]
         return []
 
 locator_classes["ls-R"] = ls_R
@@ -143,11 +171,11 @@ locator_classes["ls-R"] = ls_R
 class pykpathsea:
     """locate files by pykpathsea (a C extension module wrapping libkpathsea)"""
 
-    def openers(self, filename, names, extensions):
+    def openers(self, filename, formats):
         if not has_pykpathsea:
             return []
-        for name in names:
-            full_filename = pykpathsea_module.find_file(filename, name)
+        for format in formats:
+            full_filename = pykpathsea_module.find_file(filename, format.name)
             if full_filename:
                 break
         else:
@@ -167,7 +195,7 @@ locator_classes["pykpathsea"] = pykpathsea
 # class libkpathsea:
 #     """locate files by libkpathsea using ctypes"""
 # 
-#     def openers(self, filename, names, extensions):
+#     def openers(self, filename, formats):
 #         raise NotImplemented
 # 
 # locator_classes["libpathsea"] = libkpathsea
@@ -207,12 +235,12 @@ class kpsewhich:
     def __init__(self):
         self.kpsewhich = get("filelocator", "kpsewhich", "kpsewhich")
 
-    def openers(self, filename, names, extensions):
+    def openers(self, filename, formats):
         full_filename = None
-        for name in names:
+        for format in formats:
             try:
-                with Popen([self.kpsewhich, '--format', name, filename], stdout=subprocess.PIPE).stdout as output:
-                    with io.TextIOWrapper(output, encoding="ascii", errors="surrogateescape") as text_output:
+                with Popen([self.kpsewhich, '--format', format.name, filename], stdout=subprocess.PIPE) as process:
+                    with io.TextIOWrapper(process.stdout, encoding="ascii", errors="surrogateescape") as text_output:
                         full_filename = text_output.readline().rstrip()
             except OSError:
                 return []
@@ -241,7 +269,7 @@ class locate:
     def __init__(self):
         self.locate = get("filelocator", "locate", "locate")
 
-    def openers(self, filename, names, extensions):
+    def openers(self, filename, formats):
         full_filename = None
         for extension in extensions:
             with Popen([self.locate, filename+extension], stdout=subprocess.PIPE).stdout as output:
@@ -274,7 +302,7 @@ locator_classes["locate"] = locate
 class _marker: pass
 
 config = configparser.ConfigParser()
-config.read_string(locator_classes["internal"]().openers("pyxrc", [], [""])[0]().read().decode("utf-8"), source="(internal pyxrc)")
+config.read_string(locator_classes["internal"]().openers("pyxrc", [format.pyx])[0]().read().decode("utf-8"), source="(internal pyxrc)")
 if os.name == "nt":
     user_pyxrc = os.path.join(os.environ['APPDATA'], "pyxrc")
 else:
@@ -341,23 +369,12 @@ opener_cache = {}
 def open(filename, formats, ascii=False):
     """returns an open file searched according the list of formats"""
 
-    # When using an empty list of formats, the names list is empty
-    # and the extensions list contains an empty string only. For that
-    # case some locators (notably local and internal) return an open
-    # function for the requested file whereas other locators might not
-    # return anything (like pykpathsea and kpsewhich).
-    # This is useful for files not to be searched in the latex
-    # installation at all (like lfs files).
-    extensions = set([""])
-    for format in formats:
-        for extension in format.extensions:
-            extensions.add(extension)
     names = tuple([format.name for format in formats])
     if (filename, names) in opener_cache:
         file = opener_cache[(filename, names)]()
     else:
         for method in methods:
-            openers = method.openers(filename, names, extensions)
+            openers = method.openers(filename, formats)
             for opener in openers:
                 try:
                     file = opener()
@@ -375,28 +392,11 @@ def open(filename, formats, ascii=False):
                 continue
             break
         else:
-            logger_filelocator.info("PyX filelocator failed to find {} of type {} and extensions {}".format(filename, names, extensions))
+            logger_filelocator.info("PyX filelocator failed to find {} of formats {}".format(filename, names))
             raise IOError("Could not locate the file '%s'." % filename)
     if ascii:
         return io.TextIOWrapper(file, encoding="ascii", errors="surrogateescape")
     else:
         return file
 
-
-class format:
-    def __init__(self, name, extensions):
-        self.name = name
-        self.extensions = extensions
-
-format.tfm = format("tfm", [".tfm"])
-format.afm = format("afm", [".afm"])
-format.fontmap = format("map", [])
-format.pict = format("graphic/figure", [".eps", ".epsi"])
-format.tex_ps_header = format("PostScript header", [".pro"])                    # contains also: enc files
-format.type1 = format("type1 fonts", [".pfa", ".pfb"])
-format.vf = format("vf", [".vf"])
-format.dvips_config = format("dvips config", [])
-format.ttf = format("truetype fonts", [".ttf", ".ttc", ".TTF", ".TTC", ".dfont"])
-format.t42 = format("type42 fonts", [".t42", ".T42"])
-format.otf = format("opentype fonts", [".otf"])
 
