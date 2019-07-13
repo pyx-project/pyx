@@ -4,11 +4,11 @@ import sys; sys.path[:0] = ["../.."]
 import math
 from pyx import *
 
-text.set(mode="latex")
+text.set(text.LatexEngine)
 
 def test_multiaxes_data(c, x, y):
     g = c.insert(graph.graphxy(x, y, height=5, key=graph.key.key(pos="tl"),
-                               x=graph.axis.log(title="$W$", manualticks=[graph.axis.tick.tick(math.sqrt(8)*100, label="?"), graph.axis.tick.tick(math.sqrt(8), label="$\sqrt{8}$")]),
+                               x=graph.axis.log(title="$W$", manualticks=[graph.axis.tick.tick(math.sqrt(8)*100, label="?"), graph.axis.tick.tick(math.sqrt(8), label=r"$\sqrt{8}$")]),
                                y=graph.axis.log(title=r"$PPP_1$",
                                                painter=graph.axis.painter.regular(titledirection=None)),
                                y2=graph.axis.log(title="$P_2$"),
@@ -34,7 +34,7 @@ def test_piaxis_function(c, x, y):
 def test_textaxis_errorbars(c, x, y):
     g = c.insert(graph.graphxy(x, y, height=5,
                                x=graph.axis.lin(min=0.5, max=12.5, parter=graph.axis.parter.lin("1", extendtick=None)),
-                               y=graph.axis.lin(min=-10, max=30, title="Temperature [$^\circ$C]"),
+                               y=graph.axis.lin(min=-10, max=30, title=r"Temperature [$^\circ$C]"),
                                x2=graph.axis.lin(painter=graph.axis.painter.regular(labelattrs=None)), y2=graph.axis.lin()))
     g.plot(graph.data.file("data/testdata2", x=0, ymin="min", ymax="max"), [graph.style.errorbar()])
     a = graph.style.symbol.triangle

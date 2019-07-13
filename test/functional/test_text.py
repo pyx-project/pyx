@@ -3,14 +3,13 @@ import sys; sys.path[:0] = ["../.."]
 
 from pyx import *
 
-text.set(mode="latex")
+text.set(text.LatexEngine)
 c = canvas.canvas()
 text.preamble(r"""%
     \usepackage{graphicx}
     \usepackage{color}
     \usepackage{rotating}
     \usepackage{helvet}
-    \graphicspath{{eps/}}
 %
     \definecolor{col0}{gray}{0.1}
     \definecolor{col1}{cmyk}{0.3, 0.2, 0.1, 0.1}
@@ -37,11 +36,11 @@ c.text(7, 5, "\\vrule width1truecm height1truecm")
 c.text(6.2, 0, "0", [text.vshift.middlezero])
 c.text(-1.2, 0, "abc", [text.vshift.mathaxis, text.halign.right])
 
-t1 = text.text(0, 0, "a \PyXMarker{beforeb}b\PyXMarker{afterb} c d e f g h i j k l m n o p q r s t u v w x y z", [text.parbox(2, baseline=text.parbox.bottom)])
+t1 = text.text(0, 0, r"a \PyXMarker{beforeb}b\PyXMarker{afterb} c d e f g h i j k l m n o p q r s t u v w x y z", [text.parbox(2, baseline=text.parbox.bottom)])
 c.insert(t1)
 c.stroke(t1.path())
 
-t2 = c.insert(text.text(3, 0, "a \PyXMarker{beforeb}b\PyXMarker{afterb} c d e f g h i j k l m n o p q r s t u v w x y z", [text.parbox(2, baseline=text.parbox.top)]))
+t2 = c.insert(text.text(3, 0, r"a \PyXMarker{beforeb}b\PyXMarker{afterb} c d e f g h i j k l m n o p q r s t u v w x y z", [text.parbox(2, baseline=text.parbox.top)]))
 c.stroke(t2.path())
 c.stroke(path.line(*(t1.marker("beforeb") + t2.marker("beforeb"))), [color.rgb.red])
 c.stroke(path.line(*(t1.marker("afterb") + t2.marker("afterb"))), [color.rgb.green])
@@ -87,7 +86,7 @@ d = canvas.canvas()
 d.stroke(path.rect(0,0, 1,1))
 d.stroke(path.line(0,0, 1,1))
 d.stroke(path.line(1,0, 0,1))
-d.writeEPSfile("eps/sample")
+d.writeEPSfile("sample")
 c.insert(c.text(10, 0, r"""
     \textcolor{col0}{col0}
     \textcolor{col1}{col1}
@@ -107,9 +106,9 @@ c.text(4, 2, r"{\color[cmyk]{0.1,0.2,0.3,0.4}c\color[gray]{0.5}o\color[hsb]{0.2,
 # curved text
 sc = canvas.canvas(attrs=[trafo.mirror()])
 p = path.path(path.moveto(-2, 0), path.curveto(-1, 0, -1, 1, 0, 1), path.curveto(1, 1, 1, 0, 2, 0))
-sc.stroke(p, [deco.curvedtext("\PyX{} is fun!", textattrs=[trafo.mirror(), trafo.scale(0.5)]),
+sc.stroke(p, [deco.curvedtext(r"\PyX{} is fun!", textattrs=[trafo.mirror(), trafo.scale(0.5)]),
               deco.curvedtext("left", textattrs=[text.halign.left, text.vshift.mathaxis, trafo.mirror(), color.rgb.red], arclenfrombegin=0.5, exclude=0.1),
-              deco.curvedtext("r{\color[rgb]{1,0,0}igh}t", textattrs=[text.halign.right, text.vshift.mathaxis, trafo.mirror(), trafo.scale(1.2)], arclenfromend=0.5, exclude=0.1)])
+              deco.curvedtext(r"r{\color[rgb]{1,0,0}igh}t", textattrs=[text.halign.right, text.vshift.mathaxis, trafo.mirror(), trafo.scale(1.2)], arclenfromend=0.5, exclude=0.1)])
 c.insert(sc, [trafo.translate(12, 12)])
 
 c.writePDFfile("test_text", page_paperformat=document.paperformat.A4)

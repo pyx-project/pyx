@@ -5,14 +5,14 @@ pyfiles = $(filter-out test_connector.py test_deformer.py,$(wildcard *.py))
 epsfiles = $(patsubst %.py, %.eps, $(pyfiles))
 
 all:
-	make clean
-	make eps
+	$(MAKE) clean
+	$(MAKE) eps
 
 clean:
-	-rm -f *.eps eps/*.eps *.pdf *.svg
+	-rm -f *.ps *.eps *.pdf *.svg
 
 eps: $(epsfiles)
 
 %.eps: %.py
-	export PYTHONPATH=$(CURDIR)/../..; cd $(dir $^) ; $(PYTHON) -W default $(notdir $^)
+	$(PYTHON) -W default $^
 

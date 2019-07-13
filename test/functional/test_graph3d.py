@@ -4,7 +4,7 @@ import sys; sys.path[:0] = ["../.."]
 import math
 from pyx import *
 
-text.set(mode="latex")
+text.set(text.LatexEngine)
 
 def test_minimal(c, x, y):
     g = c.insert(graph.graphxyz(x, y, size=3))
