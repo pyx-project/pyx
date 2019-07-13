@@ -249,7 +249,7 @@ ansiglyphs = {"space": 32,
               "ydieresis":255}
 
 
-fontbboxpattern = re.compile("/FontBBox\s*\{\s*(?P<fontbbox>(-?[0-9.]+)\s+(-?[0-9.]+)\s+(-?[0-9.]+)\s+(-?[0-9.]+))\s*\}\s*(readonly\s+)?def")
+fontbboxpattern = re.compile(r"/FontBBox\s*\{\s*(?P<fontbbox>(-?[0-9.]+)\s+(-?[0-9.]+)\s+(-?[0-9.]+)\s+(-?[0-9.]+))\s*\}\s*(readonly\s+)?def")
 
 
 def _readNullString(file):
