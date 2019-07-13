@@ -99,7 +99,7 @@ html_theme = 'pyx'
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
-html_theme_options = {'sidebarwidth': 200}
+html_theme_options = {}
 
 # Add any paths that contain custom themes here, relative to this directory.
 html_theme_path = ['theme']
@@ -230,7 +230,7 @@ man_pages = [
 
 # -- Other options  ------------------------------------------------------------
 
-mathjax_path = 'http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=default'
+mathjax_path = 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=default'
 todo_include_todos = True
 autoclass_content = 'both'
 autodoc_member_order = 'bysource'
