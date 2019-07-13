@@ -295,10 +295,6 @@ class decoratedpath(baseclasses.canvasitem):
             file.write("Q\n") # grestore
 
     def processSVG(self, xml, writer, context, registry, bbox):
-        def _writestyles(attrs, context):
-            for style in self.styles or []:
-                style.processSVGattrs(attrs, writer, context, registry)
-
         def _writestrokestyles(attrs, context):
             context.fillattr = False
             for style in self.strokestyles or []:
@@ -314,13 +310,12 @@ class decoratedpath(baseclasses.canvasitem):
         strokepath = self.strokepath()
         fillpath = self.path
 
-        if self.styles:
-            acontext = context()
-            attrs = {}
-            _writestyles(attrs, acontext)
-            xml.startSVGElement("g", attrs)
-        else:
-            acontext = context
+        acontext = context()
+        gattrs = {}
+        for style in self.styles or []:
+            style.processSVGattrs(gattrs, writer, acontext, registry)
+        if gattrs:
+            xml.startSVGElement("g", gattrs)
 
         if strokepath is not fillpath:
             if self.strokestyles is not None:
@@ -376,7 +371,7 @@ class decoratedpath(baseclasses.canvasitem):
 
         self.ornaments.processSVG(xml, writer, acontext, registry, bbox)
 
-        if self.styles:
+        if gattrs:
             xml.endSVGElement("g")
 
 #
