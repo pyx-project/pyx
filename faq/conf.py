@@ -176,12 +176,6 @@ todo_include_todos = True  # gli
 
 # -- Options for LaTeX output --------------------------------------------------
 
-# The paper size ('letter' or 'a4').
-latex_paper_size = 'a4'
-
-# The font size ('10pt', '11pt' or '12pt').
-#latex_font_size = '10pt'
-
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
@@ -189,35 +183,16 @@ latex_documents = [
    'Gert-Ludwig Ingold', 'manual'),
 ]
 
-# The name of an image file (relative to this directory) to place at the top of
-# the title page.
-#latex_logo = None
-
-# For "manual" documents, if this is true, then toplevel headings are parts,
-# not chapters.
-#latex_use_parts = False
-
-# If true, show page references after internal links.
-#latex_show_pagerefs = False
-
-# If true, show URL addresses after external links.
-#latex_show_urls = False
-
-# Additional stuff for the LaTeX preamble.
-latex_preamble = r'''
+latex_elements = {
+  'papersize': 'a4paper',
+  'preamble': r'''
   \hypersetup{pdftitle={%s},
               pdfauthor={Gert-Ludwig Ingold <gert.ingold@physik.uni-augsburg.de>},
               pdfsubject={FAQ for PyX},
               pdfkeywords={PyX, graphics, tipps and tricks, FAQ}}
   \DeclareUnicodeCharacter{028F}{{\fontsize{7}{7}\selectfont Y}}
 ''' % latex_documents[0][2]
-
-# Documents to append as an appendix to all manuals.
-#latex_appendices = []
-
-# If false, no module index is generated.
-#latex_domain_indices = True
-
+}
 
 # -- Options for manual page output --------------------------------------------
 
