@@ -1,3 +1,5 @@
 # Python byte code
 __pycache__/
 *.py[cod]
+.python-version
+PyX.egg-info
