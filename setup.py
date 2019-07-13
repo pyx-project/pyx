@@ -20,23 +20,12 @@ old releases up to PyX 0.12.x, i.e. execute something like:
     exit()
 
 
+from distutils.core import setup, Extension
 import configparser
 import pyx.version
 
 cfg = configparser.ConfigParser()
 cfg.read("setup.cfg")
-
-# obtain information on which modules have to be built and whether to use setuptools
-# instead of distutils from setup.cfg file
-
-if cfg.has_section("PyX"):
-    if cfg.has_option("PyX", "use_setuptools") and cfg.getboolean("PyX", "use_setuptools"):
-        from setuptools import setup, Extension
-        setuptools_args={"zip_safe": True}
-    else:
-        from distutils.core import setup, Extension
-        setuptools_args={}
-
 
 # build list of extension modules
 
@@ -65,6 +54,7 @@ setup(name="PyX",
       packages=["pyx", "pyx/graph", "pyx/graph/axis", "pyx/font", "pyx/dvi", "pyx/metapost"],
       package_data={"pyx": ["data/afm/*", "data/lfs/*", "data/def/*", "data/pyxrc"]},
       ext_modules=ext_modules,
+      python_requires='>=3',
       classifiers=["Development Status :: 3 - Alpha",
                    "Intended Audience :: Developers",
                    "Intended Audience :: End Users/Desktop",
@@ -75,4 +65,9 @@ setup(name="PyX",
                    "Topic :: Scientific/Engineering :: Visualization",
                    "Topic :: Software Development :: Libraries :: Python Modules"],
       platforms="OS independent",
-      **setuptools_args)
+      extras_require = {"dev": ["zope.pagetemplate",
+                                "sphinx",
+                                "pillow",
+                                "IPython",
+                                "nbformat",
+                                "testfixtures"]})
