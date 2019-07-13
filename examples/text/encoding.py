@@ -1,6 +1,6 @@
 from pyx import *
 
-text.set(cls=text.LatexRunner, texenc='utf-8')
+text.set(text.LatexEngine, texenc='utf-8')
 text.preamble(r'\usepackage[utf8]{inputenc}')
 
 c = canvas.canvas()
