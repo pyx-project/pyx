@@ -51,19 +51,19 @@ class TexterTestCase(unittest.TestCase):
         default().labels(ticks)
         self.assertEqual([tex_expr(t.label) for t in ticks], ["0", "0.1", "1", "10"])
         ticks = [tick((0, 10), labellevel=0), tick((1, 10), labellevel=0), tick((1, 1), labellevel=0), tick((10000, 1), labellevel=0)]
-        default(minexp=1, skipmantissaunity=skipmantissaunity.never, uniformexp=False).labels(ticks)
+        default(minexponent=1, skipmantissaunity=skipmantissaunity.never, uniformexponent=False).labels(ticks)
         self.assertEqual([tex_expr(t.label) for t in ticks], [r"0", r"1\cdot{}10^{-1}", r"1", r"1\cdot{}10^{4}"])
         ticks = [tick((0, 10), labellevel=0), tick((1, 10), labellevel=0), tick((1, 1), labellevel=0), tick((10000, 1), labellevel=0)]
-        default(minexp=2, uniformexp=False).labels(ticks)
+        default(minexponent=2, uniformexponent=False).labels(ticks)
         self.assertEqual([tex_expr(t.label) for t in ticks], ["0", "0.1", "1", r"10^{4}"])
         ticks = [tick((-1, 10), labellevel=0), tick((1, 1), labellevel=0), tick((10, 1), labellevel=0)]
-        default(minexp=0).labels(ticks)
+        default(minexponent=0).labels(ticks)
         self.assertEqual([tex_expr(t.label) for t in ticks], [r"-10^{-1}", r"10^{0}", r"10^{1}"])
         ticks = [tick((0, 1), labellevel=0), tick((1, -10), labellevel=0), tick((15, 100), labellevel=0)]
-        default(minnegexp=0, mantissatexter=decimal(equalprecision=True)).labels(ticks)
+        default(minnegexponent=0, mantissatexter=decimal(equalprecision=True)).labels(ticks)
         self.assertEqual([tex_expr(t.label) for t in ticks], [r"0.0\cdot{}10^{0}", r"-1.0\cdot{}10^{-1}", r"1.5\cdot{}10^{-1}"])
         ticks = [tick((0, 1), labellevel=0), tick((1, -10), labellevel=0), tick((15, 100), labellevel=0)]
-        default(minnegexp=1, mantissatexter=decimal(equalprecision=True)).labels(ticks)
+        default(minnegexponent=1, mantissatexter=decimal(equalprecision=True)).labels(ticks)
         self.assertEqual([tex_expr(t.label) for t in ticks], [r"0.0", r"-1.0\cdot{}10^{-1}", r"1.5\cdot{}10^{-1}"])
 
 

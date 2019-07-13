@@ -39,7 +39,7 @@ class MessageParserTestCase(unittest.TestCase):
     @log_capture(level=logging.WARNING)
     def testFontWarning(self, l):
         text.text(0, 0, r"\fontseries{invalid}\selectfont{}hello, world", texmessages=[text.texmessage.font_warning])
-        text.default_runner.instance.do_finish()
+        text.defaulttextengine.instance.do_finish()
         l.check(("pyx", "WARNING", r"""ignoring font substitutions of NFSS:
 LaTeX Font Warning: Font shape `OT1/cmr/invalid/n' undefined
 (Font)              using `OT1/cmr/m/n' instead on input line 0."""),
