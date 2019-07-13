@@ -152,6 +152,13 @@ is replaced by a new one.
 
 .. autofunction:: escapestring
 
+.. only:: doctest
+
+   .. autofunction:: remove_string
+   .. autofunction:: remove_pattern
+   .. autofunction:: index_all
+   .. autofunction:: remove_nested_brackets
+
 
 TeX output parsers
 ==================

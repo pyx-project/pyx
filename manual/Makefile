@@ -33,6 +33,9 @@ latexpdf: figs
 	$(MAKE) -C $(BUILDDIR)/latex all-pdf
 	@echo "pdflatex finished; the PDF files are in $(BUILDDIR)/latex."
 
+doctest:
+	cd ../pyx;$(SPHINXBUILD) -b doctest ../manual $(BUILDDIR)/doctest
+
 figs: $(patsubst %.py, %.png, $(filter-out conf.py,$(wildcard *.py)))
 
 %.pdf: %.py
