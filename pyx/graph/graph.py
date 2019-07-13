@@ -338,14 +338,14 @@ class graphxy(graph):
         for axisname, aaxis in list(axes.items()):
             if aaxis is not None:
                 if not isinstance(aaxis, axis.linkedaxis):
-                    self.axes[axisname] = axis.anchoredaxis(aaxis, self.texrunner, axisname)
+                    self.axes[axisname] = axis.anchoredaxis(aaxis, self.textengine, axisname)
                 else:
                     self.axes[axisname] = aaxis
         for axisname, axisat in [("x", xaxisat), ("y", yaxisat)]:
             okey = axisname + "2"
             if axisname not in axes:
                 if okey not in axes or axes[okey] is None:
-                    self.axes[axisname] = axis.anchoredaxis(axis.linear(), self.texrunner, axisname)
+                    self.axes[axisname] = axis.anchoredaxis(axis.linear(), self.textengine, axisname)
                     if okey not in axes:
                         self.axes[okey] = axis.linkedaxis(self.axes[axisname], okey)
                 else:
@@ -783,14 +783,14 @@ class graphxyz(graph):
         for axisname, aaxis in list(axes.items()):
             if aaxis is not None:
                 if not isinstance(aaxis, axis.linkedaxis):
-                    self.axes[axisname] = axis.anchoredaxis(aaxis, self.texrunner, axisname)
+                    self.axes[axisname] = axis.anchoredaxis(aaxis, self.textengine, axisname)
                 else:
                     self.axes[axisname] = aaxis
         for axisname in ["x", "y"]:
             okey = axisname + "2"
             if axisname not in axes:
                 if okey not in axes or axes[okey] is None:
-                    self.axes[axisname] = axis.anchoredaxis(axis.linear(), self.texrunner, axisname)
+                    self.axes[axisname] = axis.anchoredaxis(axis.linear(), self.textengine, axisname)
                     if okey not in axes:
                         self.axes[okey] = axis.linkedaxis(self.axes[axisname], okey)
                 else:
@@ -798,7 +798,7 @@ class graphxyz(graph):
             elif okey not in axes:
                 self.axes[okey] = axis.linkedaxis(self.axes[axisname], okey)
         if "z" not in axes:
-            self.axes["z"] = axis.anchoredaxis(axis.linear(), self.texrunner, "z")
+            self.axes["z"] = axis.anchoredaxis(axis.linear(), self.textengine, "z")
 
         if "x" in self.axes:
             self.xbasepath = self.axes["x"].basepath

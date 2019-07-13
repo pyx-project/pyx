@@ -34,17 +34,17 @@ goldenmean = 0.5 * (math.sqrt(5) + 1)
 class axiscanvas(canvas.canvas):
     """axis canvas"""
 
-    def __init__(self, painter, graphtexrunner):
+    def __init__(self, painter, graphtextengine):
         """initializes the instance
         - sets extent to zero
         - sets labels to an empty list"""
         canvas.canvas.__init__(self)
         self.extent_pt = 0
         self.labels = []
-        if isinstance(painter, _text) and painter.texrunner:
-            self.settexrunner(painter.texrunner)
+        if isinstance(painter, _text) and painter.textengine:
+            self.settextengine(painter.textengine)
         else:
-            self.settexrunner(graphtexrunner)
+            self.settextengine(graphtextengine)
 
 
 class rotatetext:
@@ -72,10 +72,10 @@ rotatetext.orthogonal = rotatetext(180)
 
 
 class _text:
-    """a painter with a texrunner"""
+    """a painter with a textengine"""
 
-    def __init__(self, texrunner=None):
-        self.texrunner = texrunner
+    def __init__(self, textengine=None):
+        self.textengine = textengine
 
 
 class _title(_text):
@@ -189,7 +189,7 @@ class regular(_title):
                         labelattrs.append(self.labeldirection.trafo(t.temp_dx, t.temp_dy))
                     if t.labelattrs is not None:
                         labelattrs.extend(t.labelattrs)
-                    t.temp_labelbox = canvas.texrunner.text_pt(t.temp_x_pt, t.temp_y_pt, t.label, labelattrs)
+                    t.temp_labelbox = canvas.textengine.text_pt(t.temp_x_pt, t.temp_y_pt, t.label, labelattrs)
         if len(data.ticks) > 1:
             equaldirection = 1
             for t in data.ticks[1:]:
@@ -313,7 +313,7 @@ class bar(_title):
                 nameattrs = self.defaultnameattrs + self.nameattrs
                 if self.namedirection is not None:
                     nameattrs.append(self.namedirection.trafo(dx, dy))
-                nameboxes.append(canvas.texrunner.text_pt(x, y, str(name), nameattrs))
+                nameboxes.append(canvas.textengine.text_pt(x, y, str(name), nameattrs))
         labeldist_pt = canvas.extent_pt + unit.topt(self.namedist)
         if len(namepos) > 1:
             equaldirection = 1

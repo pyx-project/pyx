@@ -44,8 +44,8 @@ class axisdata:
 class _axis:
     """axis"""
 
-    def createlinked(self, data, positioner, graphtexrunner, errorname, linkpainter):
-        canvas = painter.axiscanvas(self.painter, graphtexrunner)
+    def createlinked(self, data, positioner, graphtextengine, errorname, linkpainter):
+        canvas = painter.axiscanvas(self.painter, graphtextengine)
         if linkpainter is not None:
             linkpainter.paint(canvas, data, self, positioner)
         return canvas
@@ -85,7 +85,7 @@ class _regularaxis(_axis):
 
     zero = 0.0
 
-    def adjustaxis(self, data, columndata, graphtexrunner, errorname):
+    def adjustaxis(self, data, columndata, graphtextengine, errorname):
         if self.min is None or self.max is None:
             for value in columndata:
                 try:
@@ -110,7 +110,7 @@ class _regularaxis(_axis):
             last = item
         return sorted
 
-    def _create(self, data, positioner, graphtexrunner, parter, rater, errorname):
+    def _create(self, data, positioner, graphtextengine, parter, rater, errorname):
         errorname = " for axis %s" % errorname
         if data.min is None or data.max is None:
             raise RuntimeError("incomplete axis range%s" % errorname)
@@ -131,12 +131,12 @@ class _regularaxis(_axis):
 
         def layout(data):
             if data.ticks:
-                self.adjustaxis(data, [convert_tick(data.ticks[0]), convert_tick(data.ticks[-1])], graphtexrunner, errorname)
+                self.adjustaxis(data, [convert_tick(data.ticks[0]), convert_tick(data.ticks[-1])], graphtextengine, errorname)
             self.texter.labels(data.ticks)
             if self.divisor:
                 for t in data.ticks:
                     t *= rational_divisor
-            canvas = painter.axiscanvas(self.painter, graphtexrunner)
+            canvas = painter.axiscanvas(self.painter, graphtextengine)
             if self.painter is not None:
                 self.painter.paint(canvas, data, self, positioner)
             return canvas
@@ -226,7 +226,7 @@ class _regularaxis(_axis):
             else:
                 variants[0].rate += ratelayout
             variants.sort()
-        self.adjustaxis(data, variants[0].ticks, graphtexrunner, errorname)
+        self.adjustaxis(data, variants[0].ticks, graphtextengine, errorname)
         data.ticks = variants[0].ticks
         return variants[0].storedcanvas
 
@@ -246,8 +246,8 @@ class linear(_regularaxis):
         else:
             return (float(value) - data.min) / (data.max - data.min)
 
-    def create(self, data, positioner, graphtexrunner, errorname):
-        return _regularaxis._create(self, data, positioner, graphtexrunner, self.parter, self.rater, errorname)
+    def create(self, data, positioner, graphtextengine, errorname):
+        return _regularaxis._create(self, data, positioner, graphtextengine, self.parter, self.rater, errorname)
 
 lin = linear
 
@@ -270,13 +270,13 @@ class logarithmic(_regularaxis):
         else:
             return (math.log(float(value)) - math.log(data.min)) / (math.log(data.max) - math.log(data.min))
 
-    def create(self, data, positioner, graphtexrunner, errorname):
+    def create(self, data, positioner, graphtextengine, errorname):
         try:
-            return _regularaxis._create(self, data, positioner, graphtexrunner, self.parter, self.rater, errorname)
+            return _regularaxis._create(self, data, positioner, graphtextengine, self.parter, self.rater, errorname)
         except NoValidPartitionError:
             if self.linearparter:
                 logger.warning("no valid logarithmic partitioning found for axis %s, switch to linear partitioning" % errorname)
-                return _regularaxis._create(self, data, positioner, graphtexrunner, self.linearparter, self.rater, errorname)
+                return _regularaxis._create(self, data, positioner, graphtextengine, self.linearparter, self.rater, errorname)
             raise
 
 log = logarithmic
@@ -338,8 +338,8 @@ class bar(_axis):
         data = axisdata(size=self.firstdist+self.lastdist-self.dist, subaxes={}, names=[])
         return data
 
-    def addsubaxis(self, data, name, subaxis, graphtexrunner, errorname):
-        subaxis = anchoredaxis(subaxis, graphtexrunner, "%s, subaxis %s" % (errorname, name))
+    def addsubaxis(self, data, name, subaxis, graphtextengine, errorname):
+        subaxis = anchoredaxis(subaxis, graphtextengine, "%s, subaxis %s" % (errorname, name))
         subaxis.setcreatecall(lambda: None)
         subaxis.sized = hasattr(subaxis.data, "size")
         if subaxis.sized:
@@ -353,7 +353,7 @@ class bar(_axis):
         else:
             data.names.append(name)
 
-    def adjustaxis(self, data, columndata, graphtexrunner, errorname):
+    def adjustaxis(self, data, columndata, graphtextengine, errorname):
         for value in columndata:
 
             # some checks and error messages
@@ -373,16 +373,16 @@ class bar(_axis):
             if name is not None and name not in data.names:
                 if self.subaxes:
                     if self.subaxes[name] is not None:
-                        self.addsubaxis(data, name, self.subaxes[name], graphtexrunner, errorname)
+                        self.addsubaxis(data, name, self.subaxes[name], graphtextengine, errorname)
                 else:
-                    self.addsubaxis(data, name, self.defaultsubaxis, graphtexrunner, errorname)
+                    self.addsubaxis(data, name, self.defaultsubaxis, graphtextengine, errorname)
         for name in data.names:
             subaxis = data.subaxes[name]
             if subaxis.sized:
                 data.size -= subaxis.data.size
             subaxis.axis.adjustaxis(subaxis.data,
                                     [value[1] for value in columndata if value[0] == name],
-                                    graphtexrunner,
+                                    graphtextengine,
                                     "%s, subaxis %s" % (errorname, name))
             if subaxis.sized:
                 data.size += subaxis.data.size
@@ -395,8 +395,8 @@ class bar(_axis):
         vmax = axis.vmax
         return axis.vmin + axis.convert(value[1]) * (axis.vmax - axis.vmin)
 
-    def create(self, data, positioner, graphtexrunner, errorname):
-        canvas = painter.axiscanvas(self.painter, graphtexrunner)
+    def create(self, data, positioner, graphtextengine, errorname):
+        canvas = painter.axiscanvas(self.painter, graphtextengine)
         v = 0
         position = self.firstdist
         for name in data.names:
@@ -426,8 +426,8 @@ class bar(_axis):
             self.painter.paint(canvas, data, self, positioner)
         return canvas
 
-    def createlinked(self, data, positioner, graphtexrunner, errorname, linkpainter):
-        canvas = painter.axiscanvas(self.painter, graphtexrunner)
+    def createlinked(self, data, positioner, graphtextengine, errorname, linkpainter):
+        canvas = painter.axiscanvas(self.painter, graphtextengine)
         for name in data.names:
             subaxis = data.subaxes[name]
             subaxis = linkedaxis(subaxis, name)
@@ -486,17 +486,17 @@ class autosizedlinear(linear):
             data.size = 0
         return data
 
-    def adjustaxis(self, data, columndata, graphtexrunner, errorname):
-        linear.adjustaxis(self, data, columndata, graphtexrunner, errorname)
+    def adjustaxis(self, data, columndata, graphtextengine, errorname):
+        linear.adjustaxis(self, data, columndata, graphtextengine, errorname)
         try:
             data.size = data.max - data.min
         except:
             data.size = 0
 
-    def create(self, data, positioner, graphtexrunner, errorname):
+    def create(self, data, positioner, graphtextengine, errorname):
         min = data.min
         max = data.max
-        canvas = linear.create(self, data, positioner, graphtexrunner, errorname)
+        canvas = linear.create(self, data, positioner, graphtextengine, errorname)
         if min != data.min or max != data.max:
             raise RuntimeError("range change during axis creation of autosized linear axis")
         return canvas
@@ -506,11 +506,11 @@ autosizedlin = autosizedlinear
 
 class anchoredaxis:
 
-    def __init__(self, axis, graphtexrunner, errorname):
+    def __init__(self, axis, graphtextengine, errorname):
         assert not isinstance(axis, anchoredaxis), errorname
         self.axis = axis
         self.errorname = errorname
-        self.graphtexrunner = graphtexrunner
+        self.graphtextengine = graphtextengine
         self.data = axis.createdata(self.errorname)
         self.canvas = None
         self.positioner = None
@@ -535,7 +535,7 @@ class anchoredaxis:
 
     def adjustaxis(self, columndata):
         if self.canvas is None:
-            self.axis.adjustaxis(self.data, columndata, self.graphtexrunner, self.errorname)
+            self.axis.adjustaxis(self.data, columndata, self.graphtextengine, self.errorname)
         else:
             logger.warning("ignore axis range adjustment of already created axis '%s'"  % self.errorname)
 
@@ -588,7 +588,7 @@ class anchoredaxis:
     def create(self):
         if self.canvas is None:
             assert self.positioner is not None, self.errorname
-            self.canvas = self.axis.create(self.data, self.positioner, self.graphtexrunner, self.errorname)
+            self.canvas = self.axis.create(self.data, self.positioner, self.graphtextengine, self.errorname)
         return self.canvas
 
 
@@ -607,7 +607,7 @@ class linkedaxis(anchoredaxis):
         assert isinstance(linkedaxis, anchoredaxis), self.errorname
         self.linkedto = linkedaxis
         self.axis = linkedaxis.axis
-        self.graphtexrunner = self.linkedto.graphtexrunner
+        self.graphtextengine = self.linkedto.graphtextengine
         self.errorname = "%s (linked to %s)" % (self.errorname, linkedaxis.errorname)
         self.data = linkedaxis.data
         if self.painter is _marker:
@@ -618,7 +618,7 @@ class linkedaxis(anchoredaxis):
         assert self.positioner is not None, self.errorname
         if self.canvas is None:
             self.linkedto.docreate()
-            self.canvas = self.axis.createlinked(self.data, self.positioner, self.graphtexrunner, self.errorname, self.painter)
+            self.canvas = self.axis.createlinked(self.data, self.positioner, self.graphtextengine, self.errorname, self.painter)
         return self.canvas
 
 
@@ -626,7 +626,7 @@ class anchoredpathaxis(anchoredaxis):
     """an anchored axis along a path"""
 
     def __init__(self, path, axis, **kwargs):
-        anchoredaxis.__init__(self, axis, text.defaulttexrunner, "pathaxis")
+        anchoredaxis.__init__(self, axis, text.defaulttextengine, "pathaxis")
         self.setpositioner(positioner.pathpositioner(path, **kwargs))
         self.create()
 

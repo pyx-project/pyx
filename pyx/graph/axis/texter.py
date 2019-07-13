@@ -305,7 +305,7 @@ class rational(_texter):
           the hole fraction, when the denominator is one and none of the parameters
           denomprefix, denominfix and denomsuffix are set and minuspos is not -1 or the
           fraction is positive
-        - labelattrs is a list of attributes for a texrunners text method;
+        - labelattrs is a list of attributes for a textengines text method;
           None is considered as an empty list; labelattrs might be changed
           in the painter as well"""
         self.prefix = prefix

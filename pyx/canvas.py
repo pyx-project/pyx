@@ -100,7 +100,7 @@ class canvas(baseclasses.canvasitem):
 
     """a canvas holds a collection of canvasitems"""
 
-    def __init__(self, attrs=None, texrunner=None, ipython_bboxenlarge=1*unit.t_pt):
+    def __init__(self, attrs=None, textengine=None, ipython_bboxenlarge=1*unit.t_pt):
 
         """construct a canvas
 
@@ -113,8 +113,8 @@ class canvas(baseclasses.canvasitem):
         Note that, while the first two properties are fixed for the
         whole canvas, the last one can be changed via canvas.set().
 
-        The texrunner instance used for the text method can be specified
-        using the texrunner argument. It defaults to text.defaulttexrunner
+        The textengine instance used for the text method can be specified
+        using the textengine argument. It defaults to text.defaulttextengine
 
         """
 
@@ -124,12 +124,12 @@ class canvas(baseclasses.canvasitem):
         self.layers = {}
         if attrs is None:
             attrs = []
-        if texrunner is not None:
-            self.texrunner = texrunner
+        if textengine is not None:
+            self.textengine = textengine
         else:
             # prevent cyclic imports
             from . import text
-            self.texrunner = text.defaulttexrunner
+            self.textengine = text.defaulttextengine
         self.ipython_bboxenlarge = ipython_bboxenlarge
 
         attr.checkattrs(attrs, [trafo.trafo_pt, clip, style.style])
@@ -301,7 +301,7 @@ class canvas(baseclasses.canvasitem):
                     self.items.remove(self.layers[name])
             else:
                 # create new layer
-                self.layers[name] = canvas(texrunner=self.texrunner)
+                self.layers[name] = canvas(textengine=self.textengine)
                 if above is None and below is None:
                     self.items.append(self.layers[name])
 
@@ -314,7 +314,7 @@ class canvas(baseclasses.canvasitem):
             return self.layers[name]
         else:
             if not group in self.layers:
-                self.layers[group] = self.insert(canvas(texrunner=self.texrunner))
+                self.layers[group] = self.insert(canvas(textengine=self.textengine))
             if above is not None:
                 abovegroup, above = above.split(".", 1)
                 assert abovegroup == group
@@ -366,7 +366,7 @@ class canvas(baseclasses.canvasitem):
 
         # add path decorations and modify path accordingly
         for adeco in attr.getattrs(attrs, [deco.deco]):
-            adeco.decorate(dp, self.texrunner)
+            adeco.decorate(dp, self.textengine)
 
         self.insert(dp)
 
@@ -394,29 +394,29 @@ class canvas(baseclasses.canvasitem):
         from . import deco
         self.draw(path, [deco.filled]+list(attrs))
 
-    def settexrunner(self, texrunner):
-        """sets the texrunner to be used to within the text and text_pt methods"""
+    def settextengine(self, textengine):
+        """sets the textengine to be used to within the text and text_pt methods"""
 
-        self.texrunner = texrunner
+        self.textengine = textengine
 
     def text(self, x, y, atext, *args, **kwargs):
         """insert a text into the canvas
 
-        inserts a textbox created by self.texrunner.text into the canvas
+        inserts a textbox created by self.textengine.text into the canvas
 
         returns the inserted textbox"""
 
-        return self.insert(self.texrunner.text(x, y, atext, *args, **kwargs))
+        return self.insert(self.textengine.text(x, y, atext, *args, **kwargs))
 
 
     def text_pt(self, x, y, atext, *args):
         """insert a text into the canvas
 
-        inserts a textbox created by self.texrunner.text_pt into the canvas
+        inserts a textbox created by self.textengine.text_pt into the canvas
 
         returns the inserted textbox"""
 
-        return self.insert(self.texrunner.text_pt(x, y, atext, *args))
+        return self.insert(self.textengine.text_pt(x, y, atext, *args))
 
     writeEPSfile = _wrappedindocument(document.document.writeEPSfile)
     writePSfile = _wrappedindocument(document.document.writePSfile)

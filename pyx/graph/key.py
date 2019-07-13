@@ -82,7 +82,7 @@ class key:
         self.symbolspace_pt = unit.topt(self.symbolspace)
         titleboxes = []
         for plotitem in plotitems:
-            titlebox = c.texrunner.text_pt(0, 0, plotitem.title, self.defaulttextattrs + self.textattrs)
+            titlebox = c.textengine.text_pt(0, 0, plotitem.title, self.defaulttextattrs + self.textattrs)
             titlebox.plotitem = plotitem
             titleboxes.append(titlebox)
         dy_pt = box.tile_pt(titleboxes, self.dist_pt, 0, -1)

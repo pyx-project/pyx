@@ -617,7 +617,7 @@ size.clear = attr.clearclass(size)
 
 
 ###############################################################################
-# texrunner
+# textengines
 ###############################################################################
 
 
@@ -936,7 +936,7 @@ class Tee(object):
         for file in self.files:
             file.close()
 
-# The texrunner state represents the next (or current) execute state.
+# The tex engine state represents the next (or current) execute state.
 STATE_START, STATE_PREAMBLE, STATE_TYPESET, STATE_DONE = range(4)
 PyXBoxPattern = re.compile(r"PyXBox:page=(?P<page>\d+),lt=(?P<lt>-?\d*((\d\.?)|(\.?\d))\d*)pt,rt=(?P<rt>-?\d*((\d\.?)|(\.?\d))\d*)pt,ht=(?P<ht>-?\d*((\d\.?)|(\.?\d))\d*)pt,dp=(?P<dp>-?\d*((\d\.?)|(\.?\d))\d*)pt:")
 dvi_pattern = re.compile(r"Output written on .*texput\.dvi \((?P<page>\d+) pages?, \d+ bytes\)\.", re.DOTALL)
@@ -945,7 +945,7 @@ class TexDoneError(Exception):
     pass
 
 
-class SingleRunner:
+class SingleEngine:
 
     #: default :class:`texmessage` parsers at interpreter startup
     texmessages_start_default = [texmessage.start]
@@ -971,7 +971,7 @@ class SingleRunner:
         """Base class for the TeX interface.
 
         .. note:: This class cannot be used directly. It is the base class for
-                  all texrunners and provides most of the implementation.
+                  all tex engines and provides most of the implementation.
                   Still, to the end user the parameters except for *cmd*
                   are important, as they are preserved in derived classes
                   usually.
@@ -1044,6 +1044,7 @@ class SingleRunner:
                             if self.texoutput.done():
                                 break
                             logger.warning(msg)
+                self.popen.wait()
                 for usefile in self.usefiles:
                     extpos = usefile.rfind(".")
                     try:
@@ -1184,7 +1185,7 @@ class SingleRunner:
                 self.texinput = Tee(self.copyinput, self.texinput)
         self.texoutput = MonitorOutput(self.name, io.TextIOWrapper(self.popen.stdout, encoding=self.texenc, errors="surrogateescape"))
         self._execute("\\scrollmode\n\\raiseerror%\n" # switch to and check scrollmode
-                      "\\def\\PyX{P\\kern-.3em\\lower.5ex\hbox{Y}\kern-.18em X}%\n" # just the PyX Logo
+                      "\\def\\PyX{P\\kern-.3em\\lower.5ex\\hbox{Y}\\kern-.18em X}%\n" # just the PyX Logo
                       "\\gdef\\PyXBoxHAlign{0}%\n" # global PyXBoxHAlign (0.0-1.0) for the horizontal alignment, default to 0
                       "\\newbox\\PyXBox%\n" # PyXBox will contain the output
                       "\\newbox\\PyXBoxHAligned%\n" # PyXBox will contain the horizontal aligned output
@@ -1260,8 +1261,8 @@ class SingleRunner:
         Preambles must not generate output, but are used to load files, perform
         settings, define macros, *etc*. In LaTeX mode, preambles are executed
         before ``\\begin{document}``. The method can be called multiple times,
-        but only prior to :meth:`SingleRunner.text` and
-        :meth:`SingleRunner.text_pt`.
+        but only prior to :meth:`SingleEngine.text` and
+        :meth:`SingleEngine.text_pt`.
 
         """
         texmessages = self.texmessages_preamble_default + self.texmessages_preamble + texmessages
@@ -1330,19 +1331,19 @@ class SingleRunner:
         return self.text_pt(unit.topt(x), unit.topt(y), *args, **kwargs)
 
 
-class SingleTexRunner(SingleRunner):
+class SingleTexEngine(SingleEngine):
 
     def __init__(self, cmd=config.getlist("text", "tex", ["tex"]), lfs="10pt", **kwargs):
         """Plain TeX interface.
 
-        This class adjusts the :class:`SingleRunner` to use plain TeX.
+        This class adjusts the :class:`SingleEngine` to use plain TeX.
 
         :param cmd: command and arguments to start the TeX interpreter
         :type cmd: list of str
         :param lfs: resemble LaTeX font settings within plain TeX by loading a
             lfs-file
         :type lfs: str or None
-        :param kwargs: additional arguments passed to :class:`SingleRunner`
+        :param kwargs: additional arguments passed to :class:`SingleEngine`
 
         An lfs-file is a file defining a set of font commands like ``\\normalsize``
         by font selection commands in plain TeX. Several of those files
@@ -1371,14 +1372,14 @@ class SingleTexRunner(SingleRunner):
         if self.lfs:
             if not self.lfs.endswith(".lfs"):
                 self.lfs = "%s.lfs" % self.lfs
-            with config.open(self.lfs, []) as lfsfile:
+            with config.open(self.lfs, [config.format.pyx]) as lfsfile:
                 lfsdef = lfsfile.read().decode("ascii")
             self._execute(lfsdef, [], STATE_PREAMBLE, STATE_PREAMBLE)
             self._execute("\\normalsize%\n", [], STATE_PREAMBLE, STATE_PREAMBLE)
         self._execute("\\newdimen\\linewidth\\newdimen\\textwidth%\n", [], STATE_PREAMBLE, STATE_PREAMBLE)
 
 
-class SingleLatexRunner(SingleRunner):
+class SingleLatexEngine(SingleEngine):
 
     #: default :class:`texmessage` parsers at LaTeX class loading
     texmessages_docclass_default = [texmessage.load]
@@ -1390,7 +1391,7 @@ class SingleLatexRunner(SingleRunner):
                        texmessages_docclass=[], texmessages_begindoc=[], **kwargs):
         """LaTeX interface.
 
-        This class adjusts the :class:`SingleRunner` to use LaTeX.
+        This class adjusts the :class:`SingleEngine` to use LaTeX.
 
         :param cmd: command and arguments to start the TeX interpreter
             in LaTeX mode
@@ -1406,7 +1407,7 @@ class SingleLatexRunner(SingleRunner):
         :param texmessages_begindoc: additional message parsers at
             ``\\begin{document}``
         :type texmessages_begindoc: list of :class:`texmessage` parsers
-        :param kwargs: additional arguments passed to :class:`SingleRunner`
+        :param kwargs: additional arguments passed to :class:`SingleEngine`
 
         """
         super().__init__(cmd=cmd, **kwargs)
@@ -1429,7 +1430,7 @@ class SingleLatexRunner(SingleRunner):
     def do_start(self):
         super().do_start()
         if self.pyxgraphics:
-            with config.open("pyx.def", []) as source, open(os.path.join(self.tmpdir, "pyx.def"), "wb") as dest:
+            with config.open("pyx.def", [config.format.pyx]) as source, open(os.path.join(self.tmpdir, "pyx.def"), "wb") as dest:
                 dest.write(source.read())
             self._execute("\\makeatletter%\n"
                           "\\let\\saveProcessOptions=\\ProcessOptions%\n"
@@ -1458,13 +1459,13 @@ def reset_for_tex_done(f):
     return wrapped
 
 
-class MultiRunner:
+class MultiEngine:
 
     def __init__(self, cls, *args, **kwargs):
-        """A restartable :class:`SingleRunner` class
+        """A restartable :class:`SingleEngine` class
 
         :param cls: the class being wrapped
-        :type cls: :class:`SingleRunner` class
+        :type cls: :class:`SingleEngine` class
         :param list args: args at class instantiation
         :param dict kwargs: keyword args at at class instantiation
 
@@ -1475,22 +1476,22 @@ class MultiRunner:
         self.reset()
 
     def preamble(self, expr, texmessages=[]):
-        "resembles :meth:`SingleRunner.preamble`"
+        "resembles :meth:`SingleEngine.preamble`"
         self.preambles.append((expr, texmessages))
         self.instance.preamble(expr, texmessages)
 
     @reset_for_tex_done
     def text_pt(self, *args, **kwargs):
-        "resembles :meth:`SingleRunner.text_pt`"
+        "resembles :meth:`SingleEngine.text_pt`"
         return self.instance.text_pt(*args, **kwargs)
 
     @reset_for_tex_done
     def text(self, *args, **kwargs):
-        "resembles :meth:`SingleRunner.text`"
+        "resembles :meth:`SingleEngine.text`"
         return self.instance.text(*args, **kwargs)
 
     def reset(self, reinit=False):
-        """Start a new :class:`SingleRunner` instance
+        """Start a new :class:`SingleEngine` instance
 
         :param bool reinit: replay :meth:`preamble` calls on the new instance
 
@@ -1507,28 +1508,28 @@ class MultiRunner:
             self.preambles = []
 
 
-class TexEngine(MultiRunner):
+class TexEngine(MultiEngine):
 
     def __init__(self, *args, **kwargs):
-        """A restartable :class:`SingleTexRunner` class
+        """A restartable :class:`SingleTexEngine` class
 
         :param list args: args at class instantiation
         :param dict kwargs: keyword args at at class instantiation
 
         """
-        super().__init__(SingleTexRunner, *args, **kwargs)
+        super().__init__(SingleTexEngine, *args, **kwargs)
 
 
-class LatexEngine(MultiRunner):
+class LatexEngine(MultiEngine):
 
     def __init__(self, *args, **kwargs):
-        """A restartable :class:`SingleLatexRunner` class
+        """A restartable :class:`SingleLatexEngine` class
 
         :param list args: args at class instantiation
         :param dict kwargs: keyword args at at class instantiation
 
         """
-        super().__init__(SingleLatexRunner, *args, **kwargs)
+        super().__init__(SingleLatexEngine, *args, **kwargs)
 
 
 from pyx import deco
@@ -1540,6 +1541,14 @@ from pyx.font.afmfile import AFMfile
 class MultiEngineText:
 
     def __init__(self, tex, unicode):
+        """Container for text to be typeset for both, TeX based engines and the
+        UnicodeEngine.
+
+        :param str tex: text for TeX based engines
+        :param unicode: text for the :class:`UnicodeEngine`
+        :type unicode: str, :class:`Text`, or :class:`StackedText or a list of those
+
+        """
         self.tex = tex
         self.unicode = unicode
 
@@ -1547,6 +1556,13 @@ class MultiEngineText:
 class Text:
 
     def __init__(self, text, scale=1, shift=0):
+        """Text for the UnicodeEngine with basic typesetting features
+
+        :param str text: text to be typeset
+        :param float scale: scale
+        :param float shift: vertical shift in units of the text size (without the scale)
+
+        """
         self.text = text
         self.scale = scale
         self.shift = shift
@@ -1555,6 +1571,14 @@ class Text:
 class StackedText:
 
     def __init__(self, texts, frac=False, align=0):
+        """Stack text above each other for the UnicodeEngine
+
+        :param list texts: texts to be typeset above each other
+        :param bool frac: add a fractional line (for two texts only)
+        :param float align: horizontal alignment of the text where
+            0 is left, 0.5 is centered, and 1 is right
+
+        """
         assert not frac or len(texts) == 2
         self.texts = texts
         self.frac = frac
@@ -1682,8 +1706,11 @@ class unicodetextbox_pt(textbox_pt):
 class UnicodeEngine:
 
     def __init__(self, fontname="cmr10", size=10):
-        self.font = T1font(T1File.from_PF_bytes(config.open(fontname, [config.format.type1]).read()), 
-                           AFMfile(config.open(fontname, [config.format.afm], ascii=True)))
+        with config.open(fontname, [config.format.type1]) as f:
+            t1file = T1File.from_PF_bytes(f.read())
+        with config.open(fontname, [config.format.afm], ascii=True) as f:
+            afmfile = AFMfile(f)
+        self.font = T1font(t1file, afmfile)
         self.size = size
 
     def preamble(self):
@@ -1742,39 +1769,40 @@ latexrunner = LatexRunner = LatexEngine
 # module level interface documentation for autodoc
 # the actual values are setup by the set function
 
-#: the current :class:`MultiRunner` instance for the module level functions
-default_runner = None
+#: the current :class:`MultiEngine` instance for the module level functions
+defaulttextengine = None
 
-#: default_runner.preamble (bound method)
+#: defaulttextengine.preamble (bound method)
 preamble = None
 
-#: default_runner.text_pt (bound method)
+#: defaulttextengine.text_pt (bound method)
 text_pt = None
 
-#: default_runner.text (bound method)
+#: defaulttextengine.text (bound method)
 text = None
 
-#: default_runner.reset (bound method)
+#: defaulttextengine.reset (bound method)
 reset = None
 
 def set(engine=None, cls=None, mode=None, *args, **kwargs):
-    """Setup a new module level :class:`MultiRunner`
+    """Setup a new module level :class:`MultiEngine`
 
-    :param cls: the module level :class:`MultiRunner` to be used, i.e.
-        :class:`TexRunner` or :class:`LatexRunner`
-    :type cls: :class:`MultiRunner` object, not instance
-    :param mode: ``"tex"`` for :class:`TexRunner` or ``"latex"`` for
-        :class:`LatexRunner` with arbitraty capitalization, overwriting the cls
-        value
+    :param engine: the module level engine object to be used, i.e.
+        :class:`TexEngine`, :class:`LatexEngine`, or :class:`UnicodeEngine`
+    :type cls: Engine object, not instance
+    :param cls: identical to *engine*
 
-        :deprecated: use the cls argument instead
+        :deprecated: use the engine argument instead
+    :param mode: ``"tex"`` for :class:`TexEngine` or ``"latex"`` for
+        :class:`LatexEngine` with arbitraty capitalization
+
+        :deprecated: use the engine argument instead
     :type mode: str or None
     :param list args: args at class instantiation
     :param dict kwargs: keyword args at at class instantiation
 
     """
-    # note: default_runner and defaulttexrunner are deprecated
-    global default_engine, default_runner, defaulttexrunner, reset, preamble, text, text_pt
+    global defaulttextengine, reset, preamble, text, text_pt
     if mode is not None:
         logger.warning("mode setting is deprecated, use the engine argument instead")
         assert cls is None
@@ -1784,30 +1812,30 @@ def set(engine=None, cls=None, mode=None, *args, **kwargs):
         logger.warning("cls setting is deprecated, use the engine argument instead")
         assert not engine
         engine = cls
-    default_engine = default_runner = defaulttexrunner = engine(*args, **kwargs)
-    preamble = default_runner.preamble
-    text_pt = default_runner.text_pt
-    text = default_runner.text
-    reset = default_runner.reset
+    defaulttextengine = engine(*args, **kwargs)
+    preamble = defaulttextengine.preamble
+    text_pt = defaulttextengine.text_pt
+    text = defaulttextengine.text
+    reset = defaulttextengine.reset
 
-# initialize default_runner
-set({"TexEngine": TexEngine, "LatexEngine": LatexEngine, "UnicodeEngine": UnicodeEngine}[config.get('text', 'default_engine', 'TexEngine')])
+# initialize defaulttextengine
+set({"TexEngine": TexEngine, "LatexEngine": LatexEngine, "UnicodeEngine": UnicodeEngine}[config.get('text', 'defaulttextengine', 'TexEngine')])
 
 
 def escapestring(s, replace={" ": "~",
-                             "$": "\\$",
-                             "&": "\\&",
-                             "#": "\\#",
-                             "_": "\\_",
-                             "%": "\\%",
-                             "^": "\\string^",
-                             "~": "\\string~",
+                             "$": r"\$",
+                             "&": r"\&",
+                             "#": r"\#",
+                             "_": r"\_",
+                             "%": r"\%",
+                             "^": r"\string^",
+                             "~": r"\string~",
                              "<": "{$<$}",
                              ">": "{$>$}",
-                             "{": "{$\{$}",
-                             "}": "{$\}$}",
-                             "\\": "{$\setminus$}",
-                             "|": "{$\mid$}"}):
+                             "{": r"{$\{$}",
+                             "}": r"{$\}$}",
+                             "\\": r"{$\setminus$}",
+                             "|": r"{$\mid$}"}):
     "Escapes ASCII characters such that they can be typeset by TeX/LaTeX"""
     i = 0
     while i < len(s):
