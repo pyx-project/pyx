@@ -56,21 +56,13 @@ def _bezierpolyrange(x0, x1, x2, x3):
         else:
             q = -0.5*(b-math.sqrt(s))
 
-        try:
-            t = q*1.0/a
-        except ZeroDivisionError:
-            pass
-        else:
-            if 0 < t < 1:
-                tc.append(t)
+        if 0 < q < a or a < q < 0:
+            # 0 < q/a < 1
+            tc.append(q/a)
 
-        try:
-            t = c*1.0/q
-        except ZeroDivisionError:
-            pass
-        else:
-            if 0 < t < 1:
-                tc.append(t)
+        if 0 < c < q or q < c < 0:
+            # 0 < c/q < 1
+            tc.append(c/q)
 
     p = [(((a*t + 1.5*b)*t + 3*c)*t + x0) for t in tc]
 
