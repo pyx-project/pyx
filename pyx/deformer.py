@@ -313,7 +313,7 @@ def controldists_from_endgeometry_pt(A, B, tangA, tangB, curvA, curvB, allownega
             if (t > 0 and t < x[0] and s > 0 and s < x[1]):
                 if (t > 0 and t < y[0] and s > 0 and s < y[1]):
                     # use the shorter one
-                    return (errx > erry) - (errx < erry)
+                    return int(errx > erry) - int(errx < erry)
                 else:
                     # use the longer one
                     return -1
@@ -323,10 +323,10 @@ def controldists_from_endgeometry_pt(A, B, tangA, tangB, curvA, curvB, allownega
                     return 1
                 else:
                     # use the shorter one
-                    return (errx > erry) - (errx < erry)
+                    return int(errx > erry) - int(errx < erry)
             #return cmp(x[0]**2 + x[1]**2, y[0]**2 + y[1]**2)
         else:
-            return (sy > sx) - (sy < sx)
+            return int(sy > sx) - int(sy < sx)
     # >>>
     solutions.sort(key=functools.cmp_to_key(mycmp))
 
