@@ -5,5 +5,6 @@ encoding
 marker
 color
 textengine
+unicodeengine
 textbox
 textalongpath

@@ -1,0 +1,8 @@
+Unicode engine
+
+PyX supports basic text output without using TeX/LaTeX by
+by `text.UnicodeEngine` instances.... The font defaults to
+Computer Modern at 10 pt. It can be set by paramters of the
+constructor and for the default engine via the set command:
+
+    text.set(text.UnicodeEngine, fontname="cmss10", size=14)
