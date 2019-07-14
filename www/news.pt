@@ -9,6 +9,17 @@
     <h1>PyX — News</h1>
 
     <dl>
+      <dt>2019-07-14: PyX 0.15 released</dt>
+      <dd>
+        This release introduces a new text engine UnicodeEngine, which enables
+        simple typesetting with Type1 fonts without using TeX/LaTeX. The graph
+        axis texters have been adjusted to work on the UnicodeEngine, as well.
+        The exponential and mixed graph axis texters have been merged into the
+        new default texter.<br/>
+        PyX' home has been moved to <a href="https://pyx-project.org">https://pyx-project.org</a>.
+        The source code repository has been converted to git and is now hosted
+        at <a href="https://github.com/pyx-project/pyx">https://github.com/pyx-project/pyx</a>.
+      </dd>
       <dt>2015-11-02: PyX 0.14.1 released</dt>
       <dd>
         PyX source distribution is now hosted on PyPI. We also uploaded all
