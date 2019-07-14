@@ -907,11 +907,12 @@ class parallel(baseclasses.deformer): # <<<
 
         dist = self.dist_pt
         epsilon = orig_nsp.epsilon
-        assert len(orig_nsp.normsubpathitems) != 0
+
+        if len(orig_nsp.normsubpathitems) == 0:
+            return normpath.normpath([]), None, None, {}
 
         # avoid too small dists: we would run into instabilities
         if abs(dist) < abs(epsilon):
-            assert orig_nsp.normsubpathitems
             par_to_orig = {}
             for nspitem in orig_nsp:
                 par_to_orig[nspitem] = nspitem

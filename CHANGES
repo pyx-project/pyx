@@ -28,6 +28,8 @@
       text_as_path, mesh_as_bitmap, mesh_as_bitmap_resolution
       (new: stripfonts, textaspath, meshasbitmap and meshasbitmapresolution)
       to prevent ambiquity with write_ prefixes.
+  - deformer:
+    - Fix parallel deformer for empty normsubpaths (thanks to Michael J Gruber)
   - version control:
     - switched to git on 2018/07/16 with main repository on GitHub
 
