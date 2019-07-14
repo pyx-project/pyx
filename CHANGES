@@ -28,6 +28,7 @@
       text_as_path, mesh_as_bitmap, mesh_as_bitmap_resolution
       (new: stripfonts, textaspath, meshasbitmap and meshasbitmapresolution)
       to prevent ambiquity with write_ prefixes.
+    - Fix color output in SVG (reported by Michael Hartmann)
   - deformer:
     - Fix parallel deformer for empty normsubpaths (thanks to Michael J Gruber)
   - graph.style:
