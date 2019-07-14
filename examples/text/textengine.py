@@ -13,8 +13,7 @@ c.text(0, 0, r"This is \LaTeX.")
 plaintex = text.TexEngine() # plain TeX engine
 c.insert(plaintex.text(0, -1, r"This is plain \TeX."))
 
-# If you want to use another textengine temporarily, you can just insert
-# a text box manually
+# There also is the UnicodeEngine to output text directly without TeX/LaTeX.
 unicodetext = text.UnicodeEngine() # unicode engine
 c.insert(unicodetext.text(0, -2, "Simple unicode output without TeX/LaTeX."))
 
