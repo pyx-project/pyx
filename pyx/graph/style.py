@@ -1981,7 +1981,12 @@ class density(_keygraphstyle):
                     data.write(empty)
                     continue
                 c = privatedata.colors[value1][value2]
-                c = self.color(privatedata, c)
+                try:
+                    c = self.color(privatedata, c)
+                except TypeError:
+                    data.write(empty)
+                    continue
+
                 data.write(c.to8bitbytes())
                 if needalpha:
                     data.write(bytes((255,)))
