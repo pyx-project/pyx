@@ -1,4 +1,4 @@
-0.15 (2016/xx/xx):
+0.15 (2019/07/14):
   - text module:
     - introduce UnicodeEngine
     - MultiEngineText to express combined text data for TeX based engines and
