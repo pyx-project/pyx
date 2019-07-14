@@ -34,7 +34,7 @@ latexpdf: figs
 	@echo "pdflatex finished; the PDF files are in $(BUILDDIR)/latex."
 
 doctest:
-	cd ../pyx;$(SPHINXBUILD) -b doctest ../manual $(BUILDDIR)/doctest
+	cd ../pyx;$(SPHINXBUILD) -b doctest ../manual ../manual/$(BUILDDIR)/doctest
 
 figs: $(patsubst %.py, %.png, $(filter-out conf.py,$(wildcard *.py)))
 
