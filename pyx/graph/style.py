@@ -1967,7 +1967,7 @@ class density(_keygraphstyle):
                 "/DeviceRGB": "RGB",
                 "/DeviceCMYK": "CMYK"}[self.gradient.getcolor(0).colorspacestring()]
         if needalpha:
-            mode = "A" + mode
+            mode = mode + "A"
         empty = b"\0"*len(mode)
         data = io.BytesIO()
         for value2 in values2:
@@ -1982,9 +1982,9 @@ class density(_keygraphstyle):
                     continue
                 c = privatedata.colors[value1][value2]
                 c = self.color(privatedata, c)
+                data.write(c.to8bitbytes())
                 if needalpha:
                     data.write(bytes((255,)))
-                data.write(c.to8bitbytes())
         i = bitmap.image(len(values1), len(values2), mode, data.getvalue())
 
         v1enlargement = (values1[-1]-values1[0])*0.5/(len(values1)-1)

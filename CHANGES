@@ -30,6 +30,9 @@
       to prevent ambiquity with write_ prefixes.
   - deformer:
     - Fix parallel deformer for empty normsubpaths (thanks to Michael J Gruber)
+  - graph.style
+    - Use RGBA instead of ARGB in the bitmap fallback of graph.style.density
+      Fix saving SVG as supported modes are limited (thanks to Michael J Gruber)
   - version control:
     - switched to git on 2018/07/16 with main repository on GitHub
 
