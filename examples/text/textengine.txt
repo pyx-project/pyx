@@ -1,20 +1,21 @@
 Running and controlling TeX
 
-! Usually, all you will ever need is a single `texrunner` instance which
-controls a single running TeX or LaTeX instance at a time. To make life easy to
+! Usually, all you will ever need is a single `textengine` instance which
+controls a single running TeX or LaTeX instance at a time or uses direct Unicode text typesetting. To make life easy to
 our users..., such an instance is created automatically upon startup and its
-called the `defaulttexrunner`. Whenever you use the function shortcuts like
+called the `defaulttextengine`. Whenever you use the function shortcuts like
 `text.text()` and in particular `text.set()`, you are accessing this
-`defaulttexrunner` instance. Also, the shortcut method `text` of any canvas
-instance uses this `defaulttexrunner` by default.
+`defaulttextengine` instance. Also, the shortcut method `text` of any canvas
+instance uses this `defaulttextengine` by default.
 
-!! However, it is possible to create several texrunner instances. In this
-example, we are using two of them. To make it a little more interesting, we
-instruct the `defaulttexrunner` to use LaTeX, while keeping TeX for the
-`plaintexrunner` instance. It is you turn to try expressions valid in TeX or
-LaTeX only at the different `texrunner` instances.
+!! However, it is possible to create several textengine instances. In this
+example, we are using three of them. To make it a little more interesting, we
+instruct the `defaulttextengine` to use LaTeX, while keeping TeX for the
+`plaintex` instance. It is you turn to use expressions valid in TeX or
+LaTeX only at the different `textengine` instances. Additionally we show the
+use of a `unicodetext` instance to typeset Unicode text.
 
 !! Note that you do not have to worry about mixing the results of different
-texrunners into a single output. Even the embedded fonts in the output are
-shared. You can, by the way, also restart a `texrunner` instance including the
-`defaulttexrunner` and change its configuration on that occasion.
+textengines into a single output. Even the embedded fonts in the output are
+shared. You can, by the way, also restart a plain TeX or LaTeX engines
+including the `defaulttextengine`, which is a plain TeX engine.

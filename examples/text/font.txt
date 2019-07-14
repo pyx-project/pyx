@@ -1,7 +1,7 @@
 Customize fonts
 
 In LaTeX, there are nice packages allowing to switch fonts. Hence, for a simple
-example we change the mode of the default texrunner instance to LaTeX and use
+example we change the mode of the default textengine instance to LaTeX and use
 the `preamble` method to load the `times` package. ...
 
 !! In general, it is more easy to use LaTeX with it's NFSS (new font selection
