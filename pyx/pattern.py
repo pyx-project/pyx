@@ -35,6 +35,7 @@ class pattern(canvas.canvas, attr.exclusiveattr, style.fillstyle):
 
     def __init__(self, painttype=1, tilingtype=1, xstep=None, ystep=None,
                  bbox=None, trafo=None, bboxenlarge=None, **kwargs):
+        kwargs['attrs'] = attr.mergeattrs([style.linewidth.normal] + kwargs.get('attrs', []))
         canvas.canvas.__init__(self, **kwargs)
         attr.exclusiveattr.__init__(self, pattern)
         self.id = "pattern%d" % id(self)

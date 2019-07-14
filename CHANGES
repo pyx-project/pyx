@@ -14,13 +14,13 @@
       prevent warnings occuring especially with Minion or Libertine fonts)
     - fix UnicodeDecodeError for invalid character responses by TeX/LaTeX
       (reported by Gert Ingold)
-  - new examples
+  - new examples:
     - non-ASCII TeX encoding
-  - t1font
+  - t1font:
     - use integers in auto-guessed font descriptors to prevent an issue in pdftex
       (reported by Michael Hartmann)
     - fix typo: ItalicAngles -> ItalicAngle (thanks to Ross Moore)
-  - graph.axis.texter
+  - graph.axis.texter:
     - unify exponential and mixed texter to default texter
     - use MultiEngineText in all texters (decimal, default, factional)
   - pdfwriter, pswriter, svgwriter:
@@ -30,9 +30,11 @@
       to prevent ambiquity with write_ prefixes.
   - deformer:
     - Fix parallel deformer for empty normsubpaths (thanks to Michael J Gruber)
-  - graph.style
+  - graph.style:
     - Use RGBA instead of ARGB in the bitmap fallback of graph.style.density
       Fix saving SVG as supported modes are limited (thanks to Michael J Gruber)
+  - pattern:
+    - inject default linewidth (reported by Michael J Gruber)
   - version control:
     - switched to git on 2018/07/16 with main repository on GitHub
 
