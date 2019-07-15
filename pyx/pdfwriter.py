@@ -105,11 +105,11 @@ class PDFregistry:
 
     def writeresources(self, file):
         file.write("<<\n")
-        file.write("/ProcSet [ %s ]\n" % " ".join(["/%s" % p for p in list(self.procsets.keys())]))
+        file.write("/ProcSet [ %s ]\n" % " ".join(["/%s" % p for p in sorted(self.procsets.keys())]))
         if self.resources:
-            for resourcetype, resources in list(self.resources.items()):
+            for resourcetype, resources in sorted(self.resources.items()):
                 file.write("/%s <<\n%s\n>>\n" % (resourcetype, "\n".join(["/%s %i 0 R" % (name, self.getrefno(object))
-                                                                          for name, object in list(resources.items())])))
+                                                                          for name, object in sorted(resources.items())])))
         file.write(">>\n")
 
 
