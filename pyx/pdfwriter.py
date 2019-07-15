@@ -21,7 +21,7 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import io, copy, logging, time
+import io, copy, logging, os, time
 logger = logging.getLogger("pyx")
 try:
     import zlib
@@ -162,13 +162,18 @@ class PDFinfo(PDFobject):
         PDFobject.__init__(self, "info")
 
     def write(self, file, writer, registry):
-        if time.timezone < 0:
-            # divmod on positive numbers, otherwise the minutes have a different sign from the hours
-            timezone = "-%02i'%02i'" % divmod(-time.timezone/60, 60)
-        elif time.timezone > 0:
-            timezone = "+%02i'%02i'" % divmod(time.timezone/60, 60)
-        else:
+        if os.environ.get('SOURCE_DATE_EPOCH'):
+            creation_date = time.gmtime(int(os.environ.get('SOURCE_DATE_EPOCH')))
             timezone = "Z00'00'"
+        else:
+            if time.timezone < 0:
+                # divmod on positive numbers, otherwise the minutes have a different sign from the hours
+                timezone = "-%02i'%02i'" % divmod(-time.timezone/60, 60)
+            elif time.timezone > 0:
+                timezone = "+%02i'%02i'" % divmod(time.timezone/60, 60)
+            else:
+                timezone = "Z00'00'"
+            creation_date = time.localtime()
 
         def pdfstring(s):
             r = ""
@@ -189,7 +194,8 @@ class PDFinfo(PDFobject):
         if writer.keywords:
             file.write("/Keywords (%s)\n" % pdfstring(writer.keywords))
         file.write("/Creator (PyX %s)\n" % version.version)
-        file.write("/CreationDate (D:%s%s)\n" % (time.strftime("%Y%m%d%H%M"), timezone))
+        file.write("/CreationDate (D:%s%s)\n" %
+                   (time.strftime("%Y%m%d%H%M",creation_date), timezone))
         file.write(">>\n")
 
 
