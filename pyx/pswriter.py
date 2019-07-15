@@ -20,7 +20,7 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import io, copy, time, math
+import io, copy, time, math, os
 from . import bbox, config, style, version, unit, trafo, writer
 
 
@@ -121,11 +121,15 @@ class _PSwriter:
         self.encodings = {}
 
     def writeinfo(self, file):
+        if os.environ.get('SOURCE_DATE_EPOCH'):
+            creation_date = time.gmtime(int(os.environ.get('SOURCE_DATE_EPOCH')))
+        else:
+            creation_date = time.localtime()
         file.write("%%%%Creator: PyX %s\n" % version.version)
         if self.title is not None:
             file.write("%%%%Title: %s\n" % self.title)
         file.write("%%%%CreationDate: %s\n" %
-                   time.asctime(time.localtime(time.time())))
+                   time.asctime(creation_date))
 
     def getfontmap(self):
         if self._fontmap is None:

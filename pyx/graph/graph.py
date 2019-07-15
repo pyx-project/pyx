@@ -526,7 +526,7 @@ class graphxy(graph):
             # it is an x-axis
             t = trafo.translate_pt(0, self.ypos_pt + v*self.height_pt - axis.positioner.y1_pt)
         c = canvas.canvas()
-        for layer, subcanvas in list(axis.canvas.layers.items()):
+        for layer, subcanvas in sorted(axis.canvas.layers.items()):
             c.layer(layer).insert(subcanvas, [t])
         assert len(axis.canvas.layers) == len(axis.canvas.items), str(axis.canvas.items)
         axis.canvas = c
@@ -579,8 +579,8 @@ class graphxy(graph):
             return
         self.dolayout()
         self.dobackground()
-        for axis in list(self.axes.values()):
-            for layer, canvas in list(axis.canvas.layers.items()):
+        for k, axis in sorted(self.axes.items()):
+            for layer, canvas in sorted(axis.canvas.layers.items()):
                 self.layer("axes.%s" % layer).insert(canvas)
             assert len(axis.canvas.layers) == len(axis.canvas.items), str(axis.canvas.items)
 
