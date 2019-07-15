@@ -20,7 +20,7 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import binascii, logging, struct, io
+import binascii, hashlib, logging, struct, io
 try:
     import zlib
     haszlib = True
@@ -357,7 +357,7 @@ class bitmap_trafo(baseclasses.canvasitem):
             self.compressmode = None
 
     def imagedata(self, interleavealpha):
-        """ Returns a tuple (mode, data, alpha, palettemode, palettedata)
+        """ Returns a tuple (mode, data, alpha, palettemode, palettedata, imagehash)
         where mode does not contain the alpha channel anymore.
 
         If there is an alpha channel, for interleavealpha == False it is
@@ -430,7 +430,9 @@ class bitmap_trafo(baseclasses.canvasitem):
             else:
                 alpha = alpha.tobytes()
 
-        return mode, data, alpha, palettemode, palettedata
+        imagehash = hashlib.sha1(data).hexdigest()[0:15]
+
+        return mode, data, alpha, palettemode, palettedata, imagehash
 
     def bbox(self):
         bb = bbox.empty()
@@ -441,14 +443,14 @@ class bitmap_trafo(baseclasses.canvasitem):
         return bb
 
     def processPS(self, file, writer, context, registry, bbox):
-        mode, data, alpha, palettemode, palettedata = self.imagedata(True)
+        mode, data, alpha, palettemode, palettedata, imagehash = self.imagedata(True)
         pstrafo = trafo.translate_pt(0, -1.0).scaled(self.imagewidth, -self.imageheight)*self.pdftrafo.inverse()
 
         PSsinglestring = self.PSstoreimage and len(data) < self.PSmaxstrlen
         if PSsinglestring:
-            PSimagename = "image-%d-%s-singlestring" % (id(self.image), self.compressmode)
+            PSimagename = "image-%s-%s-singlestring" % (imagehash, self.compressmode)
         else:
-            PSimagename = "image-%d-%s-stringarray" % (id(self.image), self.compressmode)
+            PSimagename = "image-%s-%s-stringarray" % (imagehash, self.compressmode)
 
         if self.PSstoreimage and not PSsinglestring:
             registry.add(pswriter.PSdefinition("imagedataaccess",
@@ -536,9 +538,9 @@ class bitmap_trafo(baseclasses.canvasitem):
         file.write("grestore\n")
 
     def processPDF(self, file, writer, context, registry, bbox):
-        mode, data, alpha, palettemode, palettedata = self.imagedata(False)
+        mode, data, alpha, palettemode, palettedata, imagehash = self.imagedata(False)
 
-        name = "image-%d-%s" % (id(self.image), self.compressmode or self.imagecompressed)
+        name = "image-%s-%s" % (imagehash, self.compressmode or self.imagecompressed)
         if alpha:
             alpha = PDFimage("%s-smask" % name, self.imagewidth, self.imageheight,
                              None, None, "L", 8,
