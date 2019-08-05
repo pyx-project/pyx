@@ -639,8 +639,8 @@ class T1File:
     eexecr = 55665
     charstringr = 4330
 
-    fontnamepattern = re.compile("/FontName\s+/(.*?)\s+def\s+")
-    fontmatrixpattern = re.compile("/FontMatrix\s*\[\s*(-?[0-9.]+)\s+(-?[0-9.]+)\s+(-?[0-9.]+)\s+(-?[0-9.]+)\s+(-?[0-9.]+)\s+(-?[0-9.]+)\s*\]\s*(readonly\s+)?def")
+    fontnamepattern = re.compile(r"/FontName\s+/(.*?)\s+def\s+")
+    fontmatrixpattern = re.compile(r"/FontMatrix\s*\[\s*(-?[0-9.]+)\s+(-?[0-9.]+)\s+(-?[0-9.]+)\s+(-?[0-9.]+)\s+(-?[0-9.]+)\s+(-?[0-9.]+)\s*\]\s*(readonly\s+)?def")
 
     def __init__(self, data1, data2eexec, data3):
         """initializes a t1font instance
@@ -706,7 +706,7 @@ class T1File:
                     break
                 assert token == "dup"
 
-    lenIVpattern = re.compile(b"/lenIV\s+(\d+)\s+def\s+")
+    lenIVpattern = re.compile(rb"/lenIV\s+(\d+)\s+def\s+")
     flexhintsubrs = [[3, 0, T1callothersubr, T1pop, T1pop, T1setcurrentpoint, T1return],
                      [0, 1, T1callothersubr, T1return],
                      [0, 2, T1callothersubr, T1return],
@@ -997,9 +997,9 @@ class T1File:
         # note that self._data2 is out-of-date here too, hence we need to call getdata2
         return self._eexecencode(self.getdata2())
 
-    newlinepattern = re.compile("\s*[\r\n]\s*")
-    uniqueidstrpattern = re.compile("%?/UniqueID\s+\d+\s+def\s+")
-    uniqueidbytespattern = re.compile(b"%?/UniqueID\s+\d+\s+def\s+")
+    newlinepattern = re.compile("\\s*[\r\n]\\s*")
+    uniqueidstrpattern = re.compile(r"%?/UniqueID\s+\d+\s+def\s+")
+    uniqueidbytespattern = re.compile(rb"%?/UniqueID\s+\d+\s+def\s+")
         # when UniqueID is commented out (as in modern latin), prepare to remove the comment character as well
 
     def getstrippedfont(self, glyphs, charcodes):
@@ -1092,11 +1092,11 @@ class T1File:
         data1 = self.data1
         data3 = self.data3
         if remove_UniqueID_lookup:
-            m1 = re.search("""FontDirectory\s*/%(name)s\s+known{/%(name)s\s+findfont\s+dup\s*/UniqueID\s+known\s*{\s*dup\s*
+            m1 = re.search(r"""FontDirectory\s*/%(name)s\s+known{/%(name)s\s+findfont\s+dup\s*/UniqueID\s+known\s*{\s*dup\s*
                               /UniqueID\s+get\s+\d+\s+eq\s+exch\s*/FontType\s+get\s+1\s+eq\s+and\s*}\s*{\s*pop\s+false\s*}\s*ifelse\s*
                               {save\s+true\s*}\s*{\s*false\s*}\s*ifelse\s*}\s*{\s*false\s*}\s*ifelse""" % {"name": self.name},
                            data1, re.VERBOSE)
-            m3 = re.search("\s*{restore}\s*if", data3)
+            m3 = re.search(r"\s*{restore}\s*if", data3)
             if m1 and m3:
                 data1 = data1[:m1.start()] + data1[m1.end():]
                 data3 = data3[:m3.start()] + data3[m3.end():]

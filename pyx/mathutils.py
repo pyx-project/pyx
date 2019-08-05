@@ -109,7 +109,7 @@ def _realroots_quartic(a3, a2, a1, a0):
 
 
 def realpolyroots(*cs):
-    """returns the roots of a polynom with given coefficients
+    r"""returns the roots of a polynom with given coefficients
 
     polynomial with coefficients given in cs:
       0 = \sum_i  cs[i] * x^(len(cs)-i-1)
