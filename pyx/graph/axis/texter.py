@@ -42,7 +42,7 @@ class _texter:
 
 
 class decimal(_texter):
-    "a texter creating decimal labels (e.g. '1.234' or even '0.\overline{3}')"
+    r"a texter creating decimal labels (e.g. '1.234' or even '0.\overline{3}')"
 
     def __init__(self, prefix="", infix="", suffix="", equalprecision=False,
                        decimalsep=".", thousandsep="", thousandthpartsep="",
@@ -145,7 +145,7 @@ skipmantissaunity.all = 2
 
 class default(_texter):
 
-    "a texter creating regular (e.g. '2') and exponential (e.g. '2\cdot10^5') labels"
+    r"a texter creating regular (e.g. '2') and exponential (e.g. '2\cdot10^5') labels"
 
     def __init__(self, multiplication_tex=r"\cdot{}", multiplication_unicode="·", base=Fraction(10),
                        skipmantissaunity=skipmantissaunity.all, minusunity="-",
@@ -261,7 +261,7 @@ class default(_texter):
 
 
 class rational(_texter):
-    "a texter creating rational labels (e.g. 'a/b' or even 'a \over b')"
+    r"a texter creating rational labels (e.g. 'a/b' or even 'a \over b')"
     # we use divmod here to be more explicit
 
     def __init__(self, prefix="", infix="", suffix="",

@@ -83,11 +83,11 @@ class svgValueError(ValueError): pass
 
 class _marker: pass
 
-_svgFloatPattern = re.compile("(?P<value>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?)(?P<unit>(px|pt|pc|mm|cm|in|%)?)\s*,?\s*")
-_svgBoolPattern = re.compile("(?P<bool>[01])\s*,?\s*")
-_svgPathPattern = re.compile("(?P<cmd>[mlhvcsqtaz])\s*(?P<args>(([^mlhvcsqtaz]|pt|pc|mm|cm)*))", re.IGNORECASE)
-_svgColorAbsPattern = re.compile("rgb\(\s*(?P<red>[0-9]+)\s*,\s*(?P<green>[0-9]+)\s*,\s*(?P<blue>[0-9]+)\s*\)$", re.IGNORECASE)
-_svgColorRelPattern = re.compile("rgb\(\s*(?P<red>[0-9]+)%\s*,\s*(?P<green>[0-9]+)%\s*,\s*(?P<blue>[0-9]+)%\s*\)$", re.IGNORECASE)
+_svgFloatPattern = re.compile(r"(?P<value>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?)(?P<unit>(px|pt|pc|mm|cm|in|%)?)\s*,?\s*")
+_svgBoolPattern = re.compile(r"(?P<bool>[01])\s*,?\s*")
+_svgPathPattern = re.compile(r"(?P<cmd>[mlhvcsqtaz])\s*(?P<args>(([^mlhvcsqtaz]|pt|pc|mm|cm)*))", re.IGNORECASE)
+_svgColorAbsPattern = re.compile(r"rgb\(\s*(?P<red>[0-9]+)\s*,\s*(?P<green>[0-9]+)\s*,\s*(?P<blue>[0-9]+)\s*\)$", re.IGNORECASE)
+_svgColorRelPattern = re.compile(r"rgb\(\s*(?P<red>[0-9]+)%\s*,\s*(?P<green>[0-9]+)%\s*,\s*(?P<blue>[0-9]+)%\s*\)$", re.IGNORECASE)
 
 
 class svgBaseHandler(xml.sax.ContentHandler):
@@ -242,7 +242,7 @@ class svgHandler(svgBaseHandler):
 
     def toTrafo(self, svgTrafo):
         t = trafo.identity
-        for match in reversed(list(re.finditer("(?P<cmd>matrix|translate|scale|rotate|skewX|skewY)\((?P<args>[^)]*)\)", svgTrafo))):
+        for match in reversed(list(re.finditer(r"(?P<cmd>matrix|translate|scale|rotate|skewX|skewY)\((?P<args>[^)]*)\)", svgTrafo))):
             cmd = match.group("cmd")
             args = match.group("args")
             if cmd == "matrix":
