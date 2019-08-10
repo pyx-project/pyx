@@ -242,7 +242,7 @@ class texmessage:
     no_nav = staticmethod(no_file.__func__("nav", "texmessage.no_nav"))
 
     aux_pattern = re.compile(r'\(([^()]+\.aux|"[^"]+\.aux")\)')
-    log_pattern = re.compile(r"Transcript written on .*texput\.log\.", re.DOTALL)
+    log_pattern = re.compile(r'Transcript written on .*texput\.log"?\.', re.DOTALL)
 
     @staticmethod
     def end(msg):
@@ -938,7 +938,7 @@ class Tee(object):
 # The tex engine state represents the next (or current) execute state.
 STATE_START, STATE_PREAMBLE, STATE_TYPESET, STATE_DONE = range(4)
 PyXBoxPattern = re.compile(r"PyXBox:page=(?P<page>\d+),lt=(?P<lt>-?\d*((\d\.?)|(\.?\d))\d*)pt,rt=(?P<rt>-?\d*((\d\.?)|(\.?\d))\d*)pt,ht=(?P<ht>-?\d*((\d\.?)|(\.?\d))\d*)pt,dp=(?P<dp>-?\d*((\d\.?)|(\.?\d))\d*)pt:")
-dvi_pattern = re.compile(r"Output written on .*texput\.dvi \((?P<page>\d+) pages?, \d+ bytes\)\.", re.DOTALL)
+dvi_pattern = re.compile(r'Output written on .*texput\.dvi"? \((?P<page>\d+) pages?, \d+ bytes\)\.', re.DOTALL)
 
 class TexDoneError(Exception):
     pass
