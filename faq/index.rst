@@ -22,3 +22,4 @@ Some frequently and not so frequently asked questions about PyX
    plotting_graphs
    other_plotting
    tex_latex
+   unicode_text
