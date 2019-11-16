@@ -104,7 +104,7 @@ Undefined control sequence ``\frac``
 
 The command ``\frac`` is only available in LaTeX. The equivalent to
 ``\frac{a}{b}`` in TeX is ``{a \over b}``.  As an alternative you may ask for
-the LaTeX mode as explained in :ref:`undefined_usepackage`.
+the LaTeX engine as explained in :ref:`undefined_usepackage`.
 
 Missing ``$`` inserted
 ----------------------
