@@ -104,7 +104,7 @@ Undefined control sequence ``\frac``
 
 The command ``\frac`` is only available in LaTeX. The equivalent to
 ``\frac{a}{b}`` in TeX is ``{a \over b}``.  As an alternative you may ask for
-the LaTeX mode as explained in :ref:`undefined_usepackage`.
+the LaTeX engine as explained in :ref:`undefined_usepackage`.
 
 Missing ``$`` inserted
 ----------------------
@@ -140,7 +140,7 @@ not allow linebreaks to occur. There are two ways out.
 If the text material should go in a box of given width, a parbox can be used
 like in the following example::
 
-   text.set(mode="latex")
+   text.set(text.LatexEngine)
    c = canvas.canvas()
    w = 2
    c.text(0, 0, r"\begin{itemize}\item a\item b\end{itemize}", [text.parbox(w)])
@@ -151,7 +151,7 @@ is useful which provides several environments like ``Bitemize`` and
 ``Beqnarray`` which can be processed in LR mode. The relevant part of the code
 could look like::
 
-   text.set(mode="latex")
+   text.set(text.LatexEngine)
    text.preamble(r"\usepackage{fancybox}")
    c = canvas.canvas()
    c.text(0, 0, r"\begin{Bitemize}\item a\item b\end{Bitemize}")
@@ -277,7 +277,7 @@ problem (even though it may cost you some time to set up things properly).
 In the simplest case, your LaTeX system contains everything needed. 
 Including the following line into your code will probably work::
 
-    text.set(mode="latex")
+    text.set(text.LatexEngine)
     text.preamble(r"\usepackage{mathptmx}")
 
 and give you Times as roman font. 
