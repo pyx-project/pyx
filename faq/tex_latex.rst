@@ -95,11 +95,12 @@ Undefined control sequence ``\usepackage``
 ------------------------------------------
 
 The command ``\usepackage`` is specific to LaTeX. Since by default PyX
-uses TeX, you have to specify the correct mode::
+uses TeX, you have to specify the correct typesetting engine::
 
-   text.set(mode="latex")
+   text.set(text.LatexEngine)
 
 Undefined control sequence ``\frac``
+------------------------------------
 
 The command ``\frac`` is only available in LaTeX. The equivalent to
 ``\frac{a}{b}`` in TeX is ``{a \over b}``.  As an alternative you may ask for
