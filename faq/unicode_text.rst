@@ -1,3 +1,5 @@
+.. _text_without_tex:
+
 =======================
 Text output without TeX
 =======================

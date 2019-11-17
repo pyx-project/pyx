@@ -7,8 +7,8 @@ General aspects
 
 .. _what_is_tex:
 
-What is TeX/LaTeX and why do I need it?
----------------------------------------
+What is TeX/LaTeX?
+------------------
 
 TeX is a high quality typesetting system developed by Donald E. Knuth which is
 available for a wide variety of operating systems. LaTeX is a macro package
@@ -17,10 +17,15 @@ particular for complex typesetting tasks. The current version of LaTeX is
 referred to as LaTeX2e and offers e.g. improved font selection as compared to
 the long outdated LaTeX 2.09 which should no longer be used. 
 
-All typesetting tasks in PyX are ultimately handed over to TeX (which is the
-default) or LaTeX, so that PyX cannot do without it. On the other hand, the
-capabilities of TeX and LaTeX can be used for complex tasks where both graphics
-and typesetting are needed.
+Do I need to use TeX/LaTeX?
+---------------------------
+
+Traditionally, typesetting in PyX is done with TeX or LaTeX. With PyX 0.15, the
+Unicode engine was introduced. This engine can be useful if one does not need
+the elaborate typesetting capabilities of TeX and LaTeX and wants to avoid
+installing the corresponding packages.  A TeX installation may nevertheless be
+useful if one wants to make use of fonts distributed with it. For further
+information see :ref:`text_without_tex`.
 
 .. _intro_tex_latex:
 
