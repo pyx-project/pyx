@@ -896,6 +896,8 @@ def _parsehex(s):
         raise AFMError("Expecting hexadecimal int, got '%s'" % s)
 
 def _parsefloat(s):
+    if ',' in s:
+        s = s.replace(',', '.', 1)
     try:
         return float(s)
     except:
