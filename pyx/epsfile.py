@@ -215,7 +215,9 @@ def _readbbox(file):
             values = line.split(b":", 1)[1].split()
             if len(values) != 4:
                 raise IOError("invalid number of bounding box values")
-            usebbox = bbox.bbox_pt(*list(map(int, values)))
+            # According to the standard, bound box values should be ints, but let's 
+            # be graceful and accept floats, as well.
+            usebbox = bbox.bbox_pt(*list(map(float, values)))
     if not usebbox:
         raise IOError("missing bounding box information in document trailer")
     return usebbox
