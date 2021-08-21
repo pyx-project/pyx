@@ -7,6 +7,8 @@
     - ignore the l3backend header special for dvips
   - bitmap module:
     - fix bitmap palette data pdf output being bytes
+  - canvas module:
+     - add clear() method to canvas class (suggested by Camilo Talero)
 
 0.15 (2019/07/14):
   - text module:

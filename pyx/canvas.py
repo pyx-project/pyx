@@ -154,6 +154,11 @@ class canvas(baseclasses.canvasitem):
     def __getitem__(self, i):
         return self.items[i]
 
+    def clear(self):
+        """clear canvas"""
+        self.items.clear()
+        self.layers.clear()
+
     def _repr_png_(self):
         """
         Automatically represent as PNG graphic when evaluated in IPython notebook.
