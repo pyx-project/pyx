@@ -1703,24 +1703,26 @@ class unicodetextbox_pt(textbox_pt):
         c.processSVG(xml, writer, context, registry, bbox)
 
 
+class FontMetricType:
+
+    afm = 1
+    pfm = 2
+
+
 class UnicodeEngine:
 
-    afm_metric = 1
-    pfm_metric = 2
-
-    def __init__(self, fontname="cmr10", size=10, metric=afm_metric):
+    def __init__(self, fontname="cmr10", size=10, font_metric_type=FontMetricType.afm):
         with config.open(fontname, [config.format.type1]) as f:
             t1file = T1File.from_PF_bytes(f.read())
-        if metric == self.afm_metric:
+        if font_metric_type == FontMetricType.afm:
             with config.open(fontname, [config.format.afm], ascii=True) as f:
-                afmfile = AFMfile(f)
-            self.font = T1font(t1file, afmfile)
-        elif metric == self.pfm_metric:
+                metric_file = AFMfile(f)
+        elif font_metric_type == FontMetricType.pfm:
             with config.open(fontname, [config.format.pfm]) as f:
-                pfmfile = PFMfile(f, t1file)
-            self.font = T1font(t1file, pfmfile)
+                metric_file = PFMfile(f, t1file)
         else:
-            raise ValueError('invalid value for matric')
+            raise ValueError("invalid value for matric")
+        self.font = T1font(t1file, metric_file)
         self.size = size
 
     def preamble(self):
