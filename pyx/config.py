@@ -49,6 +49,7 @@ class format:
 
 format.tfm = format("tfm", [".tfm"])
 format.afm = format("afm", [".afm"])
+format.pfm = format("pfm", [".pfm"])
 format.fontmap = format("map", [".map"])
 format.pict = format("graphic/figure", [".eps", ".epsi"])
 format.tex_ps_header = format("PostScript header", ["", ".pro"])                    # contains also: enc files

@@ -1535,6 +1535,7 @@ from pyx import deco
 from pyx.font import T1font
 from pyx.font.t1file import T1File
 from pyx.font.afmfile import AFMfile
+from pyx.font.pfmfile import PFMfile
 
 
 class MultiEngineText:
@@ -1704,12 +1705,22 @@ class unicodetextbox_pt(textbox_pt):
 
 class UnicodeEngine:
 
-    def __init__(self, fontname="cmr10", size=10):
+    afm_metric = 1
+    pfm_metric = 2
+
+    def __init__(self, fontname="cmr10", size=10, metric=afm_metric):
         with config.open(fontname, [config.format.type1]) as f:
             t1file = T1File.from_PF_bytes(f.read())
-        with config.open(fontname, [config.format.afm], ascii=True) as f:
-            afmfile = AFMfile(f)
-        self.font = T1font(t1file, afmfile)
+        if metric == self.afm_metric:
+            with config.open(fontname, [config.format.afm], ascii=True) as f:
+                afmfile = AFMfile(f)
+            self.font = T1font(t1file, afmfile)
+        elif metric == self.pfm_metric:
+            with config.open(fontname, [config.format.pfm]) as f:
+                pfmfile = PFMfile(f, t1file)
+            self.font = T1font(t1file, pfmfile)
+        else:
+            raise ValueError('invalid value for matric')
         self.size = size
 
     def preamble(self):
