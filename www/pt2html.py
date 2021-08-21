@@ -1,4 +1,4 @@
-import sys, os, os.path, cgi, io, codecs, glob, re, warnings
+import sys, os, os.path, html, io, codecs, glob, re, warnings
 import keyword, token, tokenize
 import xml.dom.minidom
 from zope.pagetemplate.pagetemplate import PageTemplate
@@ -63,7 +63,7 @@ class MakeHtml:
                 self.output.write('</span>')
             if tokclass is not None and tokclass != self.tokclass:
                 self.output.write('<span class="%s">' % tokclass)
-            self.output.write(cgi.escape(toktext))
+            self.output.write(html.escape(toktext))
             self.tokclass = tokclass
 
             # calculate new column position
