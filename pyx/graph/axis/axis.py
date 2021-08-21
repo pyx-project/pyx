@@ -90,7 +90,7 @@ class _regularaxis(_axis):
             for value in columndata:
                 try:
                     value = value + self.zero
-                except:
+                except Exception:
                     pass
                 else:
                     if self.min is None and (data.min is None or value < data.min):
@@ -359,11 +359,11 @@ class bar(_axis):
             # some checks and error messages
             try:
                 len(value)
-            except:
+            except Exception:
                 raise ValueError("tuple expected by bar axis '%s'" % errorname)
             try:
                 value + ""
-            except:
+            except Exception:
                 pass
             else:
                 raise ValueError("tuple expected by bar axis '%s'" % errorname)
@@ -482,7 +482,7 @@ class autosizedlinear(linear):
         data = linear.createdata(self, errorname)
         try:
             data.size = data.max - data.min
-        except:
+        except Exception:
             data.size = 0
         return data
 
@@ -490,7 +490,7 @@ class autosizedlinear(linear):
         linear.adjustaxis(self, data, columndata, graphtextengine, errorname)
         try:
             data.size = data.max - data.min
-        except:
+        except Exception:
             data.size = 0
 
     def create(self, data, positioner, graphtextengine, errorname):

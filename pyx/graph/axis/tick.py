@@ -63,7 +63,7 @@ class rational:
                 raise ValueError("unrecognized characters in '%s'" % s)
             try:
                 x = int(commaparts[0])
-            except:
+            except Exception:
                 x = int(commaparts[0])
         else:
             x = 0
@@ -72,7 +72,7 @@ class rational:
                 raise ValueError("unrecognized characters in '%s'" % s)
             try:
                 y = int(commaparts[1])
-            except:
+            except Exception:
                 y = int(commaparts[1])
         else:
             y = 0
@@ -119,15 +119,15 @@ class rational:
         try:
             # does x behave like a number
             x + 0
-        except:
+        except Exception:
             try:
                 # does x behave like a string
                 x + ""
-            except:
+            except Exception:
                 try:
                     # x might be a tuple
                     self.num, self.denom = x
-                except:
+                except Exception:
                     # otherwise it should have a num and denom
                     self.num, self.denom = x.num, x.denom
             else:
@@ -160,13 +160,13 @@ class rational:
     def __lt__(self, other):
         try:
             return self.num * other.denom < other.num * self.denom
-        except:
+        except Exception:
             return float(self) < other
 
     def __eq__(self, other):
         try:
             return self.num * other.denom == other.num * self.denom
-        except:
+        except Exception:
             return float(self) == other
 
     def __abs__(self):

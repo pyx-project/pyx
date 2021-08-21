@@ -1533,7 +1533,7 @@ def _valueorlistmethod(method):
         try:
             for item in valueorlist:
                 break
-        except:
+        except Exception:
             return method(self, [valueorlist], *args, **kwargs)[0]
         return method(self, valueorlist, *args, **kwargs)
     return wrappedmethod
@@ -1919,7 +1919,7 @@ class normpath:
         try:
             for param in params:
                 break
-        except:
+        except Exception:
             params = [params]
         return self._split_pt(self._convertparams(params, self.arclentoparam_pt))
 
@@ -1928,7 +1928,7 @@ class normpath:
         try:
             for param in params:
                 break
-        except:
+        except Exception:
             params = [params]
         return self._split_pt(self._convertparams(params, self.arclentoparam))
 

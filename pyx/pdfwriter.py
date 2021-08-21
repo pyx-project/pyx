@@ -26,7 +26,7 @@ logger = logging.getLogger("pyx")
 try:
     import zlib
     haszlib = True
-except:
+except ImportError:
     haszlib = False
 
 from . import bbox, config, style, unit, version, trafo, writer

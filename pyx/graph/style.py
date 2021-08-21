@@ -346,7 +346,7 @@ class range(_style):
                             for value, delta in zip(d[self.mask_value], d[k]):
                                 try:
                                     mindata.append(value-delta)
-                                except:
+                                except Exception:
                                     pass
                             graph.axes[a].adjustaxis(mindata)
                         if k & (self.mask_dmax | self.mask_d):
@@ -354,7 +354,7 @@ class range(_style):
                             for value, delta in zip(d[self.mask_value], d[k]):
                                 try:
                                     maxdata.append(value+delta)
-                                except:
+                                except Exception:
                                     pass
                             graph.axes[a].adjustaxis(maxdata)
                         del d[k]
@@ -856,7 +856,7 @@ class text(_styleneedingpointpos):
             x_pt, y_pt = graph.vpos_pt(*sharedata.vpos)
             try:
                 text = str(point[self.textname])
-            except:
+            except Exception:
                 pass
             else:
                 if self.dxname is None:
@@ -918,7 +918,7 @@ class arrow(_styleneedingpointpos):
             try:
                 angle = point["angle"] + 0.0
                 size = point["size"] + 0.0
-            except:
+            except Exception:
                 pass
             else:
                 if point["size"] > self.epsilon:
@@ -1362,10 +1362,10 @@ class barpos(_style):
     def addsubvalue(self, value, subvalue):
         try:
             value + ""
-        except:
+        except Exception:
             try:
                 return value[0], self.addsubvalue(value[1], subvalue)
-            except:
+            except Exception:
                 return value, subvalue
         else:
             return value, subvalue

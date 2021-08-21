@@ -199,7 +199,7 @@ class graph(canvas.canvas):
         try:
             for d in data:
                 pass
-        except:
+        except Exception:
             usedata = [data]
             singledata = 1
         else:
@@ -261,13 +261,13 @@ class graph(canvas.canvas):
         for plotitem in self.plotitems:
             try:
                 styletotal[stylesid(plotitem.styles)] += 1
-            except:
+            except Exception:
                 styletotal[stylesid(plotitem.styles)] = 1
         styleindex = {}
         for plotitem in self.plotitems:
             try:
                 styleindex[stylesid(plotitem.styles)] += 1
-            except:
+            except Exception:
                 styleindex[stylesid(plotitem.styles)] = 0
             plotitem.selectstyles(self, styleindex[stylesid(plotitem.styles)],
                                         styletotal[stylesid(plotitem.styles)])

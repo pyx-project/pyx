@@ -24,7 +24,7 @@ import binascii, hashlib, logging, struct, io
 try:
     import zlib
     haszlib = True
-except:
+except ImportError:
     haszlib = False
 
 from . import bbox, baseclasses, pswriter, pdfwriter, trafo, unit
@@ -166,7 +166,7 @@ class jpegimage(image):
     def __init__(self, file):
         try:
             data = file.read()
-        except:
+        except Exception:
             with open(file, "rb") as f:
                 data = f.read()
         pos = 0
@@ -344,7 +344,7 @@ class bitmap_trafo(baseclasses.canvasitem):
 
         try:
             self.imagecompressed = image.compressed
-        except:
+        except Exception:
             self.imagecompressed = None
         if self.compressmode not in [None, "Flate", "DCT"]:
             raise ValueError("invalid compressmode '%s'" % self.compressmode)

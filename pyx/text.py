@@ -1612,7 +1612,7 @@ class unicodetextbox_pt(textbox_pt):
                         try:
                             t = self.font.text_pt(x_pt, text.shift*self.size, text_fragment, text.scale*self.size)
                             x_pt += t.bbox().width_pt()
-                        except:
+                        except Exception:
                             assert '·' in text_fragment
                             t = self.font.text_pt(x_pt, text.shift*self.size, text_fragment.replace('·', 'x'), text.scale*self.size)
                             x_pt += t.bbox().width_pt()

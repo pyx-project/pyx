@@ -884,7 +884,7 @@ _READ_END         = 8
 def _parseint(s):
     try:
         return int(s)
-    except:
+    except Exception:
         raise AFMError("Expecting int, got '%s'" % s)
 
 def _parsehex(s):
@@ -892,7 +892,7 @@ def _parsehex(s):
         if s[0] != "<" or s[-1] != ">":
             raise AFMError()
         return int(s[1:-1], 16)
-    except:
+    except Exception:
         raise AFMError("Expecting hexadecimal int, got '%s'" % s)
 
 def _parsefloat(s):
@@ -901,7 +901,7 @@ def _parsefloat(s):
         # Gracefuly accept such input.
         s = s.replace(",", ".")
         return float(s)
-    except:
+    except Exception:
         raise AFMError("Expecting float, got '%s'" % s)
 
 def _parsefloats(s, nos):
@@ -912,7 +912,7 @@ def _parsefloats(s, nos):
         result = list(map(float, numbers))
         if len(result) != nos:
             raise AFMError()
-    except:
+    except Exception:
         raise AFMError("Expecting list of %d numbers, got '%s'" % (s, nos))
     return result
 
@@ -1269,14 +1269,14 @@ class AFMfile(metric.metric):
             if key == "KP":
                 try:
                     name1, name2, x, y = args.split()
-                except:
+                except Exception:
                     raise AFMError("Expecting name1, name2, x, y, got '%s'" % args)
                 x = _parsefloat(x)
                 y = _parsefloat(y)
             elif key == "KPH":
                 try:
                     hex1, hex2, x, y = args.split()
-                except:
+                except Exception:
                     raise AFMError("Expecting <hex1>, <hex2>, x, y, got '%s'" % args)
                 name1 = _parsehex(hex1)
                 name2 = _parsehex(hex2)
@@ -1285,14 +1285,14 @@ class AFMfile(metric.metric):
             elif key == "KPX":
                 try:
                     name1, name2, x = args.split()
-                except:
+                except Exception:
                     raise AFMError("Expecting name1, name2, x, got '%s'" % args)
                 x = _parsefloat(x)
                 y = 0
             elif key == "KPY":
                 try:
                     name1, name2, y = args.split()
-                except:
+                except Exception:
                     raise AFMError("Expecting name1, name2, y, got '%s'" % args)
                 x = 0
                 y = _parsefloat(y)
@@ -1323,13 +1323,13 @@ class AFMfile(metric.metric):
             if key == "CC":
                 try:
                     name, no = args.split()
-                except:
+                except Exception:
                     raise AFMError("Expecting name number, got '%s'" % args)
                 no = _parseint(no)
             elif key == "PCC":
                 try:
                     name1, x, y = args.split()
-                except:
+                except Exception:
                     raise AFMError("Expecting name x y, got '%s'" % args)
                 parts.append((name1, _parsefloat(x), _parsefloat(y)))
             else:

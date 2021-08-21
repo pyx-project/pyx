@@ -2,7 +2,7 @@ import sys; sys.path.insert(0, "../..")
 from pyx import *
 try:
     from PIL.Image import open
-except:
+except ImportError:
     print("PIL not available, skipping palette test")
     paletteimage = None
 else:

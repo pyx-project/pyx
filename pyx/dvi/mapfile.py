@@ -101,7 +101,7 @@ class MAPline:
                 while pscode:
                     try:
                         arg, cmd = pscode[:2]
-                    except:
+                    except Exception:
                         raise UnsupportedPSFragment("Unsupported Postscript fragment '%s'" % pscode)
                     pscode = pscode[2:]
                     if cmd == "ReEncodeFont":

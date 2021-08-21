@@ -203,14 +203,14 @@ locator_classes["pykpathsea"] = pykpathsea
 def Popen(cmd, *args, **kwargs):
     try:
         cmd + ""
-    except:
+    except Exception:
         pass
     else:
         raise ValueError("pyx.config.Popen must not be used with a string cmd")
     info = "PyX executes {} with args {}".format(cmd[0], cmd[1:])
     try:
         shutil.which
-    except:
+    except Exception:
         pass
     else:
         info += " located at {}".format(shutil.which(cmd[0]))

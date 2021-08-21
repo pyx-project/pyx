@@ -55,7 +55,7 @@ class page:
         # support for deprecated string specification of paper formats
         try:
             paperformat + ""
-        except:
+        except Exception:
             self.paperformat = paperformat
         else:
             self.paperformat = _paperformatfromstring(paperformat)
@@ -159,7 +159,7 @@ def _outputstream(file, suffix):
         return _noclose(sys.stdout.buffer)
     try:
         file.write(b"")
-    except:
+    except Exception:
         if not file.endswith(".%s" % suffix):
             return open("%s.%s" % (file, suffix), "wb")
         return open(file, "wb")

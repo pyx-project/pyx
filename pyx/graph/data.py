@@ -222,7 +222,7 @@ class data(_data):
     def columncallback(self, value):
         try:
             return self.orgdata.columndata[value][self.columncallbackcount]
-        except:
+        except Exception:
             return self.orgdata.columns[value][self.columncallbackcount]
 
 
@@ -319,7 +319,7 @@ class file(data):
 
         try:
             filename.readlines
-        except:
+        except Exception:
             # not a file-like object -> open it
             cachekey = self.getcachekey(filename, commentpattern, stringpattern, columnpattern, skiphead, skiptail, every)
             if cachekey not in filecache:
@@ -359,7 +359,7 @@ class conffile(data):
                     value = config.get(sections[i], option)
                     try:
                         value = float(value)
-                    except:
+                    except Exception:
                         pass
                     try:
                         index = columns[option]
@@ -378,7 +378,7 @@ class conffile(data):
 
         try:
             filename.readlines
-        except:
+        except Exception:
             # not a file-like object -> open it
             if filename not in filecache:
                 filecache[filename] = readfile(open(filename), filename)
@@ -484,7 +484,7 @@ class cbdfile(data):
 
         try:
             filename.readlines
-        except:
+        except Exception:
             # not a file-like object -> open it
             cachekey = self.getcachekey(filename, minrank, maxrank)
             if cachekey not in cbdfilecache:

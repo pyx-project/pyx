@@ -34,7 +34,7 @@ from pyx.path import path, moveto_pt, lineto_pt, curveto_pt, closepath
 
 try:
     from ._t1code import *
-except:
+except Exception:
     from .t1code import *
 
 
@@ -1053,7 +1053,7 @@ class T1File:
             glyphinfo_h = self.getglyphinfo("h")
             glyphinfo_period = self.getglyphinfo("period")
             glyphinfo_colon = self.getglyphinfo("colon")
-        except:
+        except Exception:
             logger.warning("Auto-guessing of font information for font '%s' failed. We're writing stub data instead." % self.name)
             file.write("/Flags 4\n")
             file.write("/FontBBox [0 -100 1000 1000]\n")

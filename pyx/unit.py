@@ -145,7 +145,7 @@ class length:
             # if this fails, we give other a chance to do the addition
             try:
                 other = length(other)
-            except:
+            except Exception:
                 return other + self
         result = length()
         result.t = self.t + other.t
@@ -164,7 +164,7 @@ class length:
             # if this fails, we give other a chance to do the subtraction
             try:
                 other = length(other)
-            except:
+            except Exception:
                 return -other + self
         result = length()
         result.t = self.t - other.t

@@ -7,7 +7,7 @@ from pyx import normpath
 # make math.sqrt raising an exception for negativ values
 try:
     math.sqrt(-1)
-except:
+except Exception:
     pass
 else:
     math._sqrt = math.sqrt

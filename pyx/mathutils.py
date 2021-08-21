@@ -25,7 +25,7 @@ import math, types
 # try:
 #     import Numeric, LinearAlgebra
 #     _has_numeric = 1
-# except:
+# except Exception:
 #     _has_numeric = 0
 
 

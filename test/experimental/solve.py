@@ -87,7 +87,7 @@ class scalar:
             raise RuntimeError("scalar already defined")
         try:
             self._scalar = float(value)
-        except:
+        except Exception:
             raise RuntimeError("float expected")
 
     def get(self):
@@ -237,12 +237,12 @@ class vector:
     def __init__(self, dimension_or_values, name="unnamed_vector"):
         try:
             name + ""
-        except:
+        except Exception:
             raise RuntimeError("a vectors name should be a string (you probably wanted to write vector([x, y]) instead of vector(x, y))")
         try:
             for value in dimension_or_values:
                 pass
-        except:
+        except Exception:
             # dimension
             self._items = [scalar(name="%s[%i]" % (name, i))
                            for i in range(dimension_or_values)]
@@ -337,13 +337,13 @@ class matrix:
     def __init__(self, dimensions_or_values, name="unnamed_matrix"):
         try:
             name + ""
-        except:
+        except Exception:
             raise RuntimeError("a matrix name should be a string (you probably wanted to write matrix([x, y]) instead of matrix(x, y))")
         try:
             for row in dimensions_or_values:
                 for col in row:
                     pass
-        except:
+        except Exception:
             # dimension
             self._numberofrows, self._numberofcols = [int(x) for x in dimensions_or_values]
             self._rows = [[scalar(name="%s[%i, %i]" % (name, row, col))
@@ -468,13 +468,13 @@ class trafo:
     def __init__(self, dimensions_or_values, name="unnamed_trafo"):
         try:
             name + ""
-        except:
+        except Exception:
             raise RuntimeError("a trafo name should be a string (you probably wanted to write trafo([x, y]) instead of trafo(x, y))")
         if len(dimensions_or_values) != 2:
             raise RuntimeError("first parameter of a trafo must contain two elements: either two dimensions or a matrix and a vector")
         try:
             numberofrows, numberofcols = [int(x) for x in dimensions_or_values]
-        except:
+        except Exception:
             self._matrix = dimensions_or_values[0].matrix()
             self._vector = dimensions_or_values[1].vector()
             if self._matrix.getnumberofrows() != len(self._vector):
