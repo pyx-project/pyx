@@ -1149,7 +1149,6 @@ class SingleEngine:
     def do_start(self):
         """Setup environment and start TeX interpreter."""
         assert self.state == STATE_START
-        self.state = STATE_PREAMBLE
 
         chroot = config.get("text", "chroot", "")
         if chroot:
@@ -1183,6 +1182,8 @@ class SingleEngine:
             else:
                 self.texinput = Tee(self.copyinput, self.texinput)
         self.texoutput = MonitorOutput(self.name, io.TextIOWrapper(self.popen.stdout, encoding=self.texenc, errors="surrogateescape"))
+
+        self.state = STATE_PREAMBLE
         self._execute("\\scrollmode\n\\raiseerror%\n" # switch to and check scrollmode
                       "\\def\\PyX{P\\kern-.3em\\lower.5ex\\hbox{Y}\\kern-.18em X}%\n" # just the PyX Logo
                       "\\gdef\\PyXBoxHAlign{0}%\n" # global PyXBoxHAlign (0.0-1.0) for the horizontal alignment, default to 0
