@@ -262,7 +262,7 @@ class PDFimagepalettedata(pdfwriter.PDFobject):
                    "/Length %d\n" % len(self.data))
         file.write(">>\n"
                    "stream\n")
-        file.write(self.data)
+        file.write_bytes(self.data)
         file.write("\n"
                    "endstream\n")
 

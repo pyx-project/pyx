@@ -5,6 +5,8 @@
     - make alignment work with texlive 2020 (reported by Thomas Bending)
   - dvi module:
     - ignore the l3backend header special for dvips
+  - bitmap module:
+    - fix bitmap palette data pdf output being bytes
 
 0.15 (2019/07/14):
   - text module:
