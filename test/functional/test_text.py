@@ -111,6 +111,12 @@ sc.stroke(p, [deco.curvedtext(r"\PyX{} is fun!", textattrs=[trafo.mirror(), traf
               deco.curvedtext(r"r{\color[rgb]{1,0,0}igh}t", textattrs=[text.halign.right, text.vshift.mathaxis, trafo.mirror(), trafo.scale(1.2)], arclenfromend=0.5, exclude=0.1)])
 c.insert(sc, [trafo.translate(12, 12)])
 
+# UnicodeEngine output with afm and pfm
+ue_afm = text.UnicodeEngine()
+c.insert(ue_afm.text(10, 9, "UnicodeEngine output (AFM)"))
+ue_pfm = text.UnicodeEngine(metric=text.UnicodeEngine.pfm_metric)
+c.insert(ue_pfm.text(10, 8, "UnicodeEngine output (PFM)"))
+
 c.writePDFfile("test_text", page_paperformat=document.paperformat.A4)
 c.writeSVGfile("test_text", page_paperformat=document.paperformat.A4)
 
