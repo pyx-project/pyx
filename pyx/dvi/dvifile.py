@@ -225,6 +225,9 @@ class DVIfile:
         y = -self.pos[_POS_V] * self.pyxconv
         if self.debug:
             self.debugfile.write("%d: xxx '%s'\n" % (self.filepos, s))
+        if s == "header=l3backend-dvips.pro":
+            # ignore header included in every file by l3backend since about texlive 2020
+            return
         if not s.startswith("PyX:"):
             logger.warning("ignoring special '%s'" % s)
             return
