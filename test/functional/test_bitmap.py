@@ -6,7 +6,7 @@ except:
     print("PIL not available, skipping palette test")
     paletteimage = None
 else:
-    paletteimage = open("../../www/vcss.png")
+    paletteimage = open("data/vcss.png")
 
 image_bw = bitmap.image(2, 2, "L", b"\0\377\377\0")
 image_rgb = bitmap.image(3, 2, "RGB", b"\77\77\77\177\177\177\277\277\277"
