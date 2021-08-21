@@ -10,7 +10,7 @@ all:
 	$(MAKE) build
 
 clean:
-	rm -r build
+	rm -rf build
 
 public:
 	scp -oCompression=yes -r build/* $(publicserver):$(publicpath)
@@ -20,7 +20,7 @@ build: copy html
 copy:
 	mkdir -p build
 	cp main.css build
-	cp *.png *.ico build
+	cp *.ico build
 	cp png/*.png ../manual/_build/latex/manual.pdf ../faq/_build/latex/pyxfaq.pdf build
 	cp -r ../manual/_build/html build/manual
 	cp -r ../manual/_build/html/manual.html build/manual/index.html
