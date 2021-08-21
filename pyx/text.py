@@ -1202,8 +1202,8 @@ class SingleEngine:
                                                   "rt=\\the\\PyXDimenHAlignRT,"
                                                   "ht=\\the\\ht\\PyXBox,"
                                                   "dp=\\the\\dp\\PyXBox:}%\n"
+                      "\\ht\\PyXBox0pt%\n" # baseline alignment (hight to zero)
                       "\\setbox\\PyXBoxHAligned=\\hbox{\\kern-\\PyXDimenHAlignLT\\box\\PyXBox}%\n" # align horizontally
-                      "\\ht\\PyXBoxHAligned0pt%\n" # baseline alignment (hight to zero)
                       "{\\count0=80\\count1=121\\count2=88\\count3=#2\\shipout\\box\\PyXBoxHAligned}}%\n" # shipout PyXBox to Page 80.121.88.<page number>
                       "\\def\\PyXInput#1{\\immediate\\write16{PyXInputMarker:executeid=#1:}}%\n" # write PyXInputMarker to stdout
                       "\\def\\PyXMarker#1{\\hskip0pt\\special{PyX:marker #1}}%", # write PyXMarker special into the dvi-file
