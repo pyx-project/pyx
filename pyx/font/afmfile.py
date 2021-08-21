@@ -897,12 +897,17 @@ def _parsehex(s):
 
 def _parsefloat(s):
     try:
+        # Against the AFM spec, some AFM files contain floats with "," instead of "." as decimal separators (e.g. DejaVuSans.afm)
+        # Gracefuly accept such input.
+        s = s.replace(",", ".")
         return float(s)
     except:
         raise AFMError("Expecting float, got '%s'" % s)
 
 def _parsefloats(s, nos):
     try:
+        # Gracefuly accept input with "," instead of ".", similarly to _parsefloat()
+        s = s.replace(",", ".")
         numbers = s.split()
         result = list(map(float, numbers))
         if len(result) != nos:
