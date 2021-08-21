@@ -190,7 +190,7 @@ class data(_data):
                             value = "%s%s(%s)%s" % (value[:m.start()], columncallback, m.groups()[0], value[m.end():])
                             m = _columnintref.search(value)
                         value = value.replace("$", columncallback)
-                    expression = compile(value.strip(), __file__, "eval")
+                    expression = compile(value.strip(), "<string>", "eval")
                     context = context.copy()
                     context[columncallback] = self.columncallback
                     if self.orgdata.columns:
@@ -519,7 +519,7 @@ class function(_data):
             raise ValueError("y(x)=... or similar expected")
         if self.xname in context:
             raise ValueError("xname in context")
-        self.expression = compile(expression.strip(), __file__, "eval")
+        self.expression = compile(expression.strip(), "<string>", "eval")
         self.columns = {}
         self.columnnames = [self.xname, self.yname]
 
@@ -572,7 +572,7 @@ class paramfunction(_data):
         else:
             self.title = title
         varlist, expression = expression.split("=")
-        expression = compile(expression.strip(), __file__, "eval")
+        expression = compile(expression.strip(), "<string>", "eval")
         keys = [key.strip() for key in varlist.split(",")]
         self.columns = dict([(key, []) for key in keys])
         context = context.copy()

@@ -63,7 +63,10 @@ def pyxinfo():
     logger.info("Platform name is: {}".format(os.name))
     logger.info("Python executable: {}".format(sys.executable))
     logger.info("Python version: %s", sys.version)
-    logger.info("PyX comes from: %s", __file__)
+    try:
+         logger.info("PyX comes from: %s", __file__)
+    except NameError:
+         logger.info("PyX comes from an unknown location")
     logger.info("PyX version: %s", __version__)
     logger.info("pyxrc %s %s %s", "is" if os.path.isfile(config.user_pyxrc) else "would be" ,"loaded from:", config.user_pyxrc)
     logger.info("pykpathsea: %s", "available" if config.has_pykpathsea else "not available")
