@@ -255,10 +255,10 @@ fontbboxpattern = re.compile(r"/FontBBox\s*\{\s*(?P<fontbbox>(-?[0-9.]+)\s+(-?[0
 def _readNullString(file):
     s = []
     c = file.read(1)
-    while c and c != "\0":
+    while c and c != b"\0":
         s.append(c)
         c = file.read(1)
-    return "".join(s)
+    return b"".join(s)
 
 
 class PFMfile(metric.metric):
@@ -274,7 +274,7 @@ class PFMfile(metric.metric):
          self.dfFirstChar, self.dfLastChar, self.dfDefaultChar,
          self.dfBreakChar, self.dfWidthBytes, self.dfDevice, self.dfFace,
          self.dfBitsPointer, self.dfBitsOffset) = struct.unpack("<HL60s7H3BHB2HB2H4BH4L", file.read(117))
-        self.dfCopyright = self.dfCopyright.split("\000", 1)[0]
+        self.dfCopyright = self.dfCopyright.split(b"\x00", 1)[0]
         (self.dfSizeFields, self.dfExtMetricsOffset, self.dfExtentTable,
          self.dfOriginTable, self.dfPairKernTable, self.dfTrackKernTable,
          self.dfDriverInfo, self.dfReserved) = struct.unpack("<H7L", file.read(30))
@@ -282,7 +282,7 @@ class PFMfile(metric.metric):
             raise ValueError("DeviceName is required for Type1 pfm files.")
         file.seek(self.dfDevice)
         self.deviceName = _readNullString(file)
-        if self.deviceName.lower() != "postscript":
+        if self.deviceName.lower() != b"postscript":
             raise ValueError("Can process pfm files for PostScript fonts only.")
         if self.dfVersion != 0x100:
             raise ValueError("Invalid pfm file version.")
