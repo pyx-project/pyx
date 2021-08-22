@@ -1,6 +1,5 @@
 {% extends "basic/layout.html" %}
 {%- block rootrellink %}<li><a href="https://pyx-project.org">PyX Homepage</a>{{ reldelim1 }}</li>{{ super() }}{% endblock %}
-{%- block relbaritems %} <li>{{ title|striptags|e }}</li>{% endblock %}
 {%- block relbar1 %}<div class="relatedtop">{{ super() }}</div>{% endblock %}
 {%- block relbar2 %}<div class="relatedbottom">{{ super() }}</div>{% endblock %}
 {%- block sidebar2 %}
