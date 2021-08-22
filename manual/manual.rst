@@ -60,3 +60,7 @@
 
    arrows
 
+.. only:: doctest
+
+   utils
+
