@@ -102,26 +102,7 @@ function) restart of the interpreter as required.
 .. autoclass:: LatexEngine
 
 .. autoclass:: textextbox_pt
-   :members: marker
-
-.. unfortunately we cannot list left, right, etc. as members, as they will show up with the value None
-.. see https://bitbucket.org/birkenfeld/sphinx/issue/904/autodocs-does-not-work-well-with-instance
-.. we're using the undocumented autoinstanceattribute as a workaround
-
-.. autoinstanceattribute:: textbox_pt.left
-   :annotation:
-
-.. autoinstanceattribute:: textbox_pt.right
-   :annotation:
-
-.. autoinstanceattribute:: textbox_pt.width
-   :annotation:
-
-.. autoinstanceattribute:: textbox_pt.height
-   :annotation:
-
-.. autoinstanceattribute:: textbox_pt.depth
-   :annotation:
+   :members: marker, left, right, width, height, depth
 
 
 Module level functionality
