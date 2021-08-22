@@ -23,7 +23,7 @@
 
 
 import logging, math, re, string
-from pyx import canvas, path, trafo, unit
+from pyx import canvas, path, trafo, unit, utils
 from pyx.graph.axis import axis, positioner
 
 logger = logging.getLogger("pyx")
@@ -309,7 +309,7 @@ class graphxy(graph):
 
     def __init__(self, xpos=0, ypos=0, width=None, height=None, ratio=goldenmean,
                  key=None, backgroundattrs=None, axesdist=0.8*unit.v_cm, flipped=False,
-                 xaxisat=None, yaxisat=None, **axes):
+                 xaxisat=None, yaxisat=None, **kwargs):
         graph.__init__(self)
 
         self.xpos = xpos
@@ -335,21 +335,30 @@ class graphxy(graph):
         self.width_pt = unit.topt(self.width)
         self.height_pt = unit.topt(self.height)
 
-        for axisname, aaxis in list(axes.items()):
+        splitted_kwargs = utils.kwsplit(kwargs)
+        axes = splitted_kwargs[None] if None in splitted_kwargs else {}
+
+        # generate default linear axes
+        for axisname in ["x", "y"]:
+            okey = axisname + "2"
+            if axisname not in axes:
+                if okey not in axes or axes[okey] is None:
+                    axes[axisname] = axis.linear()
+
+        # generate anchored axes in self.axes
+        for axisname, aaxis in axes.items():
             if aaxis is not None:
                 if not isinstance(aaxis, axis.linkedaxis):
                     self.axes[axisname] = axis.anchoredaxis(aaxis, self.textengine, axisname)
                 else:
                     self.axes[axisname] = aaxis
+
+        # generate additional linked axes
         for axisname, axisat in [("x", xaxisat), ("y", yaxisat)]:
             okey = axisname + "2"
             if axisname not in axes:
-                if okey not in axes or axes[okey] is None:
-                    self.axes[axisname] = axis.anchoredaxis(axis.linear(), self.textengine, axisname)
-                    if okey not in axes:
-                        self.axes[okey] = axis.linkedaxis(self.axes[axisname], okey)
-                else:
-                    self.axes[axisname] = axis.linkedaxis(self.axes[okey], axisname)
+                assert okey in axes and axes[okey] is not None
+                self.axes[axisname] = axis.linkedaxis(self.axes[okey], axisname)
             elif okey not in axes and axisat is None:
                 self.axes[okey] = axis.linkedaxis(self.axes[axisname], okey)
 
