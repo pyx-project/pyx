@@ -1,7 +1,7 @@
 # -*- encoding: utf-8 -*-
 #
 #
-# Copyright (C) 2002-2012 Jörg Lehmann <joerg@pyx-project.org>
+# Copyright (C) 2002-2012, 2021 Jörg Lehmann <joerg@pyx-project.org>
 # Copyright (C) 2003-2006 Michael Schindler <m-schindler@users.sourceforge.net>
 # Copyright (C) 2002-2012 André Wobst <wobsta@pyx-project.org>
 #
@@ -50,6 +50,9 @@ class linecap(attr.exclusiveattr, strokestyle):
         attr.exclusiveattr.__init__(self, linecap)
         self.value = value
 
+    def __eq__(self, other):
+        return self.value == other.value if isinstance(other, self.__class__) else NotImplemented
+
     def processPS(self, file, writer, context, registry):
         file.write("%d setlinecap\n" % self.value)
 
@@ -74,6 +77,9 @@ class linejoin(attr.exclusiveattr, strokestyle):
         attr.exclusiveattr.__init__(self, linejoin)
         self.value = value
 
+    def __eq__(self, other):
+        return self.value == other.value if isinstance(other, self.__class__) else NotImplemented
+
     def processPS(self, file, writer, context, registry):
         file.write("%d setlinejoin\n" % self.value)
 
@@ -96,6 +102,9 @@ class miterlimit(attr.exclusiveattr, strokestyle):
     def __init__(self, value=10.0):
         attr.exclusiveattr.__init__(self, miterlimit)
         self.value = value
+
+    def __eq__(self, other):
+        return self.value == other.value if isinstance(other, self.__class__) else NotImplemented
 
     def processPS(self, file, writer, context, registry):
         file.write("%f setmiterlimit\n" % self.value)
@@ -130,6 +139,11 @@ class dash(attr.exclusiveattr, strokestyle):
         self.pattern = pattern
         self.offset = offset
         self.rellengths = rellengths
+
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return self.pattern == other.pattern and self.offset == other.offset and self.rellengths == other.rellengths
+        return NotImplemented
 
     def processPS(self, file, writer, context, registry):
         if self.rellengths:
@@ -170,6 +184,11 @@ class linestyle(attr.exclusiveattr, strokestyle):
         self.c = c
         self.d = d
 
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return self.c == other.c and self.d == other.d
+        return NotImplemented
+
     def processPS(self, file, writer, context, registry):
         self.c.processPS(file, writer, context, registry)
         self.d.processPS(file, writer, context, registry)
@@ -196,6 +215,9 @@ class linewidth(attr.sortbeforeexclusiveattr, strokestyle):
     def __init__(self, width):
         attr.sortbeforeexclusiveattr.__init__(self, linewidth, [dash, linestyle])
         self.width = width
+
+    def __eq__(self, other):
+        return self.width == other.width if isinstance(other, self.__class__) else NotImplemented
 
     def processPS(self, file, writer, context, registry):
         context.linewidth_pt = unit.topt(self.width)
@@ -231,6 +253,9 @@ class fillrule(attr.exclusiveattr, fillstyle):
     def __init__(self, even_odd):
         attr.exclusiveattr.__init__(self, fillrule)
         self.even_odd = even_odd
+
+    def __eq__(self, other):
+        return self.even_odd == other.even_odd if isinstance(other, self.__class__) else NotImplemented
 
     def processPS(self, file, writer, context, registry):
         context.fillrule = self.even_odd
