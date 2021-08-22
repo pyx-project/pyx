@@ -1706,7 +1706,14 @@ class unicodetextbox_pt(textbox_pt):
 
 class FontMetricType:
 
+    #: :meta hide-value:
+    #:
+    #: use afm font metric
     afm = 1
+
+    #: :meta hide-value:
+    #:
+    #: use pfm font metric
     pfm = 2
 
 
