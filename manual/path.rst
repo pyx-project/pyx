@@ -75,14 +75,6 @@ alphabetic order):
    point in the path.
 
 
-.. method:: path.curveradius(params)
-
-   Returns the curvature radius/radii (or None if infinite) at parameter value(s)
-   *params*. [#value_or_list]_ This is the inverse of the curvature at this
-   parameter. Note that this radius can be negative or positive, depending on the
-   sign of the curvature. [#normpathconvert]_
-
-
 .. method:: path.end()
 
    Returns the parameter value (a :class:`normpathparam` instance) of the last
@@ -123,11 +115,6 @@ alphabetic order):
 
    Returns the arc length(s) corresponding to the parameter value(s) *params*.
    [#value_or_list]_ [#normpathconvert]_
-
-
-.. method:: path.range()
-
-   Returns the maximal parameter value *param* that is allowed in the path methods.
 
 
 .. method:: path.reversed()
