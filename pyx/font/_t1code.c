@@ -10,6 +10,8 @@
  *  USA.
  */
 
+#define PY_SSIZE_T_CLEAN
+
 #include <Python.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -32,11 +34,12 @@ def decoder(code, r, n):
 static PyObject *py_decoder(PyObject *self, PyObject *args)
 {
     unsigned char *code;
-    int lcode, pr, n;
+    Py_ssize_t lcode;
+    int pr, n;
 
     if (PyArg_ParseTuple(args, "y#ii", (char **) &code, &lcode, &pr, &n)) {
       unsigned char *data;
-      int i;
+      Py_ssize_t i;
       unsigned char x;
       uint16_t r=pr;
       PyObject *result;
@@ -74,11 +77,12 @@ static PyObject *py_encoder(PyObject *self, PyObject *args)
 {
     unsigned char *data;
     unsigned char *random;
-    int ldata, pr, lrandom;
+    Py_ssize_t ldata, lrandom;
+    int pr;
 
     if (PyArg_ParseTuple(args, "y#iy#", (char **) &data, &ldata, &pr, (char **) &random, &lrandom)) {
       unsigned char *code;
-      int i;
+      Py_ssize_t i;
       uint16_t r=pr;
       PyObject *result;
 
