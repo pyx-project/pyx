@@ -1,4 +1,4 @@
-0.xx (2020/xx/xx):
+0.xx (2021/xx/xx):
   - graph.axis.style:
     - Allow invalid values (e.g. None) in color values of density style.
   - text module:
@@ -9,6 +9,8 @@
     - fix bitmap palette data pdf output being bytes
   - canvas module:
      - add clear() method to canvas class (suggested by Camilo Talero)
+  - t1 extension module:
+     - adjust to int/Py_ssize_t change in python 3.10 (thanks to Michael J Gruber)
 
 0.15 (2019/07/14):
   - text module:
