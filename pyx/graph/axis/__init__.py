@@ -27,6 +27,7 @@ for module in __allmodules__:
 
 from . import axis
 __allaxis__ = ["linear", "lin", "logarithmic", "log",
+               "negative_logarithmic", "neglog",
                "bar", "nestedbar", "split",
                "sizedlinear", "sizedlin", "autosizedlinear", "autosizedlin",
                "anchoredaxis", "linkedaxis",

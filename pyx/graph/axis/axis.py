@@ -282,6 +282,38 @@ class logarithmic(_regularaxis):
 log = logarithmic
 
 
+class negative_logarithmic(_regularaxis):
+    """logarithmic axis of negative values: -log(-x)"""
+
+    def __init__(self, parter=parter.negative_autologarithmic(), rater=rater.negative_logarithmic(),
+                       linearparter=parter.autolinear(extendtick=None), **args):
+        _regularaxis.__init__(self, **args)
+        self.parter = parter
+        self.rater = rater
+        self.linearparter = linearparter
+
+    def convert(self, data, value):
+        """axis coordinates -> graph coordinates"""
+        xi = (math.log(-float(value)) - math.log(-data.min)) / (math.log(-data.max) - math.log(-data.min))
+        if not (0 <= xi <= 1):
+            # these printouts show that something is wrong with the neglog axes:
+            print("neglogaxis xi =",xi)
+        if self.reverse:
+            xi = 1 - xi
+        return xi
+
+    def create(self, data, positioner, graphtextengine, errorname):
+        try:
+            return _regularaxis._create(self, data, positioner, graphtextengine, self.parter, self.rater, errorname)
+        except NoValidPartitionError:
+            if self.linearparter:
+                logger.warning("no valid negative logarithmic partitioning found for axis %s, switch to linear partitioning" % errorname)
+                return _regularaxis._create(self, data, positioner, graphtextengine, self.linearparter, self.rater, errorname)
+            raise
+
+neglog = negative_logarithmic
+
+
 class subaxispositioner(positioner._positioner):
     """a subaxis positioner"""
 

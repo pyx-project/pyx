@@ -27,7 +27,7 @@ from pyx.graph.axis import tick
 
 
 # rater
-# conseptional remarks:
+# conceptional remarks:
 # - raters are used to calculate a rating for a realization of something
 # - a rating means a positive floating point value
 # - ratings are used to order those realizations by their suitability
@@ -242,3 +242,18 @@ class logarithmic(rater):
         rater.__init__(self, ticks, labels, range, distance)
 
 log = logarithmic
+
+
+class negative_logarithmic(rater):
+    """a rater with predefined constructor arguments suitable for a logarithmic axis of negative values"""
+
+    def __init__(self, ticks=[cube(5, left=None, right=None), cube(20, left=None, right=None, weight=0.5)],
+                       labels=[cube(5, left=None, right=None, weight=1.0), cube(5, left=None, right=None, weight=0.5)],
+                       range=cube(1, weight=2),
+                       distance=distance(1*unit.v_cm, weight=0.1)):
+        rater.__init__(self, ticks, labels, range, distance)
+
+neglog = negative_logarithmic
+
+
+
