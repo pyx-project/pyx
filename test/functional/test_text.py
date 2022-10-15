@@ -114,7 +114,7 @@ c.insert(sc, [trafo.translate(12, 12)])
 # UnicodeEngine output with afm and pfm
 ue_afm = text.UnicodeEngine()
 c.insert(ue_afm.text(10, 9, "UnicodeEngine output (AFM)"))
-ue_pfm = text.UnicodeEngine(metric=text.UnicodeEngine.pfm_metric)
+ue_pfm = text.UnicodeEngine(font_metric_type=text.FontMetricType.pfm)
 c.insert(ue_pfm.text(10, 8, "UnicodeEngine output (PFM)"))
 
 c.writePDFfile("test_text", page_paperformat=document.paperformat.A4)
