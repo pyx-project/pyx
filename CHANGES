@@ -1,6 +1,6 @@
 0.xx (2021/xx/xx):
   - graph module:
-    - enable new simplified way of passing arguments through graph components
+    - enable shortcut for passing arguments through graph components
       (axes, painters, etc.) by passing keyword arguments consisting of graph
       components separated by underscores.
   - graph.axis.style:
