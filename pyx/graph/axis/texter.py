@@ -1,9 +1,9 @@
 # -*- encoding: utf-8 -*-
 #
 #
-# Copyright (C) 2002-2004 Jörg Lehmann <joerg@pyx-project.org>
+# Copyright (C) 2002-2004, 2022 Jörg Lehmann <joerg@pyx-project.org>
 # Copyright (C) 2003-2004 Michael Schindler <m-schindler@users.sourceforge.net>
-# Copyright (C) 2002-2004 André Wobst <wobsta@pyx-project.org>
+# Copyright (C) 2002-2004, 2022 André Wobst <wobsta@pyx-project.org>
 #
 # This file is part of PyX (https://pyx-project.org/).
 #
@@ -73,6 +73,13 @@ class decimal(_texter):
         self.minus = minus
         self.period = period
         self.labelattrs = labelattrs
+        self.kwargs = {}
+
+    def __call__(self, **kwargs):
+        return decimal(**utils.merge_members_kwargs(self, kwargs,
+                                                    ["prefix", "infix", "suffix", "equalprecision",
+                                                     "decimalsep", "thousandsep", "thousandthpartsep", "plus",
+                                                     "minus", "period", "labelattrs"]))
 
     def labels(self, ticks):
         labeledticks = []
@@ -147,14 +154,14 @@ class default(_texter):
 
     r"a texter creating regular (e.g. '2') and exponential (e.g. '2\cdot10^5') labels"
 
-    def __init__(self, multiplication_tex=r"\cdot{}", multiplication_unicode="·", base=Fraction(10),
+    def __init__(self, multiplicationtex=r"\cdot{}", multiplicationunicode="·", base=Fraction(10),
                        skipmantissaunity=skipmantissaunity.all, minusunity="-",
                        minexponent=4, minnegexponent=None, uniformexponent=True,
                        mantissatexter=decimal(), basetexter=decimal(), exponenttexter=decimal(),
-                       labelattrs=[text.mathmode]):
-                       # , **kwargs): # future
+                       labelattrs=[text.mathmode], 
+                       **kwargs):
         r"""initializes the instance
-        - multiplication_tex and multiplication_unicode are the strings to
+        - multiplicationtex and multiplicationunicode are the strings to
           indicate the multiplication between the mantissa and the base
           number for the TexEngine and the UnicodeEngine, respecitvely
         - base is the number of the base of the exponent
@@ -175,24 +182,30 @@ class default(_texter):
           for the mantissa, basetexter, and exponenttexter
         - labelattrs is a list of attributes to be added to the label attributes
           given in the painter"""
-        self.multiplication_tex = multiplication_tex
-        self.multiplication_unicode = multiplication_unicode
+        split_kwargs, rest_kwargs = utils.kwsplit(kwargs, ["mantissatexter", "basetexter", "exponenttexter"], allow_only_split=True)
+        if "mantissatexter" in split_kwargs: mantissatexter = decimal(**split_kwargs["mantissatexter"])
+        if "basetexter" in split_kwargs: basetexter = decimal(**split_kwargs["basetexter"])
+        if "exponenttexter" in split_kwargs: texter = decimal(**split_kwargs["exponenttexter"])
+
+        self.multiplicationtex = multiplicationtex
+        self.multiplicationunicode = multiplicationunicode
         self.base = base
         self.skipmantissaunity = skipmantissaunity
         self.minusunity = minusunity
         self.minexponent = minexponent
         self.minnegexponent = minnegexponent if minnegexponent is not None else minexponent
         self.uniformexponent = uniformexponent
+        self.labelattrs = labelattrs
         self.mantissatexter = mantissatexter
         self.basetexter = basetexter
         self.exponenttexter = exponenttexter
-        self.labelattrs = labelattrs
+        self.kwargs = kwargs
 
-        # future:
-        # kwargs = utils.kwsplit(kwargs, ['mantissatexter', 'basetexter', 'exponenttexter'])
-        # self.mantissatexter = mantissatexter(a=1, **kwargs['mantissatexter'])
-        # self.basetexter = basetexter(**kwargs['basetexter'])
-        # self.exponenttexter = exponenttexter(**kwargs['exponenttexter'])
+    def __call__(self, **kwargs):
+        return default(**utils.merge_members_kwargs(self, kwargs,
+                                                    ["multiplicationtex", "multiplicationunicode", "base", "skipmantissaunity",
+                                                     "minusunity", "minexponent", "minnegexponent", "uniformexponent",
+                                                     "labelattrs", "mantissatexter", "basetexter", "exponenttexter"]))
 
     def labels(self, ticks):
         labeledticks = []
@@ -252,8 +265,8 @@ class default(_texter):
         for tick in labeledticks:
             if tick.temp_wantexponent:
                 if tick.temp_mantissa is not None:
-                    mantissalabel_tex = tick.temp_mantissatick.label + self.multiplication_tex
-                    mantissalabel_unicode = tick.temp_mantissatick.label + self.multiplication_unicode
+                    mantissalabel_tex = tick.temp_mantissatick.label + self.multiplicationtex
+                    mantissalabel_unicode = tick.temp_mantissatick.label + self.multiplicationunicode
                 else:
                     mantissalabel_tex = self.minusunity if tick.temp_sign == -1 else ""
                     mantissalabel_unicode = self.minusunity if tick.temp_sign == -1 else ""
@@ -308,6 +321,7 @@ class rational(_texter):
         - labelattrs is a list of attributes for a textengines text method;
           None is considered as an empty list; labelattrs might be changed
           in the painter as well"""
+        # XXX should get separate texters for nominator and denominator
         self.prefix = prefix
         self.infix = infix
         self.suffix = suffix
@@ -327,6 +341,13 @@ class rational(_texter):
         self.skipnum1 = skipnum1
         self.skipdenom1 = skipdenom1
         self.labelattrs = labelattrs
+        self.kwargs = {}
+
+    def __call__(self, **kwargs):
+        return rational(**utils.merge_members_kwargs(self, kwargs,
+                                                    ["prefix", "infix", "suffix", "numprefix", "numinfix", "numsuffix",
+                                                     "denomprefix", "denominfix", "denomsuffix", "plus", "minus", "minuspos",
+                                                     "over", "equaldenom", "skip1", "skipnum0", "skinum1", "skipdenom1", "labelattrs"]))
 
     def gcd(self, *n):
         """returns the greates common divisor of all elements in n

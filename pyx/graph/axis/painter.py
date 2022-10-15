@@ -1,9 +1,9 @@
 # -*- encoding: utf-8 -*-
 #
 #
-# Copyright (C) 2002-2012 Jörg Lehmann <joerg@pyx-project.org>
+# Copyright (C) 2002-2012, 2022 Jörg Lehmann <joerg@pyx-project.org>
 # Copyright (C) 2003-2004 Michael Schindler <m-schindler@users.sourceforge.net>
-# Copyright (C) 2002-2012 André Wobst <wobsta@pyx-project.org>
+# Copyright (C) 2002-2012, 2022 André Wobst <wobsta@pyx-project.org>
 #
 # This file is part of PyX (https://pyx-project.org/).
 #
@@ -23,7 +23,7 @@
 
 
 import math
-from pyx import canvas, color, attr, text, style, unit, box, path
+from pyx import canvas, color, attr, text, style, unit, box, path, utils
 from pyx import trafo as trafomodule
 from pyx.graph.axis import tick
 
@@ -169,7 +169,14 @@ class regular(_title):
         self.labeldirection = labeldirection
         self.labelhequalize = labelhequalize
         self.labelvequalize = labelvequalize
+        self.kwargs = kwargs
         _title.__init__(self, **kwargs)
+
+    def __call__(self, **kwargs):
+        return regular(**utils.merge_members_kwargs(self, kwargs,
+                                                    ["innerticklength", "outerticklength", "tickattrs", "gridattrs",
+                                                     "basepathattrs", "labeldist", "labelattrs", "labeldirection",
+                                                     "labelhequalize", "labelvequalize"]))
 
     def paint(self, canvas, data, axis, axispos):
         for t in data.ticks:
@@ -286,7 +293,7 @@ class bar(_title):
                        namepos=0.5,
                        namehequalize=0,
                        namevequalize=1,
-                       **args):
+                       **kwargs):
         self.innerticklength = innerticklength
         self.outerticklength = outerticklength
         self.tickattrs = tickattrs
@@ -297,7 +304,14 @@ class bar(_title):
         self.namepos = namepos
         self.namehequalize = namehequalize
         self.namevequalize = namevequalize
-        _title.__init__(self, **args)
+        self.kwargs = kwargs
+        _title.__init__(self, **kwargs)
+
+    def __call__(self, **kwargs):
+        return bar(**utils.merge_members_kwargs(self, kwargs,
+                                                ["innerticklength", "outerticklength", "tickattrs",
+                                                 "basepathattrs", "namedist", "nameattrs", "namedirection", "namepos",
+                                                 "namehequalize", "namevequalize"]))
 
     def paint(self, canvas, data, axis, positioner):
         namepos = []
@@ -383,14 +397,19 @@ class split(_title):
                        breaklineslength=0.5*unit.v_cm,
                        breaklinesangle=-60,
                        breaklinesattrs=[],
-                       **args):
+                       **kwargs):
         self.breaklinesdist = breaklinesdist
         self.breaklineslength = breaklineslength
         self.breaklinesangle = breaklinesangle
         self.breaklinesattrs = breaklinesattrs
         self.sin = math.sin(self.breaklinesangle*math.pi/180.0)
         self.cos = math.cos(self.breaklinesangle*math.pi/180.0)
-        _title.__init__(self, **args)
+        self.kwargs = kwargs
+        _title.__init__(self, **kwargs)
+
+    def __call__(self, **kwargs):
+        return split(**utils.merge_members_kwargs(self, kwargs,
+                                                  ["breaklinesdist", "breaklineslength", "breaklinesangle", "breaklinesattrs"]))
 
     def paint(self, canvas, data, axis, axispos):
         if self.breaklinesattrs is not None:

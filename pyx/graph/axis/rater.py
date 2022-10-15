@@ -1,9 +1,9 @@
 # -*- encoding: utf-8 -*-
 #
 #
-# Copyright (C) 2002-2004 Jörg Lehmann <joerg@pyx-project.org>
+# Copyright (C) 2002-2004, 2022 Jörg Lehmann <joerg@pyx-project.org>
 # Copyright (C) 2003-2004 Michael Schindler <m-schindler@users.sourceforge.net>
-# Copyright (C) 2002-2012 André Wobst <wobsta@pyx-project.org>
+# Copyright (C) 2002-2012, 2022 André Wobst <wobsta@pyx-project.org>
 #
 # This file is part of PyX (https://pyx-project.org/).
 #
@@ -27,7 +27,7 @@ from pyx.graph.axis import tick
 
 
 # rater
-# conseptional remarks:
+# conceptual remarks:
 # - raters are used to calculate a rating for a realization of something
 # - a rating means a positive floating point value
 # - ratings are used to order those realizations by their suitability
@@ -38,7 +38,7 @@ from pyx.graph.axis import tick
 
 class cube:
     """a value rater
-    - a cube rater has an optimal value, where the rate becomes zero
+    - a cube rater has an optimal value, where the rating becomes zero
     - for a left (below the optimum) and a right value (above the optimum),
       the rating is value is set to 1 (modified by an overall weight factor
       for the rating)
@@ -153,6 +153,11 @@ class rater:
         self.labels = labels
         self.range = range
         self.distance = distance
+        self.kwargs = {}
+
+    def __call__(self, **kwargs):
+        return rater(**utils.merge_members_kwargs(self, kwargs,
+                                                 ["ticks", "labels", "range", "distance"]))
 
     def rateticks(self, axis, ticks, density):
         """rates ticks by the number of ticks, subticks, labels etc.

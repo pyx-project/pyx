@@ -1,9 +1,9 @@
 # -*- encoding: utf-8 -*-
 #
 #
-# Copyright (C) 2002-2004 Jörg Lehmann <joerg@pyx-project.org>
+# Copyright (C) 2002-2004, 2022 Jörg Lehmann <joerg@pyx-project.org>
 # Copyright (C) 2003-2004 Michael Schindler <m-schindler@users.sourceforge.net>
-# Copyright (C) 2002-2006 André Wobst <wobsta@pyx-project.org>
+# Copyright (C) 2002-2006, 2022 André Wobst <wobsta@pyx-project.org>
 #
 # This file is part of PyX (https://pyx-project.org/).
 #
@@ -77,6 +77,11 @@ class linear(_parter):
         self.extendtick = extendtick
         self.extendlabel = extendlabel
         self.epsilon = epsilon
+        self.kwargs = {}
+
+    def __call__(self, **kwargs):
+        return linear(**utils.merge_members_kwargs(self, kwargs,
+                                                   ["tickdists", "labeldists", "extendtick", "extendlabel", "epsilon"]))
 
     def extendminmax(self, min, max, dist, extendmin, extendmax):
         """return new min, max tuple extending the range min, max
@@ -139,6 +144,11 @@ class autolinear(_parter):
         self.variants = variants
         self.extendtick = extendtick
         self.epsilon = epsilon
+        self.kwargs = {}
+
+    def __call__(self, **kwargs):
+        return autolinear(**utils.merge_members_kwargs(self, kwargs,
+                                                       ["variants", "extendtick", "epsilon"]))
 
     def partfunctions(self, min, max, extendmin, extendmax):
         try:
@@ -215,6 +225,11 @@ class logarithmic(linear):
         self.extendtick = extendtick
         self.extendlabel = extendlabel
         self.epsilon = epsilon
+        self.kwargs = {}
+
+    def __call__(self, **kwargs):
+        return logarithmic(**utils.merge_members_kwargs(self, kwargs,
+                                                        ["tickpreexps", "labelpreexps", "extendtick", "extendlabel", "epsilon"]))
 
     def extendminmax(self, min, max, preexp, extendmin, extendmax):
         minpower = None
@@ -281,6 +296,11 @@ class autologarithmic(logarithmic):
         self.extendlabel = extendlabel
         self.autoexponent = autoexponent
         self.epsilon = epsilon
+        self.kwargs = {}
+
+    def __call__(self, **kwargs):
+        return autologarithmic(**utils.merge_members_kwargs(self, kwargs,
+                                                            ["variants", "extendtick", "extendlabel", "autoexponent", "epsilon"]))
 
     def partfunctions(self, min, max, extendmin, extendmax):
         return [lambda d=_partdata(min=min, max=max, extendmin=extendmin, extendmax=extendmax,

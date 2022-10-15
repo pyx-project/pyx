@@ -1,4 +1,8 @@
 0.xx (2021/xx/xx):
+  - graph module:
+    - enable new simplified way of passing arguments through graph components
+      (axes, painters, etc.) by passing keyword arguments consisting of graph
+      components separated by underscores.
   - graph.axis.style:
     - Allow invalid values (e.g. None) in color values of density style.
   - text module:
@@ -12,6 +16,9 @@
      - add clear() method to canvas class (suggested by Camilo Talero)
   - t1 extension module:
      - adjust to int/Py_ssize_t change in python 3.10 (thanks to Michael J Gruber)
+  - graph.axis.texter:
+    - rename multiplication_tex -> multiplicationtex and multiplication_unicode -> 
+      multiplicationunicode in default texter
 
 0.15 (2019/07/14):
   - text module:
@@ -718,7 +725,7 @@
   - graph module:
     - reorganisation of the graph structure finished (there might be some
       small pending issues, but the basic restructuring is done with this release):
-      - graph splitted into several modules in pyx/graph and pyx/graph/axis
+      - graph split into several modules in pyx/graph and pyx/graph/axis
       - painters are using the new attribute scheme including changeable
         attributes
       - graph styles rewrite
@@ -796,7 +803,7 @@
     - switched to the new parser using pythons parser module
   - data module:
     - removed, it all lives in the graph.data module now, while before it
-      was splitted into two separate modules
+      was split into two separate modules
   - tex module:
     - not imported by default anymore
     - obsolete warning when importing this module

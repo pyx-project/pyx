@@ -123,7 +123,7 @@ axis
    Creates axes for the graph, which take care of the mapping from data values to
    graph coordinates. Because axes are also responsible for creating ticks and
    labels, showing up in the graph themselves and other things, this task is
-   splitted into several independent subtasks. Axes are discussed separately in
+   split into several independent subtasks. Axes are discussed separately in
    chapter :mod:`axis`.
 
 .. module:: graph.graph

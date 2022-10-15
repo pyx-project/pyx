@@ -1,9 +1,9 @@
 # -*- encoding: utf-8 -*-
 #
 #
-# Copyright (C) 2002-2012 Jörg Lehmann <joerg@pyx-project.org>
+# Copyright (C) 2002-2012, 2022 Jörg Lehmann <joerg@pyx-project.org>
 # Copyright (C) 2003-2011 Michael Schindler <m-schindler@users.sourceforge.net>
-# Copyright (C) 2002-2012 André Wobst <wobsta@pyx-project.org>
+# Copyright (C) 2002-2012, 2022 André Wobst <wobsta@pyx-project.org>
 #
 # This file is part of PyX (https://pyx-project.org/).
 #
@@ -22,7 +22,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 import functools, logging, math
-from pyx import attr, unit, text
+from pyx import attr, unit, text, utils
 from pyx.graph.axis import painter, parter, positioner, rater, texter, tick
 
 logger = logging.getLogger("pyx")
@@ -64,7 +64,16 @@ class _regularaxis(_axis):
 
     def __init__(self, min=None, max=None, reverse=0, divisor=None, title=None,
                        painter=painter.regular(), texter=texter.default(), linkpainter=painter.linked(),
-                       density=1, maxworse=2, manualticks=[], fallbackrange=None):
+                       density=1, maxworse=2, manualticks=[], fallbackrange=None, **kwargs):
+
+        split_kwargs, rest_kwargs = utils.kwsplit(kwargs, ["painter", "texter", "linkpainter"])
+        if rest_kwargs:
+            raise ValueError("Invalid split kwargs: %s" % rest_kwargs)
+
+        if "painter" in split_kwargs: painter = painter(**split_kwargs["painter"])
+        if "texter" in split_kwargs: texter = texter(**split_kwargs["texter"])
+        if "linkpainter" in split_kwargs: linkpainter = linkpainter(**split_kwargs["linkpainter"])
+
         if min is not None and max is not None and min > max:
             min, max, reverse = max, min, not reverse
         self.min = min
@@ -234,10 +243,20 @@ class _regularaxis(_axis):
 class linear(_regularaxis):
     """linear axis"""
 
-    def __init__(self, parter=parter.autolinear(), rater=rater.linear(), **args):
-        _regularaxis.__init__(self, **args)
+    def __init__(self, parter=parter.autolinear(), rater=rater.linear(), **kwargs):
+        split_kwargs, rest_kwargs = utils.kwsplit(kwargs, ["parter", "rater"])
+
+        _regularaxis.__init__(self, **rest_kwargs)
+
+        if "parter" in split_kwargs: parter = parter(**split_kwargs["parter"])
+        if "rater" in split_kwargs: rater = rater(**split_kwargs["rater"])
+
         self.parter = parter
         self.rater = rater
+        self.kwargs = kwargs
+
+    def __call__(self, **kwargs):
+        return linear(**utils.merge_members_kwargs(self, kwargs, ["parter", "rater"]))
 
     def convert(self, data, value):
         """axis coordinates -> graph coordinates"""
@@ -256,11 +275,22 @@ class logarithmic(_regularaxis):
     """logarithmic axis"""
 
     def __init__(self, parter=parter.autologarithmic(), rater=rater.logarithmic(),
-                       linearparter=parter.autolinear(extendtick=None), **args):
-        _regularaxis.__init__(self, **args)
+                       linearparter=parter.autolinear(extendtick=None), **kwargs):
+        split_kwargs, rest_kwargs = utils.kwsplit(kwargs, ["parter", "rater", "linearparter"])
+
+        _regularaxis.__init__(self, **rest_kwargs)
+
+        if "parter" in split_kwargs: parter = parter(**split_kwargs["parter"])
+        if "rater" in split_kwargs: rater = rater(**split_kwargs["rater"])
+        if "linearparter" in split_kwargs: linearparter = linearparter(**split_kwargs["linearparter"])
+
         self.parter = parter
         self.rater = rater
         self.linearparter = linearparter
+        self.kwargs = kwargs
+
+    def __call__(self, **kwargs):
+        return linear(**utils.merge_members_kwargs(self, kwargs, ["parter", "rater", "linearparter"]))
 
     def convert(self, data, value):
         """axis coordinates -> graph coordinates"""
@@ -317,7 +347,13 @@ class bar(_axis):
 
     def __init__(self, subaxes=None, defaultsubaxis=linear(painter=None, linkpainter=None, parter=None),
                        dist=0.5, firstdist=None, lastdist=None, title=None, reverse=0,
-                       painter=painter.bar(), linkpainter=painter.linkedbar()):
+                       painter=painter.bar(), linkpainter=painter.linkedbar(), **kwargs):
+        split_kwargs, rest_kwargs = utils.kwsplit(kwargs, ["defaultsubaxis", "painter", "linkpainter"], allow_only_split=True)
+
+        if "defaultsubaxis" in split_kwargs: defaultsubaxis = linear(**split_kwargs["defaultsubaxis"])
+        if "painter" in split_kwargs: painter = painter.bar(**split_kwargs["painter"])
+        if "linkpainter" in split_kwargs: linkpainter = painter.linkedbar(**split_kwargs["linkpainter"])
+
         self.subaxes = subaxes
         self.defaultsubaxis = defaultsubaxis
         self.dist = dist
@@ -333,6 +369,10 @@ class bar(_axis):
         self.reverse = reverse
         self.painter = painter
         self.linkpainter = linkpainter
+        self.kwargs = kwargs
+
+    def __call__(self, **kwargs):
+        return bar(**utils.merge_members_kwargs(self, kwargs, ["defaultsubaxis", "painter", "linkpainter"]))
 
     def createdata(self, errorname):
         data = axisdata(size=self.firstdist+self.lastdist-self.dist, subaxes={}, names=[])
@@ -464,6 +504,10 @@ class sizedlinear(linear):
     def __init__(self, size=1, **kwargs):
         linear.__init__(self, **kwargs)
         self.size = size
+        self.kwargs = kwargs
+
+    def __call__(self, **kwargs):
+        return sizedlinear(**utils.merge_members_kwargs(self, kwargs, ["size"]))
 
     def createdata(self, errorname):
         data = linear.createdata(self, errorname)
@@ -476,7 +520,15 @@ sizedlin = sizedlinear
 class autosizedlinear(linear):
 
     def __init__(self, parter=parter.autolinear(extendtick=None), **kwargs):
-        linear.__init__(self, parter=parter, **kwargs)
+        split_kwargs, rest_kwargs = utils.kwsplit(kwargs, ["parter"])
+        if "parter" in split_kwargs: parter = parter.autolinear(**split_kwargs["parter"])
+
+        linear.__init__(self, parter=parter, **rest_kwargs)
+
+        self.kwargs = kwargs
+
+    def __call__(self, **kwargs):
+        return autosizedlinear(**utils.merge_members_kwargs(self, kwargs, ["parter"]))
 
     def createdata(self, errorname):
         data = linear.createdata(self, errorname)

@@ -522,11 +522,11 @@ ticks created by partitioners described above.
    Text format options like ``text.size`` should instead be set at the painter.
 
 
-.. class:: default(multiplication_tex=r"\cdot{}", multiplication_unicode="·", base=Fraction(10), skipmantissaunity=skipmantissaunity.all, minusunity="-", minexponent=4, minnegexponent=None, uniformexponent=True, mantissatexter=decimal(), basetexter=decimal(), exponenttexter=decimal(), labelattrs=[text.mathmode])
+.. class:: default(multiplicationtex=r"\cdot{}", multiplicationunicode="·", base=Fraction(10), skipmantissaunity=skipmantissaunity.all, minusunity="-", minexponent=4, minnegexponent=None, uniformexponent=True, mantissatexter=decimal(), basetexter=decimal(), exponenttexter=decimal(), labelattrs=[text.mathmode])
 
    Instances of this class create decimal formatted labels with an exponential.
 
-   multiplication_tex and multiplication_unicode are the strings to indicate
+   multiplicationtex and multiplicationunicode are the strings to indicate
    the multiplication between the mantissa and the base number for the
    TexEngine and the UnicodeEngine, respecitvely
 

@@ -1,9 +1,9 @@
 # -*- encoding: utf-8 -*-
 #
 #
-# Copyright (C) 2002-2012 Jörg Lehmann <joerg@pyx-project.org>
+# Copyright (C) 2002-2012, 2022 Jörg Lehmann <joerg@pyx-project.org>
 # Copyright (C) 2003-2004 Michael Schindler <m-schindler@users.sourceforge.net>
-# Copyright (C) 2002-2012 André Wobst <wobsta@pyx-project.org>
+# Copyright (C) 2002-2012, 2022 André Wobst <wobsta@pyx-project.org>
 #
 # This file is part of PyX (https://pyx-project.org/).
 #
@@ -335,15 +335,18 @@ class graphxy(graph):
         self.width_pt = unit.topt(self.width)
         self.height_pt = unit.topt(self.height)
 
-        splitted_kwargs = utils.kwsplit(kwargs)
-        axes = splitted_kwargs[None] if None in splitted_kwargs else {}
+        split_kwargs, axes = utils.kwsplit(kwargs)
 
-        # generate default linear axes
+        # generate default linear axes (if neither x/y-axis or x2/y2-axis has been set by caller)
         for axisname in ["x", "y"]:
-            okey = axisname + "2"
             if axisname not in axes:
+                okey = axisname + "2"
                 if okey not in axes or axes[okey] is None:
                     axes[axisname] = axis.linear()
+
+        # apply split kwargs to axes
+        for axisname, kwargs in split_kwargs.items():
+            axes[axisname] = axes[axisname](**kwargs)
 
         # generate anchored axes in self.axes
         for axisname, aaxis in axes.items():
@@ -620,8 +623,8 @@ class graphxy(graph):
 class graphx(graphxy):
 
     def __init__(self, xpos=0, ypos=0, length=None, size=0.5*unit.v_cm, direction="vertical",
-                 key=None, backgroundattrs=None, axesdist=0.8*unit.v_cm, **axes):
-        for name in axes:
+                 key=None, backgroundattrs=None, axesdist=0.8*unit.v_cm, **kwargs):
+        for name in kwargs:
             if not name.startswith("x"):
                 raise ValueError("Only x axes are allowed")
         self.direction = direction
@@ -631,7 +634,7 @@ class graphx(graphxy):
             kwargsxy = dict(width=length, height=size)
         else:
             raise ValueError("vertical or horizontal direction required")
-        kwargsxy.update(**axes)
+        kwargsxy.update(**kwargs)
 
         graphxy.__init__(self, xpos=xpos, ypos=ypos, ratio=None, key=key, y=axis.lin(min=0, max=1, parter=None),
                          backgroundattrs=backgroundattrs, axesdist=axesdist, **kwargsxy)
@@ -752,7 +755,7 @@ class graphxyz(graph):
     def __init__(self, xpos=0, ypos=0, size=None,
                  xscale=1, yscale=1, zscale=1/goldenmean, xy12axesat=None, xy12axesatname="z",
                  projector=central(10, -30, 30), axesdist=0.8*unit.v_cm, key=None,
-                 **axes):
+                 **kwargs):
         graph.__init__(self)
         for name in ["hiddenaxes.grid", "hiddenaxes.baseline", "hiddenaxes.ticks", "hiddenaxes.labels", "hiddenaxes.title"]:
             self.layer(name)
@@ -789,25 +792,38 @@ class graphxyz(graph):
         self.px0show = self.vangle(0, 0, 0, 0, 1, 0, 0, 1, 1) > 0
         self.px1show = self.vangle(1, 0, 0, 1, 0, 1, 1, 1, 1) > 0
 
-        for axisname, aaxis in list(axes.items()):
+        split_kwargs, axes = utils.kwsplit(kwargs)
+
+        # generate default linear axes (if neither x/y-axis, x2/y2-axis or z-axis has been set by caller)
+        for axisname in ["x", "y"]:
+            if axisname not in axes:
+                okey = axisname + "2"
+                if okey not in axes or axes[okey] is None:
+                    axes[axisname] = axis.linear()
+        if "z" not in axes:
+            # z-axis by default has no z2 axis defined
+            axes["z"] = axis.linear()
+
+        # apply split kwargs to axes
+        for axisname, kwargs in split_kwargs.items():
+            axes[axisname] = axes[axisname](**kwargs)
+
+        # generate anchored axes in self.axes
+        for axisname, aaxis in axes.items():
             if aaxis is not None:
                 if not isinstance(aaxis, axis.linkedaxis):
                     self.axes[axisname] = axis.anchoredaxis(aaxis, self.textengine, axisname)
                 else:
                     self.axes[axisname] = aaxis
+
+        # generate additional linked axes
         for axisname in ["x", "y"]:
             okey = axisname + "2"
             if axisname not in axes:
-                if okey not in axes or axes[okey] is None:
-                    self.axes[axisname] = axis.anchoredaxis(axis.linear(), self.textengine, axisname)
-                    if okey not in axes:
-                        self.axes[okey] = axis.linkedaxis(self.axes[axisname], okey)
-                else:
-                    self.axes[axisname] = axis.linkedaxis(self.axes[okey], axisname)
+                assert okey in axes and axes[okey] is not None
+                self.axes[axisname] = axis.linkedaxis(self.axes[okey], axisname)
             elif okey not in axes:
                 self.axes[okey] = axis.linkedaxis(self.axes[axisname], okey)
-        if "z" not in axes:
-            self.axes["z"] = axis.anchoredaxis(axis.linear(), self.textengine, "z")
 
         if "x" in self.axes:
             self.xbasepath = self.axes["x"].basepath
