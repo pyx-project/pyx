@@ -1,7 +1,7 @@
 0.xx (2021/xx/xx):
   - graph module:
-    - enable shortcut for passing arguments through graph components
-      (axes, painters, etc.) by passing keyword arguments consisting of graph
+    - enable shortcut for passing arguments through graph components (axes,
+      painters, etc.) by passing keyword arguments consisting of graph
       components separated by underscores.
   - graph.axis.style:
     - Allow invalid values (e.g. None) in color values of density style.
@@ -15,10 +15,14 @@
   - canvas module:
      - add clear() method to canvas class (suggested by Camilo Talero)
   - t1 extension module:
-     - adjust to int/Py_ssize_t change in python 3.10 (thanks to Michael J Gruber)
+     - adjust to int/Py_ssize_t change in python 3.10 (thanks to Michael J
+       Gruber)
   - graph.axis.texter:
-    - rename multiplication_tex -> multiplicationtex and multiplication_unicode -> 
-      multiplicationunicode in default texter
+    - rename multiplication_tex -> multiplicationtex and multiplication_unicode
+      -> multiplicationunicode in default texter
+  - manual:
+    - Remove deprecated code in colorname.py and gradientname.py (thanks to
+      grozin for reporting this in bug #37)
 
 0.15 (2019/07/14):
   - text module:
