@@ -256,7 +256,7 @@ class linear(_regularaxis):
         self.kwargs = kwargs
 
     def __call__(self, **kwargs):
-        return linear(**utils.merge_members_kwargs(self, kwargs, ["parter", "rater"]))
+        return linear(**utils.merge_members_kwargs(self, [self.kwargs, kwargs], ["parter", "rater"]))
 
     def convert(self, data, value):
         """axis coordinates -> graph coordinates"""
@@ -290,7 +290,7 @@ class logarithmic(_regularaxis):
         self.kwargs = kwargs
 
     def __call__(self, **kwargs):
-        return linear(**utils.merge_members_kwargs(self, kwargs, ["parter", "rater", "linearparter"]))
+        return linear(**utils.merge_members_kwargs(self, [self.kwargs, kwargs], ["parter", "rater", "linearparter"]))
 
     def convert(self, data, value):
         """axis coordinates -> graph coordinates"""
@@ -372,7 +372,7 @@ class bar(_axis):
         self.kwargs = kwargs
 
     def __call__(self, **kwargs):
-        return bar(**utils.merge_members_kwargs(self, kwargs, ["defaultsubaxis", "painter", "linkpainter"]))
+        return bar(**utils.merge_members_kwargs(self, [self.kwargs, kwargs], ["defaultsubaxis", "painter", "linkpainter"]))
 
     def createdata(self, errorname):
         data = axisdata(size=self.firstdist+self.lastdist-self.dist, subaxes={}, names=[])
@@ -507,7 +507,7 @@ class sizedlinear(linear):
         self.kwargs = kwargs
 
     def __call__(self, **kwargs):
-        return sizedlinear(**utils.merge_members_kwargs(self, kwargs, ["size"]))
+        return sizedlinear(**utils.merge_members_kwargs(self, [self.kwargs, kwargs], ["size"]))
 
     def createdata(self, errorname):
         data = linear.createdata(self, errorname)
@@ -528,7 +528,7 @@ class autosizedlinear(linear):
         self.kwargs = kwargs
 
     def __call__(self, **kwargs):
-        return autosizedlinear(**utils.merge_members_kwargs(self, kwargs, ["parter"]))
+        return autosizedlinear(**utils.merge_members_kwargs(self, [self.kwargs, kwargs], ["parter"]))
 
     def createdata(self, errorname):
         data = linear.createdata(self, errorname)

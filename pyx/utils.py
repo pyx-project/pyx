@@ -75,13 +75,13 @@ def kwsplit(kwargs, parts=None, allow_only_split=False):
     return split, rest
 
 
-def merge_members_kwargs(obj, kwargs, member_names):
+def merge_members_kwargs(obj, kwargs_updates, member_names):
     """return merge obj's member variables member_names and obj.kwargs with dictionary kwargs"""
 
     new_kwargs = {}
     for name in member_names:
         new_kwargs[name] = getattr(obj, name)
 
-    new_kwargs.update(obj.kwargs)
-    new_kwargs.update(kwargs)
+    for kwargs in kwargs_updates:
+        new_kwargs.update(kwargs)
     return new_kwargs

@@ -73,10 +73,9 @@ class decimal(_texter):
         self.minus = minus
         self.period = period
         self.labelattrs = labelattrs
-        self.kwargs = {}
 
     def __call__(self, **kwargs):
-        return decimal(**utils.merge_members_kwargs(self, kwargs,
+        return decimal(**utils.merge_members_kwargs(self, [kwargs],
                                                     ["prefix", "infix", "suffix", "equalprecision",
                                                      "decimalsep", "thousandsep", "thousandthpartsep", "plus",
                                                      "minus", "period", "labelattrs"]))
@@ -202,7 +201,7 @@ class default(_texter):
         self.kwargs = kwargs
 
     def __call__(self, **kwargs):
-        return default(**utils.merge_members_kwargs(self, kwargs,
+        return default(**utils.merge_members_kwargs(self, [self.kwargs, kwargs],
                                                     ["multiplicationtex", "multiplicationunicode", "base", "skipmantissaunity",
                                                      "minusunity", "minexponent", "minnegexponent", "uniformexponent",
                                                      "labelattrs", "mantissatexter", "basetexter", "exponenttexter"]))
@@ -341,10 +340,9 @@ class rational(_texter):
         self.skipnum1 = skipnum1
         self.skipdenom1 = skipdenom1
         self.labelattrs = labelattrs
-        self.kwargs = {}
 
     def __call__(self, **kwargs):
-        return rational(**utils.merge_members_kwargs(self, kwargs,
+        return rational(**utils.merge_members_kwargs(self, [kwargs],
                                                     ["prefix", "infix", "suffix", "numprefix", "numinfix", "numsuffix",
                                                      "denomprefix", "denominfix", "denomsuffix", "plus", "minus", "minuspos",
                                                      "over", "equaldenom", "skip1", "skipnum0", "skinum1", "skipdenom1", "labelattrs"]))

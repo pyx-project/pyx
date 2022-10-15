@@ -77,10 +77,9 @@ class linear(_parter):
         self.extendtick = extendtick
         self.extendlabel = extendlabel
         self.epsilon = epsilon
-        self.kwargs = {}
 
     def __call__(self, **kwargs):
-        return linear(**utils.merge_members_kwargs(self, kwargs,
+        return linear(**utils.merge_members_kwargs(self, [kwargs],
                                                    ["tickdists", "labeldists", "extendtick", "extendlabel", "epsilon"]))
 
     def extendminmax(self, min, max, dist, extendmin, extendmax):
@@ -144,10 +143,9 @@ class autolinear(_parter):
         self.variants = variants
         self.extendtick = extendtick
         self.epsilon = epsilon
-        self.kwargs = {}
 
     def __call__(self, **kwargs):
-        return autolinear(**utils.merge_members_kwargs(self, kwargs,
+        return autolinear(**utils.merge_members_kwargs(self, [kwargs],
                                                        ["variants", "extendtick", "epsilon"]))
 
     def partfunctions(self, min, max, extendmin, extendmax):
@@ -225,10 +223,9 @@ class logarithmic(linear):
         self.extendtick = extendtick
         self.extendlabel = extendlabel
         self.epsilon = epsilon
-        self.kwargs = {}
 
     def __call__(self, **kwargs):
-        return logarithmic(**utils.merge_members_kwargs(self, kwargs,
+        return logarithmic(**utils.merge_members_kwargs(self, [kwargs],
                                                         ["tickpreexps", "labelpreexps", "extendtick", "extendlabel", "epsilon"]))
 
     def extendminmax(self, min, max, preexp, extendmin, extendmax):
@@ -296,10 +293,9 @@ class autologarithmic(logarithmic):
         self.extendlabel = extendlabel
         self.autoexponent = autoexponent
         self.epsilon = epsilon
-        self.kwargs = {}
 
     def __call__(self, **kwargs):
-        return autologarithmic(**utils.merge_members_kwargs(self, kwargs,
+        return autologarithmic(**utils.merge_members_kwargs(self, [kwargs],
                                                             ["variants", "extendtick", "extendlabel", "autoexponent", "epsilon"]))
 
     def partfunctions(self, min, max, extendmin, extendmax):

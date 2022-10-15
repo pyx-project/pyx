@@ -153,10 +153,9 @@ class rater:
         self.labels = labels
         self.range = range
         self.distance = distance
-        self.kwargs = {}
 
     def __call__(self, **kwargs):
-        return rater(**utils.merge_members_kwargs(self, kwargs,
+        return rater(**utils.merge_members_kwargs(self, [kwargs],
                                                  ["ticks", "labels", "range", "distance"]))
 
     def rateticks(self, axis, ticks, density):

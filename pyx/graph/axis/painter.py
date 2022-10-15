@@ -173,7 +173,7 @@ class regular(_title):
         _title.__init__(self, **kwargs)
 
     def __call__(self, **kwargs):
-        return regular(**utils.merge_members_kwargs(self, kwargs,
+        return regular(**utils.merge_members_kwargs(self, [self.kwargs, kwargs],
                                                     ["innerticklength", "outerticklength", "tickattrs", "gridattrs",
                                                      "basepathattrs", "labeldist", "labelattrs", "labeldirection",
                                                      "labelhequalize", "labelvequalize"]))
@@ -308,7 +308,7 @@ class bar(_title):
         _title.__init__(self, **kwargs)
 
     def __call__(self, **kwargs):
-        return bar(**utils.merge_members_kwargs(self, kwargs,
+        return bar(**utils.merge_members_kwargs(self, [self.kwargs, kwargs],
                                                 ["innerticklength", "outerticklength", "tickattrs",
                                                  "basepathattrs", "namedist", "nameattrs", "namedirection", "namepos",
                                                  "namehequalize", "namevequalize"]))
@@ -408,7 +408,7 @@ class split(_title):
         _title.__init__(self, **kwargs)
 
     def __call__(self, **kwargs):
-        return split(**utils.merge_members_kwargs(self, kwargs,
+        return split(**utils.merge_members_kwargs(self, [self.kwargs, kwargs],
                                                   ["breaklinesdist", "breaklineslength", "breaklinesangle", "breaklinesattrs"]))
 
     def paint(self, canvas, data, axis, axispos):
