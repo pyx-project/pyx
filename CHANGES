@@ -3,6 +3,7 @@
     - Allow invalid values (e.g. None) in color values of density style.
   - text module:
     - make alignment work with texlive 2020 (reported by Thomas Bending)
+    - fix deprication warning for isSet
   - dvi module:
     - ignore the l3backend header special for dvips
   - bitmap module:

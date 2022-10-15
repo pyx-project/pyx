@@ -728,7 +728,7 @@ class MonitorOutput(threading.Thread):
         :rtype: bool
 
         """
-        r = self._wait(self._received.wait, self._received.isSet)
+        r = self._wait(self._received.wait, self._received.is_set)
         if r:
             self._received.clear()
         return r
