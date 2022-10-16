@@ -51,15 +51,6 @@
         <div class="link"><a href="https://github.com/pyx-project/pyx/blob/master/CHANGES">ChangeLog</a></div>
         <div class="link"><a tal:attributes="href string:https://pypi.python.org/packages/source/P/PyX/PyX-${options/version}.tar.gz">Download</a></div>
       </div>
-
-      <div class="box">
-        <div class="title">Links</div>
-        <div class="link"><a href="https://www.python.org/">Python</a></div>
-        <div class="link"><a href="https://www.tug.org/">TeX</a></div>
-        <div class="link"><a href="https://www.adobe.com/content/dam/acom/en/devnet/actionscript/articles/PLRM.pdf">PostScript</a></div>
-        <div class="link"><a href="https://www.adobe.com/devnet/pdf/pdf_reference.html">PDF</a></div>
-        <div class="link"><a href="https://www.w3.org/TR/SVG/">SVG</a></div>
-      </div>
     </div>
 
     <div id="contentwrapper">
