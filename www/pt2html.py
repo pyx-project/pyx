@@ -202,7 +202,7 @@ for ptname in glob.glob("*.pt"):
         codecs.open("build/%s" % htmlname, "w", encoding="utf-8").write(content)
 
 
-def processexamples(basedir):
+def processexamples(basedir, gallery=False):
     exampleindextemplate = PageTemplateFile("exampleindex.pt")
     examplestemplate = PageTemplateFile("examples.pt")
     exampletemplate = PageTemplateFile("example.pt")
@@ -260,7 +260,8 @@ def processexamples(basedir):
                            subpages=examplepages,
                            mkrellink=mkrellink,
                            prev=prev,
-                           next=next)
+                           next=next,
+                           gallery=gallery)
         codecs.open("build/%s" % htmlname, "w", encoding="utf-8").write(content)
         prev = os.path.join(destdir, "index.html")
         if dir:
@@ -281,9 +282,11 @@ def processexamples(basedir):
                                           subpages=examplepages,
                                           mkrellink=mkrellink,
                                           prev=prev,
-                                          next=next)
+                                          next=next,
+                                          gallery=gallery)
                 codecs.open("build/%s" % htmlname, "w", encoding="utf-8").write(content)
                 prev = os.path.join(destdir, aexample.html)
 
 
 processexamples("examples")
+processexamples("gallery", gallery=True)

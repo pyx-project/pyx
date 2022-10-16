@@ -7,7 +7,8 @@
     <div class="examplenavigations">
       <a class="examplenavigation" tal:attributes="href python: options['mkrellink'](options['next'], options)">next</a>
     </div>
-    <h1>PyX — Examples</h1>
+    <h1 tal:condition="not: options/gallery">PyX — Examples</h1>
+    <h1 tal:condition="options/gallery">PyX — Gallery</h1>
 
     <tal:block content="structure options/text"/>
 
@@ -31,7 +32,7 @@
     </span>
 
     <div class="exampleseparator"></div>
-    <h2>Further examples</h2>
+    <h2 tal:condition="not: options/gallery">Further examples</h2>
     <ul>
       <li tal:repeat="subpage options/subpages">
         <a tal:attributes="href string:${subpage/dir}/index.html" tal:content="subpage/title">Examples</a>

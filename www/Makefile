@@ -33,6 +33,14 @@ copy:
 	    cp ../examples/$$d*.$$t build/examples/$$d 2> /dev/null; \
 	  done; \
 	done; \
+	for d in "" $$(grep / ../gallery/INDEX); \
+	do \
+	  mkdir -p build/gallery/$$d; \
+	  for t in png py ipynb jpg dat eps pdf svg; \
+	  do \
+	    cp ../gallery/$$d*.$$t build/gallery/$$d 2> /dev/null; \
+	  done; \
+	done; \
 
 html:
 	$(PYTHON) pt2html.py

@@ -36,6 +36,10 @@
         <tal:block repeat="subpage options/subpages" tal:condition="python: options['pagename'].startswith('examples')">
           <div class="sublink" tal:define="htmlname string:examples/${subpage/dir}/index.html; navname subpage/title">- <span metal:use-macro="options/maintemplate/macros/navlink"></span></div>
         </tal:block>
+        <div class="link" tal:define="htmlname python: 'gallery/index.html'; navname python: 'Gallery'"><span metal:use-macro="options/maintemplate/macros/navlink"></span></div>
+        <tal:block repeat="subpage options/subpages" tal:condition="python: options['pagename'].startswith('gallery')">
+          <div class="sublink" tal:define="htmlname string:gallery/${subpage/dir}/index.html; navname subpage/title">- <span metal:use-macro="options/maintemplate/macros/navlink"></span></div>
+        </tal:block>
         <div class="link" tal:define="htmlname python: 'license.html'; navname python: 'License'"><span metal:use-macro="options/maintemplate/macros/navlink"></span></div>
       </div>
 
@@ -44,7 +48,6 @@
         <div class="link"><a href="https://github.com/pyx-project/">GitHub</a></div>
         <div class="link"><a href="https://pypi.python.org/pypi/PyX">PyPI</a></div>
         <div class="link"><a href="https://sourceforge.net/p/pyx/mailman/">Mailing lists</a></div>
-        <div class="link"><a href="https://sourceforge.net/p/pyx/gallery/">Gallery</a></div>
         <div class="link"><a href="https://github.com/pyx-project/pyx/blob/master/CHANGES">ChangeLog</a></div>
         <div class="link"><a tal:attributes="href string:https://pypi.python.org/packages/source/P/PyX/PyX-${options/version}.tar.gz">Download</a></div>
       </div>
