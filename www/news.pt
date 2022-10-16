@@ -9,6 +9,13 @@
     <h1>PyX — News</h1>
 
     <dl>
+      <dt>2022-10-16: PyX 0.16 released</dt>
+      <dd>
+        This release enables a shortcut for accessing graph-component
+        attributes, simplifying the modification of default components. Small
+        improvements and several bug fixes, especially for the text
+        alignment with TeX Live 2020, are included.
+      </dd>
       <dt>2019-07-14: PyX 0.15 released</dt>
       <dd>
         This release introduces a new text engine UnicodeEngine, which enables
