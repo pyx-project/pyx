@@ -5,4 +5,5 @@ include faq/Makefile faq/conf.py faq/*.rst
 recursive-include pyx *.c *.py
 recursive-include pyx/data *
 recursive-include contrib *.py *.cfg *.tex
-recursive-include examples README *.py *.dat *.jpg *.txt *.ipynb
+recursive-include examples README *.py *.dat *.jpg *.txt
+recursive-include gallery README *.py *.dat *.jpg *.txt
