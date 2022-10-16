@@ -1,0 +1,9 @@
+cube
+
+The 3d graphs in PyX use projectors to transform the 3d data to two dimensions.
+Those projectors can be used for other drawing tasks as well, as shown for a
+simple cube here. ... In addition to the central projection, a parallel projection
+is available, too.
+
+Idea and initial version by Gert-Ludwig Ingold.
+
