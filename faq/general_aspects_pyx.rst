@@ -25,17 +25,21 @@ The current release of PyX (as well as older ones) is freely available from
 `https://pyx-project.org <https://pyx-project.org>`_ where also a
 subversion repository with the latest patches can be found. In addition, PyX is
 registered on the Python Package Index at
-`https://pypi.python.org/pypi/PyX <https://pypi.python.org/pypi/PyX>`_ and can
+`https://pypi.org/project/PyX <https://pypi.org/project/PyX>`_ and can
 be installed by ``easy_install`` and ``pip``. As PyX is hosted on PyPI, it can
 be directly downloaded and installed by ``pip``. Please see the
-`pip documentation <http://www.pip-installer.org/>`_ for details.
+`pip documentation <https://pip.pypa.io/en/stable/>`_ for details.
 
 Possibly older versions of PyX are also available as package for various Linux
 distributions: see, for instance,
-`http://packages.debian.org/testing/python-pyx <http://packages.debian.org/testing/python-pyx>`_
-for information on the PyX package in Debian GNU/Linux or
-`http://packages.ubuntu.com/raring/python-pyx <http://packages.ubuntu.com/raring/python-pyx>`_
-for Ubuntu.
+`https://packages.debian.org/stable/python3-pyx <https://packages.debian.org/stable/python3-pyx>`_
+for information on the PyX package in Debian GNU/Linux,
+`https://packages.ubuntu.com/jammy/python3-pyx <https://packages.ubuntu.com/jammy/python3-pyx>`_
+for Ubuntu,
+`https://software.opensuse.org/package/python-PyX <https://software.opensuse.org/package/python-PyX>`_
+for OpenSUSE, and
+`https://archlinux.org/packages/community/any/python-pyx <https://archlinux.org/packages/community/any/python-pyx>`_
+for Arch Linux.
 
 PyX has no dependencies on other Python packages.
 
@@ -62,14 +66,14 @@ to do that, one needs the corresponding PyX package (see
 :ref:`where_do_I_get_PyX` if you need to download it), which should be unpacked
 below a directory, e.g.  ``/home/xyz/Python``,  where you want to keep the
 various PyX versions.  This will result in a subdirectory with a name like
-``PyX-0.14`` which contains the contents of the corresponding package. You
+``PyX-0.16`` which contains the contents of the corresponding package. You
 can then ask Python to first look in the appropriate directory before looking
 for the current version of PyX by inserting the following code (appropriately
 modified according to your needs) at the beginning of your program before
 importing the PyX module::
 
    import sys
-   sys.path.insert(0, "/home/xyz/Python/PyX-0.14")
+   sys.path.insert(0, "/home/xyz/Python/PyX-0.16")
 
 Including appropriate lines even if the current version of PyX is used, might
 turn out to be helpful when the current version has become an old version
@@ -80,7 +84,7 @@ If your operating system supports path expansion, you might use as an
 alternative::
 
    import sys, os
-   sys.path.insert(0, os.path.expanduser("~/Python/PyX-0.14"))
+   sys.path.insert(0, os.path.expanduser("~/Python/PyX-0.16"))
 
 which will expand the tilde to your home directory.
 
