@@ -1,4 +1,4 @@
-0.xx (2021/xx/xx):
+0.16 (2022/10/16):
   - graph module:
     - enable shortcut for passing arguments through graph components (axes,
       painters, etc.) by passing keyword arguments consisting of graph
@@ -23,6 +23,8 @@
   - manual:
     - Remove deprecated code in colorname.py and gradientname.py (thanks to
       grozin for reporting this in bug #37)
+  - the gallery has been moved away from sourceforge.net wiki to the PyX website.
+    Contributions by pull requests are welcome.
 
 0.15 (2019/07/14):
   - text module:
