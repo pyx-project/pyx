@@ -243,10 +243,6 @@ axis position methods:
    Like :meth:`tickdirection` but in graph coordinates.
 
 
-.. method:: anchoredaxis.vtickdirection(v)
-
-   Like :meth:`tickdirection` but in graph coordinates.
-
 However, there are two anchored axes implementations :class:`linkedaxis` and
 :class:`anchoredpathaxis` which are available to the user to create special
 forms of anchored axes.
