@@ -10,4 +10,4 @@ clean:
 
 suite:
 	mkdir suite
-	(cd suite; curl -O http://www.w3.org/Graphics/SVG/Test/20110816/archives/W3C_SVG_11_TestSuite.tar.gz; tar xzvf W3C_SVG_11_TestSuite.tar.gz)
+	(cd suite; curl -O https://www.w3.org/Graphics/SVG/Test/20110816/archives/W3C_SVG_11_TestSuite.tar.gz; tar xzvf W3C_SVG_11_TestSuite.tar.gz)
