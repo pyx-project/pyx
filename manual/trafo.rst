@@ -68,7 +68,8 @@ be obtained via the ``trafo`` method ``inverse()``, defined by the inverse
 
 .. method:: slanted(a, angle=0, x=None, y=None)
 
-   returns ``trafo`` followed by slant by ``angle`` around point
+   returns ``trafo`` followed by slant by factor ``a`` in the direction
+   given by ``angle`` around point
    :math:`(\mathtt{x}, \mathtt{y})`, or :math:`(0,0)`, if not given.
 
 .. method:: translated(x, y)
@@ -99,7 +100,8 @@ each of which corresponds to one ``trafo`` method.
 
 .. class:: slant(a, angle=0, x=None, y=None)
 
-   slant by ``angle`` around point :math:`(\mathtt{x}, \mathtt{y})`, or :math:`(0,0)`, if not given.
+   slant by factor ``a`` in the direction given by ``angle`` around point :math:`(\mathtt{x}, \mathtt{y})`,
+   or :math:`(0,0)`, if not given.
 
 .. class:: translate(x, y)
 
