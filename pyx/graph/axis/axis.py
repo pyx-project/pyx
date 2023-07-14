@@ -268,7 +268,13 @@ class logarithmic(_regularaxis):
         if self.reverse:
             return (math.log(data.max) - math.log(float(value))) / (math.log(data.max) - math.log(data.min))
         else:
-            return (math.log(float(value)) - math.log(data.min)) / (math.log(data.max) - math.log(data.min))
+            # it is high time that this logarithmic axis is stabilised!
+            try:
+                logval = math.log(float(value))
+            except ValueError:
+                return 0
+            else:
+                return (logval - math.log(data.min)) / (math.log(data.max) - math.log(data.min))
 
     def create(self, data, positioner, graphtextengine, errorname):
         try:
