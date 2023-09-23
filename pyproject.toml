@@ -1,0 +1,57 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+
+[project]
+name = "PyX"
+description = "Python package for the generation of PostScript, PDF, and SVG files"
+readme = "README.md"
+license = { file = "LICENSE" }
+dynamic = ["version"]
+authors = [
+    {name="Jörg Lehmann", email="joerg@pyx-project.org"},
+    {name="André Wobst", email="wobsta@pyx-project.org"}
+]
+
+maintainers = [
+    {name="Jörg Lehmann", email="joerg@pyx-project.org"},
+    {name="André Wobst", email="wobsta@pyx-project.org"}
+]
+
+keywords = ["python", "data-science", "graphics", "data-visualization", "plotting", "postscript", "pdf"] 
+
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: GNU General Public License (GPL)",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Topic :: Multimedia :: Graphics",
+    "Topic :: Scientific/Engineering :: Visualization",
+    "Topic :: Software Development :: Libraries :: Python Modules"
+]
+
+requires-python = ">=3.6"
+
+[project.optional-dependencies]
+dev = [ "zope.pagetemplate", "sphinx", "sphinx_selective_exclude", "pillow", "IPython", "nbformat", "testfixtures" ]
+
+
+[project.urls]
+homepage = "https://pyx-project.org/"
+documentation = "https://pyx-project.org/documentation.html"
+repository = "https://github.com/pyx-project/pyx"
+changelog = "https://github.com/pyx-project/pyx/blob/master/CHANGES"
+
+
+[tool.setuptools]
+packages = ["pyx", "pyx.graph", "pyx.graph.axis", "pyx.font", "pyx.dvi", "pyx.metapost"]
+
+[tool.setuptools.package-data]
+pyx = ["data/afm/*", "data/lfs/*", "data/def/*", "data/pyxrc"]
+
+
+[tool.setuptools.dynamic]
+version = { attr = "pyx.version.version" }
