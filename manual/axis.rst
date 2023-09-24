@@ -119,7 +119,7 @@ arguments of a graph. Those instances should only be used once.
    This class is an abbreviation of :class:`linear` described above.
 
 
-.. class:: logarithmic(min=None, max=None, reverse=0, divisor=None, title=None, parter=parter.autologarithmic(), manualticks=[], density=1, maxworse=2, rater=rater.logarithmic(), texter=texter.mixed(), painter=painter.regular(), linkpainter=painter.linked(), fallbackrange=None, neglog=False)
+.. class:: logarithmic(min=None, max=None, reverse=0, divisor=None, title=None, parter=parter.autologarithmic(), manualticks=[], density=1, maxworse=2, rater=rater.logarithmic(), texter=texter.mixed(), painter=painter.regular(), linkpainter=painter.linked(), fallbackrange=None)
 
    This class provides a logarithmic axis. All parameters work like
    :class:`linear`. Only two parameters have a different default: *parter* and
@@ -130,17 +130,6 @@ arguments of a graph. Those instances should only be used once.
 .. class:: log(...)
 
    This class is an abbreviation of :class:`logarithmic` described above.
-
-
-.. class:: negativelogarithmic(...)
-
-   This class is identical to :class:`logarithmic` described above, but
-   with the *neglog* flag set to ``True``.
-
-
-.. class:: neglog(...)
-
-   This class is an abbreviation of :class:`negativelogarithmic` described above.
 
 
 .. class:: bar(subaxes=None, defaultsubaxis=linear(painter=None, linkpainter=None, parter=None, texter=None), dist=0.5, firstdist=None, lastdist=None, title=None, reverse=0, painter=painter.bar(), linkpainter=painter.linkedbar())
