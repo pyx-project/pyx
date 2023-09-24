@@ -275,7 +275,7 @@ class logarithmic(_regularaxis):
     """logarithmic axis"""
 
     def __init__(self, parter=parter.autologarithmic(), rater=rater.logarithmic(),
-                       linearparter=parter.autolinear(extendtick=None), **kwargs):
+                       linearparter=parter.autolinear(extendtick=None), neglog=False, **kwargs):
         split_kwargs, rest_kwargs = utils.kwsplit(kwargs, ["parter", "rater", "linearparter"])
 
         _regularaxis.__init__(self, **rest_kwargs)
@@ -287,6 +287,7 @@ class logarithmic(_regularaxis):
         self.parter = parter
         self.rater = rater
         self.linearparter = linearparter
+        self.neglog = neglog
         self.kwargs = kwargs
 
     def __call__(self, **kwargs):
@@ -295,10 +296,16 @@ class logarithmic(_regularaxis):
     def convert(self, data, value):
         """axis coordinates -> graph coordinates"""
         # TODO: store log(data.min) and log(data.max)
-        if self.reverse:
-            return (math.log(data.max) - math.log(float(value))) / (math.log(data.max) - math.log(data.min))
+        if self.neglog:
+            if self.reverse:
+                return (math.log(-data.max) - math.log(-float(value))) / (math.log(-data.max) - math.log(-data.min))
+            else:
+                return (math.log(-float(value)) - math.log(-data.min)) / (math.log(-data.max) - math.log(-data.min))
         else:
-            return (math.log(float(value)) - math.log(data.min)) / (math.log(data.max) - math.log(data.min))
+            if self.reverse:
+                return (math.log(data.max) - math.log(float(value))) / (math.log(data.max) - math.log(data.min))
+            else:
+                return (math.log(float(value)) - math.log(data.min)) / (math.log(data.max) - math.log(data.min))
 
     def create(self, data, positioner, graphtextengine, errorname):
         try:
@@ -310,6 +317,14 @@ class logarithmic(_regularaxis):
             raise
 
 log = logarithmic
+
+
+class negativelogarithmic(logarithmic):
+
+    def __init__(self, neglog=True, **kwargs):
+        logarithmic.__init__(self, neglog=neglog, **kwargs)
+
+neglog = negativelogarithmic
 
 
 class subaxispositioner(positioner._positioner):

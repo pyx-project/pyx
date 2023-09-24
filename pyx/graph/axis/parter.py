@@ -229,6 +229,11 @@ class logarithmic(linear):
                                                         ["tickpreexps", "labelpreexps", "extendtick", "extendlabel", "epsilon"]))
 
     def extendminmax(self, min, max, preexp, extendmin, extendmax):
+        if (min <= 0 and max >= 0) or (min >= 0 and max <= 0):
+            raise RuntimeError('values need to be either all positive or negative on log axis')
+        neglog = max < 0
+        if neglog:
+            min, max = -max, -min
         minpower = None
         maxpower = None
         for i in range(len(preexp.pres)):
@@ -254,12 +259,15 @@ class logarithmic(linear):
             min = float(minrational) * float(preexp.exp) ** minpower
         if extendmax:
             max = float(maxrational) * float(preexp.exp) ** maxpower
+        if neglog:
+            min, max = -max, -min
         return min, max
 
     def getticks(self, min, max, preexp, ticklevel=None, labellevel=None):
+        neglog = max < 0
+        if neglog:
+            min, max = -max, -min
         ticks = []
-        minimin = 0
-        maximax = 0
         for f in preexp.pres:
             thisticks = []
             imin = int(math.ceil(math.log(min / float(f)) /
@@ -268,8 +276,13 @@ class logarithmic(linear):
                                   math.log(preexp.exp) + 0.5 * self.epsilon))
             for i in range(imin, imax + 1):
                 pos = f * tick.rational((preexp.exp, 1), power=i)
-                thisticks.append(tick.tick((pos.num, pos.denom), ticklevel = ticklevel, labellevel = labellevel))
+                if neglog:
+                    thisticks.insert(0, tick.tick((-pos.num, pos.denom), ticklevel = ticklevel, labellevel = labellevel))
+                else:
+                    thisticks.append(tick.tick((pos.num, pos.denom), ticklevel = ticklevel, labellevel = labellevel))
             ticks = tick.mergeticklists(ticks, thisticks)
+        if neglog:
+            ticks = ticks[::-1]
         return ticks
 
 log = logarithmic
