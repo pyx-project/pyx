@@ -249,8 +249,8 @@ class linear(_regularaxis):
 
         if "parter" in split_kwargs: parter = parter(**split_kwargs["parter"])
         if "rater" in split_kwargs or density:
+            rater_kwargs = split_kwargs.get("rater", {})
             if density:
-                rater_kwargs = split_kwargs.get("rater", {})
                 if "density" in rater_kwargs:
                     raise ValueError("duplicate density in rater and depricated setting")
                 logger.warning("density should be passed to rater instead of axis")
@@ -288,8 +288,8 @@ class logarithmic(_regularaxis):
 
         if "parter" in split_kwargs: parter = parter(**split_kwargs["parter"])
         if "rater" in split_kwargs or density:
+            rater_kwargs = split_kwargs.get("rater", {})
             if density:
-                rater_kwargs = split_kwargs.get("rater", {})
                 if "density" in rater_kwargs:
                     raise ValueError("duplicate density in rater and depricated setting")
                 logger.warning("density should be passed to rater instead of axis")
