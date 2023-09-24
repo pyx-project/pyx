@@ -64,7 +64,7 @@ class _regularaxis(_axis):
 
     def __init__(self, min=None, max=None, reverse=0, divisor=None, title=None,
                        painter=painter.regular(), texter=texter.default(), linkpainter=painter.linked(),
-                       density=1, maxworse=2, manualticks=[], fallbackrange=None, **kwargs):
+                       maxworse=2, manualticks=[], fallbackrange=None, **kwargs):
 
         split_kwargs, rest_kwargs = utils.kwsplit(kwargs, ["painter", "texter", "linkpainter"])
         if rest_kwargs:
@@ -84,7 +84,6 @@ class _regularaxis(_axis):
         self.painter = painter
         self.texter = texter
         self.linkpainter = linkpainter
-        self.density = density
         self.maxworse = maxworse
         self.manualticks = self.checkfraclist(manualticks)
         self.fallbackrange = fallbackrange
@@ -199,7 +198,7 @@ class _regularaxis(_axis):
                     break
                 ticks = tick.mergeticklists(self.manualticks, ticks, mergeequal=0)
                 if ticks:
-                    rate = rater.rateticks(self, ticks, self.density)
+                    rate = rater.rateticks(self, ticks)
                     if rate is not None:
                         if self.reverse:
                             rate += rater.raterange(self.convert(data, convert_tick(ticks[0])) -
@@ -227,7 +226,7 @@ class _regularaxis(_axis):
         variants.sort()
         while not variants[0].storedcanvas:
             variants[0].storedcanvas = layout(variants[0])
-            ratelayout = rater.ratelayout(variants[0].storedcanvas, self.density)
+            ratelayout = rater.ratelayout(variants[0].storedcanvas)
             if ratelayout is None:
                 del variants[0]
                 if not variants:
@@ -243,13 +242,20 @@ class _regularaxis(_axis):
 class linear(_regularaxis):
     """linear axis"""
 
-    def __init__(self, parter=parter.autolinear(), rater=rater.linear(), **kwargs):
+    def __init__(self, parter=parter.autolinear(), rater=rater.linear(), density=None, **kwargs):
         split_kwargs, rest_kwargs = utils.kwsplit(kwargs, ["parter", "rater"])
 
         _regularaxis.__init__(self, **rest_kwargs)
 
         if "parter" in split_kwargs: parter = parter(**split_kwargs["parter"])
-        if "rater" in split_kwargs: rater = rater(**split_kwargs["rater"])
+        if "rater" in split_kwargs or density:
+            if density:
+                rater_kwargs = split_kwargs.get("rater", {})
+                if "density" in rater_kwargs:
+                    raise ValueError("duplicate density in rater and depricated setting")
+                logger.warning("density should be passed to rater instead of axis")
+                rater_kwargs["density"] = density
+            rater = rater(**rater_kwargs)
 
         self.parter = parter
         self.rater = rater
@@ -275,13 +281,20 @@ class logarithmic(_regularaxis):
     """logarithmic axis"""
 
     def __init__(self, parter=parter.autologarithmic(), rater=rater.logarithmic(),
-                       linearparter=parter.autolinear(extendtick=None), **kwargs):
+                       linearparter=parter.autolinear(extendtick=None), density=None, **kwargs):
         split_kwargs, rest_kwargs = utils.kwsplit(kwargs, ["parter", "rater", "linearparter"])
 
         _regularaxis.__init__(self, **rest_kwargs)
 
         if "parter" in split_kwargs: parter = parter(**split_kwargs["parter"])
-        if "rater" in split_kwargs: rater = rater(**split_kwargs["rater"])
+        if "rater" in split_kwargs or density:
+            if density:
+                rater_kwargs = split_kwargs.get("rater", {})
+                if "density" in rater_kwargs:
+                    raise ValueError("duplicate density in rater and depricated setting")
+                logger.warning("density should be passed to rater instead of axis")
+                rater_kwargs["density"] = density
+            rater = rater(**rater_kwargs)
         if "linearparter" in split_kwargs: linearparter = linearparter(**split_kwargs["linearparter"])
 
         self.parter = parter

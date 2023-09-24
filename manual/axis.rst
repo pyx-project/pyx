@@ -72,7 +72,7 @@ Instances of the following classes can be passed to the *\*\*axes* keyword
 arguments of a graph. Those instances should only be used once.
 
 
-.. class:: linear(min=None, max=None, reverse=0, divisor=None, title=None, parter=parter.autolinear(), manualticks=[], density=1, maxworse=2, rater=rater.linear(), texter=texter.mixed(), painter=painter.regular(), linkpainter=painter.linked(), fallbackrange=None)
+.. class:: linear(min=None, max=None, reverse=0, divisor=None, title=None, parter=parter.autolinear(), manualticks=[], rater=rater.linear(), maxworse=2, texter=texter.mixed(), painter=painter.regular(), linkpainter=painter.linked(), fallbackrange=None)
 
    This class provides a linear axis. *min* and *max* define the axis range. When
    not set, they are adjusted automatically by the data to be plotted in the graph.
@@ -92,17 +92,13 @@ arguments of a graph. Those instances should only be used once.
    *parter* is a partitioner instance, which creates suitable ticks for the axis
    range. Those ticks are merged with ticks manually given  by *manualticks* before
    proceeding with rating, painting *etc.* Manually placed ticks win against those
-   created by the partitioner. For automatic partitioners, which are able to
-   calculate several possible tick lists for a given axis range, the *density* is a
-   (linear) factor to favour more or less ticks. It should not be stressed to much
-   (its likely, that the result would be unappropriate or not at all valid in terms
-   of rating label distances). But within a range of say 0.5 to 2 (even bigger for
-   large graphs) it can help to get less or more ticks than the default would lead
-   to. *maxworse* is the number of trials with more and less ticks when a better
-   rating was already found. *rater* is a rater instance, which rates the ticks and
-   the label distances for being best suitable. It also takes into account
-   *density*. The rater is only needed, when the partitioner creates several tick
-   lists.
+   created by the partitioner.
+
+   *rater* is a rater instance, which rates the ticks and the label distances
+   for being best suitable. The rater is only needed, when the partitioner
+   creates several tick lists. *maxworse* is the number of trials with more and
+   less ticks when a better rating was already found to help to get less or
+   more ticks than the default would lead to.
 
    *texter* is a texter instance. It creates labels for those ticks, which claim to
    have a label, but do not have a label string set already. Ticks created by
@@ -119,7 +115,7 @@ arguments of a graph. Those instances should only be used once.
    This class is an abbreviation of :class:`linear` described above.
 
 
-.. class:: logarithmic(min=None, max=None, reverse=0, divisor=None, title=None, parter=parter.autologarithmic(), manualticks=[], density=1, maxworse=2, rater=rater.logarithmic(), texter=texter.mixed(), painter=painter.regular(), linkpainter=painter.linked(), fallbackrange=None)
+.. class:: logarithmic(min=None, max=None, reverse=0, divisor=None, title=None, parter=parter.autologarithmic(), manualticks=[], maxworse=2, rater=rater.logarithmic(), texter=texter.mixed(), painter=painter.regular(), linkpainter=painter.linked(), fallbackrange=None)
 
    This class provides a logarithmic axis. All parameters work like
    :class:`linear`. Only two parameters have a different default: *parter* and
@@ -758,7 +754,7 @@ bad rating as well.
    returns this value divided by the number of elements in the list.
 
 
-.. class:: rater(ticks, labels, range, distance)
+.. class:: rater(ticks, labels, range, distance=distance("1 cm"), density=1)
 
    Instances of this class are raters for axes partitionings.
 
@@ -773,8 +769,14 @@ bad rating as well.
 
    *distance* is an distance rater instance.
 
+   For automatic partitioners, which are able to calculate several possible
+   tick lists for a given axis range, the *density* is a (linear) factor to
+   favour more or less ticks. It should not be stressed to much (its likely,
+   that the result would be unappropriate or not at all valid in terms of
+   rating label distances). Useful values are between 0.5 to 2 (even bigger for
+   large graphs).
 
-.. class:: linear(ticks=[cube(4), cube(10, weight=0.5)], labels=[cube(4)], range=cube(1, weight=2), distance=distance("1 cm"))
+.. class:: linear(ticks=[cube(4), cube(10, weight=0.5)], labels=[cube(4)], range=cube(1, weight=2), **kwargs)
 
    This class is suitable to rate partitionings of linear axes. It is equal to
    :class:`rater` but defines predefined values for the arguments.
@@ -785,7 +787,7 @@ bad rating as well.
    This class is an abbreviation of :class:`linear` described above.
 
 
-.. class:: logarithmic(ticks=[cube(5, right=20), cube(20, right=100, weight=0.5)], labels=[cube(5, right=20), cube(5, right=20, weight=0.5)], range=cube(1, weight=2), distance=distance("1 cm"))
+.. class:: logarithmic(ticks=[cube(5, right=20), cube(20, right=100, weight=0.5)], labels=[cube(5, right=20), cube(5, right=20, weight=0.5)], range=cube(1, weight=2), **kwargs)
 
    This class is suitable to rate partitionings of logarithmic axes. It is equal to
    :class:`rater` but defines predefined values for the arguments.

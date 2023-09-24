@@ -22,7 +22,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 
-from pyx import unit, box
+from pyx import unit, box, utils
 from pyx.graph.axis import tick
 
 
@@ -132,7 +132,8 @@ class rater:
       defined above --- right now, there is not yet a strict interface
       for this delegation (should be done as soon as it is needed)"""
 
-    def __init__(self, ticks, labels, range, distance):
+    def __init__(self, ticks, labels, range,
+                 distance=distance(1*unit.v_cm), density=1):
         """initializes the axis rater
         - ticks and labels are lists of instances of a value rater
         - the first entry in ticks rate the number of ticks, the
@@ -153,12 +154,13 @@ class rater:
         self.labels = labels
         self.range = range
         self.distance = distance
+        self.density = density
 
     def __call__(self, **kwargs):
         return rater(**utils.merge_members_kwargs(self, [kwargs],
-                                                 ["ticks", "labels", "range", "distance"]))
+                                                 ["ticks", "labels", "range", "distance", "density"]))
 
-    def rateticks(self, axis, ticks, density):
+    def rateticks(self, axis, ticks):
         """rates ticks by the number of ticks, subticks, labels etc.
         - takes into account the number of ticks, subticks, labels
           etc. and the coverage of the axis range by the ticks
@@ -184,10 +186,10 @@ class rater:
         rate = 0
         weight = 0
         for numtick, rater in zip(numticks, self.ticks):
-            rate += rater.rate(numtick, density)
+            rate += rater.rate(numtick, self.density)
             weight += rater.weight
         for numlabel, rater in zip(numlabels, self.labels):
-            rate += rater.rate(numlabel, density)
+            rate += rater.rate(numlabel, self.density)
             weight += rater.weight
         return rate/weight
 
@@ -203,14 +205,13 @@ class rater:
           of the axis range is normal and should get some penalty)"""
         return self.range.rate(tickrange, datarange)
 
-    def ratelayout(self, axiscanvas, density):
+    def ratelayout(self, axiscanvas):
         """rate distances of the labels in an axis canvas
         - the distances should be collected as box distances of
           subsequent labels
         - the axiscanvas provides a labels attribute for easy
           access to the labels whose distances have to be taken
-          into account
-        - the density is used within the distancerate instance"""
+          into account"""
         if axiscanvas.labels is None: # to disable any layout rating
             return 0
         if len(axiscanvas.labels) > 1:
@@ -219,7 +220,7 @@ class rater:
                              for i in range(len(axiscanvas.labels) - 1)]
             except box.BoxCrossError:
                 return None
-            return self.distance.rate(distances, density)
+            return self.distance.rate(distances, self.density)
         else:
             return None
 
@@ -229,9 +230,8 @@ class linear(rater):
 
     def __init__(self, ticks=[cube(4), cube(10, weight=0.5)],
                        labels=[cube(4)],
-                       range=cube(1, weight=2),
-                       distance=distance(1*unit.v_cm)):
-        rater.__init__(self, ticks, labels, range, distance)
+                       range=cube(1, weight=2), **kwargs):
+        rater.__init__(self, ticks, labels, range, **kwargs)
 
 lin = linear
 
@@ -241,8 +241,7 @@ class logarithmic(rater):
 
     def __init__(self, ticks=[cube(5, right=20), cube(20, right=100, weight=0.5)],
                        labels=[cube(5, right=20), cube(5, right=20, weight=0.5)],
-                       range=cube(1, weight=2),
-                       distance=distance(1*unit.v_cm)):
-        rater.__init__(self, ticks, labels, range, distance)
+                       range=cube(1, weight=2), **kwargs):
+        rater.__init__(self, ticks, labels, range, **kwargs)
 
 log = logarithmic

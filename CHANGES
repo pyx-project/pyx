@@ -1,7 +1,10 @@
 0.17 (XXXX/XX/XX):
   - Move metadata from setup.py to pyproject.toml
-  - enable log axis on negative values (either all values need to be positive
-    or negative)
+  - graph modules:
+    - enable log axis on negative values (either all values need to be positive
+      or negative)
+    - move the density parameter to the rater (with a deprecation warning in
+      the axis)
 
 0.16 (2022/10/16):
   - graph module:
