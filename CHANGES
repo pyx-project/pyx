@@ -1,5 +1,7 @@
 0.17 (XXXX/XX/XX):
   - Move metadata from setup.py to pyproject.toml
+  - enable log axis on negative values (either all values need to be positive
+    or negative)
 
 0.16 (2022/10/16):
   - graph module:

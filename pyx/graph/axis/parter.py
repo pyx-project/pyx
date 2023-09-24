@@ -264,6 +264,8 @@ class logarithmic(linear):
         return min, max
 
     def getticks(self, min, max, preexp, ticklevel=None, labellevel=None):
+        if (min <= 0 and max >= 0) or (min >= 0 and max <= 0):
+            raise RuntimeError('values need to be either all positive or negative on log axis')
         neglog = max < 0
         if neglog:
             min, max = -max, -min

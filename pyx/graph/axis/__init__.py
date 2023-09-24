@@ -26,7 +26,7 @@ for module in __allmodules__:
     importlib.import_module('.' + module, package='pyx.graph.axis')
 
 from . import axis
-__allaxis__ = ["linear", "lin", "logarithmic", "log", "negativelogarithmic", "neglog",
+__allaxis__ = ["linear", "lin", "logarithmic", "log",
                "bar", "nestedbar", "split",
                "sizedlinear", "sizedlin", "autosizedlinear", "autosizedlin",
                "anchoredaxis", "linkedaxis",
