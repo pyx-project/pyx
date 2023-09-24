@@ -3,7 +3,6 @@ Code:
   - repair PDF generation with unincluded standard fonts (currently broken)
   - change DSC in PS fonts: Resource instead of Font (also in pswriter)
   - SlantFont & Co support
-  - keep an eye on PEP 324 (popen 5): it could make the texrunner much easier
   - discuss reltransform: https://sourceforge.net/mailarchive/forum.php?thread_id=9137692&forum_id=23700
   - add encoding; check whether encoding=ascii works well for the common existing cases
   - write graphics driver for pgf.sty from LaTeX
@@ -36,7 +35,6 @@ Code:
   - rename period argument of decimal texters to recurring_decimal or something similar (as pointed out
     by Tim Head)
 - canvas module:
-  - SVG support
   - stroking of patterns does not work in PDF
 - style and color module:
   - support modification of existing styles via __call__
