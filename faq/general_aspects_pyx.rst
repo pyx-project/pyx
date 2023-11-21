@@ -38,7 +38,7 @@ for information on the PyX package in Debian GNU/Linux,
 for Ubuntu,
 `https://software.opensuse.org/package/python-PyX <https://software.opensuse.org/package/python-PyX>`_
 for OpenSUSE, and
-`https://archlinux.org/packages/community/any/python-pyx <https://archlinux.org/packages/community/any/python-pyx>`_
+`https://archlinux.org/packages/extra/any/python-pyx <https://archlinux.org/packages/extra/any/python-pyx>`_
 for Arch Linux.
 
 PyX has no dependencies on other Python packages.
