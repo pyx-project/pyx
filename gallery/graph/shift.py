@@ -1,5 +1,5 @@
 # You can manually set the subaxes and exceed the axes ranges.
-# The width of the regular axes can be modified by a size paramater.
+# The width of the regular axes can be modified by a size parameter.
 # While most axes do not have a size parameter, it can be added to
 # any existing axis very easily. For linear axes so called sizedlinear
 # and autosizedlinear axes are defined by PyX already.

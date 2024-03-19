@@ -104,7 +104,7 @@ class canvas(baseclasses.canvasitem):
 
         """construct a canvas
 
-        The canvas can be modfied by supplying a list of attrs, which have
+        The canvas can be modified by supplying a list of attrs, which have
         to be instances of one of the following classes:
          - trafo.trafo (leading to a global transformation of the canvas)
          - canvas.clip (clips the canvas)

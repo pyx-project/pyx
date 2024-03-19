@@ -8,7 +8,7 @@ Module :mod:`pattern`
 .. sectionauthor:: Jörg Lehmann <joerg@pyx-project.org>
 
 
-This module contains the :class:`pattern.pattern` class, whichs allows the definition of
+This module contains the :class:`pattern.pattern` class, which allows the definition of
 PostScript Tiling patterns (cf. Sect. 4.9 of the PostScript Language Reference
 Manual) which may then be used to fill paths. In addition, a number of
 predefined hatch patterns are included.

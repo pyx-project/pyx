@@ -112,7 +112,7 @@ class polygon_pt:
             if dx*gx + dy*gy < 0: # angle bigger 90 degree
                 return 0 # use point e
             return 1 # use point f
-        # a and g are othorgonal
+        # a and g are orthogonal
         alpha = ((a*dx+cx-ex)*dy - (a*dy+cy-ey)*dx) * 1.0 / (gy*dx - gx*dy)
         if alpha > 0 - epsilon and alpha < 1 + epsilon:
             beta = ((ex-a*dx-cx)*gy - (ey-a*dy-cy)*gx) * 1.0 / (gx*dy - gy*dx)
