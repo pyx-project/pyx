@@ -161,7 +161,7 @@ class data(_data):
         if title is _notitle:
             items = list(columns.items())
             items.sort() # we want sorted items (otherwise they would be unpredictable scrambled)
-            self.title = "%s: %s" % (text.escapestring(data.title or "unkown source"),
+            self.title = "%s: %s" % (text.escapestring(data.title or "unknown source"),
                                      ", ".join(["%s=%s" % (text.escapestring(key),
                                                            text.escapestring(str(value)))
                                                 for key, value in items]))
@@ -601,7 +601,7 @@ class join(_data):
     "creates a new data set by joining from a list of data, it does however *not* combine points, but fills data with None if necessary"
 
     def merge_lists(self, lists):
-        "merges list items w/o duplications, resulting order is arbitraty"
+        "merges list items w/o duplications, resulting order is arbitrary"
         result = set()
         for l in lists:
             result.update(set(l))

@@ -27,7 +27,7 @@ Class :class:`path` --- MetaPost-like paths
    points.
 
    At points (knots), you can either specify a given tangent direction (angle
-   in degrees) or a certain *curlyness* (relative to the curvature at the other
+   in degrees) or a certain *curliness* (relative to the curvature at the other
    end of a curve), or nothing. In the latter case, both the tangent and the
    *mock* curvature (an approximation to the real curvature, introduced by J. D.
    Hobby in MetaPost) will be continuous.
@@ -57,7 +57,7 @@ Knots
 .. class:: beginknot(x, y, curl=1, angle=None)
 
    The first knot, starting an open path at the coordinates (*x*, *y*). The
-   properties of the curve in that point can either be given by its curlyness
+   properties of the curve in that point can either be given by its curliness
    (default) or the angle of its tangent vector (in degrees). The *curl*
    parameter is (as in MetaPost) the ratio of the curvatures at this point and
    at the other point of the curve connecting it.
@@ -68,7 +68,7 @@ Knots
 
 .. class:: endknot(x, y, curl=1, angle=None)
 
-   The last knot of an open path. Curlyness and angle are the same as in
+   The last knot of an open path. Curliness and angle are the same as in
    :class:`beginknot`.
 
 .. class:: smoothknot(x, y)
@@ -83,11 +83,11 @@ Knots
 .. class:: roughknot(x, y, left_curl=1, right_curl=None, left_angle=None, right_angle=None)
 
    This knot is a possibly non-smooth knot, connecting two curves or lines. At
-   each side of the knot (left/right) you can specify either the curlyness or
+   each side of the knot (left/right) you can specify either the curliness or
    the tangent angle.
 
    Note: If one of the links is a line with the *keepangles* parameter set, the
-   angles will be set eplicitly, regardless of any curlyness set.
+   angles will be set eplicitly, regardless of any curliness set.
 
 .. class:: knot(x, y)
 
@@ -105,7 +105,7 @@ Links
    *keepangles* will guarantee a continuous tangent. (The curvature may become
    discontinuous, however.) This behavior is achieved by turning adjacent knots
    into roughknots with specified angles. Note that a smoothknot and a
-   roughknot with given curlyness do behave differently near a line.
+   roughknot with given curliness do behave differently near a line.
 
 .. class:: tensioncurve(ltension=1, latleast=False, rtension=None, ratleast=None)
 

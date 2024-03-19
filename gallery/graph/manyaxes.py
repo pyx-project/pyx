@@ -2,7 +2,7 @@ import math, random
 from pyx import *
 
 # a xy-graph has linear x and y axes by default
-# they might be overwritten and futher axes might be added as well
+# they might be overwritten and further axes might be added as well
 g = graph.graphxy(width=8, y=graph.axis.log(), y2=graph.axis.lin(),
                   y3=graph.axis.lin(min=0, max=1),
                   y4=graph.axis.lin(min=0, max=2))

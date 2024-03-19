@@ -77,7 +77,7 @@ in figure :ref:`fig_graph2`, a function is plotted as a line by default.
 While the axes ranges got adjusted automatically in the previous example, they
 might be fixed by keyword options in axes constructors. Plotting only a function
 will need such a setting at least in the variable coordinate. The following code
-also shows how to set a logathmic axis in y-direction:
+also shows how to set a logarithmic axis in y-direction:
 
 
 .. include:: graph3.py
@@ -200,7 +200,7 @@ To actually plot something into the graph, the following instance method
    graph to iterate their appearance. Its up to the styles how this is performed.
 
    Instead of calling the plot method several times with different *data* but the
-   same style, you can use a list (or something iterateable) for *data*.
+   same style, you can use a list (or something iterable) for *data*.
 
 While a graph instance only collects data initially, at a certain point it must
 create the whole plot. Once this is done, further calls of :meth:`plot` will
@@ -379,7 +379,7 @@ Regarding the 3d to 2d transformation the methods :meth:`pos`, :meth:`vpos`,
 :class:`graphxy` and just take an additional argument for the dimension. Note
 that a similar transformation method (3d to 2d) is available as part of the
 projector as well already, but only the graph acknowledges its size, the scaling
-and the internal tranformation of the graph coordinates to the scaled
+and the internal transformation of the graph coordinates to the scaled
 coordinates. As the projector also implements a :meth:`zindex` and a
 :meth:`angle` method, those are also available at the graph level in the graph
 coordinate variant (i.e. having an additional v in its name and using values
@@ -416,7 +416,7 @@ There are two projector classes :class:`central` and :class:`parallel`:
    becomes identical to the parallel projection.
 
    ``phi`` is the angle of the viewer in the x-y-plane and ``theta`` is the angle
-   of the viewer to the x-y-plane. The standard notation for spheric coordinates
+   of the viewer to the x-y-plane. The standard notation for spherical coordinates
    are used. The angles are multiplied by *anglefactor* which is initialized to do
    a degree in radiant transformation such that you can specify ``phi`` and
    ``theta`` in degree while the internal computation is always done in radiants.
@@ -550,7 +550,7 @@ For the sake of completeness we list the default patterns:
    *min* and *max* give the range of the variable. If not set, the range spans the
    whole axis range. The axis range might be set explicitly or implicitly by ranges
    of other data. *points* is the number of points for which the function is
-   calculated. The points are choosen linearly in terms of graph coordinates.
+   calculated. The points are chosen linearly in terms of graph coordinates.
 
    *context* allows for accessing external variables and functions. Additionally to
    the identifiers in *context*, the variable name and the functions shown in the
@@ -562,7 +562,7 @@ For the sake of completeness we list the default patterns:
    This class creates graph data from a parametric function. *varname* is the
    parameter of the function. *min* and *max* give the range for that variable.
    *points* is the number of points for which the function is calculated. The
-   points are choosen lineary in terms of the parameter.
+   points are chosen linearly in terms of the parameter.
 
    *expression* is the mathematical expression for the parametric function. It
    contains an assignment of a tuple of functions to a tuple of variables. A
@@ -707,7 +707,7 @@ Some of the styles below are hidden styles. Those do not create any output, but
 they perform internal data handling and thus help on modularization of the
 styles. Usually, a visible style will depend on data provided by one or more
 hidden styles but most of the time it is not necessary to specify the hidden
-styles manually. The hidden styles register themself to be the default for
+styles manually. The hidden styles register themselves to be the default for
 providing certain internal data.
 
 
@@ -949,13 +949,13 @@ The class :class:`line` provides a changeable line style. Its definition is:
 
    This class is a style to plot histograms. *lineattrs* is merged with
    ``defaultlineattrs`` which is ``[deco.stroked]``. When *steps* is set, the
-   histrogram is plotted as steps instead of the default being a boxed histogram.
+   histogram is plotted as steps instead of the default being a boxed histogram.
    *fromvalue* is the baseline value of the histogram. When set to ``None``, the
    histogram will start at the baseline. When fromvalue is set, *frompathattrs* are
    the stroke attributes used to show the histogram baseline path.
 
    The *fillable* flag changes the stoke line of the histogram to make it fillable
-   properly. This is important on non-steped histograms or on histograms, which hit
+   properly. This is important on non-stepped histograms or on histograms, which hit
    the graph boundary. *rectkey* can be set to generate a rectanglar area instead
    of a line in the graph key.
 

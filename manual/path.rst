@@ -146,7 +146,7 @@ alphabetic order):
 
 .. method:: path.trafo(params)
 
-   Returns a transformation or a list of tranformations, which translate the
+   Returns a transformation or a list of transformations, which translate the
    origin to a point on the path corresponding to parameter value(s) *params*
    and rotate the x-direction to the tangent vector and the y-direction to the
    normal vector. [#normpathconvert]_

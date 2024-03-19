@@ -83,7 +83,7 @@ RGB and CMYK versions of these latter gradients are also defined under the names
 .. class:: functiongradient_hsb(f_g, f_s, f_b)
 .. class:: functiongradient_rgb(f_r, f_g, f_b)
 
-   This class provides an arbitray transition between colors of the same color
+   This class provides an arbitrary transition between colors of the same color
    model.
 
    The functions *f_c*, etc. map the values [0, 1] to the respective components

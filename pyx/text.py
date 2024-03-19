@@ -1814,7 +1814,7 @@ def set(engine=None, cls=None, mode=None, *args, **kwargs):
 
         :deprecated: use the engine argument instead
     :param mode: ``"tex"`` for :class:`TexEngine` or ``"latex"`` for
-        :class:`LatexEngine` with arbitraty capitalization
+        :class:`LatexEngine` with arbitrary capitalization
 
         :deprecated: use the engine argument instead
     :type mode: str or None

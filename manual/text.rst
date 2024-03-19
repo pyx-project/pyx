@@ -47,7 +47,7 @@ marker at the end, and waits for this output marker to be echoed in the TeX
 output. All intermediate output is attributed to the commands just sent and
 will be analysed for problems. This is done by :class:`texmessage` parsers.
 Here, a problem could be logged to the PyX logger at warning level, thus
-be reported to ``stderr`` by default. This happens for over- or underful boxes
+be reported to ``stderr`` by default. This happens for over- or underfull boxes
 or font warnings emitted by TeX. For other unknown problems (*i.e.* output not
 handled by any of the given :class:`texmessage` parsers), a
 :exc:`TexResultError` is raised, which creates a detailed error report
@@ -64,7 +64,7 @@ would expect it.
 Once the actual output is requested, PyX reads the content of the DVI file,
 accessing the page related to the output in question. It then does all the
 necessary steps to transform the DVI content to the requested output format,
-like searching for virtual font files, font metrices, font mapping files, and
+like searching for virtual font files, font metrics, font mapping files, and
 PostScript Type1 fonts to be used in the final output. Here a present
 limitation has been mentioned: PyX presently can use PostScript Type1 fonts
 only to generate text output. While this is a serious limitation, all the
@@ -156,7 +156,7 @@ TeX output one after the other. Each of the function receives the TeX output as
 a string and return it back (maybe altered). Such a function must perform one
 of the following actions in response to the TeX output is receives:
 
- 1. If it does not find any text in the TeX output it feals responsible for, it
+ 1. If it does not find any text in the TeX output it feels responsible for, it
     should just return the unchanged string.
 
  2. If it finds a text it is responsible for, and the message is just fine
@@ -322,7 +322,7 @@ Some handy instances available as class members:
    Instances of this class create a box with a finite width, where the typesetter
    creates multiple lines in. Note, that you can't create multiple lines in
    TeX/LaTeX without specifying a box width. Since PyX doesn't know a box width, it
-   uses TeXs LR-mode by default, which will always put everything into a single
+   uses TeX's LR-mode by default, which will always put everything into a single
    line. Since in a vertical box there are several baselines, you can specify the
    baseline to be used by the optional *baseline* argument. You can set it to the
    symbolic names :attr:`top`, :attr:`parbox.middle`, and :attr:`parbox.bottom`
@@ -336,7 +336,7 @@ class members.
 .. class:: vshift(lowerratio, heightstr="0")
 
    Instances of this class lower the output by *lowerratio* of the height of the
-   string *heigthstring*. Note, that you can apply several shifts to sum up the
+   string *heightstr*. Note, that you can apply several shifts to sum up the
    shift result. However, there is still a :attr:`clear` class member to remove all
    vertical shifts.
 
@@ -367,14 +367,14 @@ Some handy instances available as class members:
    usually fits the height of the minus sign. (It is the height of the minus sign
    in mathematical mode, since that's that the mathematical axis is all about.)
 
-There is a TeX/LaTeX attribute to switch to TeXs math mode. The appropriate
+There is a TeX/LaTeX attribute to switch to TeX's math mode. The appropriate
 instances ``mathmode`` and ``clearmathmode`` (to clear the math mode attribute)
 are available at module level.
 
 
 .. data:: mathmode
 
-   Enables TeXs mathematical mode in display style.
+   Enables TeX's mathematical mode in display style.
 
 The :class:`size` class creates TeX/LaTeX attributes for changing the font size.
 
@@ -559,13 +559,13 @@ analysed at the typesetting step immediately.
 Since TeX interpreters usually buffer the DVI output, the interpreter itself
 needs to be terminated to get the DVI output. As :class:`MultiEngine` instances
 can start a new interpreter when needed, this does not harm the functionality
-and happens more or less unnoticable. Still it generates some penalty in terms
+and happens more or less unnoticeable. Still it generates some penalty in terms
 of execution speed, which can become huge for certain situations (alternation
 between typesetting and marker access).
 
 One of the effects of the ``texipc`` option available in almost all present TeX
 interpreters is to flush the DVI output after each page. As PyX reads the DVI
-output linearily, it can successfully read all output whithout stopping the TeX
+output linearly, it can successfully read all output without stopping the TeX
 interpreter. It is suggested to enable the ``texipc`` feature in the
 system-wide configuration if available in the TeX interpreter being used.
 
@@ -610,7 +610,7 @@ path setup within the Python interpreter differs from the one used on the
 shell). In those situations it might help to enable some additional logging
 output created by PyX. PyX uses the logging module from the standard library
 and logs to a logger named ``"pyx"``. By default, various information about
-executing external programms and locating files will not be echoed, as it is
+executing external programs and locating files will not be echoed, as it is
 written at info level, but PyX provides a simple convenience function to enable
 the output of this logging level. Just call the :func:`pyxinfo` function
 defined on the PyX package before actually start using the package in your

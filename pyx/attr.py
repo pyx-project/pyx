@@ -88,7 +88,7 @@ class attr:
 class exclusiveattr(attr):
 
     """an attribute which swallows all but the last of the same type (specified
-    by the exlusiveclass argument to the constructor) in an attribute list"""
+    by the exclusiveclass argument to the constructor) in an attribute list"""
 
     def __init__(self, exclusiveclass):
         self.exclusiveclass = exclusiveclass
@@ -123,7 +123,7 @@ class sortbeforeattr(attr):
 class sortbeforeexclusiveattr(attr):
 
     """an attribute which swallows all but the last of the same type (specified
-    by the exlusiveclass argument to the constructor) in an attribute list and
+    by the exclusiveclass argument to the constructor) in an attribute list and
     places itself previous to all attributes given in the beforetheclasses
     argument to the constructor"""
 
@@ -147,7 +147,7 @@ class sortbeforeexclusiveattr(attr):
 
 class clearclass(attr):
 
-    """a special attribute which allows to remove all predecessing attributes of
+    """a special attribute which allows to remove all preceding attributes of
     the same type in an attribute list"""
 
     def __init__(self, clearclass):
@@ -159,14 +159,14 @@ class clearclass(attr):
 
 class _clear(attr):
 
-    """a special attribute which removes all predecessing attributes
+    """a special attribute which removes all preceding attributes
     in an attribute list"""
 
     def merge(self, attrs):
         return []
 
 # we define the attribute "clear", an instance of "_clear",
-# which can be used to remove all predecessing attributes
+# which can be used to remove all preceding attributes
 # in an attribute list
 
 clear = _clear()
@@ -182,7 +182,7 @@ def selectattrs(attrs, index, total):
       attributes
     - index should be an unsigned integer
     - total should be a positive number
-    - valid sections fullfill 0<=index<total
+    - valid sections fulfill 0<=index<total
     - returns None, when attrs is None
     - returns None, when a changeable attribute returns None"""
     if attrs is None:
@@ -219,7 +219,7 @@ class changeattr:
         if attributes to be provided
         - index should be an unsigned integer
         - total should be a positive number
-        - valid selections fullfill 0 <= index < total
+        - valid selections fulfill 0 <= index < total
         - the select method may raise a ValueError, when the
           changeable attribute does not allow for a requested
           selection"""

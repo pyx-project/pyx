@@ -113,7 +113,7 @@ class bbox_pt:
         return (self.llx_pt, self.lly_pt, self.urx_pt, self.ury_pt)
 
     def intersects(self, other):
-        """check, if two bboxes intersect eachother"""
+        """check, if two bboxes intersect each other"""
         if self.llx_pt is None or other.llx_pt is None:
             return 0
         else:

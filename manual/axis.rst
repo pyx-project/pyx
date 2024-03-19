@@ -86,7 +86,7 @@ arguments of a graph. Those instances should only be used once.
    *reverse* can be set to indicate a reversed axis starting with bigger values
    first. Alternatively you can fix the axis range by *min* and *max* accordingly.
    When divisor is set, it is taken to divide all data range and position
-   informations while creating ticks. You can create ticks not taking into account
+   information while creating ticks. You can create ticks not taking into account
    a factor by that. *title* is the title of the axis.
 
    *parter* is a partitioner instance, which creates suitable ticks for the axis
@@ -144,7 +144,7 @@ arguments of a graph. Those instances should only be used once.
    which can be added to any axis. (see the sized linear axes described below for
    some axes already having a size argument). When no size information is available
    for a subaxis, a size value of 1 is used. The baraxis itself calculates its size
-   by suming up the sizes of its subaxes plus *firstdist*, *lastdist* and *dist*
+   by summing up the sizes of its subaxes plus *firstdist*, *lastdist* and *dist*
    times the number of subaxes minus 1.
 
    *subaxes* should be a list or a dictionary mapping a discrete value of the bar
@@ -520,7 +520,7 @@ ticks created by partitioners described above.
 
    multiplicationtex and multiplicationunicode are the strings to indicate
    the multiplication between the mantissa and the base number for the
-   TexEngine and the UnicodeEngine, respecitvely
+   TexEngine and the UnicodeEngine, respectively
 
    base is the number of the base of the exponent
 
@@ -538,7 +538,7 @@ ticks created by partitioners described above.
    exponential notation, for None it is considered to be equal to minexponent
 
    uniformexponent forces all numbers to be written in exponential notation when at
-   least one label excets the limits for non-exponential notiation
+   least one label exceeds the limits for non-exponential notation
 
    mantissatexter, basetexter, and exponenttexter generate the texts for the
    mantissa, basetexter, and exponenttexter
