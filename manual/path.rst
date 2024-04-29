@@ -243,6 +243,15 @@ available:
    through the current point and *x1*, *y1*. The arc then continues to the
    point where the circle touches the line through *x1*, *y1* and *x2*, *y2*.
 
+   For example, the following code::
+
+      c.stroke(path.path(path.moveto(0, 0), path.arct(2, 0, 1.5, 1, 0.5)))
+
+   will result in the following figure.
+
+   .. figure:: arct.*
+      :align:  center
+
 Bézier curves can be constructed using:
 
 .. class:: curveto(x1, y1, x2, y2, x3, y3)
