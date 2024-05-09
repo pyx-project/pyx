@@ -7,6 +7,7 @@
       the axis)
     - bar and split axes:
       - ignore None subaxis selector instead of ValueError
+      - limit subaxis range to [0..1]
 
 0.16 (2022/10/16):
   - graph module:

@@ -365,7 +365,7 @@ class subaxispositioner(positioner._positioner):
 class bar(_axis):
 
     def __init__(self, subaxes=None, defaultsubaxis=linear(painter=None, linkpainter=None, parter=None),
-                       dist=0.5, firstdist=None, lastdist=None, title=None, reverse=0,
+                       dist=0.5, firstdist=None, lastdist=None, title=None, reverse=0, epsilon=1e-10,
                        painter=painter.bar(), linkpainter=painter.linkedbar(), **kwargs):
         split_kwargs, rest_kwargs = utils.kwsplit(kwargs, ["defaultsubaxis", "painter", "linkpainter"], allow_only_split=True)
 
@@ -388,6 +388,7 @@ class bar(_axis):
         self.reverse = reverse
         self.painter = painter
         self.linkpainter = linkpainter
+        self.epsilon = epsilon
         self.kwargs = kwargs
 
     def __call__(self, **kwargs):
@@ -449,10 +450,10 @@ class bar(_axis):
     def convert(self, data, value):
         if value[0] is None:
             return
-        axis = data.subaxes[value[0]]
-        vmin = axis.vmin
-        vmax = axis.vmax
-        return axis.vmin + axis.convert(value[1]) * (axis.vmax - axis.vmin)
+        subaxis = data.subaxes[value[0]]
+        subvalue = subaxis.convert(value[1])
+        if (self.epsilon is None) or (-self.epsilon < subvalue < 1+self.epsilon):
+            return subaxis.vmin + subvalue * (subaxis.vmax - subaxis.vmin)
 
     def create(self, data, positioner, graphtextengine, errorname):
         canvas = painter.axiscanvas(self.painter, graphtextengine)

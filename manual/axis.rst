@@ -128,7 +128,7 @@ arguments of a graph. Those instances should only be used once.
    This class is an abbreviation of :class:`logarithmic` described above.
 
 
-.. class:: bar(subaxes=None, defaultsubaxis=linear(painter=None, linkpainter=None, parter=None, texter=None), dist=0.5, firstdist=None, lastdist=None, title=None, reverse=0, painter=painter.bar(), linkpainter=painter.linkedbar())
+.. class:: bar(subaxes=None, defaultsubaxis=linear(painter=None, linkpainter=None, parter=None, texter=None), dist=0.5, firstdist=None, lastdist=None, title=None, reverse=0, epsilon=1e-10, painter=painter.bar(), linkpainter=painter.linkedbar())
 
    This class provides an axis suitable for a bar style. It handles a discrete set
    of values and maps them to distinct ranges in graph coordinates. For that, the
@@ -163,6 +163,10 @@ arguments of a graph. Those instances should only be used once.
    for an bar axis and *linkpainter* is used as the painter, when automatic link
    axes are created by the :meth:`createlinked` method.
 
+   *epsilon* allows for small overshoots of subaxis data conversion to graph
+   coordinates. Data exceeding the range will be skipped (i.e. silently ignored).
+   *epsilon* might be set to ``None`` to disable this check, which however should
+   be used with care as data will be placed out of bound of the selected subaxis.
 
 .. class:: nestedbar(subaxes=None, defaultsubaxis=bar(dist=0, painter=None, linkpainter=None), dist=0.5, firstdist=None, lastdist=None, title=None, reverse=0, painter=painter.bar(), linkpainter=painter.linkedbar())
 
