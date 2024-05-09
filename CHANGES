@@ -5,6 +5,8 @@
       or negative)
     - move the density parameter to the rater (with a deprecation warning in
       the axis)
+    - bar and split axes:
+      - ignore None subaxis selector instead of ValueError
 
 0.16 (2022/10/16):
   - graph module:

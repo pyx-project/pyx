@@ -3,7 +3,7 @@
 #
 # Copyright (C) 2002-2012, 2022 Jörg Lehmann <joerg@pyx-project.org>
 # Copyright (C) 2003-2011 Michael Schindler <m-schindler@users.sourceforge.net>
-# Copyright (C) 2002-2012, 2022 André Wobst <wobsta@pyx-project.org>
+# Copyright (C) 2002-2012, 2022, 2024 André Wobst <wobsta@pyx-project.org>
 #
 # This file is part of PyX (https://pyx-project.org/).
 #
@@ -448,7 +448,7 @@ class bar(_axis):
 
     def convert(self, data, value):
         if value[0] is None:
-            raise ValueError
+            return
         axis = data.subaxes[value[0]]
         vmin = axis.vmin
         vmax = axis.vmax

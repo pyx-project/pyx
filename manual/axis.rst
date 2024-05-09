@@ -137,6 +137,7 @@ arguments of a graph. Those instances should only be used once.
    The first item is taken to be one of the discrete values valid on this axis. The
    discrete values can be any hashable type and the order of the subaxes is defined
    by the order the data is received or the inverse of that when *reverse* is set.
+   ``None`` is an invalid subaxis selector and is silently ignored.
 
    The second item is passed to the corresponding subaxis. The result of the
    conversion done by the subaxis is mapped to the graph coordinate range reserved
