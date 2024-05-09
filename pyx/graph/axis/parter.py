@@ -3,7 +3,7 @@
 #
 # Copyright (C) 2002-2004, 2022 Jörg Lehmann <joerg@pyx-project.org>
 # Copyright (C) 2003-2004 Michael Schindler <m-schindler@users.sourceforge.net>
-# Copyright (C) 2002-2006, 2022 André Wobst <wobsta@pyx-project.org>
+# Copyright (C) 2002-2006, 2022, 2024 André Wobst <wobsta@pyx-project.org>
 #
 # This file is part of PyX (https://pyx-project.org/).
 #
@@ -283,8 +283,6 @@ class logarithmic(linear):
                 else:
                     thisticks.append(tick.tick((pos.num, pos.denom), ticklevel = ticklevel, labellevel = labellevel))
             ticks = tick.mergeticklists(ticks, thisticks)
-        if neglog:
-            ticks = ticks[::-1]
         return ticks
 
 log = logarithmic
