@@ -12,7 +12,7 @@ bendpattern = re.compile("^!+", re.MULTILINE)
 bendcode = '<img src="http://pyx.sourceforge.net/bend.png" align="left">'
 description = re.sub(bendpattern, lambda m: bendcode*(m.end()-m.start()), description)
 code = open("{}.py".format(filename), encoding="utf-8").read()
-code = re.sub('\.writeEPSfile\(("[a-z]+")?\)\n.*writePDFfile\(("[a-z]+")?\)\n.*writeSVGfile\(("[a-z]+")?\)\n', "", code)
+code = re.sub(r'\.writeEPSfile\(("[a-z]+")?\)\n.*writePDFfile\(("[a-z]+")?\)\n.*writeSVGfile\(("[a-z]+")?\)\n', "", code)
 
 nb = nbf.new_notebook()
 cells = []
