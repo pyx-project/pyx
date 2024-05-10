@@ -10,7 +10,7 @@ subaxes = [graph.axis.linear(max=1),
            graph.axis.linear(max=1),
            graph.axis.sizedlinear(size=3, min=0, max=3)]
 
-g = graph.graphxy(width=8, y=graph.axis.split(subaxes=subaxes))
+g = graph.graphxy(width=8, y=graph.axis.split(subaxes=subaxes, epsilon=None))
 g.plot([graph.data.file("shift.dat", x=1, y="i, $(i+2)", context={"i": i})
         for i in range(3)], [graph.style.line()])
 g.writeEPSfile()
