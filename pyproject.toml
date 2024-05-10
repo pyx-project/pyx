@@ -35,9 +35,8 @@ classifiers = [
 
 requires-python = ">=3.6"
 
-# XXX currently does not seem to work. Use pip install -r dev_requirements.txt
-# [project.optional-dependencies]
-# dev = [ "zope.pagetemplate", "sphinx", "sphinx_selective_exclude", "pillow", "IPython", "nbformat", "testfixtures" ]
+[project.optional-dependencies]
+dev = [ "zope.pagetemplate", "sphinx", "sphinx_selective_exclude", "pillow", "IPython", "nbformat", "testfixtures", "numpy", "scikit-image" ]
 
 
 [project.urls]
