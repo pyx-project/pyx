@@ -449,11 +449,12 @@ class bar(_axis):
 
     def convert(self, data, value):
         if value[0] is None:
-            return
+            raise ValueError
         subaxis = data.subaxes[value[0]]
         subvalue = subaxis.convert(value[1])
-        if (self.epsilon is None) or (-self.epsilon < subvalue < 1+self.epsilon):
-            return subaxis.vmin + subvalue * (subaxis.vmax - subaxis.vmin)
+        if (self.epsilon is not None) and not (-self.epsilon < subvalue < 1+self.epsilon):
+            raise ValueError
+        return subaxis.vmin + subvalue * (subaxis.vmax - subaxis.vmin)
 
     def create(self, data, positioner, graphtextengine, errorname):
         canvas = painter.axiscanvas(self.painter, graphtextengine)

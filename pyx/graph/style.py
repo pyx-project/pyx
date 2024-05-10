@@ -1959,7 +1959,12 @@ class density(_keygraphstyle):
                     break
                 if not available:
                     needalpha = True
-                    continue
+                    break
+                try:
+                    self.color(privatedata, privatedata.colors[value1][value2])
+                except (ArithmeticError, ValueError, TypeError):
+                    needalpha = True
+                    break
             else:
                 continue
             break
@@ -1983,7 +1988,7 @@ class density(_keygraphstyle):
                 c = privatedata.colors[value1][value2]
                 try:
                     c = self.color(privatedata, c)
-                except TypeError:
+                except (ArithmeticError, ValueError, TypeError):
                     data.write(empty)
                     continue
 
