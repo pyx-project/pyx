@@ -1588,10 +1588,10 @@ class StackedText:
 
 class unicodetextbox_pt(textbox_pt):
 
-    def __init__(self, x_pt, y_pt, texts, font, size, mathmode=False):
+    def __init__(self, x_pt, y_pt, texts, font, size, mathmode=False, fillstyles=[]):
         self.font = font
         self.size = size
-        self.canvas = canvas.canvas()
+        self.canvas = canvas.canvas(fillstyles)
         self.texttrafo = trafo.scale(unit.scale["x"]).translated_pt(x_pt, y_pt)
 
         if isinstance(texts, (str, Text, StackedText)):
@@ -1752,7 +1752,7 @@ class UnicodeEngine:
 
         if isinstance(text, MultiEngineText):
             text = text.unicode
-        output = unicodetextbox_pt(x_pt, y_pt, text, self.font, self.size, mathmode=mathmode)
+        output = unicodetextbox_pt(x_pt, y_pt, text, self.font, self.size, mathmode=mathmode, fillstyles=fillstyles)
         for t in trafos:
             output.reltransform(t) # TODO: should trafos really use reltransform??? (see TeXEngine)
 
