@@ -159,7 +159,7 @@ class graph(canvas.canvas):
 
     def __init__(self):
         canvas.canvas.__init__(self)
-        for name in ["background", "filldata", "axes.grid", "axes.baseline", "axes.ticks", "axes.labels", "axes.title", "data", "key"]:
+        for name in ["background", "backgrounddata", "grid", "filldata", "axes.baseline", "axes.ticks", "axes.labels", "axes.title", "data", "key"]:
             self.layer(name)
         self.axes = {}
         self.plotitems = []
@@ -591,10 +591,14 @@ class graphxy(graph):
             return
         self.dolayout()
         self.dobackground()
+        print("---", self.layer("axes").layers)
         for k, axis in sorted(self.axes.items()):
             for layer, canvas in sorted(axis.canvas.layers.items()):
+                print("***", layer, canvas)
                 self.layer("axes.%s" % layer).insert(canvas)
             assert len(axis.canvas.layers) == len(axis.canvas.items), str(axis.canvas.items)
+        #print(self.layers)
+        print("::::", self.layer("axes").layers)
 
     def dokey(self):
         if self.did(self.dokey):

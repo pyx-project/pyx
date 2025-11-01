@@ -75,7 +75,7 @@ cc = canvas.canvas([trafo.scale(0.3)])#, trafo.rotate(90)])
 cc.fill(c.bbox().path(), [color.gray(0.9)])
 cc.insert(c)
 d = document.document([document.page(cc, bboxenlarge=1)])
-d.writePDFfile("test_pdfextra", compress=0)
+d.writePDFfile("test_pdfextra", compress=False)
 
 # vim:syntax=python
 # vim:fdm=marker:fmr=<<<,>>>:

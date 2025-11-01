@@ -36,12 +36,18 @@ from . import bbox, config, style, unit, version, trafo, writer
 class PDFregistry:
 
     def __init__(self):
-        self.types = {}
+        self.types = {}     # dictionary of dictionaries containing for each object type a mapping id -> object
         # we want to keep the order of the resources
-        self.objects = []
-        self.resources = {}
+        self.objects = []   # list of all objects
+        self.resources = {} # dictionary of dictionaries containing for each resource type a mapping name -> object
         self.procsets = {"PDF": 1}
         self.merged = None
+
+    def __contains__(self, object):
+        if self.merged:
+            return object in self.merged
+        else:
+            return object.type in self.types and object.id in self.types[object.type]
 
     def add(self, object):
         """ register object, merging it with an already registered object of the same type and id """
@@ -59,11 +65,12 @@ class PDFregistry:
             return self.types[object.type][object.id].refno
 
     def mergeregistry(self, registry):
+        assert registry.merged is None ### should this be allowed?
         for object in registry.objects:
             self.add(object)
         registry.merged = self
 
-    def write(self, file, writer, catalog):
+    def write(self, file, writer, catalog, pdfinfo):
         # first we set all refnos
         refno = 1
         for object in self.objects:
@@ -92,7 +99,7 @@ class PDFregistry:
                    "<<\n"
                    "/Size %i\n" % refno)
         file.write("/Root %i 0 R\n" % self.getrefno(catalog))
-        file.write("/Info %i 0 R\n" % self.getrefno(catalog.PDFinfo))
+        file.write("/Info %i 0 R\n" % self.getrefno(pdfinfo))
         file.write(">>\n"
                    "startxref\n"
                    "%i\n" % xrefpos)
@@ -115,7 +122,7 @@ class PDFregistry:
 
 class PDFobject:
 
-    def __init__(self, type, _id=None):
+    def __init__(self, type, *, _id=None):
         """create a PDFobject
           - type has to be a string describing the type of the object
           - _id is a unique identification used for the object if it is not None.
@@ -138,19 +145,18 @@ class PDFcatalog(PDFobject):
 
     def __init__(self, document, writer, registry):
         PDFobject.__init__(self, "catalog")
-        self.PDFform = PDFform(writer, registry)
-        registry.add(self.PDFform)
-        self.PDFpages = PDFpages(document, writer, registry)
-        registry.add(self.PDFpages)
-        self.PDFinfo = PDFinfo()
-        registry.add(self.PDFinfo)
+
+        self.pdfpages = PDFpages(document, writer, registry)
+        registry.add(self.pdfpages)
 
     def write(self, file, writer, registry):
         file.write("<<\n"
                    "/Type /Catalog\n"
-                   "/Pages %i 0 R\n" % registry.getrefno(self.PDFpages))
-        if not self.PDFform.empty():
-            file.write("/AcroForm %i 0 R\n" % registry.getrefno(self.PDFform))
+                   "/Pages %i 0 R\n" % registry.getrefno(self.pdfpages))
+
+        pdfform = PDFform([])
+        if pdfform in registry:
+            file.write("/AcroForm %i 0 R\n" % registry.getrefno(pdfform))
         if writer.fullscreen:
             file.write("/PageMode /FullScreen\n")
         file.write(">>\n")
@@ -199,15 +205,49 @@ class PDFinfo(PDFobject):
         file.write(">>\n")
 
 
+class PDFannotations(PDFobject):
+
+    def __init__(self, annots):
+        PDFobject.__init__(self, "annotations", _id="annotations")
+        self.annots = annots
+
+    def merge(self, other):
+        for annot in other.annots:
+            self.annots.append(annot)
+
+    def write(self, file, writer, registry):
+        file.write("[ %s ]\n" % " ".join(["%d 0 R" % registry.getrefno(annot) for annot in self.annots]))
+
+
+class PDFform(PDFobject):
+
+    def __init__(self, fields):
+        # always register PDFform as a singleton
+        PDFobject.__init__(self, "form", _id="form")
+        self.fields = fields
+
+    def merge(self, other):
+        for field in other.fields:
+            self.fields.append(field)
+
+    def write(self, file, writer, registry):
+        file.write("<<")
+        file.write("/Fields [")
+        for field in self.fields:
+            file.write(" %d 0 R" % registry.getrefno(field))
+        file.write(" ]\n")
+        file.write(">>\n")
+
+
 class PDFpages(PDFobject):
 
     def __init__(self, document, writer, registry):
         PDFobject.__init__(self, "pages")
-        self.PDFpagelist = []
+        self.pdfpagelist = []
         for pageno, page in enumerate(document.pages):
             page = PDFpage(page, pageno, self, writer, registry)
             registry.add(page)
-            self.PDFpagelist.append(page)
+            self.pdfpagelist.append(page)
 
     def write(self, file, writer, registry):
         file.write("<<\n"
@@ -215,15 +255,15 @@ class PDFpages(PDFobject):
                    "/Kids [%s]\n"
                    "/Count %i\n"
                    ">>\n" % (" ".join(["%i 0 R" % registry.getrefno(page)
-                                       for page in self.PDFpagelist]),
-                             len(self.PDFpagelist)))
+                                       for page in self.pdfpagelist]),
+                             len(self.pdfpagelist)))
 
 
 class PDFpage(PDFobject):
 
-    def __init__(self, page, pageno, PDFpages, writer, registry):
+    def __init__(self, page, pageno, pdfpages, writer, registry):
         PDFobject.__init__(self, "page")
-        self.PDFpages = PDFpages
+        self.pdfpages = pdfpages
         self.page = page
 
         # every page uses its own registry in order to find out which
@@ -232,33 +272,35 @@ class PDFpage(PDFobject):
         self.pageregistry = PDFregistry()
         self.pageregistry.add(self)
 
-        self.PDFannotations = PDFannotations()
-        self.pageregistry.add(self.PDFannotations)
-        # we eventually need the form dictionary to append formfields
-        for object in registry.objects:
-            if object.type == "form":
-                self.pageregistry.add(object)
+        # self.PDFannotations = PDFannotations()
+        # self.pageregistry.add(self.PDFannotations)
+        # # we eventually need the form dictionary to append formfields
+        # for object in registry.objects:
+        #     if object.type == "form":
+        #         self.pageregistry.add(object)
 
-        self.PDFcontent = PDFcontent(page, writer, self.pageregistry)
-        self.pageregistry.add(self.PDFcontent)
+        self.pdfcontent = PDFcontent(page, writer, self.pageregistry)
+        self.pageregistry.add(self.pdfcontent)
         registry.mergeregistry(self.pageregistry)
 
     def write(self, file, writer, registry):
         file.write("<<\n"
                    "/Type /Page\n"
-                   "/Parent %i 0 R\n" % registry.getrefno(self.PDFpages))
+                   "/Parent %i 0 R\n" % registry.getrefno(self.pdfpages))
         paperformat = self.page.paperformat
         if paperformat:
             file.write("/MediaBox [0 0 %f %f]\n" % (unit.topt(paperformat.width), unit.topt(paperformat.height)))
         else:
-            file.write("/MediaBox [%f %f %f %f]\n" % self.PDFcontent.bbox.highrestuple_pt())
-        if self.PDFcontent.bbox and writer.writebbox:
-            file.write("/CropBox [%f %f %f %f]\n" % self.PDFcontent.bbox.highrestuple_pt())
+            file.write("/MediaBox [%f %f %f %f]\n" % self.pdfcontent.bbox.highrestuple_pt())
+        if self.pdfcontent.bbox and writer.writebbox:
+            file.write("/CropBox [%f %f %f %f]\n" % self.pdfcontent.bbox.highrestuple_pt())
         if self.page.rotated:
             file.write("/Rotate 90\n")
-        if not self.PDFannotations.empty():
-            file.write("/Annots %i 0 R\n" % registry.getrefno(self.PDFannotations))
-        file.write("/Contents %i 0 R\n" % registry.getrefno(self.PDFcontent))
+
+        pdfannotations = PDFannotations([])
+        if pdfannotations in registry:
+            file.write("/Annots %i 0 R\n" % registry.getrefno(pdfannotations))
+        file.write("/Contents %i 0 R\n" % registry.getrefno(self.pdfcontent))
         file.write("/Resources ")
         self.pageregistry.writeresources(file)
         file.write(">>\n")
@@ -267,7 +309,7 @@ class PDFpage(PDFobject):
 class PDFcontent(PDFobject):
 
     def __init__(self, page, awriter, registry):
-        PDFobject.__init__(self, registry, "content")
+        PDFobject.__init__(self, registry, _id="content")
         contentfile = writer.writer(io.BytesIO())
         self.bbox = bbox.empty()
         acontext = context()
@@ -334,10 +376,12 @@ class PDFwriter:
         registry = PDFregistry()
         catalog = PDFcatalog(document, self, registry)
         registry.add(catalog)
+        pdfinfo = PDFinfo()
+        registry.add(pdfinfo)
 
         file = writer.writer(file)
         file.write_bytes(b"%PDF-1.4\n%\xc3\xb6\xc3\xa9\n")
-        registry.write(file, self, catalog)
+        registry.write(file, self, catalog, pdfinfo)
 
     def getfontmap(self):
         if self._fontmap is None:
@@ -346,51 +390,6 @@ class PDFwriter:
             fontmapfiles = config.getlist("text", "pdffontmaps", ["pdftex.map"])
             self._fontmap = mapfile.readfontmap(fontmapfiles)
         return self._fontmap
-
-
-class PDFannotations(PDFobject):
-
-    def __init__(self):
-        PDFobject.__init__(self, "annotations")
-        self.annots = []
-
-    def append(self, item):
-        if item not in self.annots:
-            self.annots.append(item)
-
-    def empty(self):
-        return len(self.annots) == 0
-
-    def write(self, file, writer, registry):
-        # XXX problem: This object will be written to the file even if it is useless (empty)
-        file.write("[ %s ]\n" % " ".join(["%d 0 R" % registry.getrefno(annot) for annot in self.annots]))
-
-
-class PDFform(PDFobject):
-
-    def __init__(self, writer, registry):
-        PDFobject.__init__(self, "form")
-        self.fields = []
-
-    def merge(self, other):
-        for field in other.fields:
-            self.append(field)
-
-    def append(self, field):
-        if field not in self.fields:
-            self.fields.append(field)
-
-    def empty(self):
-        return len(self.fields) == 0
-
-    def write(self, file, writer, registry):
-        # XXX problem: This object will be written to the file even if it is useless (empty)
-        file.write("<<")
-        file.write("/Fields [")
-        for field in self.fields:
-            file.write(" %d 0 R" % registry.getrefno(field))
-        file.write(" ]\n")
-        file.write(">>\n")
 
 
 class context:

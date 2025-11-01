@@ -159,7 +159,7 @@ class PSchangefontmatrix(pswriter.PSresource):
 class PDFfont(pdfwriter.PDFobject):
 
     def __init__(self, fontname, basefontname, charcodes, fontdescriptor, encoding, metric):
-        pdfwriter.PDFobject.__init__(self, "font", fontname)
+        pdfwriter.PDFobject.__init__(self, "font", _id=fontname)
 
         self.fontname = fontname
         self.basefontname = basefontname
@@ -212,7 +212,7 @@ class PDFfont(pdfwriter.PDFobject):
 class PDFstdfont(pdfwriter.PDFobject):
 
     def __init__(self, basename):
-        pdfwriter.PDFobject.__init__(self, "font", "stdfont-%s" % basename)
+        pdfwriter.PDFobject.__init__(self, "font", _id="stdfont-%s" % basename)
         self.name = basename # name is ignored by acroread
         self.basename = basename
 
@@ -243,7 +243,7 @@ PDFZapfDingbats         = PDFstdfont("ZapfDingbats")
 class PDFfontdescriptor(pdfwriter.PDFobject):
 
     def __init__(self, fontname, fontfile, metric):
-        pdfwriter.PDFobject.__init__(self, "fontdescriptor", fontname)
+        pdfwriter.PDFobject.__init__(self, "fontdescriptor", _id=fontname)
         self.fontname = fontname
         self.fontfile = fontfile
         self.metric = metric
@@ -264,7 +264,7 @@ class PDFfontdescriptor(pdfwriter.PDFobject):
 class PDFfontfile(pdfwriter.PDFobject):
 
     def __init__(self, t1file, glyphnames, charcodes):
-        pdfwriter.PDFobject.__init__(self, "fontfile", t1file.name)
+        pdfwriter.PDFobject.__init__(self, "fontfile", _id=t1file.name)
         self.t1file = t1file
         self.glyphnames = set(glyphnames)
         self.charcodes = set(charcodes)
@@ -283,7 +283,7 @@ class PDFfontfile(pdfwriter.PDFobject):
 class PDFencoding(pdfwriter.PDFobject):
 
     def __init__(self, encoding, name):
-        pdfwriter.PDFobject.__init__(self, "encoding", name)
+        pdfwriter.PDFobject.__init__(self, "encoding", _id=name)
         self.encoding = encoding
 
     def getvector(self):

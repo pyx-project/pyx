@@ -254,7 +254,7 @@ class PSimagedata(pswriter.PSresource):
 class PDFimagepalettedata(pdfwriter.PDFobject):
 
     def __init__(self, name, data):
-        pdfwriter.PDFobject.__init__(self, "imagepalettedata", name)
+        pdfwriter.PDFobject.__init__(self, "imagepalettedata", _id=name)
         self.data = data
 
     def write(self, file, writer, registry):
@@ -271,7 +271,7 @@ class PDFimage(pdfwriter.PDFobject):
 
     def __init__(self, name, width, height, palettemode, palettedata, mode,
                        bitspercomponent, compressmode, data, smask, registry, addresource=True):
-        pdfwriter.PDFobject.__init__(self, "image", name)
+        pdfwriter.PDFobject.__init__(self, "image", _id=name)
 
         if addresource:
             if palettedata is not None:

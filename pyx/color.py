@@ -579,7 +579,7 @@ cmykgradient.ReverseJet = cmykgradient(gradient.ReverseJet)
 class PDFextgstate(pdfwriter.PDFobject):
 
     def __init__(self, name, extgstate, registry):
-        pdfwriter.PDFobject.__init__(self, "extgstate", name)
+        pdfwriter.PDFobject.__init__(self, "extgstate", _id=name)
         registry.addresource("ExtGState", name, self)
         self.name = name
         self.extgstate = extgstate

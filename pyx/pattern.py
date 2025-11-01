@@ -315,7 +315,7 @@ class PDFpattern(pdfwriter.PDFobject):
     def __init__(self, name, patterntype, painttype, tilingtype, bbox, xstep, ystep, trafo,
                  patternproc, writer, registry, patternregistry):
         self.patternregistry = patternregistry
-        pdfwriter.PDFobject.__init__(self, "pattern", name)
+        pdfwriter.PDFobject.__init__(self, "pattern", _id=name)
         registry.addresource("Pattern", name, self)
 
         self.name = name

@@ -20,8 +20,13 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 import io, math
-from . import baseclasses, bbox, pdfwriter, color, unit
+from . import baseclasses, bbox, pdfwriter, color, unit, writer
 from .font.font import PDFHelvetica, PDFZapfDingbats
+try:               
+    import zlib
+    haszlib = True
+except ImportError:
+    haszlib = False
 
 # TODO:
 # - discuss behaviour under transformations with André and Jörg
@@ -190,6 +195,7 @@ class textfield(formfield): # <<<
           fontsize_pt, self.font, self.fontrelleading*fontsize_pt,
           borderwidth_pt, (not self.flags["multiline"]),
           alignflag, annotflag, formflag, context.fillstyles, writer, registry))
+
 # >>>
 class PDFtextfield(pdfwriter.PDFobject): # <<<
 
@@ -197,17 +203,12 @@ class PDFtextfield(pdfwriter.PDFobject): # <<<
         borderwidth, vcenter,
         alignflag, annotflag, formflag, fillstyles, writer, registry):
 
-        pdfwriter.PDFobject.__init__(self, "formfield_text")
+        super().__init__("formfield_text")
 
         # append this formfield to the global document form
         # and to the annotation list of the page:
-        self.PDFform = None
-        for object in registry.objects:
-            if object.type == "form":
-                object.append(self)
-                self.PDFform = object
-            elif object.type == "annotations":
-                object.append(self)
+        registry.add(pdfwriter.PDFform([self]))
+        registry.add(pdfwriter.PDFannotations([self]))
 
         self.name = name
         self.bb_pt = bb_pt
@@ -250,9 +251,8 @@ class PDFtextfield(pdfwriter.PDFobject): # <<<
     def write(self, file, writer, registry):
         ### the dictionary entries for the annotation
         file.write("<</Type /Annot\n")
-        file.write("/P %d 0 R\n" % registry.getrefno(self.PDFform)) # reference to the page objects
         file.write("/Rect [%f %f %f %f]\n" % self.bb_pt) # the annotation rectangle
-        #ile.write("/BS <</W 0 /S /S>>\n") # border style dictionary
+        # file.write("/BS <</W 0 /S /S>>\n") # border style dictionary
         file.write("/Border [0 0 %f]\n" % self.borderwidth) # border style
         file.write("/F %d\n" % self.annotflag)
         ### the dictionary entries for the widget annotations
@@ -279,7 +279,7 @@ class PDFdefaulttext(pdfwriter.PDFobject): # <<<
 
     def __init__(self, writer, registry, fontsize, font, fontleading, texts, bb, borderwidth, vcenter):
 
-        pdfwriter.PDFobject.__init__(self, "defaulttext")
+        super().__init__("defaulttext")
         self.font = font
         self.fontsize = fontsize
         self.fontleading = fontleading
@@ -310,13 +310,15 @@ class PDFdefaulttext(pdfwriter.PDFobject): # <<<
         registry.mergeregistry(self.registry)
 
 
-    def write(self, file, writer, registry):
-        content = "/Tx BMC q BT /%s %f Tf %f TL %f %f Td (%s) Tj" % (self.font.name, self.fontsize, self.fontleading, self.hshift, self.vshift, self.texts[0])
+    def write(self, file, awriter, registry):
+        contentfile = writer.writer(io.BytesIO())
+        contentfile.write("/Tx BMC q BT /%s %f Tf %f TL %f %f Td (%s) Tj" % (self.font.name, self.fontsize, self.fontleading, self.hshift, self.vshift, self.texts[0]))
         for text in self.texts[1:]:
-            content += " (%s)'" % (text)
-        content += " ET Q EMC\n"
-        if writer.compress:
-            import zlib
+            contentfile.write(" (%s)'" % (text))
+        contentfile.write(" ET Q EMC\n")
+
+        content = contentfile.file.getvalue()
+        if awriter.compress:
             content = zlib.compress(content)
 
         file.write("<<\n")
@@ -327,11 +329,11 @@ class PDFdefaulttext(pdfwriter.PDFobject): # <<<
         file.write("/Resources ")
         self.registry.writeresources(file) # default resources for appearance
         file.write("/Length %i\n" % len(content))
-        if writer.compress:
+        if awriter.compress:
             file.write("/Filter /FlateDecode\n")
         file.write(">>\n"
                    "stream\n")
-        file.write(content)
+        file.write_bytes(content)
         file.write("endstream\n")
 # >>>
 
@@ -440,13 +442,15 @@ class PDFbuttonlist(pdfwriter.PDFobject): # <<<
     def __init__(self, positions_pt, name, size_pt, values, defaultvalue, annotflag, formflag,
         onstate, offstate, writer, registry):
 
-        pdfwriter.PDFobject.__init__(self, "formfield_buttonlist")
+        super().__init__("formfield_buttonlist")
+
+        registry.add(pdfwriter.PDFform([self]))
 
         # append this formfield to the global document form
         # but we do not treat this as a fully valid annotation field
-        for object in registry.objects:
-            if object.type == "form":
-                object.append(self)
+        #for object in registry.objects:
+        #    if object.type == "form":
+        #        object.append(self)
 
         self.name = name
         self.formflag = formflag
@@ -488,17 +492,13 @@ class PDFcheckboxfield(pdfwriter.PDFobject): # <<<
 
     def __init__(self, pos_pt, name, size_pt, valuename, defaulton, parent, onstate, offstate, annotflag, formflag, writer, registry):
 
-        pdfwriter.PDFobject.__init__(self, "formfield_checkbox")
+        super().__init__("formfield_checkbox")
 
         # we treat this as an annotation only, since the parent is
         # already in the form field
-        self.PDFform = None
-        for object in registry.objects:
-            if object.type == "form":
-                assert self.PDFform is None
-                self.PDFform = object
-            if object.type == "annotations":
-                object.append(self)
+
+        registry.add(pdfwriter.PDFform([self]))
+        registry.add(pdfwriter.PDFannotations([self]))
 
         self.bb_pt = (pos_pt[0], pos_pt[1], pos_pt[0] + size_pt, pos_pt[1] + size_pt)
         self.name = name
@@ -519,7 +519,6 @@ class PDFcheckboxfield(pdfwriter.PDFobject): # <<<
         file.write("<<\n")
         file.write("/Type /Annot\n")
         file.write("/Subtype /Widget\n")
-        file.write("/P %d 0 R\n" % registry.getrefno(self.PDFform)) # reference to the page objects
         file.write("/Rect [%f %f %f %f]\n" % self.bb_pt) # the annotation rectangle
         file.write("/F %d\n" % self.annotflag) # flags
         ### the dictionary entries for the widget annotations
@@ -537,7 +536,7 @@ class PDFButtonState(pdfwriter.PDFobject): # <<<
     def __init__(self, writer, registry, fontsize, font, bgchar, fgchar,
         bgscale=None, bgrelshift=None, fgscale=None, fgrelshift=None):
 
-        pdfwriter.PDFobject.__init__(self, "buttonstate", "buttonstate" + "_".join(map(str, list(map(id, [fontsize, font, bgchar, fgchar, bgscale, bgrelshift, fgscale, fgrelshift])))))
+        super().__init__("buttonstate", _id="buttonstate" + "_".join(map(str, list(map(id, [fontsize, font, bgchar, fgchar, bgscale, bgrelshift, fgscale, fgrelshift])))))
         self.font = font
         self.fontsize = fontsize
         registry.addresource("Font", self.font.name, self.font, procset="Text")
@@ -564,14 +563,15 @@ class PDFButtonState(pdfwriter.PDFobject): # <<<
         else:
             self.fgtrafo = ""
 
-    def write(self, file, writer, registry):
-        content = ""
+    def write(self, file, awriter, registry):
+        contentfile = writer.writer(io.BytesIO())
         if self.bgchar:
-            content += "q BT /%s %f Tf %s (%s) Tj ET Q\n" % (self.font.name, self.fontsize, self.bgtrafo, self.bgchar)
+            contentfile.write("q BT /%s %f Tf %s (%s) Tj ET Q\n" % (self.font.name, self.fontsize, self.bgtrafo, self.bgchar))
         if self.fgchar:
-            content += "q BT /%s %f Tf %s (%s) Tj ET Q\n" % (self.font.name, self.fontsize, self.fgtrafo, self.fgchar)
-        if writer.compress:
-            import zlib
+            contentfile.write("q BT /%s %f Tf %s (%s) Tj ET Q\n" % (self.font.name, self.fontsize, self.fgtrafo, self.fgchar))
+
+        content = contentfile.file.getvalue()
+        if awriter.compress:
             content = zlib.compress(content)
 
         file.write("<<\n")
@@ -582,11 +582,11 @@ class PDFButtonState(pdfwriter.PDFobject): # <<<
         file.write("/Resources <</Font << /%s %d 0 R >> /ProcSet [/PDF /Text] >>\n" %
                    (self.font.name, registry.getrefno(self.font)))
         file.write("/Length %i\n" % len(content))
-        if writer.compress:
+        if awriter.compress:
             file.write("/Filter /FlateDecode\n")
         file.write(">>\n"
                    "stream\n")
-        file.write(content)
+        file.write_bytes(content)
         file.write("endstream\n")
 
 
@@ -654,17 +654,12 @@ class PDFchoicefield(pdfwriter.PDFobject): # <<<
     def __init__(self, bb_pt, name, values, defaultvalue, fontsize, font,
         borderwidth_pt, alignflag, annotflag, formflag, writer, registry):
 
-        pdfwriter.PDFobject.__init__(self, "formfield_choice")
+        super().__init__("formfield_choice")
 
         # append this formfield to the global document form
         # and to the annotation list of the page:
-        self.PDFform = None
-        for object in registry.objects:
-            if object.type == "form":
-                object.append(self)
-                self.PDFform = object
-            elif object.type == "annotations":
-                object.append(self)
+        registry.add(pdfwriter.PDFform([self]))
+        registry.add(pdfwriter.PDFannotations([self]))
 
         self.name = name
         self.bb_pt = bb_pt
@@ -684,9 +679,8 @@ class PDFchoicefield(pdfwriter.PDFobject): # <<<
     def write(self, file, writer, registry):
         ### the dictionary entries for the annotation
         file.write("<</Type /Annot\n")
-        file.write("/P %d 0 R\n" % registry.getrefno(self.PDFform)) # reference to the page objects
         file.write("/Rect [%f %f %f %f]\n" % self.bb_pt) # the annotation rectangle
-        #ile.write("/BS << ... >>\n" # border style dictionary
+        # file.write("/BS << ... >>\n" # border style dictionary
         file.write("/Border [0 0 %f]\n" % self.borderwidth_pt) # border style
         file.write("/F %d\n" % self.annotflag)
         ### the dictionary entries for the widget annotations

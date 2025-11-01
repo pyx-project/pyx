@@ -67,7 +67,7 @@ def coords24bit_pt(coords_pt, min_pt, max_pt):
 class PDFGenericResource(pdfwriter.PDFobject):
 
     def __init__(self, type, name, content):
-        pdfwriter.PDFobject.__init__(self, type, name)
+        pdfwriter.PDFobject.__init__(self, type, _id=name)
         self.content = content
 
     def write(self, file, writer, registry):
