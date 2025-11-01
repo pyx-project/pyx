@@ -159,8 +159,11 @@ class graph(canvas.canvas):
 
     def __init__(self):
         canvas.canvas.__init__(self)
-        for name in ["background", "backgrounddata", "grid", "filldata", "axes.baseline", "axes.ticks", "axes.labels", "axes.title", "data", "key"]:
+        for name in ["background", "grid", "filldata", "axes.baseline", "axes.ticks", "axes.labels", "axes.title", "data", "key"]:
             self.layer(name)
+        # define mapping of axes to graph layers
+        # in particular, map grid to the graph grid, i.e. outside of the axes, in order to paint the grid below filldata
+        self.axistographlayers = {"baseline": "axes.baseline", "ticks": "axes.ticks", "labels": "axes.labels", "title": "axes.title", "grid": "grid"}
         self.axes = {}
         self.plotitems = []
         self.keyitems = []
@@ -591,14 +594,10 @@ class graphxy(graph):
             return
         self.dolayout()
         self.dobackground()
-        print("---", self.layer("axes").layers)
         for k, axis in sorted(self.axes.items()):
             for layer, canvas in sorted(axis.canvas.layers.items()):
-                print("***", layer, canvas)
-                self.layer("axes.%s" % layer).insert(canvas)
+                self.layer(self.axistographlayers[layer]).insert(canvas)
             assert len(axis.canvas.layers) == len(axis.canvas.items), str(axis.canvas.items)
-        #print(self.layers)
-        print("::::", self.layer("axes").layers)
 
     def dokey(self):
         if self.did(self.dokey):

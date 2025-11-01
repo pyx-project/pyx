@@ -7,6 +7,8 @@
       the axis)
     - limit subaxis range in bar and split axes to [0..1] except for epsilon=None
     - improve exception handling for invalid data in density style
+    - add a new grid layer below filldata and paint axes grids there
+  - cleanup of pdfwriter and pdfextras
 
 0.16 (2022/10/16):
   - graph module:
