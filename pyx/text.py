@@ -1754,7 +1754,7 @@ class UnicodeEngine:
             text = text.unicode
         output = unicodetextbox_pt(x_pt, y_pt, text, self.font, self.size, mathmode=mathmode)
         for t in trafos:
-            box.reltransform(t) # TODO: should trafos really use reltransform??? (see TeXEngine)
+            output.reltransform(t) # TODO: should trafos really use reltransform??? (see TeXEngine)
 
         return output
 
