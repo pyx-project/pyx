@@ -1747,12 +1747,14 @@ class UnicodeEngine:
         fillstyles = attr.getattrs(textattrs, [style.fillstyle])
         textattrs = attr.getattrs(textattrs, [textattr])
         mathmode = bool(attr.getattrs(textattrs, [_mathmode]))
+        if textattrs:
+            raise ValueError("UnicodeEngine does not support textattrs")
 
         if isinstance(text, MultiEngineText):
             text = text.unicode
         output = unicodetextbox_pt(x_pt, y_pt, text, self.font, self.size, mathmode=mathmode)
-        for ta in textattrs: # reverse?!
-            ta.apply_trafo(output)
+        for t in trafos:
+            box.reltransform(t) # TODO: should trafos really use reltransform??? (see TeXEngine)
 
         return output
 
