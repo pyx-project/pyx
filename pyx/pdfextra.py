@@ -2,6 +2,8 @@
 #
 #
 # Copyright (C) 2006 Michael Schindler <m-schindler@users.sourceforge.net>
+# Copyright (C) 2025 Jörg Lehmann <joerg@pyx-project.org>
+# Copyright (C) 2025 André Wobst <wobsta@pyx-project.org>
 #
 # This file is part of PyX (https://pyx-project.org/).
 #

@@ -1,9 +1,9 @@
 # -*- encoding: utf-8 -*-
 #
 #
-# Copyright (C) 2005-2011 Jörg Lehmann <joerg@pyx-project.org>
+# Copyright (C) 2005-2011, 2025 Jörg Lehmann <joerg@pyx-project.org>
 # Copyright (C) 2007 Michael Schindler <m-schindler@users.sourceforge.net>
-# Copyright (C) 2005-2011 André Wobst <wobsta@pyx-project.org>
+# Copyright (C) 2005-2011, 2025 André Wobst <wobsta@pyx-project.org>
 #
 # This file is part of PyX (https://pyx-project.org/).
 #
@@ -122,7 +122,7 @@ class PDFregistry:
 
 class PDFobject:
 
-    def __init__(self, type, *, _id=None):
+    def __init__(self, type, _id=None):
         """create a PDFobject
           - type has to be a string describing the type of the object
           - _id is a unique identification used for the object if it is not None.

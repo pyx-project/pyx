@@ -1,4 +1,4 @@
-0.17 (XXXX/XX/XX):
+0.17 (2025/11/02):
   - Move metadata from setup.py to pyproject.toml
   - graph modules:
     - enable log axis on negative values (either all values need to be positive
@@ -11,6 +11,7 @@
     - support modification of x2, y2, etc. graph axes by keyword arguments
   - Cleanup of pdfwriter and pdfextras
   - Add support for fillattrs and trafos in UnicodeEngine
+  - various improvements to the documentation
 
 0.16 (2022/10/16):
   - graph module:

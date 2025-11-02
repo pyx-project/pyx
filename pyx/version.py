@@ -1,8 +1,8 @@
 # -*- encoding: utf-8 -*-
 #
 #
-# Copyright (C) 2002-2012 Jörg Lehmann <joerg@pyx-project.org>
-# Copyright (C) 2002-2012 André Wobst <wobsta@pyx-project.org>
+# Copyright (C) 2002-2025 Jörg Lehmann <joerg@pyx-project.org>
+# Copyright (C) 2002-2025 André Wobst <wobsta@pyx-project.org>
 # Copyright (C) 2011 Michael Schindler <m-schindler@users.sourceforge.net>
 #
 # This file is part of PyX (https://pyx-project.org/).
@@ -22,5 +22,5 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 
-version = "0.16"
-date = "2022/10/16"
+version = "0.17"
+date = "2025/11/02"
