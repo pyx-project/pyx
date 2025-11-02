@@ -444,13 +444,9 @@ class PDFbuttonlist(pdfwriter.PDFobject): # <<<
 
         super().__init__("formfield_buttonlist")
 
-        registry.add(pdfwriter.PDFform([self]))
-
         # append this formfield to the global document form
         # but we do not treat this as a fully valid annotation field
-        #for object in registry.objects:
-        #    if object.type == "form":
-        #        object.append(self)
+        registry.add(pdfwriter.PDFform([self]))
 
         self.name = name
         self.formflag = formflag
