@@ -497,7 +497,6 @@ class PDFcheckboxfield(pdfwriter.PDFobject): # <<<
         # we treat this as an annotation only, since the parent is
         # already in the form field
 
-        registry.add(pdfwriter.PDFform([self]))
         registry.add(pdfwriter.PDFannotations([self]))
 
         self.bb_pt = (pos_pt[0], pos_pt[1], pos_pt[0] + size_pt, pos_pt[1] + size_pt)
