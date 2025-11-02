@@ -160,6 +160,8 @@ def _outputstream(file, suffix):
     try:
         file.write(b"")
     except Exception:
+        if not isinstance(file, str):
+            raise ValueError("Provide as file argument either a filename or an object supporting binary writes")
         if not file.endswith(".%s" % suffix):
             return open("%s.%s" % (file, suffix), "wb")
         return open(file, "wb")
