@@ -348,8 +348,12 @@ class graphxy(graph):
                     axes[axisname] = axis.linear()
 
         # apply split kwargs to axes
+        do_later = []
         for axisname, kwargs in split_kwargs.items():
-            axes[axisname] = axes[axisname](**kwargs)
+            if axisname in axes:
+                axes[axisname] = axes[axisname](**kwargs)
+            else:
+                do_later.append((axisname, kwargs))
 
         # generate anchored axes in self.axes
         for axisname, aaxis in axes.items():
@@ -367,6 +371,9 @@ class graphxy(graph):
                 self.axes[axisname] = axis.linkedaxis(self.axes[okey], axisname)
             elif okey not in axes and axisat is None:
                 self.axes[okey] = axis.linkedaxis(self.axes[axisname], okey)
+
+        for axisname, kwargs in do_later:
+            self.axes[axisname] = self.axes[axisname](**kwargs)
 
         if "x" in self.axes:
             self.xbasepath = self.axes["x"].basepath
@@ -808,8 +815,12 @@ class graphxyz(graph):
             axes["z"] = axis.linear()
 
         # apply split kwargs to axes
+        do_later = []
         for axisname, kwargs in split_kwargs.items():
-            axes[axisname] = axes[axisname](**kwargs)
+            if axisname in axes:
+                axes[axisname] = axes[axisname](**kwargs)
+            else:
+                do_later.append((axisname, kwargs))
 
         # generate anchored axes in self.axes
         for axisname, aaxis in axes.items():
@@ -827,6 +838,9 @@ class graphxyz(graph):
                 self.axes[axisname] = axis.linkedaxis(self.axes[okey], axisname)
             elif okey not in axes:
                 self.axes[okey] = axis.linkedaxis(self.axes[axisname], okey)
+
+        for axisname, kwargs in do_later:
+            self.axes[axisname] = self.axes[axisname](**kwargs)
 
         if "x" in self.axes:
             self.xbasepath = self.axes["x"].basepath

@@ -8,6 +8,7 @@
     - limit subaxis range in bar and split axes to [0..1] except for epsilon=None
     - improve exception handling for invalid data in density style
     - add a new grid layer below filldata and paint axes grids there
+    - support modification of x2, y2, etc. graph axes by keyword arguments
   - Cleanup of pdfwriter and pdfextras
   - Add support for fillattrs and trafos in UnicodeEngine
 

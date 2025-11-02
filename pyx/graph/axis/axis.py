@@ -667,7 +667,11 @@ class anchoredaxis:
 
 class linkedaxis(anchoredaxis):
 
-    def __init__(self, linkedaxis=None, errorname="manual-linked", painter=_marker):
+    def __init__(self, linkedaxis=None, errorname="manual-linked", painter=_marker, **kwargs):
+        split_kwargs, rest_kwargs = utils.kwsplit(kwargs, ["painter"])
+        if rest_kwargs:
+            raise ValueError("Unknown kwargs '%s' to linkedaxis" % rest_kwargs)
+        if "painter" in split_kwargs: painter = painter(**split_kwargs["painter"])
         self.painter = painter
         self.linkedto = None
         self.errorname = errorname
@@ -675,6 +679,10 @@ class linkedaxis(anchoredaxis):
         self.positioner = None
         if linkedaxis:
             self.setlinkedaxis(linkedaxis)
+        self.kwargs = kwargs
+
+    def __call__(self, **kwargs):
+        return linkedaxis(linkedaxis=self.linkedto, errorname=self.errorname, **utils.merge_members_kwargs(self, [self.kwargs, kwargs], ["painter"]))
 
     def setlinkedaxis(self, linkedaxis):
         assert isinstance(linkedaxis, anchoredaxis), self.errorname
