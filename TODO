@@ -22,6 +22,7 @@ Code:
   - fix docu of gridattrs functionality of axis painters
     (how can one, e.g. draw a grid at the ticks and not at the subticks)
   - make graph.style.symbol.diamond a graph.style.symbol instance (to be discussed)
+  - histogram style should be comptatible with numpy.histogram
 - graph.data module:
   - use csv module (new in 2.3)
   - Check for "inf" and "nan" in datafiles.
