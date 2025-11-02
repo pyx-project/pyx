@@ -9,6 +9,14 @@
     <h1>PyX — News</h1>
 
     <dl>
+      <dt>2025-11-02: PyX 0.17 released</dt>
+      <dd>
+        This release contains various fixes and improvements. In particular, it
+        adds support for log axes with purely negative values, graph grids are
+        now displayed below filled data, and the UnicodeEngine supports
+        transformations and colors. <br/> 
+        Note that the density parameter has been moved to the axis rater.
+      </dd>
       <dt>2022-10-16: PyX 0.16 released</dt>
       <dd>
         This release enables a shortcut for accessing graph-component
