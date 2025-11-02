@@ -942,7 +942,8 @@ The class :class:`line` provides a changeable line style. Its definition is:
    provided by *coloraxis*. A key graph, a graphx instance, is generated
    automatically to indicate the color scale if not provided by *keygraph*.
    If a *keygraph* is given, its ``x`` axis defines the color conversion and
-   *coloraxis* is ignored.
+   *coloraxis* is ignored. If *keygraph* is set to ``None``, no keygraph is
+   shown and the conversion works via the *coloraxis*.
 
 
 .. class:: histogram(lineattrs=[], steps=0, fromvalue=0, frompathattrs=[], fillable=0, rectkey=0, autohistogramaxisindex=0, autohistogrampointpos=0.5, epsilon=1e-10)
