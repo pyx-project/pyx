@@ -638,9 +638,6 @@ UnicodeEngine
 .. module:: text
    :noindex:
 
-.. autoclass:: FontMetricType
-   :members:
-
 .. autoclass:: UnicodeEngine
 
 .. autoclass:: Text
