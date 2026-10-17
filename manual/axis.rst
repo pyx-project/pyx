@@ -1,844 +1,661 @@
-
 .. module:: graph.axis
+   :synopsis: Modular graph axes, ticks, partitioners, texters, painters, and raters
+
+.. _axis:
 
 ****
 Axes
 ****
 
-
-Component architecture
+Component Architecture
 ======================
 
-Axes are a fundamental component of graphs although there might be applications
-outside of the graph system. Internally axes are constructed out of components,
-which handle different tasks axes need to fulfill:
+Axes in PyX convert data values into normalized graph coordinates :math:`v \in [0, 1]`
+and render the visual axis elements (baseline, tick marks, grid lines, tick
+labels, and axis title). Although most commonly used inside a
+:class:`graph.graphxy` or :class:`graph.graphxyz`, axes can also be drawn
+standalone along any arbitrary path using :func:`graph.axis.pathaxis`.
 
-axis
-   Implements the conversion of a data value to a graph coordinate of range [0:1].
-   It does also handle the proper usage of the components in complicated tasks
-   (*i.e.* combine the partitioner, texter, painter and rater to find the best
-   partitioning).
+Internally, each axis delegates its work to six modular components located in
+submodules of :mod:`graph.axis`:
 
-   An anchoredaxis is a container to combine an axis with an positioner and provide
-   a storage area for all kind of axis data. That way axis instances are reusable
-   (they do not store any data locally). The anchoredaxis and the positioner are
-   created by a graph corresponding to its geometry.
+``axis`` (:mod:`graph.axis.axis`)
+   Defines the mathematical mapping between data values and normalized graph
+   coordinates :math:`[0, 1]`, orchestrates automatic range adjustment, and
+   combines the partitioner, texter, painter, and rater to choose the optimal
+   tick layout.
 
-tick
-   Ticks are plotted along the axis. They might be labeled with text as well.
+   Because an axis instance itself is stateless, a graph wraps each axis in an
+   :class:`~graph.axis.axis.anchoredaxis` container that pairs the axis with a
+   geometric :class:`~graph.axis.positioner.positioner` and holds per-graph range
+   and tick data.
 
-partitioner, we use "parter" as a short form
-   Creates one or several choices of tick lists suitable to a certain axis range.
+``tick`` (:mod:`graph.axis.tick`)
+   Represents individual ticks and subticks placed along an axis, using exact
+   rational arithmetic (:class:`~graph.axis.tick.rational`) to avoid
+   floating-point rounding artifacts.
 
-texter
-   Creates labels for ticks when they are not set manually.
+``parter`` (:mod:`graph.axis.parter`)
+   Short for *partitioner*: generates one or more candidate lists of tick and
+   subtick positions for a given data range.
 
-painter
-   Responsible for painting the axis.
+``texter`` (:mod:`graph.axis.texter`)
+   Formats numeric or rational tick positions into label strings (using decimal,
+   scientific/exponential, or fraction notation).
 
-rater
-   Calculate ratings, which can be used to select the best suitable partitioning.
+``painter`` (:mod:`graph.axis.painter`)
+   Paints the axis baseline, ticks, grid lines, tick labels, and axis title onto
+   an axis canvas.
 
-positioner
-   Defines the position of an axis.
+``rater`` (:mod:`graph.axis.rater`)
+   Evaluates candidate tick partitionings by scoring the number of ticks/labels
+   and checking the painted label boxes for overlaps or crowding. The candidate
+   with the lowest penalty score is selected.
 
-The names above map directly to modules which are provided in the directory
-:file:`graph/axis` except for the anchoredaxis, which is part of the axis module
-as well. Sometimes it might be convenient to import the axis directory directly
-rather than to access iit through the graph. This would look like::
+``positioner`` (:mod:`graph.axis.positioner`)
+   Defines the geometric curve (straight line or arbitrary path), tick direction,
+   and grid paths of an anchored axis on the canvas.
+
+Customizing Axes and Subcomponents via Keyword Splitting
+--------------------------------------------------------
+
+Every axis, painter, and texter instance in :mod:`graph.axis` is callable
+(implementing ``__call__`` via :func:`utils.merge_members_kwargs`) and supports
+underscore-separated keyword forwarding (:func:`utils.kwsplit`). This means you
+can customize nested components without verbose boilerplate:
+
+.. code-block:: python
 
    from pyx import *
-   graph.axis.painter() # and the like
 
-   from pyx.graph import axis
-   axis.painter() # this is shorter ...
+   # Equivalent ways to enable grid lines and set a custom label prefix on a linear axis:
+   ax1 = graph.axis.linear(min=0, max=10,
+                           painter=graph.axis.painter.regular(gridattrs=[color.gray(0.8)]),
+                           texter=graph.axis.texter.default(mantissatexter_prefix=r"\$"))
 
-In most cases different implementations are available through different classes,
-which can be combined in various ways. There are various axis examples
-distributed with PyX, where you can see some of the features of the axis with a
-few lines of code each. Hence we can here directly come to the reference of the
-available components.
+   ax2 = graph.axis.linear(min=0, max=10,
+                           painter_gridattrs=[color.gray(0.8)],
+                           texter_mantissatexter_prefix=r"\$")
 
 
 .. module:: graph.axis.axis
+   :synopsis: Linear, logarithmic, bar, and split axes
 
-Module :mod:`graph.axis.axis`: Axes
-===================================
+Module :mod:`graph.axis.axis`: Axis Classes
+===========================================
 
-The following classes are part of the module :mod:`graph.axis.axis`. However,
-there is a shortcut to access those classes via ``graph.axis`` directly.
+All classes in :mod:`graph.axis.axis` are also exposed directly in
+:mod:`graph.axis` (e.g. ``graph.axis.linear``, ``graph.axis.log``,
+``graph.axis.bar``).
 
-Instances of the following classes can be passed to the *\*\*axes* keyword
-arguments of a graph. Those instances should only be used once.
+Continuous Regular Axes (:class:`linear` and :class:`logarithmic`)
+------------------------------------------------------------------
 
+.. class:: linear(min=None, max=None, reverse=0, divisor=None, title=None, parter=parter.autolinear(), manualticks=[], rater=rater.linear(), maxworse=2, texter=texter.default(), painter=painter.regular(), linkpainter=painter.linked(), fallbackrange=None, **kwargs)
 
-.. class:: linear(min=None, max=None, reverse=0, divisor=None, title=None, parter=parter.autolinear(), manualticks=[], rater=rater.linear(), maxworse=2, texter=texter.mixed(), painter=painter.regular(), linkpainter=painter.linked(), fallbackrange=None)
+   A linear axis mapping :math:`[\text{min}, \text{max}]` linearly onto
+   :math:`[0, 1]`. Also available under the short alias :class:`lin`.
 
-   This class provides a linear axis. *min* and *max* define the axis range. When
-   not set, they are adjusted automatically by the data to be plotted in the graph.
-   Note, that some data might want to access the range of an axis (*e.g.* the
-   :class:`function` class when no range was provided there) or you need to specify
-   a range when using the axis without plugging it into a graph (*e.g.* when
-   drawing an axis along a path). In cases where the data provides a range of zero
-   (e.g. a when plotting a constant function), then a *fallbackrange* can be set to
-   guarantee a minimal range of the axis.
-
-   *reverse* can be set to indicate a reversed axis starting with bigger values
-   first. Alternatively you can fix the axis range by *min* and *max* accordingly.
-   When divisor is set, it is taken to divide all data range and position
-   information while creating ticks. You can create ticks not taking into account
-   a factor by that. *title* is the title of the axis.
-
-   *parter* is a partitioner instance, which creates suitable ticks for the axis
-   range. Those ticks are merged with ticks manually given  by *manualticks* before
-   proceeding with rating, painting *etc.* Manually placed ticks win against those
-   created by the partitioner.
-
-   *rater* is a rater instance, which rates the ticks and the label distances
-   for being best suitable. The rater is only needed, when the partitioner
-   creates several tick lists. *maxworse* is the number of trials with more and
-   less ticks when a better rating was already found to help to get less or
-   more ticks than the default would lead to.
-
-   *texter* is a texter instance. It creates labels for those ticks, which claim to
-   have a label, but do not have a label string set already. Ticks created by
-   partitioners typically receive their label strings by texters. The *painter* is
-   finally used to construct the output. Note, that usually several output
-   constructions are needed, since the rater is also used to rate the distances
-   between the labels for an optimum. The *linkedpainter* is used as the axis
-   painter, when automatic link axes are created by the :meth:`createlinked`
-   method.
-
+   * *min*, *max*: Fixed lower and upper bounds of the axis. When left as
+     ``None``, the bounds are determined automatically from the plotted data and
+     extended to the nearest outer tick if allowed by *parter*. If ``min > max``,
+     the bounds are swapped and *reverse* is toggled automatically.
+   * *reverse*: When true, reverses the direction of the axis so values decrease
+     from ``0`` to ``1`` in graph coordinates.
+   * *divisor*: Optional number by which all data values are divided before
+     partitioning and formatting ticks (for example, ``divisor=math.pi`` paired
+     with ``texter=graph.axis.texter.rational(suffix=r"\pi")`` labels ticks in
+     multiples of :math:`\pi`).
+   * *title*: Axis title string, typeset using the graph's text engine.
+   * *parter*: Partitioner instance (default :class:`parter.autolinear`) or
+     ``None`` to draw only *manualticks*.
+   * *manualticks*: List of :class:`~graph.axis.tick.tick` instances merged with
+     the ticks generated by *parter* (manual ticks override automatic ticks at
+     identical positions).
+   * *rater*, *maxworse*: Rater instance (:class:`rater.linear`) and maximum
+     number of consecutively worse partitioning candidates to explore before
+     stopping the search in each direction.
+   * *texter*: Texter instance (default :class:`texter.default`) used to format
+     unlabeled ticks.
+   * *painter*: Painter instance (default :class:`painter.regular`) used to draw
+     the primary axis.
+   * *linkpainter*: Painter instance (default :class:`painter.linked`) used when
+     an opposite linked axis (such as ``x2`` or ``y2``) is created automatically.
+   * *fallbackrange*: Minimal range width (or ``(min, max)`` tuple) used when the
+     plotted data has zero span (for example, a constant function).
+   * *\*\*kwargs*: Underscore-split keyword arguments forwarded to ``painter``,
+     ``texter``, ``linkpainter``, ``parter``, or ``rater`` (e.g.
+     ``painter_gridattrs=...``).
 
 .. class:: lin(...)
 
-   This class is an abbreviation of :class:`linear` described above.
+   Alias for :class:`linear`.
 
+.. class:: logarithmic(min=None, max=None, reverse=0, divisor=None, title=None, parter=parter.autologarithmic(), linearparter=parter.autolinear(extendtick=None), manualticks=[], maxworse=2, rater=rater.logarithmic(), texter=texter.default(), painter=painter.regular(), linkpainter=painter.linked(), fallbackrange=None, **kwargs)
 
-.. class:: logarithmic(min=None, max=None, reverse=0, divisor=None, title=None, parter=parter.autologarithmic(), manualticks=[], maxworse=2, rater=rater.logarithmic(), texter=texter.mixed(), painter=painter.regular(), linkpainter=painter.linked(), fallbackrange=None)
+   A logarithmic axis mapping positive (or negative) values logarithmically onto
+   :math:`[0, 1]`. Also available under the short alias :class:`log`.
 
-   This class provides a logarithmic axis. All parameters work like
-   :class:`linear`. Only two parameters have a different default: *parter* and
-   *rater*. Furthermore and most importantly, the mapping between data and graph
-   coordinates is logarithmic.
-
+   All arguments work as in :class:`linear`, with defaults tailored for
+   logarithmic scales (:class:`parter.autologarithmic` and
+   :class:`rater.logarithmic`). If the data spans such a narrow interval that no
+   valid logarithmic partitioning without overlapping labels can be found, the
+   axis logs a warning and automatically falls back to *linearparter* (unless
+   ``linearparter=None``).
 
 .. class:: log(...)
 
-   This class is an abbreviation of :class:`logarithmic` described above.
+   Alias for :class:`logarithmic`.
+
+Discrete and Segmented Axes (:class:`bar`, :class:`nestedbar`, and :class:`split`)
+----------------------------------------------------------------------------------
+
+.. class:: bar(subaxes=None, defaultsubaxis=linear(painter=None, linkpainter=None, parter=None), dist=0.5, firstdist=None, lastdist=None, title=None, reverse=0, epsilon=1e-10, painter=painter.bar(), linkpainter=painter.linkedbar(), **kwargs)
+
+   Discrete categorical axis for bar charts (:class:`graph.style.bar`). A bar
+   axis maps a 2-tuple ``(name, subvalue)`` to a normalized graph coordinate:
+
+   * ``name`` selects one of the discrete categories along the bar axis (ordered
+     by their appearance in the data, or reversed when ``reverse=1``).
+   * ``subvalue`` is converted by the subaxis associated with ``name`` and mapped
+     into the sub-interval of :math:`[0, 1]` allocated to that category.
+
+   * *subaxes*: Optional dictionary or sequence mapping category names to explicit
+     subaxis instances; any category not in *subaxes* uses a copy of
+     *defaultsubaxis*.
+   * *dist*, *firstdist*, *lastdist*: Spacing between consecutive category
+     intervals, before the first category, and after the last category, measured
+     relative to a unit subaxis size of ``1`` (default ``dist=0.5``, with
+     *firstdist* and *lastdist* defaulting to ``0.5 * dist``).
+   * *\*\*kwargs*: Underscore-split keyword arguments forwarded to
+     ``defaultsubaxis``, ``painter``, or ``linkpainter``.
+
+.. class:: nestedbar(subaxes=None, defaultsubaxis=bar(dist=0, painter=None, linkpainter=None), dist=0.5, firstdist=None, lastdist=None, title=None, reverse=0, painter=painter.bar(), linkpainter=painter.linkedbar(), **kwargs)
+
+   A two-level hierarchical bar axis for grouped side-by-side bar charts, where
+   *defaultsubaxis* is itself a :class:`bar` axis with ``dist=0``. Data values
+   passed to a :class:`nestedbar` axis have the nested tuple form
+   ``((category, subcategory), subvalue)``.
+
+.. class:: split(subaxes=None, defaultsubaxis=linear(), dist=0.5, firstdist=0, lastdist=0, title=None, reverse=0, painter=painter.split(), linkpainter=painter.linkedsplit(), **kwargs)
+
+   A segmented continuous axis divided into multiple continuous sub-ranges
+   separated by visual break markers (painted by :class:`painter.split`). Data
+   values can be routed to subaxes automatically using
+   :func:`graph.data.splitatvalue`.
+
+.. class:: sizedlinear(size=1, **kwargs)
+.. class:: autosizedlinear(**kwargs)
+
+   Subclasses of :class:`linear` (also aliased as :class:`sizedlin` and
+   :class:`autosizedlin`) for use as subaxes in a :class:`bar` or :class:`split`
+   axis. :class:`sizedlinear` assigns a fixed relative width *size* to the
+   subaxis, whereas :class:`autosizedlinear` scales the width of each subaxis
+   proportionally to its data span ``max - min``.
+
+Anchored, Linked, and Standalone Path Axes
+------------------------------------------
+
+.. class:: anchoredaxis(axis, textengine, errorname)
+
+   Combines an :class:`_axis` instance with a :class:`positioner.positioner` and
+   per-graph storage (``self.data`` and ``self.canvas``). Graph instances store
+   their anchored axes in ``g.axes[name]``. Once the axis layout has been
+   created, :class:`anchoredaxis` provides the following geometric methods:
+
+   .. method:: basepath(x1=None, x2=None)
+   .. method:: vbasepath(v1=None, v2=None)
+
+      Returns a :class:`path.path` along the axis baseline between data values
+      *x1* and *x2* (or graph coordinates *v1* and *v2*).
+
+   .. method:: gridpath(x)
+   .. method:: vgridpath(v)
+
+      Returns the grid line :class:`path.path` across the graph at data value *x*
+      (or graph coordinate *v*), or ``None`` if no grid path is defined.
+
+   .. method:: tickpoint(x)
+   .. method:: tickpoint_pt(x)
+   .. method:: vtickpoint(v)
+   .. method:: vtickpoint_pt(v)
+
+      Returns the canvas coordinates ``(x, y)`` of the point on the axis baseline
+      corresponding to data value *x* (or graph coordinate *v*).
+
+   .. method:: tickdirection(x)
+   .. method:: vtickdirection(v)
+
+      Returns the unit normal vector ``(dx, dy)`` pointing toward the interior of
+      the graph at data value *x* (or graph coordinate *v*).
+
+.. class:: linkedaxis(linkedaxis=None, errorname="manual-linked", painter=_marker, **kwargs)
+
+   An anchored axis that shares the data range, scaling, and tick positions of
+   another :class:`anchoredaxis` instance *linkedaxis* (for example, to link an
+   axis in one graph to the axis of an adjacent graph in a multi-panel figure).
+
+   .. method:: setlinkedaxis(linkedaxis)
+
+      Binds or updates the target *linkedaxis* after construction.
+
+.. class:: anchoredpathaxis(path, axis, textengine=text.defaulttextengine, direction=1)
+.. function:: pathaxis(path, axis, **kwargs)
+
+   Creates and paints a standalone *axis* (which must have explicit *min* and
+   *max* bounds) along an arbitrary geometric :class:`path.path`. *direction*
+   specifies whether ticks point to the left (``1``, default) or right (``-1``)
+   of the path tangent. :func:`pathaxis` immediately builds the axis and returns
+   its painted :class:`canvas.canvas` so it can be inserted directly into any
+   canvas:
+
+   .. code-block:: python
+
+      c = canvas.canvas()
+      c.insert(graph.axis.pathaxis(path.curve(0, 0, 2, 2, 4, -2, 6, 0),
+                                   graph.axis.linear(min=0, max=10)))
 
 
-.. class:: bar(subaxes=None, defaultsubaxis=linear(painter=None, linkpainter=None, parter=None, texter=None), dist=0.5, firstdist=None, lastdist=None, title=None, reverse=0, epsilon=1e-10, painter=painter.bar(), linkpainter=painter.linkedbar())
+.. module:: graph.axis.timeaxis
+   :synopsis: Axes for Python datetime data
 
-   This class provides an axis suitable for a bar style. It handles a discrete set
-   of values and maps them to distinct ranges in graph coordinates. For that, the
-   axis gets a tuple of two values.
+Module :mod:`graph.axis.timeaxis`: Date and Time Axes
+=====================================================
 
-   The first item is taken to be one of the discrete values valid on this axis. The
-   discrete values can be any hashable type and the order of the subaxes is defined
-   by the order the data is received or the inverse of that when *reverse* is set.
-   ``None`` is an invalid subaxis selector and is silently ignored.
+The :mod:`graph.axis.timeaxis` module provides classes for plotting Python
+:class:`datetime.datetime` (or :class:`datetime.date`) objects along a
+continuous axis:
 
-   The second item is passed to the corresponding subaxis. The result of the
-   conversion done by the subaxis is mapped to the graph coordinate range reserved
-   for this subaxis. This range is defined by a size attribute of the subaxis,
-   which can be added to any axis. (see the sized linear axes described below for
-   some axes already having a size argument). When no size information is available
-   for a subaxis, a size value of 1 is used. The baraxis itself calculates its size
-   by summing up the sizes of its subaxes plus *firstdist*, *lastdist* and *dist*
-   times the number of subaxes minus 1.
+.. class:: timeaxis(min=None, max=None, reverse=0, divisor=None, title=None, parter=timeparter(), manualticks=[], rater=rater.linear(), maxworse=2, texter=timetexter(), painter=painter.regular(), linkpainter=painter.linked(), fallbackrange=None, **kwargs)
 
-   *subaxes* should be a list or a dictionary mapping a discrete value of the bar
-   axis to the corresponding subaxis. When no subaxes are set or data is received
-   for an unknown discrete axis value, instances of defaultsubaxis are used as the
-   subaxis for this discrete value.
+   A continuous axis whose data bounds and values are Python
+   :class:`datetime.datetime` instances.
 
-   *dist* is used as the spacing between the ranges for each distinct value. It is
-   measured in the same units as the subaxis results, thus the default value of
-   ``0.5`` means half the width between the distinct values as the width for each
-   distinct value. *firstdist* and *lastdist* are used before the first and after
-   the last value. When set to ``None``, half of *dist* is used.
+.. class:: timetick(dt, ticklevel=0, labellevel=0, label=None, labelattrs=[])
 
-   *title* is the title of the split axes and *painter* is a specialized painter
-   for an bar axis and *linkpainter* is used as the painter, when automatic link
-   axes are created by the :meth:`createlinked` method.
+   A tick positioned at a :class:`datetime.datetime` value (or initialized from
+   ``(year, month, day[, hour[, minute[, second]]])`` positional arguments).
 
-   *epsilon* allows for small overshoots of subaxis data conversion to graph
-   coordinates. Data exceeding the range will be skipped (i.e. silently ignored).
-   *epsilon* might be set to ``None`` to disable this check, which however should
-   be used with care as data will be placed out of bound of the selected subaxis.
+.. class:: timeparter(variants=defaultvariants)
 
-.. class:: nestedbar(subaxes=None, defaultsubaxis=bar(dist=0, painter=None, linkpainter=None), dist=0.5, firstdist=None, lastdist=None, title=None, reverse=0, painter=painter.bar(), linkpainter=painter.linkedbar())
+   Partitioner that places ticks and subticks at calendar-aligned intervals (days,
+   weeks, months, hours, etc.).
 
-   This class is identical to the bar axis except for the different default value
-   for defaultsubaxis.
+.. class:: timetexter(format="%Y-%m-%d")
 
-
-.. class:: split(subaxes=None, defaultsubaxis=linear(), dist=0.5, firstdist=0, lastdist=0, title=None, reverse=0, painter=painter.split(), linkpainter=painter.linkedsplit())
-
-   This class is identical to the bar axis except for the different default value
-   for defaultsubaxis, firstdist, lastdist, painter, and linkedpainter.
-
-Sometimes you want to alter the default size of 1 of the subaxes. For that you
-have to add a size attribute to the axis data. The two classes
-:class:`sizedlinear` and :class:`autosizedlinear` do that for linear axes. Their
-short names are :class:`sizedlin` and :class:`autosizedlin`.
-:class:`sizedlinear` extends the usual linear axis by an first argument *size*.
-:class:`autosizedlinear` creates the size out of its data range automatically
-but sets an :class:`autolinear` parter with *extendtick* being ``None`` in order
-to disable automatic range modifications while painting the axis.
-
-The :mod:`axis` module also contains classes implementing so called anchored
-axes, which combine an axis with an positioner and a storage place for axis
-related data. Since these features are not interesting for the average PyX user,
-we'll not go into all the details of their parameters and except for some handy
-axis position methods:
-
-
-.. class:: anchoredaxis()
-
-.. method:: anchoredaxis.basepath(x1=None, x2=None)
-
-   Returns a path instance for the base path. *x1* and *x2* define the axis range,
-   the base path should cover. For ``None`` the beginning and end of the path is
-   taken, which might cover a longer range, when the axis is embedded as a subaxis.
-   For that case, a ``None`` value extends the range to the point of the middle
-   between two subaxes or the beginning or end of the whole axis, when the subaxis
-   is the first or last of the subaxes.
-
-
-.. method:: anchoredaxis.vbasepath(v1=None, v2=None)
-
-   Like :meth:`basepath` but in graph coordinates.
-
-
-.. method:: anchoredaxis.gridpath(x)
-
-   Returns a path instance for the grid path at position *x*. Might return ``None``
-   when no grid path is available.
-
-
-.. method:: anchoredaxis.vgridpath(v)
-
-   Like :meth:`gridpath` but in graph coordinates.
-
-
-.. method:: anchoredaxis.tickpoint(x)
-
-   Returns the position of *x* as a tuple ``(x, y)``.
-
-
-.. method:: anchoredaxis.vtickpoint(v)
-
-   Like :meth:`tickpoint` but in graph coordinates.
-
-
-.. method:: anchoredaxis.tickdirection(x)
-
-   Returns the direction of a tick at *x* as a tuple ``(dx, dy)``. The tick
-   direction points inside of the graph.
-
-
-.. method:: anchoredaxis.vtickdirection(v)
-
-   Like :meth:`tickdirection` but in graph coordinates.
-
-
-However, there are two anchored axes implementations :class:`linkedaxis` and
-:class:`anchoredpathaxis` which are available to the user to create special
-forms of anchored axes.
-
-
-.. class:: linkedaxis(linkedaxis=None, errorname="manual-linked", painter=_marker)
-
-   This class implements an anchored axis to be passed to a graph constructor to
-   manually link the axis to another anchored axis instance *linkedaxis*. Note that
-   you can skip setting the value of *linkedaxis* in the constructor, but set it
-   later on by the :meth:`setlinkedaxis` method described below. *errorname* is
-   printed within error messages when the data is used and some problem occurs.
-   *painter* is used for painting the linked axis instead of the *linkedpainter*
-   provided by the *linkedaxis*.
-
-
-.. method:: linkedaxis.setlinkedaxis(linkedaxis)
-
-   This method can be used to set the *linkedaxis* after constructing the axis. By
-   that you can create several graph instances with cycled linked axes.
-
-
-.. class:: anchoredpathaxis(path, axis, direction=1)
-
-   This class implements an anchored axis the path *path*. *direction* defines the
-   direction of the ticks. Allowed values are ``1`` (left) and ``-1`` (right).
-
-The :class:`anchoredpathaxis` contains as any anchored axis after calling its
-:meth:`create` method the painted axis in the :attr:`canvas` member attribute.
-The function :func:`pathaxis` has the same signature like the
-:class:`anchoredpathaxis` class, but immediately creates the axis and returns
-the painted axis.
+   Formats :class:`timetick` positions using :meth:`datetime.datetime.strftime`
+   with the given *format* string.
 
 
 .. module:: graph.axis.tick
+   :synopsis: Rational numbers and axis ticks
 
-Module :mod:`graph.axis.tick`: Axes ticks
+Module :mod:`graph.axis.tick`: Axis Ticks
 =========================================
-
-The following classes are part of the module :mod:`graph.axis.tick`.
-
 
 .. class:: rational(x, power=1, floatprecision=10)
 
-   This class implements a rational number with infinite precision. For that it
-   stores two integers, the numerator ``num`` and a denominator ``denom``. Note
-   that the implementation of rational number arithmetics is not at all complete
-   and designed for its special use case of axis partitioning in PyX preventing any
-   roundoff errors.
+   Exact rational number ``num / denom`` used internally by partitioners and
+   texters to avoid floating-point rounding errors. *x* can be:
 
-   *x* is the value of the rational created by a conversion from one of the
-   following input values:
+   * A ``float`` (converted using precision *floatprecision*),
+   * A decimal or fraction string (such as ``"0.25"`` or ``"1/3"``),
+   * A 2-tuple of integers ``(num, denom)``, or
+   * Any object with ``.num`` and ``.denom`` integer attributes (or a Python
+     :class:`fractions.Fraction`).
 
-* A float. It is converted to a rational with finite precision determined by
-     *floatprecision*.
-
-* A string, which is parsed to a rational number with full precision. It is also
-     allowed to provide a fraction like ``"1/3"``.
-
-* A sequence of two integers. Those integers are taken as numerator and
-     denominator of the rational.
-
-* An instance defining instance variables ``num`` and ``denom`` like
-     :class:`rational` itself.
-
-   *power* is an integer to calculate ``x**power``. This is useful at certain
-   places in partitioners.
-
+   If *power* is given, the rational number is raised to the integer exponent
+   *power*.
 
 .. class:: tick(x, ticklevel=0, labellevel=0, label=None, labelattrs=[], power=1, floatprecision=10)
 
-   This class implements ticks based on rational numbers. Instances of this class
-   can be passed to the ``manualticks`` parameter of a regular axis.
+   Represents a tick mark and/or label at position *x* (interpreted as a
+   :class:`rational`). Instances of :class:`tick` can be passed to the
+   ``manualticks`` list of any regular axis:
 
-   The parameters *x*, *power*, and *floatprecision* share its meaning with
-   :class:`rational`.
+   .. code-block:: python
 
-   A tick has a tick level (*i.e.* markers at the axis path) and a label lavel
-   (*e.i.* place text at the axis path), *ticklevel* and *labellevel*. These are
-   non-negative integers or *None*. A value of ``0`` means a regular tick or label,
-   ``1`` stands for a subtick or sublabel, ``2`` for subsubtick or subsublabel and
-   so on. ``None`` means omitting the tick or label. *label* is the text of the
-   label. When not set, it can be created automatically by a texter. *labelattrs*
-   are the attributes for the labels.
+      ax = graph.axis.linear(min=0, max=4,
+                             manualticks=[graph.axis.tick.tick(math.pi, label=r"$\pi$")])
+
+   * *ticklevel*: Non-negative integer specifying the tick hierarchy level
+     (``0`` for a major tick, ``1`` for a subtick, ``2`` for a sub-subtick, etc.),
+     or ``None`` to draw no tick mark at this position.
+   * *labellevel*: Non-negative integer specifying the label hierarchy level
+     (``0`` for a major label, ``1`` for a sublabel, etc.), or ``None`` to omit
+     the label at this position.
+   * *label*: Explicit label string, or ``None`` to let the axis's :mod:`~graph.axis.texter`
+     generate the label automatically.
+   * *labelattrs*: Additional text attributes applied to this specific tick's
+     label.
 
 
 .. module:: graph.axis.parter
+   :synopsis: Automatic and manual axis partitioners
 
-Module :mod:`graph.axis.parter`: Axes partitioners
+Module :mod:`graph.axis.parter`: Axis Partitioners
 ==================================================
 
-The following classes are part of the module :mod:`graph.axis.parter`. Instances
-of the classes can be passed to the parter keyword argument of regular axes.
+Partitioners generate candidate lists of :class:`~graph.axis.tick.tick` instances
+for a given axis range.
 
+Linear Partitioners
+-------------------
 
 .. class:: linear(tickdists=None, labeldists=None, extendtick=0, extendlabel=None, epsilon=1e-10)
-
-   Instances of this class creates equally spaced tick lists. The distances between
-   the ticks, subticks, subsubticks *etc.* starting from a tick at zero are given
-   as first, second, third *etc.* item of the list *tickdists*. For a tick
-   position, the lowest level wins, *i.e.* for ``[2, 1]`` even numbers will have
-   ticks whereas subticks are placed at odd integer. The items of *tickdists* might
-   be strings, floats or tuples as described for the *pos* parameter of class
-   :class:`tick`.
-
-   *labeldists* works equally for placing labels. When *labeldists* is kept
-   ``None``, labels will be placed at each tick position, but sublabels *etc.* will
-   not be used. This copy behaviour is also available *vice versa* and can be
-   disabled by an empty list.
-
-   *extendtick* can be set to a tick level for including the next tick of that
-   level when the data exceeds the range covered by the ticks by more than
-   *epsilon*. *epsilon* is taken relative to the axis range. *extendtick* is
-   disabled when set to ``None`` or for fixed range axes. *extendlabel* works
-   similar to *extendtick* but for labels.
-
-
 .. class:: lin(...)
 
-   This class is an abbreviation of :class:`linear` described above.
+   Places ticks at fixed equidistant intervals specified in *tickdists* (a list
+   of intervals ``[major_step, subtick_step, ...]``, where each step can be a
+   number, string, or :class:`~graph.axis.tick.rational`).
 
+   * *labeldists*: Optional list of step sizes for labeled ticks. When ``None``
+     (default), labels are placed at major ticks (level ``0``) only.
+   * *extendtick*, *extendlabel*: Tick or label level (default ``0`` for
+     *extendtick*, ``None`` for *extendlabel*) to which an auto-ranged axis is
+     expanded if the data exceeds the outermost tick by more than *epsilon*.
 
 .. class:: autolinear(variants=defaultvariants, extendtick=0, epsilon=1e-10)
-
-   Instances of this class creates equally spaced tick lists, where the distance
-   between the ticks is adjusted to the range of the axis automatically. Variants
-   are a list of possible choices for *tickdists* of :class:`linear`. Further
-   variants are build out of these by multiplying or dividing all the values by
-   multiples of ``10``. *variants* should be ordered that way, that the number of
-   ticks for a given range will decrease, hence the distances between the ticks
-   should increase within the *variants* list. *extendtick* and *epsilon* have the
-   same meaning as in :class:`linear`.
-
-
-.. attribute:: autolinear.defaultvariants
-
-   ``[[tick.rational((1, 1)), tick.rational((1, 2))], [tick.rational((2, 1)),
-   tick.rational((1, 1))], [tick.rational((5, 2)), tick.rational((5, 4))],
-   [tick.rational((5, 1)), tick.rational((5, 2))]]``
-
-
 .. class:: autolin(...)
 
-   This class is an abbreviation of :class:`autolinear` described above.
+   Automatically generates candidate :class:`linear` partitionings by scaling the
+   base step patterns in *variants* by powers of 10 to match the data span.
 
+   .. attribute:: autolinear.defaultvariants
+
+      ``[[1, 1/2], [2, 1], [5/2, 5/4], [5, 5/2]]`` (represented as
+      :class:`~graph.axis.tick.rational` pairs of ``[tick_step, subtick_step]``).
+
+Logarithmic Partitioners
+------------------------
 
 .. class:: preexp(pres, exp)
 
-   This is a storage class defining positions of ticks on a logarithmic scale. It
-   contains a list *pres* of positions :math:`p_i` and *exp*, a multiplicator
-   :math:`m`. Valid tick positions are defined by :math:`p_im^n` for any integer
-   :math:`n`.
-
+   Specifies a repeating sequence of logarithmic tick positions of the form
+   :math:`p_i \cdot \text{exp}^n` for all integers :math:`n` and prefixes
+   :math:`p_i \in \text{pres}`.
 
 .. class:: logarithmic(tickpreexps=None, labelpreexps=None, extendtick=0, extendlabel=None, epsilon=1e-10)
-
-   Instances of this class creates tick lists suitable to logarithmic axes. The
-   positions of the ticks, subticks, subsubticks *etc.* are defined by the first,
-   second, third *etc.* item of the list *tickpreexps*, which are all
-   :class:`preexp` instances.
-
-   *labelpreexps* works equally for placing labels. When *labelpreexps* is kept
-   ``None``, labels will be placed at each tick position, but sublabels *etc.* will
-   not be used. This copy behaviour is also available *vice versa* and can be
-   disabled by an empty list.
-
-   *extendtick*, *extendlabel* and *epsilon* have the same meaning as in
-   :class:`linear`.
-
-Some :class:`preexp` instances for the use in :class:`logarithmic` are available
-as instance variables (should be used read-only):
-
-
-.. attribute:: logarithmic.pre1exp5
-
-   ``preexp([tick.rational((1, 1))], 100000)``
-
-
-.. attribute:: logarithmic.pre1exp4
-
-   ``preexp([tick.rational((1, 1))], 10000)``
-
-
-.. attribute:: logarithmic.pre1exp3
-
-   ``preexp([tick.rational((1, 1))], 1000)``
-
-
-.. attribute:: logarithmic.pre1exp2
-
-   ``preexp([tick.rational((1, 1))], 100)``
-
-
-.. attribute:: logarithmic.pre1exp
-
-   ``preexp([tick.rational((1, 1))], 10)``
-
-
-.. attribute:: logarithmic.pre125exp
-
-   ``preexp([tick.rational((1, 1)), tick.rational((2, 1)), tick.rational((5, 1))],
-   10)``
-
-
-.. attribute:: logarithmic.pre1to9exp
-
-   ``preexp([tick.rational((1, 1)) for x in range(1, 10)], 10)``
-
-
 .. class:: log(...)
 
-   This class is an abbreviation of :class:`logarithmic` described above.
+   Places ticks on a logarithmic axis according to the list of :class:`preexp`
+   instances in *tickpreexps* (for ticks, subticks, …) and *labelpreexps* (for
+   labels, sublabels, …).
 
+   Predefined :class:`preexp` constants on :class:`logarithmic`:
+
+   * :attr:`logarithmic.pre1exp` — powers of 10 (:math:`10^n`)
+   * :attr:`logarithmic.pre125exp` — :math:`1, 2, 5 \times 10^n`
+   * :attr:`logarithmic.pre1to9exp` — :math:`1, 2, \dots, 9 \times 10^n`
+   * :attr:`logarithmic.pre1exp2`, :attr:`~logarithmic.pre1exp3`,
+     :attr:`~logarithmic.pre1exp4`, :attr:`~logarithmic.pre1exp5` — steps of
+     :math:`10^{2n}`, :math:`10^{3n}`, :math:`10^{4n}`, :math:`10^{5n}`
 
 .. class:: autologarithmic(variants=defaultvariants, extendtick=0, extendlabel=None, epsilon=1e-10)
-
-   Instances of this class creates tick lists suitable to logarithmic axes, where
-   the distance between the ticks is adjusted to the range of the axis
-   automatically. Variants are a list of tuples with possible choices for
-   *tickpreexps* and *labelpreexps* of :class:`logarithmic`. *variants* should be
-   ordered that way, that the number of ticks for a given range will decrease
-   within the *variants* list.
-
-   *extendtick*, *extendlabel* and *epsilon* have the same meaning as in
-   :class:`linear`.
-
-
-.. attribute:: autologarithmic.defaultvariants
-
-   ``[([log.pre1exp, log.pre1to9exp], [log.pre1exp, log.pre125exp]), ([log.pre1exp,
-   log.pre1to9exp], None), ([log.pre1exp2, log.pre1exp], None), ([log.pre1exp3,
-   log.pre1exp], None), ([log.pre1exp4, log.pre1exp], None), ([log.pre1exp5,
-   log.pre1exp], None)]``
-
-
 .. class:: autolog(...)
 
-   This class is an abbreviation of :class:`autologarithmic` described above.
+   Evaluates candidate logarithmic tick and label patterns from *variants* (ordered
+   from densest to sparsest) for rating by the axis rater.
 
 
 .. module:: graph.axis.texter
+   :synopsis: Tick label formatters
 
-Module :mod:`graph.axis.texter`: Axes texter
-============================================
+Module :mod:`graph.axis.texter`: Axis Texters
+=============================================
 
-The following classes are part of the module :mod:`graph.axis.texter`. Instances
-of the classes can be passed to the texter keyword argument of regular axes.
-Texters are used to define the label text for ticks, which request to have a
-label, but for which no label text has been specified so far. A typical case are
-ticks created by partitioners described above.
+Texters format the numeric value of each :class:`~graph.axis.tick.tick` whose
+``labellevel`` is not ``None`` and whose ``label`` is not already set manually.
+All texters are callable so you can clone and tweak them via keyword arguments.
 
+.. class:: default(multiplicationtex=r"\cdot{}", multiplicationunicode="·", base=Fraction(10), skipmantissaunity=skipmantissaunity.all, minusunity="-", minexponent=4, minnegexponent=None, uniformexponent=True, mantissatexter=decimal(), basetexter=decimal(), exponenttexter=decimal(), labelattrs=[text.mathmode], **kwargs)
 
-.. class:: decimal(prefix="", infix="", suffix="", equalprecision=False, decimalsep=".", thousandsep="", thousandthpartsep="", plus="", minus="-", period=r"\\overline{%s}", labelattrs=[text.mathmode])
+   The default texter for linear and logarithmic axes. Formats moderate numbers
+   in plain decimal notation and automatically switches to scientific notation
+   (:math:`m \cdot 10^e`) for large or small exponents, producing a
+   :class:`text.MultiEngineText` that works seamlessly with both TeX/LaTeX
+   engines and :class:`text.UnicodeEngine`.
 
-   Instances of this class create decimal formatted labels.
+   * *multiplicationtex*, *multiplicationunicode*: Multiplication symbol placed
+     between the mantissa and base for TeX engines and :class:`text.UnicodeEngine`,
+     respectively.
+   * *base*: Exponent base (default ``Fraction(10)``).
+   * *skipmantissaunity*: Controls when a mantissa of ``1`` is omitted (so
+     :math:`1 \cdot 10^5` is written simply as :math:`10^5`):
 
-   The strings *prefix*, *infix*, and *suffix* are added to the label at the
-   beginning, immediately after the plus or minus, and at the end, respectively.
+     - :attr:`skipmantissaunity.never` (``0``): Always write :math:`1 \cdot 10^e`.
+     - :attr:`skipmantissaunity.each` (``1``): Omit ``1`` on any individual tick
+       whose mantissa is unity.
+     - :attr:`skipmantissaunity.all` (``2``, default): Omit ``1`` only when *all*
+       exponentially formatted ticks on the axis have a mantissa of unity (as on
+       a standard logarithmic axis).
 
-   *equalprecision* forces the same number of digits after *decimalsep*, even
-   when the tailing digits are zero.
+   * *minexponent*, *minnegexponent*: Minimum positive exponent (default ``4``,
+     i.e. :math:`10^4`) and minimum negative exponent magnitude (defaults to
+     *minexponent*, i.e. :math:`10^{-4}`) at which exponential notation is used.
+   * *uniformexponent*: When ``True`` (default), if any non-zero tick on the axis
+     triggers exponential notation, all non-zero ticks on the axis are formatted
+     in exponential notation for visual consistency.
+   * *mantissatexter*, *basetexter*, *exponenttexter*: :class:`decimal` texters
+     used to format the mantissa, base, and exponent (can also be configured via
+     underscore-split keywords such as ``mantissatexter_equalprecision=True``).
+   * *labelattrs*: Text attributes added to each formatted tick (default
+     ``[text.mathmode]``).
 
-   *decimalsep*, *thousandsep*, and *thousandthpartsep* are strings used to
-   separate integer from fractional part and three-digit groups in the integer and
-   fractional part. The strings *plus* and *minus* are inserted in front of the
-   unsigned value for non-negative and negative numbers, respectively.
+.. class:: decimal(prefix="", infix="", suffix="", equalprecision=False, decimalsep=".", thousandsep="", thousandthpartsep="", plus="", minus="-", period=r"\overline{%s}", labelattrs=[text.mathmode])
 
-   The format string *period* should generate a period. It must contain one string
-   insert operators ``%s`` for the period.
+   Formats ticks in fixed-point decimal notation.
 
-   *labelattrs* is a list of attributes to be added to the label attributes given
-   in the painter. It should be used to setup TeX features like ``text.mathmode``.
-   Text format options like ``text.size`` should instead be set at the painter.
+   * *prefix*, *infix*, *suffix*: Strings inserted before the sign, immediately
+     after the sign, and at the end of the number, respectively.
+   * *equalprecision*: When ``True``, pads all decimal tick labels on the axis
+     with trailing zeros to match the tick with the most decimal places.
+   * *decimalsep*, *thousandsep*, *thousandthpartsep*: Separators for the decimal
+     point and 3-digit groups in the integer and fractional parts.
+   * *plus*, *minus*: Sign strings for non-negative and negative values.
+   * *period*: Format string with a single ``%s`` placeholder used to render
+     repeating decimal periods (default ``r"\overline{%s}"``).
 
+.. class:: rational(prefix="", infix="", suffix="", numprefix="", numinfix="", numsuffix="", denomprefix="", denominfix="", denomsuffix="", plus="", minus="-", minuspos=0, over=r"{{%s}\over{%s}}", equaldenom=False, skip1=True, skipnum0=True, skipnum1=True, skipdenom1=True, labelattrs=[text.mathmode])
 
-.. class:: default(multiplicationtex=r"\cdot{}", multiplicationunicode="·", base=Fraction(10), skipmantissaunity=skipmantissaunity.all, minusunity="-", minexponent=4, minnegexponent=None, uniformexponent=True, mantissatexter=decimal(), basetexter=decimal(), exponenttexter=decimal(), labelattrs=[text.mathmode])
+   Formats ticks as exact reduced fractions :math:`\frac{a}{b}` (especially
+   useful for axes partitioned in multiples of :math:`\pi` or rational fractions).
 
-   Instances of this class create decimal formatted labels with an exponential.
-
-   multiplicationtex and multiplicationunicode are the strings to indicate
-   the multiplication between the mantissa and the base number for the
-   TexEngine and the UnicodeEngine, respectively
-
-   base is the number of the base of the exponent
-
-   skipmantissaunity is either skipmantissaunity.never (never skip the unity
-   mantissa), skipmantissaunity.each (skip the unity mantissa whenever it occurs
-   for each label separately), or skipmantissaunity.all (skip the unity mantissa
-   whenever if all labels happen to be mantissafixed with unity)
-
-   minusunity is used as the output of -unity for the mantissa
-
-   minexponent is the minimal positive exponent value to be printed by exponential
-   notation
-
-   minnegexponent is the minimal negative exponent value to be printed by
-   exponential notation, for None it is considered to be equal to minexponent
-
-   uniformexponent forces all numbers to be written in exponential notation when at
-   least one label exceeds the limits for non-exponential notation
-
-   mantissatexter, basetexter, and exponenttexter generate the texts for the
-   mantissa, basetexter, and exponenttexter
-
-   labelattrs is a list of attributes to be added to the label attributes given
-   in the painter"""
-
-
-.. class:: rational(prefix="", infix="", suffix="", numprefix="", numinfix="", numsuffix="", denomprefix="", denominfix="", denomsuffix="", plus="", minus="-", minuspos=0, over=r"%s\\over%s", equaldenom=False, skip1=True, skipnum0=True, skipnum1=True, skipdenom1=True, labelattrs=[text.mathmode])
-
-   Instances of this class create labels formated as fractions.
-
-   The strings *prefix*, *infix*, and *suffix* are added to the label at the
-   beginning, immediately after the plus or minus, and at the end, respectively.
-   The strings *numprefix*, *numinfix*, and *numsuffix* are added to the labels
-   numerator accordingly whereas *denomprefix*, *denominfix*, and *denomsuffix* do
-   the same for the denominator.
-
-   The strings *plus* and *minus* are inserted in front of the unsigned value. The
-   position of the sign is defined by *minuspos* with values ``1`` (at the
-   numerator), ``0`` (in front of the fraction), and ``-1`` (at the denominator).
-
-   The format string *over* should generate the fraction. It must contain two
-   string insert operators ``%s``, the first for the numerator and the second for
-   the denominator. An alternative to the default is ``"{{%s}/{%s}}"``.
-
-   Usually, the numerator and denominator are canceled, while, when *equaldenom* is
-   set, the least common multiple of all denominators is used.
-
-   The boolean *skip1* indicates, that only the prefix, plus or minus, the infix
-   and the suffix should be printed, when the value is ``1`` or ``-1`` and at least
-   one of *prefix*, *infix* and *suffix* is present.
-
-   The boolean *skipnum0* indicates, that only a ``0`` is printed when the
-   numerator is zero.
-
-   *skipnum1* is like *skip1* but for the numerator.
-
-   *skipdenom1* skips the denominator, when it is ``1`` taking into account
-   *denomprefix*, *denominfix*, *denomsuffix* *minuspos* and the sign of the
-   number.
-
-   *labelattrs* has the same meaning as for *decimal*.
+   * *prefix*, *infix*, *suffix*: Strings placed around the entire fraction.
+   * *numprefix*, *numinfix*, *numsuffix*: Strings placed around the numerator
+     (for example, ``numsuffix=r"\pi"``).
+   * *denomprefix*, *denominfix*, *denomsuffix*: Strings placed around the
+     denominator.
+   * *minuspos*: Placement of the sign: ``0`` (in front of the fraction), ``1``
+     (in the numerator), or ``-1`` (in the denominator).
+   * *over*: Format string with two ``%s`` placeholders for numerator and
+     denominator (default ``r"{{%s}\over{%s}}"``; use ``r"{{%s}/{%s}}"`` for
+     inline slash fractions).
+   * *equaldenom*: When ``True``, expresses all fractions on the axis over their
+     least common denominator instead of reducing each fraction individually.
+   * *skip1*, *skipnum0*, *skipnum1*, *skipdenom1*: Booleans controlling automatic
+     simplification when the fraction is :math:`\pm 1`, the numerator is ``0`` or
+     :math:`\pm 1`, or the denominator is ``1``.
 
 
 .. module:: graph.axis.painter
+   :synopsis: Axis painters
 
-Module :mod:`graph.axis.painter`: Axes painter
-==============================================
+Module :mod:`graph.axis.painter`: Axis Painters
+===============================================
 
-The following classes are part of the module :mod:`graph.axis.painter`.
-Instances of the painter classes can be passed to the painter keyword argument
-of regular axes.
+Painters draw the visual representation of an axis onto an :class:`axiscanvas`.
 
+Helper Classes (:class:`rotatetext` and :class:`ticklength`)
+------------------------------------------------------------
 
 .. class:: rotatetext(direction, epsilon=1e-10)
 
-   This helper class is used in direction arguments of the painters below to
-   prevent axis labels and titles being written upside down. In those cases the
-   text will be rotated by 180 degrees. *direction* is an angle to be used relative
-   to the tick direction. *epsilon* is the value by which 90 degrees can be
-   exceeded before an 180 degree rotation is performed.
+   Computes a :class:`trafo.rotate` transformation for axis labels or titles
+   at angle *direction* (in degrees) relative to the inward tick direction,
+   automatically flipping the text by 180° whenever it would otherwise appear
+   upside-down.
 
-The following two class variables are initialized for the most common
-applications:
+   .. attribute:: rotatetext.parallel
 
+      ``rotatetext(90)`` — orients text parallel to the axis baseline.
 
-.. attribute:: rotatetext.parallel
+   .. attribute:: rotatetext.orthogonal
 
-   ``rotatetext(90)``
-
-
-.. attribute:: rotatetext.orthogonal
-
-   ``rotatetext(180)``
-
+      ``rotatetext(180)`` — orients text perpendicular to the axis baseline.
 
 .. class:: ticklength(initial, factor)
 
-   This helper class provides changeable PyX lengths starting from an initial value
-   *initial* multiplied by *factor* again and again. The resulting lengths are thus
-   a geometric series.
+   A changeable attribute (:class:`attr.changeattr`) that generates a geometric
+   progression of visual lengths :math:`\text{initial} \cdot \text{factor}^k` for
+   major ticks (:math:`k = 0`), subticks (:math:`k = 1`), sub-subticks
+   (:math:`k = 2`), etc.
 
-There are some class variables initialized with suitable values for tick
-stroking. They are named ``ticklength.SHORT``, ``ticklength.SHORt``, …,
-``ticklength.short``, ``ticklength.normal``, ``ticklength.long``, …,
-``ticklength.LONG``. ``ticklength.normal`` is initialized with a length of
-``0.12`` and the reciprocal of the golden mean as ``factor`` whereas the others
-have a modified initial value obtained by multiplication with or division by
-appropriate multiples of  :math:`\sqrt{2}`.
+   Predefined instances with ``factor = 1 / goldenmean`` and base length
+   ``0.12 * unit.v_cm`` scaled by powers of :math:`\sqrt{2}` are provided as
+   class attributes: ``ticklength.SHORT``, ``ticklength.SHORt``,
+   ``ticklength.SHOrt``, ``ticklength.SHort``, ``ticklength.Short``,
+   ``ticklength.short``, ``ticklength.normal``, ``ticklength.long``,
+   ``ticklength.Long``, ``ticklength.LOng``, ``ticklength.LONg``, and
+   ``ticklength.LONG``.
 
+Painter Classes
+---------------
 
-.. class:: regular(innerticklength=ticklength.normal, outerticklength=None, tickattrs=[], gridattrs=None, basepathattrs=[], labeldist="0.3 cm", labelattrs=[], labeldirection=None, labelhequalize=0, labelvequalize=1, titledist="0.3 cm", titleattrs=[], titledirection=rotatetext.parallel, titlepos=0.5, texrunner=None)
+.. class:: regular(innerticklength=ticklength.normal, outerticklength=None, tickattrs=[], gridattrs=None, basepathattrs=[], labeldist=0.3*unit.v_cm, labelattrs=[], labeldirection=None, labelhequalize=0, labelvequalize=1, titledist=0.3*unit.v_cm, titleattrs=[], titledirection=rotatetext.parallel, titlepos=0.5, textengine=None)
 
-   Instances of this class are painters for regular axes like linear and
-   logarithmic axes.
+   Default painter for continuous axes (:class:`~graph.axis.axis.linear`,
+   :class:`~graph.axis.axis.logarithmic`, :class:`~graph.axis.timeaxis.timeaxis`).
 
-   *innerticklength* and *outerticklength* are visual PyX lengths of the ticks,
-   subticks, subsubticks *etc.* plotted along the axis inside and outside of the
-   graph. Provide changeable attributes to modify the lengths of ticks compared to
-   subticks *etc.* ``None`` turns off the ticks inside and outside the graph,
-   respectively.
+   * *innerticklength*, *outerticklength*: Visual length (or changeable
+     :class:`ticklength`) of ticks pointing inside and outside the graph, or
+     ``None`` to omit inner or outer ticks.
+   * *tickattrs*: Stroke attributes for ticks (supports changeable attributes to
+     style major ticks and subticks differently), or ``None`` to suppress ticks.
+   * *gridattrs*: Stroke attributes for grid lines across the graph (for example,
+     ``[color.gray(0.8)]`` or
+     ``[attr.changelist([style.linestyle.solid, style.linestyle.dotted])]``), or
+     ``None`` (default) to disable grid lines.
+   * *basepathattrs*: Stroke attributes for the axis baseline (merged with
+     ``[style.linecap.square]``), or ``None`` to omit the baseline.
+   * *labeldist*: Visual distance between the axis baseline (or outer ticks) and
+     the tick labels (default ``0.3 * unit.v_cm``).
+   * *labelattrs*: Text attributes for tick labels (merged with
+     ``[text.halign.center, text.vshift.mathaxis]``), or ``None`` to suppress
+     tick labels.
+   * *labeldirection*: Optional :class:`rotatetext` instance to rotate tick
+     labels relative to the axis.
+   * *labelhequalize*, *labelvequalize*: Aligns all tick labels along a common
+     horizontal or vertical line on straight vertical or horizontal axes.
+   * *titledist*, *titleattrs*, *titledirection*, *titlepos*: Distance, text
+     attributes (or ``None`` to hide), rotation (:attr:`rotatetext.parallel` by
+     default), and normalized position (:math:`0.5` = centered) of the axis
+     title.
+   * *textengine*: Optional text engine override (defaults to the graph's text
+     engine).
 
-   *tickattrs* and *gridattrs* are changeable stroke attributes for the ticks and
-   the grid, where ``None`` turns off the feature. *basepathattrs* are stroke
-   attributes for the axis or ``None`` to turn it off. *basepathattrs* is merged
-   with ``[style.linecap.square]``.
+.. class:: linked(innerticklength=ticklength.short, outerticklength=None, tickattrs=[], gridattrs=None, basepathattrs=[], labeldist=0.3*unit.v_cm, labelattrs=None, labeldirection=None, labelhequalize=0, labelvequalize=1, titledist=0.3*unit.v_cm, titleattrs=None, titledirection=rotatetext.parallel, titlepos=0.5, textengine=None)
 
-   *labeldist* is the distance of the labels from the axis base path as a visual
-   PyX length. *labelattrs* is a list of text attributes for the labels. It is
-   merged with ``[text.halign.center, text.vshift.mathaxis]``. *labeldirection* is
-   an instance of *rotatetext* to rotate the labels relative to the axis tick
-   direction or ``None``.
+   Subclass of :class:`regular` used by default for opposite linked axes
+   (``x2``, ``y2``), with ``innerticklength=ticklength.short`` and labels and
+   titles disabled (``labelattrs=None, titleattrs=None``).
 
-   The boolean values *labelhequalize* and *labelvequalize* force an equal
-   alignment of all labels for straight vertical and horizontal axes, respectively.
+.. class:: bar(innerticklength=None, outerticklength=None, tickattrs=[], basepathattrs=[], namedist=0.3*unit.v_cm, nameattrs=[], namedirection=None, namepos=0.5, namehequalize=0, namevequalize=1, titledist=0.3*unit.v_cm, titleattrs=[], titledirection=rotatetext.parallel, titlepos=0.5, textengine=None)
+.. class:: linkedbar(...)
 
-   *titledist* is the distance of the title from the rest of the axis as a visual
-   PyX length. *titleattrs* is a list of text attributes for the title. It is
-   merged with ``[text.halign.center, text.vshift.mathaxis]``. *titledirection* is
-   an instance of *rotatetext* to rotate the title relative to the axis tick
-   direction or ``None``. *titlepos* is the position of the title in graph
-   coordinates.
+   Painters for :class:`~graph.axis.axis.bar` and
+   :class:`~graph.axis.axis.nestedbar` axes. The ``name*`` parameters control the
+   placement and formatting of the categorical bar labels, while
+   *innerticklength* and *outerticklength* optionally mark the boundaries of each
+   bar subaxis. :class:`linkedbar` disables category names and the axis title by
+   default.
 
-   *texrunner* is the texrunner instance to create axis text like the axis title or
-   labels. When not set the texrunner of the graph instance is taken to create the
-   text.
+.. class:: split(breaklinesdist=0.05*unit.v_cm, breaklineslength=0.5*unit.v_cm, breaklinesangle=-60, titledist=0.3*unit.v_cm, titleattrs=[], titledirection=rotatetext.parallel, titlepos=0.5, textengine=None)
+.. class:: linkedsplit(...)
 
-
-.. class:: linked(innerticklength=ticklength.short, outerticklength=None, tickattrs=[], gridattrs=None, basepathattrs=[], labeldist="0.3 cm", labelattrs=None, labeldirection=None, labelhequalize=0, labelvequalize=1, titledist="0.3 cm", titleattrs=None, titledirection=rotatetext.parallel, titlepos=0.5, texrunner=None)
-
-   This class is identical to :class:`regular` up to the default values of
-   *labelattrs* and *titleattrs*. By turning off those features, this painter is
-   suitable for linked axes.
-
-
-.. class:: bar(innerticklength=None, outerticklength=None, tickattrs=[], basepathattrs=[], namedist="0.3 cm", nameattrs=[], namedirection=None, namepos=0.5, namehequalize=0, namevequalize=1, titledist="0.3 cm", titleattrs=[], titledirection=rotatetext.parallel, titlepos=0.5, texrunner=None)
-
-   Instances of this class are suitable painters for bar axes.
-
-   *innerticklength* and *outerticklength* are visual PyX lengths to mark the
-   different bar regions along the axis inside and outside of the graph. ``None``
-   turns off the ticks inside and outside the graph, respectively. *tickattrs* are
-   stroke attributes for the ticks or ``None`` to turn all ticks off.
-
-   The parameters with prefix *name* are identical to their *label* counterparts in
-   :class:`regular`. All other parameters have the same meaning as in
-   :class:`regular`.
-
-
-.. class:: linkedbar(innerticklength=None, outerticklength=None, tickattrs=[], basepathattrs=[], namedist="0.3 cm", nameattrs=None, namedirection=None, namepos=0.5, namehequalize=0, namevequalize=1, titledist="0.3 cm", titleattrs=None, titledirection=rotatetext.parallel, titlepos=0.5, texrunner=None)
-
-   This class is identical to :class:`bar` up to the default values of *nameattrs*
-   and *titleattrs*. By turning off those features, this painter is suitable for
-   linked bar axes.
-
-
-.. class:: split(breaklinesdist="0.05 cm", breaklineslength="0.5 cm", breaklinesangle=-60, titledist="0.3 cm", titleattrs=[], titledirection=rotatetext.parallel, titlepos=0.5, texrunner=None)
-
-   Instances of this class are suitable painters for split axes.
-
-   *breaklinesdist* and *breaklineslength* are the distance between axes break
-   markers in visual PyX lengths. *breaklinesangle* is the angle of the axis break
-   marker with respect to the base path of the axis. All other parameters have the
-   same meaning as in :class:`regular`.
-
-
-.. class:: linkedsplit(breaklinesdist="0.05 cm", breaklineslength="0.5 cm", breaklinesangle=-60, titledist="0.3 cm", titleattrs=None, titledirection=rotatetext.parallel, titlepos=0.5, texrunner=None)
-
-   This class is identical to :class:`split` up to the default value of
-   *titleattrs*. By turning off this feature, this painter is suitable for linked
-   split axes.
+   Painters for :class:`~graph.axis.axis.split` axes, drawing parallel break
+   slashes separated by *breaklinesdist* of length *breaklineslength* at angle
+   *breaklinesangle* (in degrees) between adjacent subaxes.
 
 
 .. module:: graph.axis.rater
+   :synopsis: Rating of candidate axis partitionings
 
-Module :mod:`graph.axis.rater`: Axes rater
-==========================================
+Module :mod:`graph.axis.rater`: Axis Raters
+===========================================
 
-The rating of axes is implemented in :mod:`graph.axis.rater`. When an axis
-partitioning scheme returns several partitioning possibilities, the partitions
-need to be rated by a positive number. The axis partitioning rated lowest is
-considered best.
+When an automatic partitioner (:class:`~graph.axis.parter.autolinear` or
+:class:`~graph.axis.parter.autologarithmic`) produces multiple candidate tick
+lists, an axis :class:`rater` assigns a non-negative penalty score to each
+candidate (where smaller scores are better):
 
-The rating consists of two steps. The first takes into account only the number
-of ticks, subticks, labels and so on in comparison to optimal numbers.
-Additionally, the extension of the axis range by ticks and labels is taken into
-account. This rating leads to a preselection of possible partitions. In the
-second step, after the layout of preferred partitionings has been calculated,
-the distance of  the labels in a partition is taken into account as well at a
-smaller weight factor by default. Thereby partitions with overlapping labels
-will be rejected completely. Exceptionally sparse or dense labels will receive a
-bad rating as well.
-
+1. **Tick count and range rating**: Scores the number of ticks, subticks, and
+   labels against target optima (:class:`cube`) and penalizes excessive range
+   expansion beyond the data bounds.
+2. **Label layout rating**: For the top-ranked candidates, paints the axis and
+   checks the spacing between adjacent label boxes (:class:`distance`). Any
+   candidate whose labels overlap is rejected completely.
 
 .. class:: cube(opt, left=None, right=None, weight=1)
 
-   Instances of this class provide a number rater. *opt* is the optimal value. When
-   not provided, *left* is set to ``0`` and *right* is set to ``3*opt``. Weight is
-   a multiplicator to the result.
+   Cubic penalty function :math:`\text{weight} \cdot ((x - \text{opt}) / (\text{other} - \text{opt}))^3`
+   evaluating how far a count :math:`x` deviates from the optimal value *opt*,
+   where *other* is *left* (default ``0``) for :math:`x < \text{opt}` and *right*
+   (default ``3 * opt``) for :math:`x > \text{opt}`.
 
-   The rater calculates ``width*((x-opt)/(other-opt))**3`` to rate the value ``x``,
-   where ``other`` is *left* (``x``<*opt*) or *right* (``x``>*opt*).
+.. class:: distance(opt=1*unit.v_cm, weight=0.1)
 
+   Rates the visual separation between adjacent tick label boxes against the
+   optimal separation *opt* (rejecting negative separations where labels overlap).
 
-.. class:: distance(opt, weight=0.1)
+.. class:: rater(ticks, labels, range, distance=distance(1*unit.v_cm), density=1)
 
-   Instances of this class provide a rater for a list of numbers. The purpose is to
-   rate the distance between label boxes. *opt* is the optimal value.
-
-   The rater calculates the sum of ``weight*(opt/x-1)`` (``x``<*opt*) or
-   ``weight*(x/opt-1)`` (``x``>*opt*) for all elements ``x`` of the list. It
-   returns this value divided by the number of elements in the list.
-
-
-.. class:: rater(ticks, labels, range, distance=distance("1 cm"), density=1)
-
-   Instances of this class are raters for axes partitionings.
-
-   *ticks* and *labels* are both lists of number rater instances, where the first
-   items are used for the number of ticks and labels, the second items are used for
-   the number of subticks (including the ticks) and sublabels (including the
-   labels) and so on until the end of the list is reached or no corresponding ticks
-   are available.
-
-   *range* is a number rater instance which rates the range of the ticks relative
-   to the range of the data.
-
-   *distance* is an distance rater instance.
-
-   For automatic partitioners, which are able to calculate several possible
-   tick lists for a given axis range, the *density* is a (linear) factor to
-   favour more or less ticks. It should not be stressed to much (its likely,
-   that the result would be unappropriate or not at all valid in terms of
-   rating label distances). Useful values are between 0.5 to 2 (even bigger for
-   large graphs).
+   Combines lists of :class:`cube` raters for *ticks* and *labels* at each hierarchy
+   level, a :class:`cube` rater for *range* extension, and a :class:`distance`
+   rater for label spacing. Increasing *density* (e.g. ``density=1.5`` or ``2``)
+   scales the optimal tick and label counts upward to favor denser ticks;
+   decreasing *density* (e.g. ``density=0.7``) favors fewer ticks.
 
 .. class:: linear(ticks=[cube(4), cube(10, weight=0.5)], labels=[cube(4)], range=cube(1, weight=2), **kwargs)
-
-   This class is suitable to rate partitionings of linear axes. It is equal to
-   :class:`rater` but defines predefined values for the arguments.
-
-
 .. class:: lin(...)
 
-   This class is an abbreviation of :class:`linear` described above.
-
+   Default rater for linear axes.
 
 .. class:: logarithmic(ticks=[cube(5, right=20), cube(20, right=100, weight=0.5)], labels=[cube(5, right=20), cube(5, right=20, weight=0.5)], range=cube(1, weight=2), **kwargs)
-
-   This class is suitable to rate partitionings of logarithmic axes. It is equal to
-   :class:`rater` but defines predefined values for the arguments.
-
-
 .. class:: log(...)
 
-   This class is an abbreviation of :class:`logarithmic` described above.
+   Default rater for logarithmic axes.
 
 
-.. module:: graph.axis.positioners
+.. module:: graph.axis.positioner
+   :synopsis: Geometric positioning of axes
 
-Module :mod:`graph.axis.positioner`: Axes positioners
+Module :mod:`graph.axis.positioner`: Axis Positioners
 =====================================================
 
-The position of an axis is defined by an instance of a class providing the
-following methods:
+Positioner instances define the geometric placement of an axis on a canvas and
+are created automatically by :class:`graph.graphxy`, :class:`graph.graphxyz`,
+and :func:`graph.axis.pathaxis`. Every positioner implements the following
+interface:
 
+.. class:: _positioner()
 
-.. class:: positioner()
+   .. method:: vbasepath(v1=None, v2=None)
 
-.. method:: positioner.vbasepath(v1=None, v2=None)
+      Returns the :class:`path.path` of the axis baseline between normalized
+      graph coordinates *v1* and *v2*.
 
-   Returns a path instance for the base path. *v1* and *v2* define the axis range
-   in graph coordinates the base path should cover.
+   .. method:: vgridpath(v)
 
+      Returns the grid line :class:`path.path` at normalized coordinate *v*, or
+      ``None`` if no grid is defined.
 
-.. method:: positioner.vgridpath(v)
+   .. method:: vtickpoint_pt(v)
 
-   Returns a path instance for the grid path at position *v* in graph coordinates.
-   The method might return ``None`` when no grid path is available (for an axis
-   along a path for example).
+      Returns ``(x_pt, y_pt)`` in PostScript points on the baseline at normalized
+      coordinate *v*.
 
+   .. method:: vtickdirection(v)
 
-.. method:: positioner.vtickpoint_pt(v)
-
-   Returns the position of *v* in graph coordinates as a tuple ``(x, y)`` in
-   points.
-
-
-.. method:: positioner.vtickdirection(v)
-
-   Returns the direction of a tick at *v* in graph coordinates as a tuple ``(dx,
-   dy)``. The tick direction points inside of the graph.
-
-The module contains several implementations of those positioners, but since the
-positioner instances are created by graphs etc. as needed, the details are not
-interesting for the average PyX user.
-
+      Returns the unit normal vector ``(dx, dy)`` pointing toward the graph
+      interior at normalized coordinate *v*.

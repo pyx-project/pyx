@@ -1,86 +1,110 @@
-
 .. module:: connector
+   :synopsis: Connecting paths (lines, arcs, curves, and polylines) between boxes
+
+.. _connector:
 
 ***********************
 Module :mod:`connector`
 ***********************
 
-This module provides classes for connecting two :class:`box`\ -instances with
-lines, arcs or curves. All constructors of the following connector-classes take
-two :class:`box`\ -instances as the two first arguments. They return a
-connecting path from the first to the second box. The overall geometry of the
-path is such that is starts/ends at the boxes' centers. It is then cut by the
-boxes' outlines. The resulting :class:`connector` will additionally be shortened
-by lengths given in the *boxdists* (a list of two lengths,
-default ``[0,0]``).
+The :mod:`connector` module constructs paths (:class:`normpath.normpath`
+subclasses) that connect two :class:`box.polygon` instances (such as
+:class:`text.textbox` objects or :class:`box.rect` boxes) using straight lines,
+circular arcs, cubic Bézier curves, or two-segment polylines.
 
-Angle keywords can be either absolute or relative. The absolute angles refer to
-the angle between x-axis and the running tangent of the connector, while the
-relative angles are between the direct connecting line of the box-centers and
-the running tangent (see figure. :ref:`fig_connector`).
+Geometry, Angles, and Bulges
+============================
 
-The bulge-keywords parameterize the deviation of the connector from the
-connecting line. It has different meanings for different connectors (see figure.
-:ref:`fig_connector`).
+All connector classes take two box instances (*box1* and *box2*) as their first
+two arguments and construct a path leading from *box1* to *box2*:
 
+1. The geometric curve is constructed between the centers (`box1.center` and
+   `box2.center`) of the two boxes.
+2. The path is then trimmed at its intersections with the boundary outlines of
+   *box1* and *box2*.
+3. Finally, the trimmed path can be shortened at its start and end by the
+   distances specified in *boxdists* (a 2-element sequence ``[dist1, dist2]``,
+   defaulting to ``[0, 0]``).
 
-Class :class:`line`
-===================
+.. code-block:: python
 
-The constructor of the :class:`line` class accepts only boxes and the
-*boxdists*.
+   from pyx import *
 
+   c = canvas.canvas()
+   b1 = c.text(0, 0, "Start", [text.halign.center, text.vshift.mathaxis])
+   b2 = c.text(4, 1, "End", [text.halign.center, text.vshift.mathaxis])
 
-Class :class:`arc`
-==================
+   c.stroke(connector.arc(b1, b2, boxdists=[0.2, 0.2]), [deco.earrow.normal])
 
-The constructor takes either the *relangle* or a combination
-of *relbulge* and *absbulge*. The "bulge" is meant to be a
-hint for the greatest distance between the connecting arc and the straight
-connection between the box-centers. (Default: ``relangle=45``,
-``relbulge=None``, ``absbulge=None``)
+Angles and Bulge Parameters
+---------------------------
 
-Note that the bulge-keywords override the angle-keyword.
+Connectors that bend (:class:`arc`, :class:`curve`, and :class:`twolines`) are
+parameterized by tangent angles and/or bulge distances (illustrated in figure
+:ref:`fig_connector`):
 
-If both *relbulge* and *absbulge* are given, they will be
-added.
-
-
-Class :class:`curve`
-====================
-
-The constructor takes both angle- and bulge-keywords. Here, the bulges are used
-as distances between the control points of the cubic Beziér-curve. For the signs
-of the angle- and bulge-keywords refer to figure :ref:`fig_connector`.
-
-*absangle1* or *relangle1* ---  *absangle2* or
-*relangle2*, where the absolute angle overrides the relative if both
-are given. (Default: ``relangle1=45``, ``relangle2=45``, ``absangle1=None``,
-``absangle2=None``)
-
-*absbulge* and *relbulge*, where they will be added if both
-are given. ---  (Default: ``absbulge=None``, ``relbulge=0.39``; these default
-values produce output similar to the defaults of :class:`arc`.)
+* **Relative vs. absolute angles**:
+  Relative angles (*relangle*, *relangle1*, *relangle2*) are measured in degrees
+  relative to the straight line connecting ``box1.center`` to ``box2.center``.
+  Absolute angles (*absangle1*, *absangle2*) are measured counter-clockwise from
+  the positive *x*-axis. Whenever both an absolute and a relative angle are
+  specified for the same endpoint, the absolute angle takes precedence.
+* **Bulge distances**:
+  Bulge parameters (*relbulge* and *absbulge*) control how far the connector
+  deviates from the straight line between the box centers. *relbulge* is a
+  dimensionless fraction of the center-to-center distance, whereas *absbulge* is
+  an absolute PyX length. If both *relbulge* and *absbulge* are given, their
+  contributions are summed.
 
 .. _fig_connector:
 .. figure:: connector.*
-   :align:  center
+   :align: center
 
-   The angle-parameters of the connector.arc (left panel) and the connector.curve (right panel) classes.
+   Geometric meaning of the angle and bulge parameters for :class:`connector.arc`
+   (left) and :class:`connector.curve` (right).
 
 
-Class :class:`twolines`
-=======================
+Connector Classes
+=================
 
-This class returns two connected straight lines. There is a vast variety of
-combinations for angle- and length-keywords. The user has to make sure to
-provide a non-ambiguous set of keywords:
+Each connector class is available both in user units (e.g. :class:`line`,
+:class:`arc`, :class:`curve`, :class:`twolines`) and in PostScript points (with a
+``_pt`` suffix, where *boxdists* and *absbulge* are given in points).
 
-*absangle1* or *relangle1* for the first angle, ---
-*relangleM* for the middle angle and ---  *absangle2* or
-*relangle2* for the ending angle. Again, the absolute angle overrides
-the relative if both are given. (Default: all five angles are ``None``)
+.. class:: line(box1, box2, boxdists=[0, 0])
 
-*length1* and *length2* for the lengths of the connecting
-lines. (Default: ``None``)
+   Connects *box1* and *box2* with a straight line segment between their centers,
+   trimmed at the box outlines and shortened by *boxdists*.
 
+.. class:: arc(box1, box2, boxdists=[0, 0], relangle=45, absbulge=None, relbulge=None)
+
+   Connects *box1* and *box2* with a circular arc.
+
+   * *relangle*: Angle (in degrees) between the chord connecting the box centers
+     and the arc's tangent at the centers (default ``45``).
+   * *absbulge*, *relbulge*: Maximum perpendicular distance (sagitta) between the
+     arc and the straight chord connecting the box centers. Specifying either
+     *absbulge* or *relbulge* overrides *relangle*.
+
+.. class:: curve(box1, box2, boxdists=[0, 0], relangle1=45, relangle2=45, absangle1=None, absangle2=None, absbulge=None, relbulge=0.39)
+
+   Connects *box1* and *box2* with a cubic Bézier curve. Here the bulge specifies
+   the distance from each box center to the corresponding Bézier control point
+   along the departure/arrival tangent direction (see the right panel of figure
+   :ref:`fig_connector` for sign conventions).
+
+   * *relangle1*, *relangle2*: Departure and arrival tangent angles relative to
+     the center-to-center line (default ``45`` for both).
+   * *absangle1*, *absangle2*: Absolute departure and arrival tangent angles in
+     degrees (override *relangle1* / *relangle2* if given).
+   * *absbulge*, *relbulge*: Control-point distances (default ``relbulge=0.39``,
+     which closely approximates a circular arc when ``relangle1 = relangle2 = 45``).
+
+.. class:: twolines(box1, box2, boxdists=[0, 0], relangle1=None, relangle2=None, absangle1=None, absangle2=None, relangleM=None, length1=None, length2=None)
+
+   Connects *box1* and *box2* with a two-segment polyline meeting at an
+   intermediate corner point. You must supply an unambiguous combination of two
+   constraints chosen from the departure angle (*absangle1* or *relangle1*),
+   arrival angle (*absangle2* or *relangle2*), interior angle between the two
+   segments (*relangleM*), first segment length (*length1*), or second segment
+   length (*length2*).

@@ -1,1130 +1,941 @@
-
 .. module:: graph
+   :synopsis: 1D, 2D, and 3D data and function plotting
+
+.. _graph:
 
 ******
 Graphs
 ******
 
-
 Introduction
 ============
 
-PyX can be used for data and function plotting. At present x-y-graphs and
-x-y-z-graphs are supported only. However, the component architecture of the
-graph system described in section :ref:`graph_components` allows for additional
-graph geometries while reusing most of the existing components.
+PyX provides a flexible, publication-quality plotting system for 1D, 2D
+(*x*–*y*), and 3D (*x*–*y*–*z*) data and mathematical functions. Its modular
+component architecture (described in section :ref:`graph_components`) cleanly
+separates graph geometry, data sources, plotting styles, legends (keys), and
+axes.
 
-Creating a graph splits into two basic steps. First you have to create a graph
-instance. The most simple form would look like::
+A Minimal Plot
+--------------
 
-   from pyx import *
-   g = graph.graphxy(width=8)
+Creating a graph in PyX takes three steps:
 
-The graph instance ``g`` created in this example can then be used to actually
-plot something into the graph. Suppose you have some data in a file
-:file:`graph.dat` you want to plot. The content of the file could look like:
+1. Instantiate a graph object such as :class:`graph.graphxy`:
 
+   .. code-block:: python
 
-.. include:: graph.dat
-   :literal:
+      from pyx import *
+      g = graph.graphxy(width=8)
 
-To plot these data into the graph ``g`` you must perform::
+2. Call :meth:`~graph.graphxy.plot` with one or more data sources (and optional
+   plot styles). For example, given a data file :file:`graph.dat` containing two
+   columns of numbers:
 
-   g.plot(graph.data.file("graph.dat", x=1, y=2))
+   .. include:: graph.dat
+      :literal:
 
-The method :meth:`plot` takes the data to be plotted and optionally a list of
-graph styles to be used to plot the data. When no styles are provided, a default
-style defined by the data instance is used. For data read from a file by an
-instance of :class:`graph.data.file`, the default are symbols. When
-instantiating :class:`graph.data.file`, you not only specify the file name, but
-also a mapping from columns to axis names and other information the styles might
-make use of (*e.g.* data for error bars to be used by the errorbar style).
+   we can plot column 1 against column 2 with:
 
-While the graph is already created by that, we still need to perform a write of
-the result into a file. Since the graph instance is a canvas, we can just call
-its :meth:`writeEPSfile` method.  ::
+   .. code-block:: python
 
-   g.writeEPSfile("graph")
+      g.plot(graph.data.file("graph.dat", x=1, y=2))
 
-The result :file:`graph.eps` is shown in figure :ref:`fig_graph`.
+   When no explicit style list is passed to :meth:`~graph.graphxy.plot`, each
+   data source uses its own default style—symbols (:class:`graph.style.symbol`)
+   for tabular data such as :class:`graph.data.file`, and continuous lines
+   (:class:`graph.style.line`) for analytical functions such as
+   :class:`graph.data.function`.
+
+3. Write the finished graph to a file. Because every graph instance is a
+   subclass of :class:`canvas.canvas`, you can call any canvas output method (or
+   insert the graph into another canvas):
+
+   .. code-block:: python
+
+      g.writeEPSfile("graph")
+
+The resulting plot :file:`graph.eps` is shown in figure :ref:`fig_graph`.
 
 .. _fig_graph:
 .. figure:: graph.*
-   :align:  center
+   :align: center
 
-   A minimalistic plot for the data from file :file:`graph.dat`.
+   A minimal scatter plot of the data in :file:`graph.dat`.
 
-Instead of plotting data from a file, other data source are available as well.
-For example function data is created and placed into :meth:`plot` by the
-following line::
+Combining Multiple Datasets and Functions
+-----------------------------------------
+
+You can overlay multiple datasets and analytical functions on the same graph by
+calling :meth:`~graph.graphxy.plot` several times before writing the output. For
+example, to plot the parabola :math:`y(x) = x^2` alongside the data file:
+
+.. code-block:: python
 
    g.plot(graph.data.function("y(x)=x**2"))
 
-You can plot different data in a single graph by calling :meth:`plot` several
-times before writing the output to a file. Note that a calling :meth:`plot`
-will fail once a graph was forced to "finish" itself. This happens
-automatically, when the graph is written to a file. Thus it is not an option to
-call :meth:`plot` after writing the output. The topic of the finalization of a
-graph is addressed in more detail in section :mod:`graph.graph`. As you can see
-in figure :ref:`fig_graph2`, a function is plotted as a line by default.
-
 .. _fig_graph2:
 .. figure:: graph2.*
-   :align:  center
+   :align: center
 
-   Plotting data from a file together with a function.
+   Plotting tabular data from a file together with an analytical function.
 
-While the axes ranges got adjusted automatically in the previous example, they
-might be fixed by keyword options in axes constructors. Plotting only a function
-will need such a setting at least in the variable coordinate. The following code
-also shows how to set a logarithmic axis in y-direction:
+Configuring Axes and Keyword-Splitting Shortcuts
+------------------------------------------------
 
+In the examples above, the *x* and *y* axes were created automatically as linear
+axes (:class:`graph.axis.linear`) and their ranges were determined from the
+plotted data. When plotting only an analytical function, or when you want fixed
+axis bounds, titles, or logarithmic scaling, you can pass explicit axis
+instances (see chapter :ref:`axis`):
 
 .. include:: graph3.py
    :literal:
 
-The result is shown in figure :ref:`fig_graph3`.
+The resulting plot with a logarithmic *y*-axis is shown in figure
+:ref:`fig_graph3`.
 
 .. _fig_graph3:
 .. figure:: graph3.*
-   :align:  center
+   :align: center
 
-   Plotting a function for a given axis range and use a logarithmic y-axis.
+   Plotting a function over a fixed *x*-range with a logarithmic *y*-axis.
+
+.. tip::
+
+   **Concise axis configuration via underscore keyword splitting**:
+   Instead of instantiating :class:`graph.axis.linear` or
+   :class:`graph.axis.painter.regular` explicitly just to set a few options, you
+   can pass underscore-separated keyword arguments directly to
+   :class:`graph.graphxy` (powered by :func:`utils.kwsplit`). For example:
+
+   .. code-block:: python
+
+      g = graph.graphxy(width=8,
+                        x_min=0, x_max=10, x_title=r"$x$",
+                        y_title=r"$f(x)$",
+                        x_painter_gridattrs=[color.gray(0.8)])
+
+   Here ``x_min``, ``x_max``, and ``x_title`` are automatically forwarded to the
+   ``x`` axis, and ``x_painter_gridattrs`` is forwarded to the ``painter`` of the
+   ``x`` axis!
 
 
 .. _graph_components:
 
-Component architecture
-======================
+Component Architecture and Canvas Layers
+========================================
 
-Creating a graph involves a variety of tasks, which thus can be separated into
-components without significant additional costs. This structure manifests itself
-also in the PyX source, where there are different modules for the different
-tasks. They interact by some well-defined interfaces. They certainly have to be
-completed and stabilized in their details, but the basic structure came up in
-the continuous development quite clearly. The basic parts of a graph are:
+PyX splits the work of constructing a graph across five cooperating modules:
 
-graph
-   Defines the geometry of the graph by means of graph coordinates with range
-   [0:1]. Keeps lists of plotted data, axes *etc.*
+``graph`` (:mod:`graph.graph`)
+   Defines the overall geometry of the plot area using normalized *graph
+   coordinates* :math:`v \in [0, 1]` along each dimension, manages the canvas
+   layers, coordinates axis range adjustment and style selection, and provides
+   geometric transformation methods between data coordinates, graph coordinates,
+   and canvas coordinates.
 
-data
-   Produces or prepares data to be plotted in graphs.
+``data`` (:mod:`graph.data`)
+   Reads, generates, or transforms data columns (from files, Python lists, or
+   mathematical expressions) and supplies points to the styles.
 
-style
-   Performs the plotting of the data into the graph. It gets data, converts them
-   via the axes into graph coordinates and uses the graph to finally plot the data
-   with respect to the graph geometry methods.
+``style`` (:mod:`graph.style`)
+   Translates data values into visual marks on the graph canvas (symbols, lines,
+   error bars, histograms, bars, 3D surfaces, heatmaps/densities, arrows, and
+   text labels).
 
-key
-   Responsible for the graph keys.
+``key`` (:mod:`graph.key`)
+   Builds and positions the graph legend from the titles and style samples of the
+   plotted items.
 
-axis
-   Creates axes for the graph, which take care of the mapping from data values to
-   graph coordinates. Because axes are also responsible for creating ticks and
-   labels, showing up in the graph themselves and other things, this task is
-   split into several independent subtasks. Axes are discussed separately in
-   chapter :mod:`axis`.
+``axis`` (:mod:`graph.axis`)
+   Maps data values to normalized graph coordinates :math:`[0, 1]` and partitions,
+   formats, rates, and paints axis baselines, ticks, labels, titles, and grids
+   (covered in detail in chapter :ref:`axis`).
+
+Canvas Layer Ordering in a Graph
+--------------------------------
+
+Every :class:`graph.graph` instance is a :class:`canvas.canvas` pre-initialized
+with nine named layers in back-to-front drawing order:
+
+1. ``"background"`` — graph background fill and border
+2. ``"grid"`` — axis grid lines
+3. ``"filldata"`` — filled data regions (such as bars, rectangles, and density bitmaps)
+4. ``"axes.baseline"`` — axis baselines
+5. ``"axes.ticks"`` — axis tick marks
+6. ``"axes.labels"`` — axis tick labels
+7. ``"axes.title"`` — axis titles
+8. ``"data"`` — stroked data lines, symbols, and error bars
+9. ``"key"`` — graph legend (key)
+
+Because drawing order is governed by these layers rather than the order in which
+internal ``do*()`` methods are executed, grid lines always appear behind data
+and axes labels always remain legible on top of grid lines. If you draw custom
+annotations onto a graph canvas ``g``, you can target any layer directly via
+``g.layer("filldata").fill(...)`` or ``g.layer("data").stroke(...)``.
+
 
 .. module:: graph.graph
+   :synopsis: 1D, 2D, and 3D graph geometries
 
-Module :mod:`graph.graph`: Graph geometry
+Module :mod:`graph.graph`: Graph Geometry
 =========================================
 
+The classes :class:`graphxy`, :class:`graphx`, and :class:`graphxyz` are defined
+in :mod:`graph.graph` and re-exported at the top level of :mod:`graph` as
+``graph.graphxy``, ``graph.graphx``, and ``graph.graphxyz``.
 
-The classes :class:`graphxy` and :class:`graphxyz` are part of the module
-:mod:`graph.graph`. However, there are shortcuts to access the classes via
-``graph.graphxy`` and ``graph.graphxyz``, respectively.
+2D Graphs (:class:`graphxy`)
+----------------------------
 
+.. class:: graphxy(xpos=0, ypos=0, width=None, height=None, ratio=goldenmean, key=None, backgroundattrs=None, axesdist=0.8*unit.v_cm, flipped=False, xaxisat=None, yaxisat=None, **axes)
 
-.. class:: graphxy(xpos=0, ypos=0, width=None, height=None, ratio=goldenmean, key=None, backgroundattrs=None, axesdist=0.8*unit.v_cm, xaxisat=None, yaxisat=None, **axes)
+   Constructs a two-dimensional *x*–*y* graph.
 
-   This class provides an x-y-graph. A graph instance is also a fully functional
-   canvas.
+   * *xpos*, *ypos*: Lower-left corner of the plot area on the graph canvas (in
+     user units or PyX lengths; default ``0``).
+   * *width*, *height*, *ratio*: Dimensions of the rectangular plot area
+     (excluding the space occupied by ticks, labels, and titles outside the box).
+     At least *width* or *height* must be specified; if only one is given, the
+     other is computed using *ratio* (which defaults to the golden ratio
+     :math:`(1 + \sqrt{5})/2 \approx 1.618`).
+   * *key*: Optional :class:`graph.key.key` instance to generate a graph legend,
+     or ``None`` (default) to omit the legend.
+   * *backgroundattrs*: List of fill/stroke attributes (e.g.
+     ``[deco.filled([color.gray(0.95)])]``) used to draw the rectangular plot
+     background in the ``"background"`` layer, or ``None`` (default) for a
+     transparent background.
+   * *axesdist*: Distance between multiple parallel axes stacked on the same side
+     of the graph (default ``0.8 * unit.v_cm``).
+   * *flipped*: When ``True``, swaps the geometric orientation of the *x* and *y*
+     axes so that the *x*-axis runs vertically and the *y*-axis runs
+     horizontally (default ``False``).
+   * *xaxisat*, *yaxisat*: Data value along the orthogonal axis (*y* or *x*,
+     respectively) at which the main ``x`` or ``y`` axis should be positioned
+     inside the plot (for example, ``xaxisat=0, yaxisat=0`` to cross the axes at
+     the origin). Setting *xaxisat* or *yaxisat* disables automatic creation of
+     the opposite linked axis (``x2`` or ``y2``).
+   * *\*\*axes*: Axis instances or underscore-split axis parameters. Valid axis
+     names are ``x``, ``x2``, ``x3``, … and ``y``, ``y2``, ``y3``, ….
 
-   The position of the graph on its own canvas is specified by *xpos* and *ypos*.
-   The size of the graph is specified by *width*, *height*, and *ratio*. These
-   parameters define the size of the graph area not taking into account the
-   additional space needed for the axes. Note that you have to specify at least
-   *width* or *height*. *ratio* will be used as the ratio between *width* and
-   *height* when only one of these is provided.
+     - If neither ``x`` nor ``x2`` is specified, ``x`` defaults to
+       :class:`graph.axis.linear`.
+     - If ``x2`` (or ``y2``) is not specified and *xaxisat* (or *yaxisat*) is
+       ``None``, PyX automatically creates a :class:`graph.axis.linkedaxis` at
+       the opposite side of the plot box (top for ``x2``, right for ``y2``). Pass
+       ``x2=None`` or ``y2=None`` to suppress the top or right axis.
+     - Odd-numbered axes (``x``, ``x3``, … and ``y``, ``y3``, …) are placed at
+       the bottom and left of the plot; even-numbered axes (``x2``, ``x4``, … and
+       ``y2``, ``y4``, …) are placed at the top and right, spaced outward by
+       *axesdist*.
+     - Any keyword argument of the form ``<axisname>_<option>=...`` (such as
+       ``x_min=0`` or ``y_painter_gridattrs=...``) is split via
+       :func:`utils.kwsplit` and applied to the corresponding axis.
 
-   *key* can be set to a :class:`graph.key.key` instance to create an automatic
-   graph key. ``None`` omits the graph key.
+   .. attribute:: graphxy.axes
 
-   *backgroundattrs* is a list of attributes for drawing the background of the
-   graph. Allowed are decorators, strokestyles, and fillstyles. ``None`` disables
-   background drawing.
+      Dictionary mapping axis names (``"x"``, ``"y"``, ``"x2"``, ``"y2"``, …) to
+      their :class:`graph.axis.anchoredaxis` instances.
 
-   *axisdist* is the distance between axes drawn at the same side of a graph.
+Plotting Data and Accessing Plot Items
+--------------------------------------
 
-   *xaxisat* and *yaxisat* specify a value at the y and x axis, where the
-   corresponding axis should be moved to. It's a shortcut for corresonding calls of
-   :meth:`axisatv` described below. Moving an axis by *xaxisat* or *yaxisat*
-   disables the automatic creation of a linked axis at the opposite side of the
-   graph.
+.. method:: graphxy.plot(data, styles=None, rangewarning=1)
 
-   *\*\*axes* receives axes instances. Allowed keywords (axes names) are ``x``,
-   ``x2``, ``x3``, *etc.* and ``y``, ``y2``, ``y3``, *etc.* When not providing an
-   ``x`` or ``y`` axis, linear axes instances will be used automatically. When not
-   providing a ``x2`` or ``y2`` axis, linked axes to the ``x`` and ``y`` axes are
-   created automatically and *vice versa*. As an exception, a linked axis is not
-   created automatically when the axis is placed at a specific position by
-   *xaxisat* or *yaxisat*. You can disable the automatic creation of axes by
-   setting the linked axes to ``None``. The even numbered axes are plotted at the
-   top (``x`` axes) and right (``y`` axes) while the others are plotted at the
-   bottom (``x`` axes) and left (``y`` axes) in ascending order each.
+   Adds *data* (a :mod:`graph.data` instance, or an iterable of data instances)
+   to the graph to be plotted with *styles* (a list of :mod:`graph.style`
+   instances, or ``None`` to use ``data.defaultstyles``).
 
-Some instance attributes might be useful for outside read-access. Those are:
+   Returns a :class:`plotitem` instance (or a list of :class:`plotitem` instances
+   if *data* was an iterable). When the exact same *styles* list object is reused
+   across multiple :meth:`plot` calls on the same graph, the styles automatically
+   cycle through their changeable attributes (such as symbol shapes or dash
+   patterns).
 
+   .. tip::
 
-.. attribute:: graphxy.axes
+      **Accessing plotted paths**:
+      After calling ``g.doplot()`` (or ``g.finish()``), a :class:`plotitem`
+      provides attribute access to data stored by its styles. In particular, when
+      plotting with :class:`graph.style.line`, ``p = g.plot(...); g.doplot(); p.path``
+      returns the plotted :class:`path.path` in canvas coordinates—ideal for
+      filling the area between two curves using :meth:`path.path.joined`!
 
-   A dictionary mapping axes names to the :class:`anchoredaxis` instances.
+Graph Lifecycle and Finalization Methods
+----------------------------------------
 
-To actually plot something into the graph, the following instance method
-:meth:`plot` is provided:
+A graph accumulates data across :meth:`plot` calls and automatically finalizes
+its layout and drawing when written to a file or when its :meth:`bbox` is
+queried. If you want to query data positions (:meth:`pos`) or axis paths before
+writing the file, call :meth:`dolayout` (or :meth:`finish`) explicitly. Calling
+any ``do*()`` method multiple times is safe (subsequent calls are no-ops):
 
+.. method:: graphxy.doranges()
 
-.. method:: graphxy.plot(data, styles=None)
-
-   Adds *data* to the list of data to be plotted. Sets *styles* to be used for
-   plotting the data. When *styles* is ``None``, the default styles for the data as
-   provided by *data* is used.
-
-   *data* should be an instance of any of the data described in section
-   :mod:`graph.data`.
-
-   When the same combination of styles (*i.e.* the same references) are used
-   several times within the same graph instance, the styles are kindly asked by the
-   graph to iterate their appearance. Its up to the styles how this is performed.
-
-   Instead of calling the plot method several times with different *data* but the
-   same style, you can use a list (or something iterable) for *data*.
-
-While a graph instance only collects data initially, at a certain point it must
-create the whole plot. Once this is done, further calls of :meth:`plot` will
-fail. Usually you do not need to take care about the finalization of the graph,
-because it happens automatically once you write the plot into a file. However,
-sometimes position methods (described below) are nice to be accessible. For
-that, at least the layout of the graph must have been finished. However, the
-drawing order is based on canvas layers and thus the order in which the
-:meth:`do`\ -methods are called will not alter the output. Multiple calls to
-any of the :meth:`do`\ -methods have no effect (only the first call counts).
-The orginal order in which the :meth:`do`\ -methods are called is:
-
+   Computes automatic axis ranges from all plotted data sources and evaluates
+   dynamic data sources (such as :class:`graph.data.function`).
 
 .. method:: graphxy.dolayout()
 
-   Fixes the layout of the graph. As part of this work, the ranges of the axes are
-   fitted to the data when the axes ranges are allowed to adjust themselves to the
-   data ranges. The other :meth:`do`\ -methods ensure, that this method is always
-   called first.
-
+   Runs :meth:`doranges`, partitions and paints all axes, and fixes the geometry
+   of the graph. After :meth:`dolayout` has run, coordinate conversion methods
+   such as :meth:`pos` are ready to use.
 
 .. method:: graphxy.dobackground()
 
-   Draws the background.
-
+   Draws the graph background if *backgroundattrs* was specified.
 
 .. method:: graphxy.doaxes()
 
-   Inserts the axes.
+   Inserts the painted axis layers into the graph canvas.
 
+.. method:: graphxy.dostyles()
+
+   Selects changeable style attributes across all plotted datasets. Once
+   :meth:`dostyles` has been called, no further :meth:`plot` calls are allowed.
 
 .. method:: graphxy.doplotitem(plotitem)
 
-   Plots the plotitem as returned by the graphs plot method.
-
+   Draws a single *plotitem* onto the graph canvas.
 
 .. method:: graphxy.doplot()
 
-   Plots all (remaining) plotitems.
+   Draws all remaining plot items onto the graph canvas.
 
+.. method:: graphxy.dokeyitem(plotitem)
 
-.. method:: graphxy.dokeyitem()
-
-   Inserts a plotitem in the graph key as returned by the graphs plot method.
-
+   Registers *plotitem* with the graph legend.
 
 .. method:: graphxy.dokey()
 
-   Inserts the graph key.
-
+   Paints and inserts the graph legend (:class:`graph.key.key`).
 
 .. method:: graphxy.finish()
 
-   Finishes the graph by calling all pending :meth:`do`\ -methods. This is done
-   automatically, when the output is created.
+   Executes all pending lifecycle steps (:meth:`dobackground`, :meth:`doaxes`,
+   :meth:`doplot`, and :meth:`dokey`). Called automatically before output or
+   bounding-box calculation.
 
-The graph provides some methods to access its geometry:
-
+Coordinate Queries and Axis Positioning
+---------------------------------------
 
 .. method:: graphxy.pos(x, y, xaxis=None, yaxis=None)
+.. method:: graphxy.pos_pt(x, y, xaxis=None, yaxis=None)
 
-   Returns the given point at *x* and *y* as a tuple ``(xpos, ypos)`` at the graph
-   canvas. *x* and *y* are anchoredaxis instances for the two axes *xaxis* and
-   *yaxis*. When *xaxis* or *yaxis* are ``None``, the axes with names ``x`` and
-   ``y`` are used. This method fails if called before :meth:`dolayout`.
-
+   Converts data values ``(x, y)`` along *xaxis* and *yaxis* (defaulting to
+   ``self.axes["x"]`` and ``self.axes["y"]``) into canvas coordinates
+   ``(xpos, ypos)`` (in user units for :meth:`pos`, or PostScript points for
+   :meth:`pos_pt`). Requires :meth:`dolayout` to have been called if axis ranges
+   are automatic.
 
 .. method:: graphxy.vpos(vx, vy)
+.. method:: graphxy.vpos_pt(vx, vy)
 
-   Returns the given point at *vx* and *vy* as a tuple ``(xpos, ypos)`` at the
-   graph canvas. *vx* and *vy* are graph coordinates with range [0:1].
-
+   Converts normalized graph coordinates ``(vx, vy)`` in :math:`[0, 1]^2` into
+   canvas coordinates ``(xpos, ypos)``.
 
 .. method:: graphxy.vgeodesic(vx1, vy1, vx2, vy2)
-
-   Returns the geodesic between points *vx1*, *vy1* and *vx2*, *vy2* as a path. All
-   parameters are in graph coordinates with range [0:1]. For :class:`graphxy` this
-   is a straight line.
-
-
 .. method:: graphxy.vgeodesic_el(vx1, vy1, vx2, vy2)
 
-   Like :meth:`vgeodesic` but this method returns the path element to connect the
-   two points.
-
-.. index::
-   single: xbasepath()@xbasepath() (graphxy method)
-   single: xvbasepath()@xvbasepath() (graphxy method)
-   single: xgridpath()@xgridpath() (graphxy method)
-   single: xvgridpath()@xvgridpath() (graphxy method)
-   single: xtickpoint()@xtickpoint() (graphxy method)
-   single: xvtickpoint()@xvtickpoint() (graphxy method)
-   single: xtickdirection()@xtickdirection() (graphxy method)
-   single: xvtickdirection()@xvtickdirection() (graphxy method)
-   single: ybasepath()@ybasepath() (graphxy method)
-   single: yvbasepath()@yvbasepath() (graphxy method)
-   single: ygridpath()@ygridpath() (graphxy method)
-   single: yvgridpath()@yvgridpath() (graphxy method)
-   single: ytickpoint()@ytickpoint() (graphxy method)
-   single: yvtickpoint()@yvtickpoint() (graphxy method)
-   single: ytickdirection()@ytickdirection() (graphxy method)
-   single: yvtickdirection()@yvtickdirection() (graphxy method)
-
-Further geometry information is available by the :attr:`axes` instance variable,
-with is a dictionary mapping axis names to :class:`anchoredaxis` instances.
-Shortcuts to the anchoredaxis positioner methods for the ``x``\ - and ``y``\
--axis become available after :meth:`dolayout` as :class:`graphxy` methods
-``Xbasepath``, ``Xvbasepath``, ``Xgridpath``, ``Xvgridpath``, ``Xtickpoint``,
-``Xvtickpoint``, ``Xtickdirection``, and ``Xvtickdirection`` where the prefix
-``X`` stands for ``x`` and ``y``.
-
-
-.. method:: graphxy.axistrafo(axis, t)
-
-   This method can be used to apply a transformation *t* to an
-   :class:`anchoredaxis` instance *axis* to modify the axis position and the like.
-   This method fails when called on a not yet finished axis, i.e. it should be used
-   after :meth:`dolayout`.
-
+   Returns the geodesic path (:meth:`vgeodesic`) or path element
+   (:meth:`vgeodesic_el`) connecting ``(vx1, vy1)`` to ``(vx2, vy2)`` in
+   normalized graph coordinates (a straight line segment for :class:`graphxy`).
 
 .. method:: graphxy.axisatv(axis, v)
 
-   This method calls :meth:`axistrafo` with a transformation to move the axis
-   *axis* to a graph position *v* (in graph coordinates).
+   Translates the anchored *axis* to the normalized graph coordinate *v* along
+   the orthogonal direction (must be called after :meth:`dolayout`).
 
-The class :class:`graphxyz` is very similar to the :class:`graphxy` class,
-except for its additional dimension. In the following documentation only the
-differences to the :class:`graphxy` class are described.
+.. index::
+   single: xbasepath() (graphxy method)
+   single: xvbasepath() (graphxy method)
+   single: xgridpath() (graphxy method)
+   single: xvgridpath() (graphxy method)
+   single: xtickpoint() (graphxy method)
+   single: xvtickpoint() (graphxy method)
+   single: xtickdirection() (graphxy method)
+   single: xvtickdirection() (graphxy method)
+   single: ybasepath() (graphxy method)
+   single: yvbasepath() (graphxy method)
+   single: ygridpath() (graphxy method)
+   single: yvgridpath() (graphxy method)
+   single: ytickpoint() (graphxy method)
+   single: xvtickpoint() (graphxy method)
+   single: ytickdirection() (graphxy method)
+   single: yvtickdirection() (graphxy method)
 
+In addition, for the primary ``x`` and ``y`` axes, :class:`graphxy` exposes
+shortcut methods ``Xbasepath``, ``Xvbasepath``, ``Xgridpath``, ``Xvgridpath``,
+``Xtickpoint``, ``Xtickpoint_pt``, ``Xvtickpoint``, ``Xvtickpoint_pt``,
+``Xtickdirection``, and ``Xvtickdirection`` (where ``X`` is ``x`` or ``y``) that
+delegate directly to ``self.axes["x"]`` and ``self.axes["y"]`` (see
+:class:`graph.axis.anchoredaxis`).
+
+1D Graphs and Color Bars (:class:`graphx`)
+------------------------------------------
+
+.. class:: graphx(xpos=0, ypos=0, length=None, size=0.5*unit.v_cm, direction="vertical", key=None, backgroundattrs=None, axesdist=0.8*unit.v_cm, **kwargs)
+
+   A one-dimensional specialization of :class:`graphxy` with a single active axis
+   dimension (``x``, ``x2``, …) of length *length* and cross-sectional width
+   *size* (default ``0.5 * unit.v_cm``), oriented either ``"vertical"`` (default)
+   or ``"horizontal"``. :class:`graphx` is used automatically as the color scale
+   legend (``keygraph``) for :class:`graph.style.rect`,
+   :class:`graph.style.surface`, and :class:`graph.style.density` plots.
+
+3D Graphs (:class:`graphxyz`)
+-----------------------------
 
 .. class:: graphxyz(xpos=0, ypos=0, size=None, xscale=1, yscale=1, zscale=1/goldenmean, xy12axesat=None, xy12axesatname="z", projector=central(10, -30, 30), key=None, **axes)
 
-   This class provides an x-y-z-graph.
+   Constructs a three-dimensional *x*–*y*–*z* graph projected onto the 2D canvas.
 
-   The position of the graph on its own canvas is specified by *xpos* and *ypos*.
-   The size of the graph is specified by *size* and the length factors *xscale*,
-   *yscale*, and *zscale*. The final size of the graph depends on the projector
-   *projector*, which is called with ``x``, ``y``, and ``z`` values up to *xscale*,
-   *yscale*, and  *zscale* respectively and scaling the result by *size*. For a
-   parallel projector changing *size* is thus identical to changing *xscale*,
-   *yscale*, and *zscale* by the same factor. For the central projector the
-   projectors internal distance would also need to be changed by this factor. Thus
-   *size* changes the size of the whole graph without changing the projection.
+   * *xpos*, *ypos*: Origin of the projected graph on the canvas.
+   * *size*: Overall scaling length of the projected 3D box.
+   * *xscale*, *yscale*, *zscale*: Relative scale factors along the three dimensions
+     (default ``1``, ``1``, and ``1 / goldenmean``).
+   * *xy12axesat*, *xy12axesatname*: Moves the bottom *x*–*y* plane (containing
+     axes ``x``, ``x2``, ``y``, ``y2``) to the specified data value along axis
+     *xy12axesatname* (default ``"z"``).
+   * *projector*: A 3D-to-2D projection instance—either :class:`central`
+     (perspective projection) or :class:`parallel` (orthographic/parallel
+     projection), also accessible as class attributes ``graphxyz.central`` and
+     ``graphxyz.parallel``.
+   * *\*\*axes*: Supports up to four axes per dimension (``x``, ``x2``, ``x3``,
+     ``x4``, ``y``, ``y2``, ``y3``, ``y4``, ``z``, ``z2``, ``z3``, ``z4``).
+     ``x``, ``x2``, ``y``, ``y2`` border the bottom *x*–*y* plane (with ``x`` and
+     ``y`` automatically placed along the front edges closest to the viewer);
+     ``x3``, ``x4``, ``y3``, ``y4`` border the top *x*–*y* plane; and ``z``,
+     ``z2``, ``z3``, ``z4`` run along the four vertical corners.
 
-   *xy12axesat* moves the xy-plane of the axes ``x``, ``x2``, ``y``, ``y2`` to the
-   given value at the axis *xy12axesatname*.
+   In addition to 3D versions of :meth:`pos`, :meth:`vpos`, :meth:`vgeodesic`,
+   and :meth:`vgeodesic_el` (each taking three coordinates *x*, *y*, *z*),
+   :class:`graphxyz` provides depth and surface-normal angle queries used for
+   occlusion sorting and 3D lighting:
 
-   *projector* defines the conversion of 3d coordinates to 2d coordinates. It can
-   be an instance of :class:`central` or :class:`parallel` described below.
+   .. method:: graphxyz.vzindex(vx, vy, vz)
 
-   *\*\*axes* receives axes instances as for :class:`graphxy`. The graphxyz allows
-   for 4 axes per graph dimension ``x``, ``x2``, ``x3``, ``x4``, ``y``, ``y2``,
-   ``y3``, ``y4``, ``z``, ``z2``, ``z3``, and ``z4``. The x-y-plane is the
-   horizontal plane at the bottom and the ``x``, ``x2``, ``y``, and ``y2`` axes are
-   placed at the boundary of this plane with ``x`` and ``y`` always being in front.
-   ``x3``, ``x4``, ``y3``, and ``y4`` are handled similar, but for the top plane of
-   the graph. The ``z`` axis is placed at the origin of the ``x`` and ``y``
-   dimension, whereas ``z2`` is placed at the final point of the ``x`` dimension,
-   ``z3`` at the final point of the ``y`` dimension and ``z4`` at the final point
-   of the ``x`` and ``y`` dimension together.
+      Returns the normalized depth of ``(vx, vy, vz)`` in :math:`[-1, 1]`, where
+      larger values are closer to the viewer.
 
+   .. method:: graphxyz.vangle(vx1, vy1, vz1, vx2, vy2, vz2, vx3, vy3, vz3)
 
-.. attribute:: graphxyz.central
-
-   The central attribute of the graphxyz is the :class:`central` class. See the
-   class description below.
-
-
-.. attribute:: graphxyz.parallel
-
-   The parallel attribute of the graphxyz is the :class:`parallel` class. See the
-   class description below.
-
-Regarding the 3d to 2d transformation the methods :meth:`pos`, :meth:`vpos`,
-:meth:`vgeodesic`, and :meth:`vgeodesic_el` are available as for class
-:class:`graphxy` and just take an additional argument for the dimension. Note
-that a similar transformation method (3d to 2d) is available as part of the
-projector as well already, but only the graph acknowledges its size, the scaling
-and the internal transformation of the graph coordinates to the scaled
-coordinates. As the projector also implements a :meth:`zindex` and a
-:meth:`angle` method, those are also available at the graph level in the graph
-coordinate variant (i.e. having an additional v in its name and using values
-from 0 to 1 per dimension).
-
-
-.. method:: graphxyz.vzindex(vx, vy, vz)
-
-   The depths of the point defined by *vx*, *vy*, and *vz* scaled to a range [-1:1]
-   where 1 is closest to the viewer. All arguments passed to the method are in graph
-   coordinates with range [0:1].
-
-
-.. method:: graphxyz.vangle(vx1, vy1, vz1, vx2, vy2, vz2, vx3, vy3, vz3)
-
-   The cosine of the angle of the view ray thru point ``(vx1, vy1, vz1)`` and the
-   plane defined by the points ``(vx1, vy1, vz1)``, ``(vx2, vy2, vz2)``, and
-   ``(vx3, vy3, vz3)``. All arguments passed to the method are in graph coordinates
-   with range [0:1].
-
-There are two projector classes :class:`central` and :class:`parallel`:
-
+      Returns the cosine of the angle between the viewing ray through
+      ``(vx1, vy1, vz1)`` and the plane spanned by the three points
+      ``(vx1, vy1, vz1)``, ``(vx2, vy2, vz2)``, and ``(vx3, vy3, vz3)``.
 
 .. class:: central(distance, phi, theta, anglefactor=math.pi/180)
 
-   Instances of this class implement a central projection for the given parameters.
+   Central (perspective) 3D-to-2D projector.
 
-   *distance* is the distance of the viewer from the origin. Note that the
-   :class:`graphxyz` class uses the range ``-xscale`` to ``xscale``, ``-yscale`` to
-   ``yscale``, and ``-zscale`` to ``zscale`` for the coordinates ``x``, ``y``, and
-   ``z``. As those scales are of the order of one (by default), the distance should
-   be of the order of 10 to give nice results. Smaller distances increase the
-   central projection character while for huge distances the central projection
-   becomes identical to the parallel projection.
-
-   ``phi`` is the angle of the viewer in the x-y-plane and ``theta`` is the angle
-   of the viewer to the x-y-plane. The standard notation for spherical coordinates
-   are used. The angles are multiplied by *anglefactor* which is initialized to do
-   a degree in radiant transformation such that you can specify ``phi`` and
-   ``theta`` in degree while the internal computation is always done in radiants.
-
+   * *distance*: Distance of the viewer from the center of the graph in units of
+     *xscale* / *yscale* / *zscale* (values around ``10`` give natural perspective;
+     larger values approach parallel projection).
+   * *phi*: Azimuthal viewing angle in the *x*–*y* plane (in degrees by default).
+   * *theta*: Elevation angle above the *x*–*y* plane (in degrees by default).
+   * *anglefactor*: Conversion factor from the angle unit of *phi* and *theta* to
+     radians (default ``math.pi / 180``).
 
 .. class:: parallel(phi, theta, anglefactor=math.pi/180)
 
-   Instances of this class implement a parallel projection for the given
-   parameters. There is no distance for that transformation (compared to the
-   central projection). All other parameters are identical to the :class:`central`
-   class.
+   Parallel (orthographic) 3D-to-2D projector with azimuthal angle *phi* and
+   elevation angle *theta*.
 
 
 .. module:: graph.data
+   :synopsis: Data sources for graphs
 
-Module :mod:`graph.data`: Graph data
-====================================
+Module :mod:`graph.data`: Graph Data Sources
+============================================
 
+The classes in :mod:`graph.data` prepare tabular or functional data for
+:meth:`graph.graphxy.plot`.
 
-The following classes provide data for the :meth:`plot` method of a graph. The
-classes are implemented in :mod:`graph.data`.
+Tabular Data from Python Lists and Dictionaries
+-----------------------------------------------
 
+.. class:: values(title="user provided values", **columns)
+
+   Creates a dataset from keyword arguments where each keyword name defines a
+   column name and its value is a sequence (list, tuple, or NumPy array) of column
+   values:
+
+   .. code-block:: python
+
+      g.plot(graph.data.values(x=[1, 2, 3, 4], y=[1, 4, 9, 16], title="Squares"))
+
+.. class:: points(data, title="user provided points", addlinenumbers=1, **columns)
+
+   Creates a dataset from a list of rows (*data*), where each row is a sequence
+   of values ``[v1, v2, ...]``.
+
+   * *\*\*columns*: Maps column names (such as ``x=1, y=2``) to column indices in
+     each row.
+   * *addlinenumbers*: When true (default), 1-based row numbers are placed in
+     virtual column ``0``, and data columns in *data* are indexed starting at
+     ``1``. When false, data columns in *data* are indexed starting at ``0``.
+
+Reading Data from Files
+-----------------------
 
 .. class:: file(filename, commentpattern=defaultcommentpattern, columnpattern=defaultcolumnpattern, stringpattern=defaultstringpattern, skiphead=0, skiptail=0, every=1, title=notitle, context={}, copy=1, replacedollar=1, columncallback="__column__", **columns)
 
-   This class reads data from a file and makes them available to the graph system.
-   *filename* is the name of the file to be read. The data should be organized in
-   columns.
+   Reads whitespace-separated or custom-formatted tabular data from *filename*
+   (a file path or open text file object). Parsed files are cached in memory so
+   multiple :class:`file` instances reading different columns from the same file
+   only parse the file once.
 
-   The arguments *commentpattern*, *columnpattern*, and *stringpattern* are
-   responsible for identifying the data in each line of the file. Lines matching
-   *commentpattern* are ignored except for the column name search of the last non-
-   empty comment line before the data. By default a line starting with one of the
-   characters ``'#'``, ``'%'``, or ``'!'`` as well as an empty line is treated as a
-   comment.
+   **Line and column parsing**:
 
-   A non-comment line is analysed by repeatedly matching *stringpattern* and,
-   whenever the stringpattern does not match, by *columnpattern*. When the
-   *stringpattern* matches, the result is taken as the value for the next column
-   without further transformations. When *columnpattern* matches, it is tried to
-   convert the result to a float. When this fails the result is taken as a string
-   as well. By default, you can write strings with spaces surrounded by ``'"'``
-   immediately surrounded by spaces or begin/end of line in the data file.
-   Otherwise ``'"'`` is not taken to be special.
+   * Lines matching *commentpattern* (by default, lines starting with ``#``,
+     ``!``, or ``%``, as well as blank lines) are skipped as comments.
+   * If the last non-empty comment line immediately preceding the first data line
+     contains tokens, those tokens are used as *file column names*.
+   * Each data line is tokenized by repeatedly matching *stringpattern* (which by
+     default extracts double-quoted strings ``"..."`` containing spaces) and
+     *columnpattern* (which extracts whitespace-delimited tokens and converts
+     them to ``float`` when possible, or keeps them as strings otherwise).
+   * *skiphead* and *skiptail* skip the specified number of data rows at the
+     beginning or end of the file, and *every* keeps only every *every*-th row.
 
-   *skiphead* and *skiptail* are numbers of data lines to be ignored at the
-   beginning and end of the file while *every* selects only every *every* line from
-   the data.
+   **Column definitions and mathematical expressions** (*\*\*columns*):
 
-   *title* is the title of the data to be used in the graph key. A default title is
-   constructed out of *filename* and *\*\*columns*. You may set *title* to ``None``
-   to disable the title.
+   Each keyword argument ``name=spec`` defines a named column passed to the
+   plotting styles:
 
-   Finally, *columns* define columns out of the existing columns from the file by a
-   column number or a mathematical expression (see below). When *copy* is set the
-   names of the columns in the file (file column names) and the freshly created
-   columns having the names of the dictionary key (data column names) are passed as
-   data to the graph styles. The data columns may hide file columns when names are
-   equal. For unset *copy* the file columns are not available to the graph styles.
+   * If ``spec`` is an integer, it selects the 1-based column number from the
+     file (or ``0`` for the 1-based data row number).
+   * If ``spec`` is a string, it can be either a file column name (from the
+     header comment) or an arbitrary Python mathematical expression evaluated for
+     each row. Inside the expression, you can reference file columns by their
+     header names or via ``$1``, ``$2``, … (when ``replacedollar=1``), as well as
+     all functions and constants in Python's :mod:`math` module (plus the
+     built-in helpers listed in the table below) and any variables passed in the
+     *context* dictionary.
+   * When ``copy=1`` (default), all named columns from the file header are also
+     passed through to the plotting styles automatically unless overridden by
+     *\*\*columns*.
+   * *title*: Legend title for the dataset. By default, PyX constructs a title
+     automatically from *filename* and the column expressions; pass
+     ``title=None`` to suppress the legend entry.
 
-   File column names occur when the data file contains a comment line immediately
-   in front of the data (except for empty or empty comment lines). This line will
-   be parsed skipping the matched comment identifier as if the line would be
-   regular data, but it will not be converted to floats even if it would be
-   possible to convert the items. The result is taken as file column names, *i.e.*
-   a string representation for the columns in the file.
+   **Example**:
 
-   The values of *\*\*columns* can refer to column numbers in the file starting at
-   ``1``. The column ``0`` is also available and contains the line number starting
-   from ``1`` not counting comment lines, but lines skipped by *skiphead*,
-   *skiptail*, and *every*. Furthermore values of *\*\*columns* can be strings:
-   file column names or complex mathematical expressions. To refer to columns
-   within mathematical expressions you can also use file column names when they are
-   valid variable identifiers. Equal named items in context will then be hidden.
-   Alternatively columns can be access by the syntax ``$<number>`` when
-   *replacedollar* is set. They will be translated into function calls to
-   *columncallback*, which is a function to access column data by index or name.
+   Given :file:`test.dat`:
 
-   *context* allows for accessing external variables and functions when evaluating
-   mathematical expressions for columns. Additionally to the identifiers in
-   *context*, the file column names, the *columncallback* function and the
-   functions shown in the table "builtins in math expressions" at the end of the
-   section are available.
-
-   Example::
-
-      graph.data.file("test.dat", a=1, b="B", c="2*B+$3")
-
-   with :file:`test.dat` looking like::
+   .. code-block:: text
 
       # A   B C
       1.234 1 2
       5.678 3 4
 
-   The columns with name ``"a"``, ``"b"``, ``"c"`` will become ``"[1.234,
-   5.678]"``, ``"[1.0, 3.0]"``, and ``"[4.0, 10.0]"``, respectively. The columns
-   ``"A"``, ``"B"``, ``"C"`` will be available as well, since *copy* is enabled by
-   default.
+   calling:
 
-   When creating several data instances accessing the same file, the file is read
-   only once. There is an inherent caching of the file contents.
+   .. code-block:: python
 
-For the sake of completeness we list the default patterns:
+      d = graph.data.file("test.dat", a=1, b="B", c="2*B+$3")
 
+   produces columns ``a = [1.234, 5.678]``, ``b = [1.0, 3.0]``, and
+   ``c = [4.0, 10.0]`` (along with ``A``, ``B``, and ``C`` since ``copy=1``).
 
-.. attribute:: file.defaultcommentpattern
+   The default regular expression patterns on :class:`file` are:
 
-   ``re.compile(r"(#+|!+|%+)\s*")``
+   .. attribute:: file.defaultcommentpattern
 
+      ``re.compile(r"(#+|!+|%+)\s*")``
 
-.. attribute:: file.defaultcolumnpattern
+   .. attribute:: file.defaultstringpattern
 
-   ``re.compile(r"\"(.*?)\"(\s+|$)")``
+      ``re.compile(r"\"(.*?)\"(\s+|$)")``
 
+   .. attribute:: file.defaultcolumnpattern
 
-.. attribute:: file.defaultstringpattern
+      ``re.compile(r"(.*?)(\s+|$)")``
 
-   ``re.compile(r"(.*?)(\s+|$)")``
+Transforming Existing Datasets and Other File Formats
+-----------------------------------------------------
 
+.. class:: data(data, title=notitle, context={}, copy=1, replacedollar=1, columncallback="__column__", **columns)
+
+   Wraps an existing :mod:`graph.data` instance *data* and derives new columns or
+   mathematical expressions from its columns using the same keyword syntax as
+   :class:`file`.
+
+.. class:: conffile(filename, title=notitle, context={}, copy=1, replacedollar=1, columncallback="__column__", **columns)
+
+   Reads tabular data from an INI-style configuration file parsed by Python's
+   :mod:`configparser` module. Each ``[section]`` in the file becomes one data
+   row, with ``option = value`` entries acting as named columns.
+
+.. class:: cbdfile(filename, minrank=None, maxrank=None, title=notitle, context={}, copy=1, replacedollar=1, columncallback="__column__", **columns)
+
+   Reads vector coastline/boundary segments from a CIA World DataBank (``.cbd``)
+   binary file, filtering segments by rank between *minrank* and *maxrank*.
+
+Analytical and Parametric Functions
+-----------------------------------
 
 .. class:: function(expression, title=notitle, min=None, max=None, points=100, context={})
 
-   This class creates graph data from a function. *expression* is the mathematical
-   expression of the function. It must also contain the result variable name
-   including the variable the function depends on by assignment. A typical example
-   looks like ``"y(x)=sin(x)"``.
+   Generates data points by evaluating a mathematical function of one variable.
 
-   *title* is the title of the data to be used in the graph key. By default
-   *expression* is used. You may set *title* to ``None`` to disable the title.
-
-   *min* and *max* give the range of the variable. If not set, the range spans the
-   whole axis range. The axis range might be set explicitly or implicitly by ranges
-   of other data. *points* is the number of points for which the function is
-   calculated. The points are chosen linearly in terms of graph coordinates.
-
-   *context* allows for accessing external variables and functions. Additionally to
-   the identifiers in *context*, the variable name and the functions shown in the
-   table "builtins in math expressions" at the end of the section are available.
-
+   * *expression*: String assignment specifying the dependent axis variable, the
+     independent axis variable in parentheses, and the formula—for example,
+     ``"y(x) = sin(x) / x"`` or ``"x(y) = y**2"``.
+   * *min*, *max*: Domain of the independent variable. If omitted, the range of
+     the corresponding graph axis is used automatically.
+   * *points*: Number of sample points (default ``100``), spaced uniformly in
+     graph coordinates (so a logarithmic axis is sampled logarithmically).
+   * *title*: Legend title (defaults to *expression*; set to ``None`` to hide).
+   * *context*: Dictionary of external Python variables or callables accessible
+     within *expression*.
 
 .. class:: paramfunction(varname, min, max, expression, title=notitle, points=100, context={})
 
-   This class creates graph data from a parametric function. *varname* is the
-   parameter of the function. *min* and *max* give the range for that variable.
-   *points* is the number of points for which the function is calculated. The
-   points are chosen linearly in terms of the parameter.
+   Generates data points from a parametric curve in 2D or 3D as the parameter
+   *varname* varies linearly from *min* to *max* over *points* samples.
 
-   *expression* is the mathematical expression for the parametric function. It
-   contains an assignment of a tuple of functions to a tuple of variables. A
-   typical example looks like ``"x, y = cos(k), sin(k)"``.
+   * *expression*: Tuple assignment mapping the parameter *varname* to two or
+     three axis coordinates—for example,
+     ``"x, y = cos(t), sin(t)"`` or ``"x, y, z = cos(t), sin(t), 0.1*t"``.
 
-   *title* is the title of the data to be used in the graph key. By default
-   *expression* is used. You may set *title* to ``None`` to disable the title.
+Built-in Functions in Mathematical Expressions
+----------------------------------------------
 
-   *context* allows for accessing external variables and functions. Additionally to
-   the identifiers in *context*, *varname* and the functions shown in the table
-   "builtins in math expressions" at the end of the section are available.
+All mathematical expressions in :class:`file`, :class:`data`, :class:`function`,
+and :class:`paramfunction` have access to every function and constant in Python's
+standard :mod:`math` module (``sin``, ``cos``, ``tan``, ``asin``, ``acos``,
+``atan``, ``atan2``, ``sinh``, ``cosh``, ``tanh``, ``exp``, ``log``, ``log10``,
+``sqrt``, ``hypot``, ``pi``, ``e``, etc.), plus the following convenience
+functions:
 
-
-.. class:: values(title="user provided values", **columns)
-
-   This class creates graph data from externally provided data. Each column is a
-   list of values to be used for that column.
-
-   *title* is the title of the data to be used in the graph key.
-
-
-.. class:: points(data, title="user provided points", addlinenumbers=1, **columns)
-
-   This class creates graph data from externally provided data. *data* is a list of
-   lines, where each line is a list of data values for the columns.
-
-   *title* is the title of the data to be used in the graph key.
-
-   The keywords of *\*\*columns* become the data column names. The values are the
-   column numbers starting from one, when *addlinenumbers* is turned on (the zeroth
-   column is added to contain a line number in that case), while the column numbers
-   starts from zero, when *addlinenumbers* is switched off.
-
-
-.. class:: data(data, title=notitle, context=, copy=1, replacedollar=1, columncallback="__column__", **columns)
-
-   This class provides graph data out of other graph data. *data* is the source of
-   the data. All other parameters work like the equally called parameters in
-   :class:`graph.data.file`. Indeed, the latter is built on top of this class by
-   reading the file and caching its contents in a :class:`graph.data.list`
-   instance.
-
-
-.. class:: conffile(filename, title=notitle, context=, copy=1, replacedollar=1, columncallback="__column__", **columns)
-
-   This class reads data from a config file with the file name *filename*. The
-   format of a config file is described within the documentation of the
-   :mod:`ConfigParser` module of the Python Standard Library.
-
-   Each section of the config file becomes a data line. The options in a section
-   are the columns. The name of the options will be used as file column names. All
-   other parameters work as in *graph.data.file* and *graph.data.data* since they
-   all use the same code.
-
-
-.. class:: cbdfile(filename, minrank=None, maxrank=None, title=notitle, context=, copy=1, replacedollar=1, columncallback="__column__", **columns)
-
-   This is an experimental class to read map data from cbd-files. See
-   `<http://sepwww.stanford.edu/ftp/World_Map/>`_ for some world-map data.
-
-The builtins in math expressions are listed in the following table:
-
-+------------------+--------------------------------------------+
-| name             | value                                      |
-+==================+============================================+
-| ``neg``          | ``lambda x: -x``                           |
-+------------------+--------------------------------------------+
-| ``abs``          | ``lambda x: x < 0 and -x or x``            |
-+------------------+--------------------------------------------+
-| ``sgn``          | ``lambda x: x < 0 and -1 or 1``            |
-+------------------+--------------------------------------------+
-| ``sqrt``         | ``math.sqrt``                              |
-+------------------+--------------------------------------------+
-| ``exp``          | ``math.exp``                               |
-+------------------+--------------------------------------------+
-| ``log``          | ``math.log``                               |
-+------------------+--------------------------------------------+
-| ``sin``          | ``math.sin``                               |
-+------------------+--------------------------------------------+
-| ``cos``          | ``math.cos``                               |
-+------------------+--------------------------------------------+
-| ``tan``          | ``math.tan``                               |
-+------------------+--------------------------------------------+
-| ``asin``         | ``math.asin``                              |
-+------------------+--------------------------------------------+
-| ``acos``         | ``math.acos``                              |
-+------------------+--------------------------------------------+
-| ``atan``         | ``math.atan``                              |
-+------------------+--------------------------------------------+
-| ``sind``         | ``lambda x: math.sin(math.pi/180*x)``      |
-+------------------+--------------------------------------------+
-| ``cosd``         | ``lambda x: math.cos(math.pi/180*x)``      |
-+------------------+--------------------------------------------+
-| ``tand``         | ``lambda x: math.tan(math.pi/180*x)``      |
-+------------------+--------------------------------------------+
-| ``asind``        | ``lambda x: 180/math.pi*math.asin(x)``     |
-+------------------+--------------------------------------------+
-| ``acosd``        | ``lambda x: 180/math.pi*math.acos(x)``     |
-+------------------+--------------------------------------------+
-| ``atand``        | ``lambda x: 180/math.pi*math.atan(x)``     |
-+------------------+--------------------------------------------+
-| ``norm``         | ``lambda x, y: math.hypot(x, y)``          |
-+------------------+--------------------------------------------+
-| ``splitatvalue`` | see the ``splitatvalue`` description below |
-+------------------+--------------------------------------------+
-| ``pi``           | ``math.pi``                                |
-+------------------+--------------------------------------------+
-| ``e``            | ``math.e``                                 |
-+------------------+--------------------------------------------+
-
-``math`` refers to Pythons :mod:`math` module. The ``splitatvalue`` function is
-defined as:
-
++------------------+------------------------------------------------------+
+| Name             | Definition                                           |
++==================+======================================================+
+| ``neg(x)``       | ``-x``                                               |
++------------------+------------------------------------------------------+
+| ``abs(x)``       | ``abs(x)``                                           |
++------------------+------------------------------------------------------+
+| ``sgn(x)``       | ``-1`` if ``x < 0`` else ``1``                       |
++------------------+------------------------------------------------------+
+| ``sind(x)``      | ``math.sin(math.pi / 180 * x)`` (sine in degrees)    |
++------------------+------------------------------------------------------+
+| ``cosd(x)``      | ``math.cos(math.pi / 180 * x)`` (cosine in degrees)  |
++------------------+------------------------------------------------------+
+| ``tand(x)``      | ``math.tan(math.pi / 180 * x)`` (tangent in degrees) |
++------------------+------------------------------------------------------+
+| ``asind(x)``     | ``180 / math.pi * math.asin(x)`` (in degrees)        |
++------------------+------------------------------------------------------+
+| ``acosd(x)``     | ``180 / math.pi * math.acos(x)`` (in degrees)        |
++------------------+------------------------------------------------------+
+| ``atand(x)``     | ``180 / math.pi * math.atan(x)`` (in degrees)        |
++------------------+------------------------------------------------------+
+| ``norm(x, y)``   | ``math.hypot(x, y)``                                 |
++------------------+------------------------------------------------------+
+| ``splitatvalue`` | See :func:`splitatvalue` below                       |
++------------------+------------------------------------------------------+
 
 .. function:: splitatvalue(value, *splitpoints)
 
-   This method returns a tuple ``(section, value)``. The section is calculated by
-   comparing *value* with the values of splitpoints. If *splitpoints* contains only
-   a single item, ``section`` is ``0`` when value is lower or equal this item and
-   ``1`` else. For multiple splitpoints, ``section`` is ``0`` when its lower or
-   equal the first item, ``None`` when its bigger than the first item but lower or
-   equal the second item, ``1`` when its even bigger the second item, but lower or
-   equal the third item. It continues to alter between ``None`` and ``2``, ``3``,
-   etc.
+   Splits a coordinate value into discontinuous sections at *splitpoints* (useful
+   with split axes; see :class:`graph.axis.split`). Returns a tuple
+   ``(section, value)``. With a single split point ``s1``, ``section`` is ``0``
+   when ``value <= s1`` and ``1`` otherwise. With multiple split points,
+   ``section`` alternates between ``0``, ``None`` (ignored gap between the first
+   and second split points), ``1``, ``None``, ``2``, etc.
 
 
 .. module:: graph.style
+   :synopsis: Plotting styles for graphs
 
-Module :mod:`graph.style`: Graph styles
+Module :mod:`graph.style`: Graph Styles
 =======================================
 
-Please note that we are talking about graph styles here. Those are responsible
-for plotting symbols, lines, bars and whatever else into a graph. Do not mix it
-up with path styles like the line width, the line style (solid, dashed, dotted
-*etc.*) and others.
+Graph styles control how data columns are rendered visually inside a graph. The
+*styles* argument of :meth:`graph.graphxy.plot` accepts a list of style
+instances, allowing you to combine multiple styles for a single dataset—for
+example, ``[graph.style.line(), graph.style.symbol(), graph.style.errorbar()]``.
 
-The following classes provide styles to be used at the :meth:`plot` method of a
-graph. The plot method accepts a list of styles. By that you can combine several
-styles at the very same time.
+Hidden Data-Provider Styles
+---------------------------
 
-Some of the styles below are hidden styles. Those do not create any output, but
-they perform internal data handling and thus help on modularization of the
-styles. Usually, a visible style will depend on data provided by one or more
-hidden styles but most of the time it is not necessary to specify the hidden
-styles manually. The hidden styles register themselves to be the default for
-providing certain internal data.
-
+Several styles (:class:`pos`, :class:`range`, :class:`barpos`,
+:class:`stackedbarpos`, and :class:`gridpos`) are *hidden styles*: they do not
+draw marks themselves (except for optional baseline paths), but instead read data
+columns and compute graph-coordinate positions in a shared ``sharedata`` object
+consumed by visible styles. Because PyX automatically inserts the required
+default hidden style whenever a visible style is used, you only need to
+instantiate a hidden style explicitly when you want to customize its column name
+mapping (*usenames*) or baseline (*fromvalue*).
 
 .. class:: pos(usenames={}, epsilon=1e-10)
 
-   This class is a hidden style providing a position in the graph. It needs a data
-   column for each graph dimension. For that the column names need to be equal to
-   an axis name, or a name translation from axis names to column names need to be
-   given by *usenames*. Data points are considered to be out of graph when their
-   position in graph coordinates exceeds the range [0:1] by more than *epsilon*.
-
+   Hidden style that reads one data column per graph axis (matching the axis name
+   ``"x"``, ``"y"``, ``"z"``, or mapped via the dictionary *usenames*) and
+   computes the normalized graph position. Points outside :math:`[0, 1]` by more
+   than *epsilon* are marked as out of bounds.
 
 .. class:: range(usenames={}, epsilon=1e-10)
 
-   This class is a hidden style providing an errorbar range. It needs data column
-   names constructed out of a axis name ``X`` for each dimension errorbar data
-   should be provided as follows:
+   Hidden style that reads interval/uncertainty bounds for one or more axes ``X``
+   (or mapped via *usenames*). For each axis ``X``, you can supply any of the
+   following column combinations:
 
-   +-----------+---------------------------+
-   | data name | description               |
-   +===========+===========================+
-   | ``Xmin``  | minimal value             |
-   +-----------+---------------------------+
-   | ``Xmax``  | maximal value             |
-   +-----------+---------------------------+
-   | ``dX``    | minimal and maximal delta |
-   +-----------+---------------------------+
-   | ``dXmin`` | minimal delta             |
-   +-----------+---------------------------+
-   | ``dXmax`` | maximal delta             |
-   +-----------+---------------------------+
+   +------------------+---------------------------------------------------------------+
+   | Column Name(s)   | Meaning                                                       |
+   +==================+===============================================================+
+   | ``Xmin``, ``Xmax``| Explicit lower and upper bounds :math:`[X_{\min}, X_{\max}]`. |
+   +------------------+---------------------------------------------------------------+
+   | ``dX``           | Symmetric uncertainty :math:`X \pm \Delta X` (requires column |
+   |                  | ``X``).                                                       |
+   +------------------+---------------------------------------------------------------+
+   | ``dXmin``,       | Asymmetric uncertainties :math:`[X - \Delta X_{\min},\;       |
+   | ``dXmax``        | X + \Delta X_{\max}]` (requires column ``X``).                |
+   +------------------+---------------------------------------------------------------+
 
-   When delta data are provided the style will also read column data for the axis
-   name ``X`` itself. *usenames* allows to insert a translation dictionary from
-   axis names to the identifiers ``X``.
-
-   *epsilon* is a comparison precision when checking for invalid errorbar ranges.
-
+Symbols, Lines, Impulses, and Error Bars
+----------------------------------------
 
 .. class:: symbol(symbol=changecross, size=0.2*unit.v_cm, symbolattrs=[])
 
-   This class is a style for plotting symbols in a graph. *symbol* refers to a
-   (changeable) symbol function with the prototype ``symbol(c, x_pt, y_pt, size_pt,
-   attrs)`` and draws the symbol into the canvas ``c`` at the position ``(x_pt,
-   y_pt)`` with size ``size_pt`` and attributes ``attrs``. Some predefined symbols
-   are available in member variables listed below. The symbol is drawn at size
-   *size* using *symbolattrs*. *symbolattrs* is merged with ``defaultsymbolattrs``
-   which is a list containing the decorator :class:`deco.stroked`. An instance of
-   :class:`symbol` is the default style for all graph data classes described in
-   section :mod:`graph.data` except for :class:`function` and
-   :class:`paramfunction`.
+   Draws a marker symbol at each data point. This is the default style for all
+   tabular data sources (:class:`~graph.data.file`, :class:`~graph.data.values`,
+   :class:`~graph.data.points`, etc.).
 
-The class :class:`symbol` provides some symbol functions as member variables,
-namely:
+   * *symbol*: A symbol drawing callable with signature
+     ``symbol(c, x_pt, y_pt, size_pt, attrs)`` or a changeable attribute cycling
+     through symbol callables.
+   * *size*: Visual diameter of the symbol (default ``0.2 * unit.v_cm``).
+   * *symbolattrs*: Stroke/fill/color attributes merged with
+     ``defaultsymbolattrs`` (``[deco.stroked]``).
 
+   **Predefined symbol shapes** (class attributes on :class:`symbol`):
 
-.. attribute:: symbol.cross
+   * :attr:`symbol.cross` — diagonal cross :math:`\times` (stroke only)
+   * :attr:`symbol.plus` — orthogonal plus :math:`+` (stroke only)
+   * :attr:`symbol.square` — square (can be stroked, filled, or both)
+   * :attr:`symbol.triangle` — equilateral triangle (can be stroked, filled, or both)
+   * :attr:`symbol.circle` — circle (can be stroked, filled, or both)
+   * :attr:`symbol.diamond` — diamond Rhombus (can be stroked, filled, or both)
 
-   A cross. Should be used for stroking only.
+   **Changeable symbol lists** (automatically cycle across datasets when the same
+   :class:`symbol` instance is reused):
 
+   * :attr:`symbol.changecross` — ``attr.changelist([cross, plus, square, triangle, circle, diamond])``
+   * :attr:`symbol.changeplus` — ``attr.changelist([plus, square, triangle, circle, diamond, cross])``
+   * :attr:`symbol.changesquare` — ``attr.changelist([square, triangle, circle, diamond, cross, plus])``
+   * :attr:`symbol.changetriangle` — ``attr.changelist([triangle, circle, diamond, cross, plus, square])``
+   * :attr:`symbol.changecircle` — ``attr.changelist([circle, diamond, cross, plus, square, triangle])``
+   * :attr:`symbol.changediamond` — ``attr.changelist([diamond, cross, plus, square, triangle, circle])``
+   * :attr:`symbol.changesquaretwice` — repeats each closed shape twice: ``[square, square, triangle, triangle, circle, circle, diamond, diamond]``
+   * :attr:`symbol.changetriangletwice` — ``[triangle, triangle, circle, circle, diamond, diamond, square, square]``
+   * :attr:`symbol.changecircletwice` — ``[circle, circle, diamond, diamond, square, square, triangle, triangle]``
+   * :attr:`symbol.changediamondtwice` — ``[diamond, diamond, square, square, triangle, triangle, circle, circle]``
 
-.. attribute:: symbol.plus
+   **Changeable stroke/fill decorators** (useful in *symbolattrs* alongside the
+   ``*twice`` symbol lists above):
 
-   A plus. Should be used for stroking only.
-
-
-.. attribute:: symbol.square
-
-   A square. Might be stroked or filled or both.
-
-
-.. attribute:: symbol.triangle
-
-   A triangle. Might be stroked or filled or both.
-
-
-.. attribute:: symbol.circle
-
-   A circle. Might be stroked or filled or both.
-
-
-.. attribute:: symbol.diamond
-
-   A diamond. Might be stroked or filled or both.
-
-:class:`symbol` provides some changeable symbol functions as member variables,
-namely:
-
-
-.. attribute:: symbol.changecross
-
-   attr.changelist([cross, plus, square, triangle, circle, diamond])
-
-
-.. attribute:: symbol.changeplus
-
-   attr.changelist([plus, square, triangle, circle, diamond, cross])
-
-
-.. attribute:: symbol.changesquare
-
-   attr.changelist([square, triangle, circle, diamond, cross, plus])
-
-
-.. attribute:: symbol.changetriangle
-
-   attr.changelist([triangle, circle, diamond, cross, plus, square])
-
-
-.. attribute:: symbol.changecircle
-
-   attr.changelist([circle, diamond, cross, plus, square, triangle])
-
-
-.. attribute:: symbol.changediamond
-
-   attr.changelist([diamond, cross, plus, square, triangle, circle])
-
-
-.. attribute:: symbol.changesquaretwice
-
-   attr.changelist([square, square, triangle, triangle, circle, circle, diamond,
-   diamond])
-
-
-.. attribute:: symbol.changetriangletwice
-
-   attr.changelist([triangle, triangle, circle, circle, diamond, diamond, square,
-   square])
-
-
-.. attribute:: symbol.changecircletwice
-
-   attr.changelist([circle, circle, diamond, diamond, square, square, triangle,
-   triangle])
-
-
-.. attribute:: symbol.changediamondtwice
-
-   attr.changelist([diamond, diamond, square, square, triangle, triangle, circle,
-   circle])
-
-The class :class:`symbol` provides two changeable decorators for alternated
-filling and stroking. Those are especially useful in combination with the
-:meth:`change`\ -\ :meth:`twice`\ -symbol methods above. They are:
-
-
-.. attribute:: symbol.changestrokedfilled
-
-   attr.changelist([deco.stroked, deco.filled])
-
-
-.. attribute:: symbol.changefilledstroked
-
-   attr.changelist([deco.filled, deco.stroked])
-
+   * :attr:`symbol.changestrokedfilled` — ``attr.changelist([deco.stroked, deco.filled])``
+   * :attr:`symbol.changefilledstroked` — ``attr.changelist([deco.filled, deco.stroked])``
 
 .. class:: line(lineattrs=[], epsilon=1e-10)
 
-   This class is a style to stroke lines in a graph. *lineattrs* is merged with
-   ``defaultlineattrs`` which is a list containing the member variable
-   ``changelinestyle`` as described below. An instance of :class:`line` is the
-   default style of the graph data classes :class:`function` and
-   :class:`paramfunction` described in section :mod:`graph.data`. *epsilon* is
-   a precision in graph coordinates for line clipping.
+   Connects consecutive data points with geodesic segments clipped to the graph
+   boundary. This is the default style for :class:`graph.data.function` and
+   :class:`graph.data.paramfunction`.
 
-The class :class:`line` provides a changeable line style. Its definition is:
-
-
-.. attribute:: line.changelinestyle
-
-   attr.changelist([style.linestyle.solid, style.linestyle.dashed,
-   style.linestyle.dotted, style.linestyle.dashdotted])
-
+   * *lineattrs*: Stroke attributes merged with ``defaultlineattrs``
+     (``[line.changelinestyle]``).
+   * :attr:`line.changelinestyle`:
+     ``attr.changelist([style.linestyle.solid, style.linestyle.dashed, style.linestyle.dotted, style.linestyle.dashdotted])``.
 
 .. class:: impulses(lineattrs=[], fromvalue=0, frompathattrs=[], valueaxisindex=1)
 
-   This class is a style to plot impulses. *lineattrs* is merged with
-   ``defaultlineattrs`` which is a list containing the member variable
-   ``changelinestyle`` of the :class:`line` class. *fromvalue* is the baseline
-   value of the impulses. When set to ``None``, the impulses will start at the
-   baseline. When fromvalue is set, *frompathattrs* are the stroke attributes used
-   to show the impulses baseline path.
-
+   Draws vertical (when ``valueaxisindex=1``) or horizontal (when
+   ``valueaxisindex=0``) impulse stems from a baseline value *fromvalue* (or from
+   the bottom/left graph boundary if ``fromvalue=None``) to each data point. When
+   *fromvalue* is not ``None``, the baseline is stroked using *frompathattrs*.
 
 .. class:: errorbar(size=0.1*unit.v_cm, errorbarattrs=[], epsilon=1e-10)
 
-   This class is a style to stroke errorbars in a graph. *size* is the size of the
-   caps of the errorbars and *errorbarattrs* are the stroke attributes. Errorbars
-   and error caps are considered to be out of the graph when their position in
-   graph coordinates exceeds the range [0:1] by more that *epsilon*. Out of graph
-   caps are omitted and the errorbars are cut to the valid graph range.
+   Draws error bars with perpendicular end caps of visual length *size* using the
+   interval bounds provided by :class:`range` (such as ``dy``, ``ymin``/``ymax``,
+   or ``dymin``/``dymax``). Error bars extending outside the plot area are
+   clipped to the graph boundary and their out-of-bounds caps are omitted.
 
+Text Labels and Vector Arrows
+-----------------------------
 
 .. class:: text(textname="text", dxname=None, dyname=None, dxunit=0.3*unit.v_cm, dyunit=0.3*unit.v_cm, textdx=0*unit.v_cm, textdy=0.3*unit.v_cm, textattrs=[])
 
-   This class is a style to stroke text in a graph. The text to be written has to
-   be provided in the data column named ``textname``. *textdx* and *textdy* are the
-   position of the text with respect to the position in the graph. Alternatively
-   you can specify a ``dxname`` and a ``dyname`` and provide appropriate data in
-   those columns to be taken in units of *dxunit* and *dyunit* to specify the
-   position of the text for each point separately. *textattrs* are text attributes
-   for the output of the text. Those attributes are merged with the default
-   attributes ``textmodule.halign.center`` and ``textmodule.vshift.mathaxis``.
-
+   Places a text label (read from column *textname*) at each data point, offset
+   by ``(textdx, textdy)``—or by per-point offsets read from columns *dxname* and
+   *dyname* multiplied by *dxunit* and *dyunit*. *textattrs* is merged with
+   ``[text.halign.center, text.vshift.mathaxis]``.
 
 .. class:: arrow(linelength=0.25*unit.v_cm, arrowsize=0.15*unit.v_cm, lineattrs=[], arrowattrs=[], arrowpos=0.5, epsilon=1e-10, decorator=deco.earrow)
 
-   This class is a style to plot short lines with arrows into a two-dimensional
-   graph to a given graph position. The arrow parameters are defined by two
-   additional data columns named ``size`` and ``angle`` define the size and angle
-   for each arrow. ``size`` is taken as a factor to *arrowsize* and *linelength*,
-   the size of the arrow and the length of the line the arrow is plotted at.
-   ``angle`` is the angle the arrow points to with respect to a horizontal line.
-   The ``angle`` is taken in degrees and used in mathematically positive sense.
-   *lineattrs* and *arrowattrs* are styles for the arrow line and arrow head,
-   respectively. *arrowpos* defines the position of the arrow line with respect to
-   the position at the graph. The default ``0.5`` means centered at the graph
-   position, whereas ``0`` and ``1`` creates the arrows to start or end at the
-   graph position, respectively. *epsilon* is used as a cutoff for short arrows in
-   order to prevent numerical instabilities. *decorator* defines the decorator to
-   be added to the line.
+   Draws 2D vector field arrows at each data point using two additional data
+   columns:
 
+   * ``size``: Scale factor multiplying both *linelength* and *arrowsize*.
+   * ``angle``: Direction angle in degrees counter-clockwise from the positive
+     *x*-axis.
 
-.. class:: rect(colorname="color", gradient=color.gradient.Grey, coloraxis=None, keygraph=_autokeygraph)
+   *arrowpos* controls how each arrow segment is anchored at the data point
+   (``0`` starts at the point, ``0.5`` centers the arrow on the point, and ``1``
+   ends at the point).
 
-   This class is a style to plot colored rectangles into a two-dimensional graph.
-   The size of the rectangles is taken from the data provided by the :class:`range`
-   style. The additional data column named *colorname* specifies the color of the
-   rectangle defined by *gradient*. The translation of the data values to the
-   gradient is done by the *coloraxis*, which is set to be a linear axis if not
-   provided by *coloraxis*. A key graph, a graphx instance, is generated
-   automatically to indicate the color scale if not provided by *keygraph*.
-   If a *keygraph* is given, its ``x`` axis defines the color conversion and
-   *coloraxis* is ignored. If *keygraph* is set to ``None``, no keygraph is
-   shown and the conversion works via the *coloraxis*.
-
+Histograms and Bar Charts
+-------------------------
 
 .. class:: histogram(lineattrs=[], steps=0, fromvalue=0, frompathattrs=[], fillable=0, rectkey=0, autohistogramaxisindex=0, autohistogrampointpos=0.5, epsilon=1e-10)
 
-   This class is a style to plot histograms. *lineattrs* is merged with
-   ``defaultlineattrs`` which is ``[deco.stroked]``. When *steps* is set, the
-   histogram is plotted as steps instead of the default being a boxed histogram.
-   *fromvalue* is the baseline value of the histogram. When set to ``None``, the
-   histogram will start at the baseline. When fromvalue is set, *frompathattrs* are
-   the stroke attributes used to show the histogram baseline path.
+   Plots a 2D histogram.
 
-   The *fillable* flag changes the stoke line of the histogram to make it fillable
-   properly. This is important on non-stepped histograms or on histograms, which hit
-   the graph boundary. *rectkey* can be set to generate a rectanglar area instead
-   of a line in the graph key.
+   * *lineattrs*: Attributes used to draw the histogram outline (merged with
+     ``[deco.stroked]``).
+   * *steps*: When ``0`` (default), draws full vertical box outlines for each
+     bin; when ``1``, draws only the upper step contour.
+   * *fromvalue*, *frompathattrs*: Baseline value and stroke attributes for the
+     histogram base (or ``fromvalue=None`` to start at the axis boundary).
+   * *fillable*: When true, closes the histogram path along the baseline and
+     graph boundaries so that passing ``deco.filled([...])`` in *lineattrs*
+     cleanly fills the area under the histogram.
+   * *rectkey*: When true, draws a filled/stroked rectangle in the graph legend
+     instead of a line segment.
 
-   In the most general case, a histogram is defined by a range specification (like
-   for an errorbar) in one graph dimension (say, along the x-axis) and a value for
-   the other graph dimension. This allows for the widths of the histogram boxes
-   being variable. Often, however, all histogram bin ranges are equally sized, and
-   instead of passing the range, the position of the bin along the x-axis fully
-   specifies the histogram - assuming that there are at least two bins. This common
-   case is supported via two parameters: *autohistogramaxisindex*, which defines
-   the index of the independent histogram axis (in the case just described this
-   would be ``0`` designating the x axis). *autohistogrampointpos*, defines the
-   relative position of the center of the histogram bin: ``0.5`` means that the bin
-   is centered at the values passed to the style, ``0`` (``1``) means that the bin
-   is aligned at the right-(left-)hand side.
+   **Specifying bin widths (equal vs. variable bin widths)**:
 
-   XXX describe, how to specify general histograms with varying bin widths
-
-   Positions of the histograms are considered to be out of graph when they exceed
-   the graph coordinate range [0:1] by more than *epsilon*.
-
+   * *Equal-width bins (automatic)*: If you supply only point coordinates ``x``
+     and ``y`` (with at least two data points), :class:`histogram` automatically
+     computes equal bin widths along axis *autohistogramaxisindex* (``0`` for
+     *x*, ``1`` for *y*). *autohistogrampointpos* specifies where the given data
+     coordinate sits within each bin: ``0.5`` (default) centers each bin on the
+     data point, ``0`` places the bin to the right of the data point, and ``1``
+     places the bin to the left.
+   * *Variable-width bins (explicit ranges)*: To plot a histogram with unequal
+     bin widths, supply range columns for the bin axis (such as ``xmin`` and
+     ``xmax``, or ``x`` and ``dx``, as consumed by :class:`range`) alongside the
+     height column ``y``. Whenever range columns are present for the bin axis,
+     :class:`histogram` uses the exact interval :math:`[x_{\min}, x_{\max}]` of
+     each bin.
 
 .. class:: barpos(fromvalue=None, frompathattrs=[], epsilon=1e-10)
 
-   This class is a hidden style providing position information in a bar graph.
-   Those graphs need to contain a specialized axis, namely a bar axis. The data
-   column for this bar axis is named ``Xname`` where ``X`` is an axis name. In the
-   other graph dimension the data column name must be equal to an axis name. To
-   plot several bars in a single graph side by side, you need to have a nested bar
-   axis and provide a tuple as data for nested bar axis.
-
-   The bars start at *fromvalue* when provided. The *fromvalue* is marked by a
-   gridline stroked using *frompathattrs*. Thus this hidden style might actually
-   create some output. The value of a bar axis is considered to be out of graph
-   when its position in graph coordinates exceeds the range [0:1] by more than
-   *epsilon*.
-
+   Hidden style that computes bar positions along a :class:`graph.axis.bar` (or
+   :class:`graph.axis.nestedbar`) axis. For a bar axis named ``X`` (e.g. ``x``),
+   the categorical bar names are read from column ``Xname`` (e.g. ``xname``) and
+   the bar heights are read from the continuous axis column (e.g. ``y``). To plot
+   grouped bars side by side on a :class:`graph.axis.nestedbar` axis, pass a
+   2-tuple ``(category, subcategory)`` in ``Xname`` (for example,
+   ``xname="$1, 0"`` and ``xname="$1, 1"``).
 
 .. class:: stackedbarpos(stackname, addontop=0, epsilon=1e-10)
 
-   This class is a hidden style providing position information in a bar graph by
-   stacking a new bar on top of another bar. The value of the new bar is taken from
-   the data column named *stackname*. When *addontop* is set, the values is taken
-   relative to the previous top of the bar.
-
+   Hidden style that stacks a new bar series on top of the previous bar series,
+   reading the upper coordinate (or the incremental height when ``addontop=1``)
+   from column *stackname*.
 
 .. class:: bar(barattrs=[], epsilon=1e-10, gradient=color.gradient.RedBlack)
 
-   This class draws bars in a bar graph. The bars are filled using *barattrs*.
-   *barattrs* is merged with ``defaultbarattrs`` which is a list containing
-   ``[color.gradient.Rainbow, deco.stroked([color.grey.black])]``.
-
-   The bar style has limited support for 3d graphs: Occlusion does not work
-   properly on stacked bars or multiple dataset. *epsilon* is used in 3d to prevent
-   numerical instabilities on bars without hight. When *gradient* is not ``None``
-   it is used to calculate a lighting coloring taking into account the angle
-   between the view ray and the bar and the distance between viewer and bar. The
-   precise conversion is defined in the :meth:`lighting` method.
-
+   Draws filled rectangular (2D) or prism (3D) bars using the positions computed
+   by :class:`barpos` or :class:`stackedbarpos`. *barattrs* is merged with
+   ``[color.gradient.Rainbow, deco.stroked([color.gray.black])]``, so multiple
+   bar series in a grouped or stacked bar chart automatically receive distinct
+   colors from ``gradient.Rainbow``.
 
 .. class:: changebar(barattrs=[])
 
-   This style works like the :class:`bar` style, but instead of the *barattrs* to
-   be changed on subsequent data instances the *barattrs* are changed for each
-   value within a single data instance. In the result the style can't be applied to
-   several data instances and does not support 3d. The style raises an error
-   instead.
+   Variant of :class:`bar` that cycles the changeable attributes in *barattrs*
+   from bar to bar *within* a single dataset rather than across multiple
+   datasets.
 
+Rectangles, Grids, Surfaces, and Density Plots
+----------------------------------------------
 
-.. class:: gridpos(index1=0, index2=1, gridlines1=1, gridlines2=1, gridattrs=[], epsilon=1e-10)
+.. class:: rect(colorname="color", gradient=color.gradient.Gray, coloraxis=None, keygraph=_autokeygraph, mincolor=None, maxcolor=None)
 
-   This class is a hidden style providing rectangular grid information out of graph
-   positions for graph dimensions *index1* and *index2*. Data points are considered
-   to be out of graph when their position in graph coordinates exceeds the range
-   [0:1] by more than *epsilon*. Data points are merged to a single graph
-   coordinate value when their difference in graph coordinates is below *epsilon*.
+   Fills axis-aligned rectangles (defined by :class:`range` bounds on *x* and
+   *y*) with colors mapped from column *colorname* via *gradient*.
 
+   * *coloraxis*: Axis instance (defaults to :class:`graph.axis.linear`) mapping
+     values in *colorname* to :math:`[0, 1]`.
+   * *keygraph*: A :class:`graph.graphx` instance drawn beside the main graph as
+     a color bar legend. By default, a vertical :class:`graph.graphx` is created
+     automatically; pass ``keygraph=None`` to omit the color bar.
+   * *mincolor*, *maxcolor*: Optional colors used for values falling below or
+     above the range of *coloraxis*.
+
+.. class:: gridpos(index1=0, index2=1, epsilon=1e-10)
+
+   Hidden style that organizes point data along graph dimensions *index1* and
+   *index2* into a structured 2D rectangular mesh.
 
 .. class:: grid(gridlines1=1, gridlines2=1, gridattrs=[], epsilon=1e-10)
 
-   Strokes a rectangular grid in the first grid direction, when *gridlines1* is set
-   and in the second grid direction, when *gridlines2* is set. *gridattrs* is
-   merged with ``defaultgridattrs`` which is a list containing the member variable
-   ``changelinestyle`` of the :class:`line` class. *epsilon* is a precision in graph
-   coordinates for line clipping.
+   Strokes a wireframe mesh in 2D or 3D along the first (*gridlines1*) and/or
+   second (*gridlines2*) mesh directions provided by :class:`gridpos`.
 
+.. class:: surface(gridlines1=0.05, gridlines2=0.05, gridcolor=None, backcolor=color.gray.black, mincolor=None, maxcolor=None, **kwargs)
 
-.. class:: surface(gridlines1=0.05, gridlines2=0.05, gridcolor=None, backcolor=color.gray.black, **kwargs)
+   Draws a smoothly shaded 2D or 3D surface over the rectangular mesh provided by
+   :class:`gridpos` using a Gouraud-shaded triangle mesh (each grid cell is
+   subdivided into four triangles).
 
-   Draws a surface of a rectangular grid. Each rectangle is divided into 4
-   triangles.
+   * *gridlines1*, *gridlines2*, *gridcolor*: If *gridcolor* is set, draws narrow
+     triangle strips of fractional width *gridlines1* and *gridlines2* in
+     *gridcolor* along the cell boundaries.
+   * *backcolor*: Color used for triangles facing away from the viewer (or
+     ``None`` to color both sides identically).
+   * **Coloring**: Accepts the same *colorname*, *gradient*, *coloraxis*,
+     *keygraph*, *mincolor*, and *maxcolor* arguments as :class:`rect`. If no
+     *colorname* column is present in the data, :class:`surface` automatically
+     computes 3D lighting from the viewing angle and distance using
+     :meth:`lighting`. Note that Gouraud shading meshes in PostScript/PDF require
+     Gray, RGB, or CMYK colors; wrap HSB gradients in :class:`color.rgbgradient`
+     or :class:`color.cmykgradient`.
 
-   If a *gridcolor* is set, the rectangular grid is marked by small stripes of the
-   relative (compared to each rectangle) size of *gridlines1* and *gridlines2* for
-   the first and second grid direction, respectively.
+.. class:: density(epsilon=1e-10, Nearest=False, **kwargs)
 
-   *backcolor* is used to fill triangles shown from the back. If *backcolor* is set
-   to ``None``, back sides are not drawn differently from the front sides.
-
-   The surface is encoded using a single mesh. While this is quite space efficient,
-   it has the following implications:
-
-* All colors must use the same color space.
-
-* HSB colors are not allowed, whereas Gray, RGB, and CMYK are allowed. You can
-     convert HSB colors into a different color space by means of
-     :class:`rgbgradient` and class:`cmykgradient` before passing it to the
-     surface style.
-
-* The grid itself is also constructed out of triangles. The grid is transformed
-     along with the triangles thus looking quite different from a stroked grid (as
-     done by the grid style).
-
-* Occlusion is handled by proper painting order.
-
-* Color changes are continuous (in the selected color space) for each triangle.
-
-   Further arguments are identical to the :class:`graph.style.rect` style. However,
-   if no *colorname* column exists, the surface style falls back to a lighting
-   coloring taking into account the angle between the view ray and the triangle and
-   the distance between viewer and triangle. The precise conversion is defined in
-   the :meth:`lighting` method.
-
-
-.. class:: density(epsilon=1e-10, **kwargs):
-
-   Density plots can be created by the density style. It is similar to a surface
-   plot in 2d, but it does not use a mesh, but a bitmap representation instead.
-   Due to that difference, the file size is smaller and no color interpolation
-   takes place. Furthermore the style can be used with equidistantly spaced data
-   only (after conversion by the axis, so logarithmic raw data and such are
-   possible using proper axes). Further arguments are identical to the
-   :class:`graph.style.rect` style.
+   Renders a 2D pseudocolor heatmap as an embedded :mod:`bitmap` image over an
+   equidistantly spaced grid (in graph coordinates). Accepts the same
+   *colorname*, *gradient*, *coloraxis*, *keygraph*, *mincolor*, and *maxcolor*
+   arguments as :class:`rect`. Because :class:`density` embeds a compact raster
+   bitmap rather than a triangle mesh, it produces much smaller files than
+   :class:`surface` for large 2D grids and avoids PDF viewer anti-aliasing seams.
 
 
 .. module:: graph.key
+   :synopsis: Graph legends (keys)
 
-Module :mod:`graph.key`: Graph keys
-===================================
-
-The following class provides a key, whose instances can be passed to the
-constructor keyword argument ``key`` of a graph. The class is implemented in
-:mod:`graph.key`.
-
+Module :mod:`graph.key`: Graph Keys (Legends)
+=============================================
 
 .. class:: key(dist=0.2*unit.v_cm, pos="tr", hpos=None, vpos=None, hinside=1, vinside=1, hdist=0.6*unit.v_cm, vdist=0.4*unit.v_cm, symbolwidth=0.5*unit.v_cm, symbolheight=0.25*unit.v_cm, symbolspace=0.2*unit.v_cm, textattrs=[], columns=1, columndist=0.5*unit.v_cm, border=0.3*unit.v_cm, keyattrs=None)
 
-   This class writes the title of the data in a plot together with a small
-   illustration of the style. The style is responsible for its illustration.
+   Creates a graph legend to be passed to the ``key`` argument of
+   :class:`graph.graphxy` or :class:`graph.graphxyz`.
 
-   *dist* is a visual length and a distance between the key entries. *pos* is the
-   position of the key with respect to the graph. Allowed values are combinations
-   of ``"t"`` (top), ``"m"`` (middle) and ``"b"`` (bottom) with ``"l"`` (left),
-   ``"c"`` (center) and ``"r"`` (right). Alternatively, you may use *hpos* and
-   *vpos* to specify the relative position using the range [0:1]. *hdist* and
-   *vdist* are the distances from the specified corner of the graph. *hinside* and
-   *vinside* are numbers to be set to 0 or 1 to define whether the key should be
-   placed horizontally and vertically inside of the graph or not.
-
-   *symbolwidth* and *symbolheight* are passed to the style to control the size of
-   the style illustration. *symbolspace* is the space between the illustration and
-   the text. *textattrs* are attributes for the text creation. They are merged with
-   ``[text.vshift.mathaxis]``.
-
-   *columns* is a number of columns of the graph key and *columndist* is the
-   distance between those columns.
-
-   When *keyattrs* is set to contain some draw attributes, the graph key is
-   enlarged by *border* and the key area is drawn using *keyattrs*.
-
-
+   * *pos*: Two-character alignment string positioning the legend relative to the
+     plot box: vertical position ``"t"`` (top), ``"m"`` (middle), or ``"b"``
+     (bottom) followed by horizontal position ``"l"`` (left), ``"c"`` (center),
+     or ``"r"`` (right). Default is ``"tr"`` (top right).
+   * *hpos*, *vpos*: Explicit relative horizontal and vertical positions in
+     :math:`[0, 1]` (alternative to *pos*; cannot be combined with *pos*).
+   * *hinside*, *vinside*: ``1`` (default) to place the legend inside the plot
+     box, or ``0`` to place it outside the plot box (for example, ``pos="tl",
+     hinside=0`` places the legend to the left of the top-left corner).
+   * *hdist*, *vdist*: Horizontal and vertical margin between the legend and the
+     reference corner of the plot box.
+   * *dist*: Vertical baseline separation between consecutive entries.
+   * *symbolwidth*, *symbolheight*, *symbolspace*: Dimensions of the style preview
+     swatch and horizontal gap between the swatch and the dataset title.
+   * *textattrs*: Text attributes applied to legend labels (merged with
+     ``[text.vshift.mathaxis]``).
+   * *columns*, *columndist*: Number of legend columns (default ``1``) and
+     horizontal spacing between columns.
+   * *keyattrs*, *border*: Optional draw attributes (such as
+     ``[deco.filled([color.gray.white]), deco.stroked()]``) used to draw a box around
+     the legend, padded on all sides by *border* (default ``0.3 * unit.v_cm``).

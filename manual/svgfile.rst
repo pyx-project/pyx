@@ -1,74 +1,117 @@
-
 .. module:: svgfile
+   :synopsis: Inclusion and parsing of Scalable Vector Graphics (SVG) files
+
+.. _svgfile:
 
 *****************************************
 Module :mod:`svgfile`: SVG file inclusion
 *****************************************
 
-With the help of the ``svgfile.svgfile`` class, you can easily embed another SVG
-file in your canvas, thereby scaling, aligning the content at discretion. The
-most simple example looks like
+The :mod:`svgfile` module allows you to include external Scalable Vector Graphics
+(SVG) files in a PyX :class:`canvas.canvas`, either by embedding the XML tree
+directly in SVG output or by parsing the SVG vector paths and styles into a
+native PyX canvas that can be exported to PostScript, EPS, PDF, and SVG:
 
-   ::
+.. code-block:: python
 
-      from pyx import *
-      c = canvas.canvas()
-      c.insert(svgfile.svgfile(0, 0, "file.svg"))
-      c.writeSVGfile("output")
+   from pyx import *
+
+   c = canvas.canvas()
+   c.insert(svgfile.svgfile(0, 0, "icon.svg", width=4, parsed=True))
+   c.writePDFfile("output")
 
 
-All relevant parameters are passed to the ``svgfile.svgfile`` constructor. They
-are summarized in the following table:
+Class :class:`svgfile`
+======================
 
-+---------------------+-----------------------------------------------+
-| argument name       | description                                   |
-+=====================+===============================================+
-| ``x``               | :math:`x`\ -coordinate of position.           |
-+---------------------+-----------------------------------------------+
-| ``y``               | :math:`y`\ -coordinate of position.           |
-+---------------------+-----------------------------------------------+
-| ``filename``        | Name of the SVG file.                         |
-+---------------------+-----------------------------------------------+
-| ``width=None``      | Desired width of SVG graphics or ``None`` for |
-|                     | original width.                               |
-+---------------------+-----------------------------------------------+
-| ``height=None``     | Desired height of SVG graphics or ``None``    |
-|                     | for original height.                          |
-+---------------------+-----------------------------------------------+
-| ``ratio=None``      | For a given width or height set the other     |
-|                     | dimension with the given ratio. If ``None``   |
-|                     | and either width or height is set, the other  |
-|                     | dimension is scaled proportionally, which     |
-|                     | is different from a ratio ``1``.              |
-+---------------------+-----------------------------------------------+
-| ``parsed=False``    | Parsed mode flag, see below.                  |
-+---------------------+-----------------------------------------------+
-| ``resolution=96``   | SVG resolution in "dpi", see below.           |
-+---------------------+-----------------------------------------------+
+.. class:: svgfile(x, y, filename, width=None, height=None, ratio=None, align="bl", parsed=False, resolution=96)
 
-In parsed mode a filled PyX canvas containing the SVG data is created. At the
-moment the parser handles paths with styles, transformations, canvas nesting
-etc. but no other SVG constructs. While some features might be added in the
-future, the parsed mode will probably always have limitations, like not being
-able to take into account CSS styling and other things. On the other hand the
-parsed mode has some major advantages. You can access the paths as PyX paths
-within the canvas and you can output the parsed SVG data to PostScript and PDF.
+   Creates a canvas item representing the SVG file *filename* placed at ``(x, y)``
+   (in user units or PyX lengths). A point-based variant :class:`svgfile_pt`
+   takes ``x_pt``, ``y_pt``, ``width_pt``, and ``height_pt`` in PostScript
+   points.
 
-Even though SVG is a vector format, inserting an SVG file depends on a
-resolution most of the time. This resolution defines the unit scale, when no
-unit like ``pt``, ``in``, ``mm``, or ``cm`` is used. This user unit is meant to
-be pixels, thus viewer programs are adviced to use the screen resolution. Tools
-to SVG files often use 90 dpi as in the w3.org SVG Recommendation. However,
-note that Adobe (R) Illustrator (R) uses 72 dpi. In browsers 96 dpi is commonly
-used, which is thus set as the default. However, all this might vary between
-plattforms and configurations.
+   +---------------------+---------------------------------------------------------------+
+   | Argument            | Description                                                   |
+   +=====================+===============================================================+
+   | ``x``, ``y``        | Coordinates of the reference point at which the SVG graphic   |
+   |                     | is placed.                                                    |
+   +---------------------+---------------------------------------------------------------+
+   | ``filename``        | Path to the SVG file, or an open binary file-like object.     |
+   +---------------------+---------------------------------------------------------------+
+   | ``width=None``      | Desired width of the graphic, or ``None`` to use its original |
+   |                     | width (or compute from *height* and *ratio*).                 |
+   +---------------------+---------------------------------------------------------------+
+   | ``height=None``     | Desired height of the graphic, or ``None`` to use its         |
+   |                     | original height (or compute from *width* and *ratio*).        |
+   +---------------------+---------------------------------------------------------------+
+   | ``ratio=None``      | Aspect ratio ``width / height`` used when only *width* or     |
+   |                     | only *height* is specified. If ``None``, the SVG file's       |
+   |                     | original aspect ratio is preserved.                           |
+   +---------------------+---------------------------------------------------------------+
+   | ``align="bl"``      | Two-character alignment string specifying how the SVG graphic |
+   |                     | is aligned relative to ``(x, y)``. The first character sets   |
+   |                     | vertical alignment (``"b"`` bottom, ``"c"`` center, ``"t"``   |
+   |                     | top) and the second sets horizontal alignment (``"l"`` left,  |
+   |                     | ``"c"`` center, ``"r"`` right).                               |
+   +---------------------+---------------------------------------------------------------+
+   | ``parsed=False``    | When ``False`` (default), embeds the raw SVG XML into SVG     |
+   |                     | output. When ``True``, parses the SVG elements into a native  |
+   |                     | PyX :class:`canvas.canvas` (stored in ``self.canvas``).       |
+   +---------------------+---------------------------------------------------------------+
+   | ``resolution=96``   | Assumed resolution in dots per inch (dpi) used to convert     |
+   |                     | unitless SVG user coordinates (pixels) to physical units.     |
+   +---------------------+---------------------------------------------------------------+
 
-Note that the SVG output of PyX defines the its size using units. Still, when
-reading such a file in un-parsed mode PyX need to make assumtions on how the
-final viewer will insert (i.e. scale and position) the SVG file, thus needing a
-resolution. Only in parsed mode it becomes resolution independent.
 
-Unfortunately it is rather uncommon to store the size of the SVG in coordinates
-with units. You then need to provide the correct resolution in both modes,
-parsed and unparsed, to get proper alignment.
+Unparsed vs. Parsed Mode
+========================
 
+Unparsed Mode (``parsed=False``)
+--------------------------------
+
+In unparsed mode, PyX reads only the root ``<svg>`` attributes (``width``,
+``height``, and ``viewBox``) to determine the graphic's dimensions and copies the
+SVG XML content directly into the output stream when writing an SVG file
+(:meth:`canvas.canvas.writeSVGfile`). Unparsed mode supports the full SVG
+specification (including filters, gradients, and CSS), but can only be written to
+SVG output.
+
+Parsed Mode (``parsed=True``)
+-----------------------------
+
+In parsed mode, PyX parses the SVG document into native PyX paths, styles,
+transformations, and nested canvases stored in the instance's :attr:`canvas`
+attribute. The parser supports ``<g>``, ``<svg>``, ``<path>`` (including full SVG
+path data commands ``M``, ``L``, ``H``, ``V``, ``C``, ``S``, ``Q``, ``T``, ``A``,
+``Z``), basic shapes (``<rect>``, ``<circle>``, ``<ellipse>``, ``<line>``,
+``<polyline>``, ``<polygon>``), coordinate ``transform`` attributes, and stroke
+and fill styles.
+
+Parsed mode offers two major advantages:
+
+1. **Cross-format output**: The included SVG graphic can be written to
+   PostScript, EPS, PDF, and SVG alike.
+2. **Direct path access**: Because ``self.canvas`` is a standard PyX
+   :class:`canvas.canvas`, you can inspect or manipulate the parsed paths and
+   sub-canvases directly in Python.
+
+
+Coordinate Resolution (``resolution``)
+======================================
+
+Although SVG is a vector format, SVG files frequently specify ``width``,
+``height``, or coordinates in unitless user coordinates (``px``) rather than
+physical units (``pt``, ``mm``, ``cm``, ``in``). The *resolution* parameter
+defines how many SVG user pixels correspond to one physical inch (72 PostScript
+points):
+
+* **96 dpi** (the default): Used by CSS, modern web browsers, and Inkscape 0.92+.
+* **90 dpi**: Used by the original W3C SVG 1.1 specification and older versions
+  of Inkscape.
+* **72 dpi**: Used by Adobe Illustrator (where 1 user unit equals 1 PostScript
+  point).
+
+When an SVG file specifies physical units on its root ``width`` and ``height``
+(as PyX's own SVG writer does) and ``parsed=True`` is used, the result is
+completely independent of *resolution*.

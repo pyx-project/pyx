@@ -1,79 +1,111 @@
-
 .. module:: text
-   :synopsis: High-level interface for text output including a TeX/LaTeX
-              interface
+   :synopsis: High-level interface for text typesetting using TeX/LaTeX or direct Unicode font rendering
+
+.. _text:
 
 ****
 Text
 ****
 
-Rationale
-=========
+Overview and Quick Start
+========================
 
-The :mod:`text` module is used to create text output. It seamlessly integrates
-Donald E. Knuths famous TeX typesetting engine\ [#]_. The module is a
-high-level interface to an extensive stack of TeX and font related
-functionality in PyX, whose details are way beyond this manual and completely
-irrelevant for the typical PyX user. However, the basic concept should be
-described briefly, as it provides important insights into essential properties
-of the whole machinery.
+The :mod:`text` module provides PyX's text typesetting facilities. Depending on
+your needs and environment, PyX offers two complementary text rendering engines:
 
-PyX does not apply any limitations on the text submitted by the user. Instead
-the text is directly passed to TeX. This has the implication, that the text to
-be typeset should come from a trusted source or some special security measures
-should be applied (see :ref:`chroot`). PyX just adds a light and transparent
-wrapper using basic TeX functionality for later identification and output
-extraction. This procedure enables full access to all TeX features and makes
-PyX on the other hand dependent on the error handling provided by TeX. However,
-a detailed and immediate control of the TeX output allows PyX to report
-problems back to the user as they occur.
+* **TeX and LaTeX engines** (:class:`TexEngine` and :class:`LatexEngine`):
+  The default typesetting backend. PyX runs Donald E. Knuth's TeX [#]_ or LaTeX
+  as a background process, giving you full access to TeX's mathematical
+  typesetting, macro expansion, kerning, ligatures, and LaTeX packages.
+* **Direct Unicode font engine** (:class:`UnicodeEngine`):
+  A lightweight, pure-Python text engine that renders Unicode strings directly
+  using Type 1 or OpenType/TrueType (``.otf``/``.ttf``) fonts without invoking an
+  external TeX process.
 
-While we only talked about TeX so far (and will continue to do so in the rest
-of this section), it is important to note that the coupling is not limited to
-plain TeX. Currently, PyX can also use LaTeX for typesetting, and other TeX
-variants could be added in the future. What PyX really depends on is the
-ability of the typesetting program to generate DVI\ [#]_.
+Basic Usage
+-----------
 
-As soon as some text creation is requested or, even before that, a preamble
-setting or macro definition is submitted, the TeX program is started as a
-separate process. The input and output is bound to a :class:`SingleEngine`
-instance. Typically, the process will be kept alive and will be reused for all
-future typesetting requests until the end of the PyX process. However, there
-are certain situations when the TeX program needs to be shutdown early, which
-are be described in detail in the :ref:`texipc` section.
+In most scripts, you do not create a text engine directly. Instead, you call
+:meth:`canvas.canvas.text` (which delegates to the module-level default engine)
+and configure the global engine via :func:`text.set` and :func:`text.preamble`:
 
-Whenever PyX sends some commands to the TeX interpreter, it adds an output
-marker at the end, and waits for this output marker to be echoed in the TeX
-output. All intermediate output is attributed to the commands just sent and
-will be analysed for problems. This is done by :class:`texmessage` parsers.
-Here, a problem could be logged to the PyX logger at warning level, thus
-be reported to ``stderr`` by default. This happens for over- or underfull boxes
-or font warnings emitted by TeX. For other unknown problems (*i.e.* output not
-handled by any of the given :class:`texmessage` parsers), a
-:exc:`TexResultError` is raised, which creates a detailed error report
-including the traceback, the commands submitted to TeX and the output returned
-by TeX.
+.. code-block:: python
 
-PyX wraps each text to be typeset in a TeX box and adds a shipout of this box
-to the TeX code before forwarding it to TeX. Thus a page in the DVI file is
-created containing just this output. Furthermore TeX is asked to output the box
-extent. By that PyX will immediately know the size of the text without
-referring to the DVI. This also allows faking the box size by TeX means, as you
-would expect it.
+   from pyx import *
 
-Once the actual output is requested, PyX reads the content of the DVI file,
-accessing the page related to the output in question. It then does all the
-necessary steps to transform the DVI content to the requested output format,
-like searching for virtual font files, font metrics, font mapping files, and
-PostScript Type1 fonts to be used in the final output. Here a present
-limitation has been mentioned: PyX presently can use PostScript Type1 fonts
-only to generate text output. While this is a serious limitation, all the
-default fonts in TeX are available in Type1 nowadays and current TeX
-installations are alreadily configured to use them by default.
+   # Switch the default engine from plain TeX to LaTeX and load packages
+   text.set(cls=text.LatexEngine)
+   text.preamble(r"\usepackage{amsmath}")
+
+   c = canvas.canvas()
+   c.text(0, 0, r"$\int_{-\infty}^{\infty} e^{-x^2}\,dx = \sqrt{\pi}$",
+          [text.halign.center, text.vshift.mathaxis, text.size.Large])
+   c.writePDFfile("gauss")
+
+Calling :func:`text.text` (or :meth:`canvas.canvas.text`) returns a
+:class:`textextbox_pt` (or :class:`textbox`) instance—a canvas-like object that
+knows its exact typographic width, height, and depth, and can be aligned,
+transformed, or queried for its bounding box before or after insertion into a
+canvas.
 
 
-TeX interface
-=============
+Architecture of the TeX Interface
+=================================
+
+Understanding how PyX communicates with TeX/LaTeX is helpful when customizing
+preambles, handling TeX warnings, or optimizing scripts that typeset many text
+fragments.
+
+1. **Direct TeX execution**:
+   PyX does not parse or restrict TeX syntax itself; instead, it passes your
+   text directly to an external ``tex`` or ``latex`` process wrapped in a thin
+   TeX macro for box measurement and shipout. Because arbitrary TeX primitives
+   can read files on disk, untrusted user input should only be typeset inside a
+   restricted environment (see :ref:`chroot`).
+
+2. **Persistent background process**:
+   As soon as the first preamble command or :func:`text` call is issued, PyX
+   launches the TeX interpreter as a child process bound to a
+   :class:`SingleEngine` instance. This single process stays alive across
+   subsequent :func:`text` calls so that TeX only initializes once and macro
+   definitions persist.
+
+3. **Immediate box metrics and output parsing**:
+   For each text fragment, PyX places the typeset material into a TeX box,
+   instructs TeX to print the box's exact ``width``, ``height``, and ``depth`` to
+   ``stdout`` followed by a unique end-of-command marker, and ships the box out
+   to its own page in the DVI [#]_ file. PyX immediately parses ``stdout`` using
+   a chain of :class:`texmessage` parsers:
+
+   * Expected status messages are stripped silently.
+   * Overfull/underfull box notices and font warnings are logged via the
+     ``"pyx"`` logger at ``WARNING`` level.
+   * Any unrecognized output left over after all :class:`texmessage` parsers
+     have run raises a :exc:`TexResultError` with a detailed diagnostic report.
+
+   Because TeX reports box dimensions immediately on ``stdout``, PyX knows the
+   exact dimensions of every text box (`width`, `height`, `depth`) right away—even
+   before reading the DVI file.
+
+4. **DVI reading and font embedding**:
+   When final output (EPS, PS, PDF, or SVG) is written—or when a coordinate
+   marker inside the text box is queried via :meth:`textextbox_pt.marker`—PyX
+   reads the corresponding page from the DVI file, resolves virtual fonts
+   (``.vf``), TeX font metrics (``.tfm``), and font map files (``psfonts.map`` /
+   ``pdftex.map``), and embeds the required Type 1 font outlines directly into
+   the output document.
+
+
+TeX and LaTeX Engines
+=====================
+
+PyX separates the low-level management of a single TeX process
+(:class:`SingleEngine`) from the high-level engine interface
+(:class:`MultiEngine`) that automatically restarts TeX if needed (for instance,
+when the DVI file must be flushed and read mid-script without :ref:`texipc`).
+
+Single-Process Engines
+----------------------
 
 .. autoclass:: SingleEngine
    :members: preamble, text, text_pt, texmessages_start_default, texmessages_end_default, texmessages_preamble_default, texmessages_run_default
@@ -83,16 +115,16 @@ TeX interface
 .. autoclass:: SingleLatexEngine
    :members: texmessages_docclass_default, texmessages_begindoc_default
 
-The :class:`SingleEngine` classes described above do not handle restarts of the
-interpreter when the actuall DVI result is required and is not available via
-the :ref:`texipc` feature.
+Multi-Run Wrapper Engines
+-------------------------
 
-The :class:`MultiEngine` classes below are not derived from
-:class:`SingleEngine` even though the provide the same functional interface
-(:meth:`MultiEngine.preamble`, :meth:`MultiEngine.text`, and
-:meth:`MultiEngine.text_pt`), but instead wrap a :class:`SingleEngine`
-instance, and provide an automatic (or manual by the :meth:`MultiEngine.reset`
-function) restart of the interpreter as required.
+:class:`MultiEngine` and its subclasses (:class:`TexEngine` and
+:class:`LatexEngine`) wrap one or more :class:`SingleEngine` instances. They
+provide the same public methods (:meth:`~MultiEngine.preamble`,
+:meth:`~MultiEngine.text`, and :meth:`~MultiEngine.text_pt`), while
+automatically starting a fresh :class:`SingleEngine` (and replaying all
+accumulated preamble commands) whenever the previous process had to be closed to
+read its DVI file.
 
 .. autoclass:: MultiEngine
    :members: preamble, text, text_pt, reset
@@ -101,18 +133,37 @@ function) restart of the interpreter as required.
 
 .. autoclass:: LatexEngine
 
+Text Boxes and Coordinate Markers
+---------------------------------
+
+Every call to ``text()`` or ``text_pt()`` on a TeX/LaTeX engine returns a
+:class:`textextbox_pt` instance:
+
 .. autoclass:: textextbox_pt
    :members: marker, left, right, width, height, depth
 
+.. tip::
 
-Module level functionality
-==========================
+   **Using PyX Markers inside TeX**:
+   You can record the exact position of any point inside a TeX expression by
+   inserting ``\PyXMarker{id}`` in your TeX string and later calling
+   ``tb.marker("id")`` on the returned text box to obtain its ``(x, y)``
+   coordinates on the canvas:
 
-The text module provides the public interface of the :class:`SingleEngine`
-class by module level functions. For that, a module level :class:`MultiEngine`
-is created and configured by the :func:`set` function. Each time the
-:func:`set` function is called, the existing module level :class:`MultiEngine`
-is replaced by a new one.
+   .. code-block:: python
+
+      tb = c.text(0, 0, r"$y = \PyXMarker{rhs}\underbrace{a x^2 + b x + c}$")
+      mx, my = tb.marker("rhs")
+
+
+Module-Level Functions
+======================
+
+For convenience, the :mod:`text` module maintains a default module-level text
+engine (:data:`defaulttextengine`, which defaults to a :class:`TexEngine`
+instance) and exposes its methods as module-level functions. Calling
+:func:`text.set` replaces :data:`defaulttextengine` with a newly configured
+engine.
 
 .. autodata:: defaulttextengine
    :annotation:
@@ -141,508 +192,445 @@ is replaced by a new one.
    .. autofunction:: remove_nested_brackets
 
 
-TeX output parsers
-==================
+TeX Output Parsers and Error Handling
+=====================================
 
-While running TeX (and variants thereof) a variety of information is written to
-``stdout`` like status messages, details about file access, and also warnings
-and errors. PyX reads all the output and analyses it. Some of the output is
-triggered as a direct response to the TeX input and is thus easy to understand
-for PyX. This includes page output information, but also workflow control
-information injected by PyX into the input stream. PyX uses it to check the
-communication and typeset progress. All the other output is handled by a list
-of :class:`texmessage` parsers, an individual set of functions applied to the
-TeX output one after the other. Each of the function receives the TeX output as
-a string and return it back (maybe altered). Such a function must perform one
-of the following actions in response to the TeX output is receives:
+When TeX or LaTeX runs, it writes status banners, file load notices, box
+warnings, and error messages to ``stdout``. After stripping its own internal page
+and extent markers, PyX passes the remaining output string through a sequence of
+:class:`texmessage` parser callables. Each parser inspects the output string and
+performs one of four actions:
 
- 1. If it does not find any text in the TeX output it feels responsible for, it
-    should just return the unchanged string.
+1. **Unrelated output**: Return the string unchanged so subsequent parsers can
+   inspect it.
+2. **Expected/harmless message**: Strip the recognized message and return the
+   remaining string.
+3. **Warning**: Log a warning via the ``"pyx"`` logger (printed to ``stderr`` by
+   default, e.g. for overfull/underfull boxes or font substitutions), strip the
+   message, and return the remaining string.
+4. **Error**: Raise :exc:`TexResultError` (or leave the error text in the
+   returned string—any non-empty text remaining after all parsers have run
+   automatically triggers a :exc:`TexResultError`).
 
- 2. If it finds a text it is responsible for, and the message is just fine
-    (doesn't need to be communicated to the user), it should just remove this
-    text and return the rest of the TeX output.
-
- 3. If the text should be communicated to the user, a message should be written
-    the the pyx logger at warning level, thus being reported to the user on
-    ``stderr`` by default. Examples are underfull and overfull box warnings or
-    font warnings. In addition, the text should be removed as in 2 above.
-
- 4. In case of an error, :exc:`TexResultError` should be raised.
-
-This is rather uncommon, that the fourth option is taken directly. Instead,
-errors can just be kept in the output as PyX considers unhandled TeX output
-left after applying all given :class:`texmessage` parsers as an error. In
-addition to the error message, information about the TeX in- and output will be
-added to the exception description text by the :class:`SingleEngine` according
-to the :class:`errordetail` setting. The following verbosity levels are
-available:
+The amount of context included in a :exc:`TexResultError` exception is
+controlled by :class:`errordetail`:
 
 .. autoclass:: errordetail
    :members:
 
 .. autoexception:: TexResultError
 
-To prevent any unhandled TeX output to be reported as an error,
-:attr:`texmessage.warn` or :attr:`texmessage.ignore` can be used. To complete
-the description, here is a list of all available :class:`texmessage` parsers:
+To accept unknown TeX output without raising an error, you can append
+:attr:`texmessage.warn` or :attr:`texmessage.ignore` to the ``texmessages_*``
+lists. The built-in message parsers are:
 
 .. autoclass:: texmessage
    :members:
 
 
-TeX/LaTeX attributes
-====================
+Text Attributes (Alignment, Parboxes, Math Mode, Font Size)
+===========================================================
 
+Text attributes are passed in a list to :func:`text.text` or
+:meth:`canvas.canvas.text` alongside transformations (:class:`trafo.trafo`),
+colors (:class:`color.color`), and decorators. They generate appropriate
+TeX/LaTeX wrapper fragments or geometric alignments and automatically resolve
+ordering dependencies.
 
-TeX/LaTeX attributes are instances to be passed to a :class:`texrunner`\ s
-:meth:`text` method. They stand for TeX/LaTeX expression fragments and handle
-dependencies by proper ordering.
-
+Horizontal Alignment (:class:`halign`)
+--------------------------------------
 
 .. class:: halign(boxhalign, flushhalign)
 
-   Instances of this class set the horizontal alignment of a text box and the
-   contents of a text box to be left, center and right for *boxhalign* and
-   *flushhalign* being ``0``, ``0.5``, and ``1``. Other values are allowed as well,
-   although such an alignment seems quite unusual.
+   Controls both the horizontal alignment of the text box relative to its
+   reference point ``(x, y)`` (*boxhalign*) and the horizontal alignment of text
+   lines inside a multi-line :class:`parbox` (*flushhalign*). Standard values are
+   ``0`` (left), ``0.5`` (center), and ``1`` (right), though arbitrary floating
+   point numbers are permitted.
 
-Note that there are two separate classes :class:`boxhalign` and
-:class:`flushhalign` to set the alignment of the box and its contents
-independently, but those helper classes can't be cleared independently from each
-other. Some handy instances available as class members:
+   The separate helper classes :class:`boxhalign` and :class:`flushhalign` allow
+   setting box placement and line flushing independently. Predefined instances
+   are provided as class attributes on :class:`halign`:
 
+   .. attribute:: halign.boxleft
 
-.. attribute:: halign.boxleft
+      Left-aligns the text box at the reference point (``boxhalign=0``, leaves
+      *flushhalign* unchanged).
 
-   Left alignment of the text box, *i.e.* sets *boxhalign* to ``0`` and doesn't set
-   *flushhalign*.
+   .. attribute:: halign.boxcenter
 
+       Horizontally centers the text box at the reference point
+       (``boxhalign=0.5``, leaves *flushhalign* unchanged).
 
-.. attribute:: halign.boxcenter
+   .. attribute:: halign.boxright
 
-   Center alignment of the text box, *i.e.* sets *boxhalign* to ``0.5`` and doesn't
-   set *flushhalign*.
+      Right-aligns the text box at the reference point (``boxhalign=1``, leaves
+      *flushhalign* unchanged).
 
+   .. attribute:: halign.flushleft
+   .. attribute:: halign.raggedright
 
-.. attribute:: halign.boxright
+      Left-aligns (ragged-right) lines inside a :class:`parbox`
+      (``flushhalign=0``, leaves *boxhalign* unchanged).
 
-   Right alignment of the text box, *i.e.* sets *boxhalign* to ``1`` and doesn't
-   set *flushhalign*.
+   .. attribute:: halign.flushcenter
+   .. attribute:: halign.raggedcenter
 
+      Centers lines inside a :class:`parbox` (``flushhalign=0.5``, leaves
+      *boxhalign* unchanged).
 
-.. attribute:: halign.flushleft
+   .. attribute:: halign.flushright
+   .. attribute:: halign.raggedleft
 
-   Left alignment of the content of the text box in a multiline box, *i.e.* sets
-   *flushhalign* to ``0`` and doesn't set *boxhalign*.
+      Right-aligns (ragged-left) lines inside a :class:`parbox`
+      (``flushhalign=1``, leaves *boxhalign* unchanged).
 
+   .. attribute:: halign.left
 
-.. attribute:: halign.raggedright
+      Combines :attr:`boxleft` and :attr:`flushleft` (``halign(0, 0)``).
 
-   Identical to :attr:`flushleft`.
+   .. attribute:: halign.center
 
+      Combines :attr:`boxcenter` and :attr:`flushcenter` (``halign(0.5, 0.5)``).
 
-.. attribute:: halign.flushcenter
+   .. attribute:: halign.right
 
-   Center alignment of the content of the text box in a multiline box, *i.e.* sets
-   *flushhalign* to ``0.5`` and doesn't set *boxhalign*.
+      Combines :attr:`boxright` and :attr:`flushright` (``halign(1, 1)``).
 
-
-.. attribute:: halign.raggedcenter
-
-   Identical to :attr:`flushcenter`.
-
-
-.. attribute:: halign.flushright
-
-   Right alignment of the content of the text box in a multiline box, *i.e.* sets
-   *flushhalign* to ``1`` and doesn't set *boxhalign*.
-
-
-.. attribute:: halign.raggedleft
-
-   Identical to :attr:`flushright`.
-
-
-.. attribute:: halign.left
-
-   Combines :attr:`boxleft` and :attr:`flushleft`, *i.e.* ``halign(0, 0)``.
-
-
-.. attribute:: halign.center
-
-   Combines :attr:`boxcenter` and :attr:`flushcenter`, *i.e.* ``halign(0.5, 0.5)``.
-
-
-.. attribute:: halign.right
-
-   Combines :attr:`boxright` and :attr:`flushright`, *i.e.* ``halign(1, 1)``.
+Vertical Alignment (:class:`valign`) and Multi-Line Boxes (:class:`parbox`)
+---------------------------------------------------------------------------
 
 .. _fig_textvalign:
 .. figure:: textvalign.*
-   :align:  center
+   :align: center
 
-   valign example
-
+   Vertical alignment of single-line text boxes using :class:`valign` (left) and
+   baseline selection in multi-line :class:`parbox` boxes (right).
 
 .. class:: valign(valign)
 
-   Instances of this class set the vertical alignment of a text box to be top,
-   center and bottom for *valign* being ``0``, ``0.5``, and ``1``. Other values are
-   allowed as well, although such an alignment seems quite unusual. See the left
-   side of figure :ref:`fig_textvalign` for an example.
+   Sets the vertical alignment of the text box relative to its overall bounding
+   height (from bottom of depth to top of height): ``0`` aligns at the top,
+   ``0.5`` at the vertical center, and ``1`` at the bottom. See the left side of
+   figure :ref:`fig_textvalign`.
 
-Some handy instances available as class members:
+   .. attribute:: valign.top
 
+      Aligns the top of the text box with the reference point (``valign(0)``).
 
-.. attribute:: valign.top
+   .. attribute:: valign.middle
 
-   ``valign(0)``
+      Vertically centers the text box at the reference point (``valign(0.5)``).
 
+   .. attribute:: valign.bottom
 
-.. attribute:: valign.middle
+      Aligns the bottom of the text box with the reference point (``valign(1)``).
 
-   ``valign(0.5)``
+   .. attribute:: valign.baseline
 
-
-.. attribute:: valign.bottom
-
-   ``valign(1)``
-
-
-.. attribute:: valign.baseline
-
-   Identical to clearing the vertical alignment by :attr:`clear` to emphasise that
-   a baseline alignment is not a box-related alignment. Baseline alignment is the
-   default, *i.e.* no valign is set by default.
-
+      Clears any box-based vertical alignment (identical to ``valign.clear``) so
+      that the text box is aligned along its typographic baseline (the default).
 
 .. class:: parbox(width, baseline=top)
 
-   Instances of this class create a box with a finite width, where the typesetter
-   creates multiple lines in. Note, that you can't create multiple lines in
-   TeX/LaTeX without specifying a box width. Since PyX doesn't know a box width, it
-   uses TeX's LR-mode by default, which will always put everything into a single
-   line. Since in a vertical box there are several baselines, you can specify the
-   baseline to be used by the optional *baseline* argument. You can set it to the
-   symbolic names :attr:`top`, :attr:`parbox.middle`, and :attr:`parbox.bottom`
-   only, which are members of :class:`valign`. See the right side of figure
-   :ref:`fig_textvalign` for an example.
+   Typesets text in a vertical paragraph box of fixed *width* (a PyX length or
+   number in user units), enabling automatic line wrapping and explicit line
+   breaks (``\\``). By default, TeX typesets in LR (left-to-right) mode on a
+   single line unless a :class:`parbox` attribute is provided.
 
-Since you need to specify a box width no predefined instances are available as
-class members.
+   Because a multi-line paragraph has multiple baselines, *baseline* selects
+   which baseline serves as the reference baseline of the box:
 
+   * :attr:`parbox.top` (default): the baseline of the first line.
+   * :attr:`parbox.middle`: the vertical center of the paragraph box.
+   * :attr:`parbox.bottom`: the baseline of the last line.
+
+   See the right side of figure :ref:`fig_textvalign`.
+
+Vertical Shifts (:class:`vshift`)
+---------------------------------
 
 .. class:: vshift(lowerratio, heightstr="0")
 
-   Instances of this class lower the output by *lowerratio* of the height of the
-   string *heightstr*. Note, that you can apply several shifts to sum up the
-   shift result. However, there is still a :attr:`clear` class member to remove all
-   vertical shifts.
+   Lowers the text box relative to its baseline by *lowerratio* times the height
+   of the character(s) in *heightstr* (default ``"0"``). Multiple :class:`vshift`
+   attributes accumulate; use ``vshift.clear`` to remove all vertical shifts.
 
-Some handy instances available as class members:
+   .. attribute:: vshift.bottomzero
 
+      ``vshift(0)`` — no vertical shift (aligns at the baseline of ``"0"``).
 
-.. attribute:: vshift.bottomzero
+   .. attribute:: vshift.middlezero
 
-   ``vshift(0)`` (this doesn't shift at all)
+      ``vshift(0.5)`` — lowers the text by half the height of ``"0"``.
 
+   .. attribute:: vshift.topzero
 
-.. attribute:: vshift.middlezero
+      ``vshift(1)`` — lowers the text by the full height of ``"0"``.
 
-   ``vshift(0.5)``
+   .. attribute:: vshift.mathaxis
 
+      Lowers the text by the height of TeX's mathematical axis (the vertical
+      center of math operators such as minus signs and fraction bars). This is
+      used by default for graph axis labels and titles.
 
-.. attribute:: vshift.topzero
-
-   ``vshift(1)``
-
-
-.. attribute:: vshift.mathaxis
-
-   This is a special vertical shift to lower the output by the height of the
-   mathematical axis. The mathematical axis is used by TeX for the vertical
-   alignment in mathematical expressions and is often usefull for vertical
-   alignment. The corresponding vertical shift is less than :attr:`middlezero` and
-   usually fits the height of the minus sign. (It is the height of the minus sign
-   in mathematical mode, since that's that the mathematical axis is all about.)
-
-There is a TeX/LaTeX attribute to switch to TeX's math mode. The appropriate
-instances ``mathmode`` and ``clearmathmode`` (to clear the math mode attribute)
-are available at module level.
-
+Math Mode, Font Sizes, and Phantom Text
+---------------------------------------
 
 .. data:: mathmode
 
-   Enables TeX's mathematical mode in display style.
-
-The :class:`size` class creates TeX/LaTeX attributes for changing the font size.
-
+   Typesets the text in TeX display math mode (``$\displaystyle ...$``). Use
+   ``clearmathmode`` to clear this attribute.
 
 .. class:: size(sizeindex=None, sizename=None, sizelist=defaultsizelist)
 
-   LaTeX knows several commands to change the font size. The command names are
-   stored in the *sizelist*, which defaults to ``["normalsize", "large", "Large",
-   "LARGE", "huge", "Huge", None, "tiny", "scriptsize", "footnotesize", "small"]``.
+   Applies a TeX/LaTeX font size command from *sizelist*
+   (default ``["normalsize", "large", "Large", "LARGE", "huge", "Huge", None,
+   "tiny", "scriptsize", "footnotesize", "small"]``). You can specify either an
+   integer *sizeindex* into *sizelist* or a command name *sizename*.
 
-   You can either provide an index *sizeindex* to access an item in *sizelist* or
-   set the command name by *sizename*.
+   Predefined instances corresponding to standard LaTeX font sizes are available
+   as class attributes:
 
-Instances for the LaTeXs default size change commands are available as class
-members:
+   .. attribute:: size.tiny
 
+      ``size(-4)``
 
-.. attribute:: size.tiny
+   .. attribute:: size.scriptsize
 
-   ``size(-4)``
+      ``size(-3)``
 
+   .. attribute:: size.footnotesize
 
-.. attribute:: size.scriptsize
+      ``size(-2)``
 
-   ``size(-3)``
+   .. attribute:: size.small
 
+      ``size(-1)``
 
-.. attribute:: size.footnotesize
+   .. attribute:: size.normalsize
 
-   ``size(-2)``
+      ``size(0)``
 
+   .. attribute:: size.large
 
-.. attribute:: size.small
+      ``size(1)``
 
-   ``size(-1)``
+   .. attribute:: size.Large
 
+      ``size(2)``
 
-.. attribute:: size.normalsize
+   .. attribute:: size.LARGE
 
-   ``size(0)``
+      ``size(3)``
 
+   .. attribute:: size.huge
 
-.. attribute:: size.large
+      ``size(4)``
 
-   ``size(1)``
+   .. attribute:: size.Huge
 
-
-.. attribute:: size.Large
-
-   ``size(2)``
-
-
-.. attribute:: size.LARGE
-
-   ``size(3)``
-
-
-.. attribute:: size.huge
-
-   ``size(4)``
-
-
-.. attribute:: size.Huge
-
-   ``size(5)``
-
-There is a TeX/LaTeX attribute to create empty text boxes with the size of the
-material passed in. The appropriate instances ``phantom`` and ``clearphantom``
-(to clear the phantom attribute) are available at module level.
-
+      ``size(5)``
 
 .. data:: phantom
 
-   Skip the text in the box, but keep its size.
+   Typesets an invisible box that occupies the exact width, height, and depth of
+   the given text without drawing any glyphs (equivalent to TeX's ``\phantom``).
+   Use ``clearphantom`` to clear this attribute.
+
+
+.. _UnicodeEngine:
+
+UnicodeEngine: Direct Font Rendering without TeX
+================================================
+
+.. module:: text
+   :noindex:
+
+When you only need simple labels or want to use system OpenType/TrueType
+(``.otf``/``.ttf``) or Type 1 fonts without invoking an external TeX process,
+you can use :class:`UnicodeEngine`.
+
+.. code-block:: python
+
+   from pyx import *
+
+   text.set(cls=text.UnicodeEngine, fontname="cmr10", size=12)
+
+   c = canvas.canvas()
+   c.text(0, 0, "Direct Unicode text rendering", [text.halign.center])
+
+.. class:: UnicodeEngine(fontname="cmr10", size=10, prepend_fontpath=None)
+
+   A pure-Python text engine that renders Unicode strings directly using Type 1
+   or OpenType/TrueType (``.otf``/``.ttf``) fonts.
+
+   * *fontname*: Name of the font to load (looked up via ``psfonts.map`` /
+     ``pdftex.map`` or directly as ``<fontname>.otf`` / ``<fontname>.ttf``).
+   * *size*: Base font size in PostScript points (default ``10``).
+   * *prepend_fontpath*: Optional list of directory paths to search for font
+     files before searching standard TeX/system font paths.
+
+   .. method:: text_pt(x_pt, y_pt, text, textattrs=[], **kwargs)
+   .. method:: text(x, y, text, textattrs=[], **kwargs)
+
+      Typesets *text* (which may be a string, :class:`Text`, :class:`StackedText`,
+      :class:`MultiEngineText`, or a list thereof) at ``(x, y)`` and returns a
+      :class:`textbox_pt` instance. Supports :class:`halign`, :class:`valign`,
+      :class:`vshift`, :class:`size`, :class:`trafo.trafo_pt`, and
+      :class:`color.color` attributes in *textattrs*.
+
+.. class:: Text(text, scale=1, shift=0)
+
+   Wraps a string *text* for :class:`UnicodeEngine` with a relative font *scale*
+   factor and a vertical baseline *shift* (as a fraction of the font size). This
+   is useful for superscripts and subscripts when using :class:`UnicodeEngine`,
+   for example ``["10", text.Text("-3", scale=0.7, shift=0.4)]``.
+
+.. class:: StackedText(texts, halign=0, sep=2)
+
+   Stacks a sequence of *texts* vertically (for example, to render a fraction or
+   multi-line label in :class:`UnicodeEngine`) with horizontal alignment *halign*
+   (``0`` for left, ``0.5`` for center, ``1`` for right) and vertical separation
+   *sep* in points.
+
+.. class:: MultiEngineText(text_tex, text_unicode)
+
+   Holds two representations of a text fragment: *text_tex* (passed when a
+   TeX/LaTeX engine is active) and *text_unicode* (passed when
+   :class:`UnicodeEngine` is active). PyX's axis texters use
+   :class:`MultiEngineText` so that exponential tick labels work seamlessly with
+   both TeX engines and :class:`UnicodeEngine`.
 
 
 .. _pyxgraphics:
 
-Using the graphics-bundle with LaTeX
-====================================
+Using the LaTeX ``graphics`` Bundle with PyX
+============================================
 
-The packages in the LaTeX graphics bundle (``color.sty``, ``graphics.sty``,
-``graphicx.sty``, ...) make extensive use of ``\\special`` commands. PyX
-defines a clean set of such commands to fit the needs of the LaTeX graphics
-bundle. This is done via the ``pyx.def`` driver file, which tells the graphics
-bundle about the syntax of the ``\\special`` commands as expected by PyX. You
-can install the driver file ``pyx.def`` into your LaTeX search path and add the
-content of both files ``color.cfg`` and ``graphics.cfg`` to your personal
-configuration files\ [#]_. After you have installed the ``cfg`` files, please
-use the :mod:`text` module with unset ``pyxgraphics`` keyword argument which
-will switch off a convenience hack for less experienced LaTeX users. You can
-then import the LaTeX graphics bundle packages and related packages (e.g.
-``rotating``, ...) with the option ``pyx``, e.g.
-``\\usepackage[pyx]{color,graphicx}``. Note that the option ``pyx`` is only
-available with unset *pyxgraphics* keyword argument and a properly installed
-driver file. Otherwise, omit the specification of a driver when loading the
-packages.
+The packages in the standard LaTeX graphics bundle (``color``, ``graphicx``,
+``rotating``, etc.) rely on driver-specific ``\special`` commands emitted into
+the DVI file. PyX ships with its own driver file ``pyx.def`` (located in
+``pyx/data/def/pyx.def``) that translates LaTeX color, scaling, rotation, and EPS
+inclusion commands into native PyX canvas operations.
 
-When you define colors in LaTeX via one of the color models ``gray``, ``cmyk``,
-``rgb``, ``RGB``, ``hsb``, then PyX will use the corresponding values (one to
-four real numbers). In case you use any of the ``named`` colors in LaTeX, PyX
-will use the corresponding predefined color (see module ``color`` and the color
-table at the end of the manual). The additional LaTeX color model ``pyx`` allows
-to use a PyX color expression, such as ``color.cmyk(0,0,0,0)`` directly in
-LaTeX. It is passed to PyX.
+By default, :class:`SingleLatexEngine` enables ``pyxgraphics=True``, which
+automatically injects ``pyx.def`` so you can write
+``\usepackage{color,graphicx}`` in your LaTeX preamble without specifying a
+driver option. If you install ``pyx.def`` into your local TeX tree and configure
+``color.cfg`` / ``graphics.cfg`` [#]_, you can set ``pyxgraphics=False`` and load
+packages explicitly with ``\usepackage[pyx]{color,graphicx}``.
 
-When importing Encapsulated PostScript files (``eps`` files) PyX will rotate,
-scale and clip your file like you expect it. Other graphic formats can not be
-imported via the graphics package at the moment.
+Supported LaTeX Color Models and Specials
+-----------------------------------------
 
-For reference purpose, the following specials can be handled by PyX at the
-moment:
+When you define or use colors in LaTeX via the ``gray``, ``cmyk``, ``rgb``,
+``RGB``, or ``hsb`` models, or via ``named`` colors, PyX maps them directly to
+the corresponding :mod:`color` classes and predefined named colors (see appendix
+:ref:`colorname`). In addition, the ``pyx`` color model lets you pass any PyX
+color expression directly from LaTeX, such as
+``\textcolor[pyx]{color.cmyk.PineGreen}{colored text}``.
+
+For developer reference, PyX's DVI reader interprets the following ``\special``
+commands generated by ``pyx.def``:
 
 ``PyX:color_begin (model) (spec)``
-   starts a color. ``(model)`` is one of ``gray``, ``cmyk``, ``rgb``, ``hsb``,
-   ``texnamed``, or ``pyxcolor``. ``(spec)`` depends on the model: a name or some
-   numbers
+   Pushes a color onto the graphics state. ``(model)`` is one of ``gray``,
+   ``cmyk``, ``rgb``, ``hsb``, ``texnamed``, or ``pyxcolor``, and ``(spec)``
+   contains the model parameters or name.
 
 ``PyX:color_end``
-   ends a color.
+   Restores the previous color state.
 
 ``PyX:epsinclude file= llx= lly= urx= ury= width= height= clip=0/1``
-   includes an Encapsulated PostScript file (``eps`` files). The values of ``llx``
-   to ``ury`` are in the files' coordinate system and specify the part of the
-   graphics that should become the specified ``width`` and ``height`` in the
-   outcome. The graphics may be clipped. The last three parameters are optional.
+   Includes an Encapsulated PostScript (``.eps``) file scaled, positioned, and
+   optionally clipped according to the specified bounding box coordinates.
 
-``PyX:scale_begin (x) (y)``
-   begins scaling from the current point.
+``PyX:scale_begin (x) (y)`` / ``PyX:scale_end``
+   Starts and ends coordinate scaling relative to the current DVI reference
+   point.
 
-``PyX:scale_end``
-   ends scaling.
-
-``PyX:rotate_begin (angle)``
-   begins rotation around the current point.
-
-``PyX:rotate_end``
-   ends rotation.
+``PyX:rotate_begin (angle)`` / ``PyX:rotate_end``
+   Starts and ends coordinate rotation (in degrees) around the current DVI
+   reference point.
 
 
 .. _config:
-
 .. _pyxrc:
 
-Configuration
-=============
+Configuration and Debugging
+===========================
 
-While the PyX configuration technically has nothing to do with the text module,
-we mention it here as part of the text module since its main purpose is the
-configuration of various aspects related to the typesetting of text.
-
-PyX comes with reasonable defaults which should work out of the box on most TeX
-installations. The default values are defined in the PyX source code itself and
-are repeated in the system-wide config file in INI file format located at
-``pyx/data/pyxrc``. This file also contains a description of each of the listed
-config values and is read at PyX startup. Thus the system-wide configuration
-can be adjusted by editing this file.
-
-In addition, a user-specific configuration can be setup by a ``~/.pyxrc`` on
-unix-like Systems (including OS X) or ``pyxrc`` in the directory defined by the
-environment variable ``APPDATA`` on MS Windows. This user-specific
-configuration will overwrite the system-wide settings.
-
-Yet another configuration can be set by the environment variable ``PYXRC``. The
-given file will is loaded on top of the configuration defined in the previous
-steps.
-
+As described in :ref:`intro`, PyX reads its system-wide defaults from
+``pyx/data/pyxrc``, followed by user-level settings in ``~/.pyxrc`` (or
+``%APPDATA%\pyxrc`` on Windows) and any file referenced by the ``PYXRC``
+environment variable. Most options in ``[general]`` and ``[text]`` configure how
+PyX locates TeX files and runs the TeX/LaTeX interpreter.
 
 .. _texipc:
 
-TeX ipc mode
+TeX IPC Mode
 ------------
 
-For output generation of typeset text and to calculate the positions of markers
-(see :meth:`textbox_pt.marker`) the DVI output of the TeX interpreter must be
-read. In contrast, the text extent (:attr:`textbox_pt.left`,
-:attr:`textbox_pt.right`, :attr:`textbox_pt.width`, :attr:`textbox_pt.height`,
-:attr:`textbox_pt.depth`) is available without accessing the DVI output, as the
-TeX interpreter is instructed by PyX to output it to stdout, which is read and
-analysed at the typesetting step immediately.
+To read the actual glyph positions or ``\PyXMarker`` coordinates of a text box,
+PyX must read the DVI page written by TeX. However, standard TeX buffers its DVI
+output until the TeX process terminates. When ``texipc`` is disabled (the
+default), accessing a marker or writing a canvas forces :class:`MultiEngine` to
+close the running TeX process so the DVI file is flushed, and then spawn a new
+TeX process if further text is typeset afterward.
 
-Since TeX interpreters usually buffer the DVI output, the interpreter itself
-needs to be terminated to get the DVI output. As :class:`MultiEngine` instances
-can start a new interpreter when needed, this does not harm the functionality
-and happens more or less unnoticeable. Still it generates some penalty in terms
-of execution speed, which can become huge for certain situations (alternation
-between typesetting and marker access).
-
-One of the effects of the ``texipc`` option available in almost all present TeX
-interpreters is to flush the DVI output after each page. As PyX reads the DVI
-output linearly, it can successfully read all output without stopping the TeX
-interpreter. It is suggested to enable the ``texipc`` feature in the
-system-wide configuration if available in the TeX interpreter being used.
-
+Most modern TeX distributions support the ``--ipc`` command-line option, which
+flushes the DVI file after every ``\shipout``. Enabling ``texipc = 1`` in the
+``[text]`` section of your ``pyxrc`` allows PyX to read DVI pages on the fly
+without terminating TeX, dramatically speeding up scripts that alternate between
+typesetting text and querying marker positions.
 
 .. _debug:
 
-Debugging
----------
+Debugging TeX Typesetting Issues
+--------------------------------
 
-PyX provides various functionality to collect details about the typesetting
-process. First off all, PyX reads the output generated by the TeX interpreter
-while it processes the text provided by the user. If the given
-:class:`texmessage` parsers do not validate this output, an
-:exc:`TexResultError` is raised immediately. The verbosity of this output can
-be adjusted by the :class:`errordetail` setting of the :class:`SingleEngine`.
-This might help in some cases to identify an error in the text passed for
-typesetting, but for more complicated problems, other help is required.
+PyX provides several tools for diagnosing TeX errors and environment problems:
 
-One possibility is to output the actual code passed to the TeX interpreter. For
-that you can pass a file name or a file handle to the ``copyinput`` argument of
-the :class:`SingleEngine`. You can then process the text by the TeX interpreter
-yourself to reproduce the issue outside of PyX.
+1. **Error verbosity** (:class:`errordetail`):
+   Pass ``errordetail=text.errordetail.full`` to :func:`text.set` to include the
+   full TeX session transcript and input commands whenever a
+   :exc:`TexResultError` is raised.
+2. **Saving the TeX input stream** (``copyinput``):
+   Pass a filename or writable file object as ``copyinput="debug.tex"`` to
+   :func:`text.set` to record the exact TeX code PyX sends to the interpreter so
+   you can run ``tex`` or ``latex`` on it manually.
+3. **Preserving ``.log`` and ``.aux`` files** (``usefiles``):
+   Each TeX process runs in a temporary working directory that is deleted on
+   exit. Passing ``usefiles=["myjob.log", "myjob.aux"]`` to :func:`text.set`
+   copies those files into and out of the temporary directory (matching PyX's
+   internal ``\jobname`` while preserving the file extension), allowing you to
+   inspect the full TeX ``.log`` file or share ``.aux`` files across runs.
+4. **Enabling ``INFO`` logging** (:func:`pyx.pyxinfo`):
 
-Similarily you can also save the log output from the TeX interpreter. For that
-you need to pass a log file name (with the suffix ``.log``) in the ``usefiles``
-argument (which is a list of files) of the :class:`SingleEngine`. This list of
-files are saved and restored in the temporary directory used by the TeX
-interpreter. While originally it is meant to share, for example, a ``.aux``
-file between several runs (for which the temporary directory is different and
-removed after each run), it can do the same for the ``.log`` file (where the
-restore feature is needless, but does not harm). PyX takes care of the proper
-``\jobname``, hence you can choose the filename arbitrarily with the exception
-of the suffix, as the suffix is kept during the save and restore.
+   .. module:: pyx
+      :synopsis: The PyX package
+      :noindex:
 
-.. module:: pyx
-   :synopsis: The PyX package
+   PyX logs all external command executions and file lookups to the standard
+   Python logger ``"pyx"`` at ``INFO`` level. Calling :func:`pyx.pyxinfo` at the
+   top of your script attaches a stream handler that prints these messages to
+   ``stderr``:
 
-Still, all this might not help to fully understand the problem you're facing.
-For example there might be situations, where it is not clear which TeX
-interpreter is actually used (when several executables are available and the
-path setup within the Python interpreter differs from the one used on the
-shell). In those situations it might help to enable some additional logging
-output created by PyX. PyX uses the logging module from the standard library
-and logs to a logger named ``"pyx"``. By default, various information about
-executing external programs and locating files will not be echoed, as it is
-written at info level, but PyX provides a simple convenience function to enable
-the output of this logging level. Just call the :func:`pyxinfo` function
-defined on the PyX package before actually start using the package in your
-Python program:
-
-.. autofunction:: pyxinfo
+   .. autofunction:: pyxinfo
 
 .. _chroot:
 
-Typesetting insecure text
--------------------------
+Typesetting Untrusted Text
+--------------------------
 
-When typesetting text it is passed to a TeX interpreter unchanged\ [#]_. This
-is a security problem if the text does not come from a trusted source. While
-full access to all typesetting features is not considered a problem, you should
-bear in mind that TeX code can be used to read data from any other file
-accessible to the TeX process. To surely prevent this process from accessing
-any other data unrelated to the TeX installation, you can setup a chroot
-environment for the TeX interpreter and configure PyX to use it. This can be
-achieved by setting the ``chroot`` option and adjusting the TeX interpreter
-call and the ``filelocator`` configuration in the ``pyxrc``.
+Because TeX has primitives that can read arbitrary files accessible to the user
+running the script (and, in misconfigured environments, execute shell commands),
+never pass untrusted user input directly to TeX without isolation [#]_. If you
+use PyX in a web service or multi-user environment, you can run TeX inside a
+``chroot`` jail by configuring the ``chroot`` option, the TeX executable command,
+and the ``filelocator`` paths in ``pyxrc``.
 
-UnicodeEngine
-=============
-.. module:: text
-   :noindex:
-
-.. autoclass:: UnicodeEngine
-
-.. autoclass:: Text
-
-.. autoclass:: StackedText
 
 .. rubric:: Footnotes
 
@@ -650,11 +638,10 @@ UnicodeEngine
 
 .. [#] https://en.wikipedia.org/wiki/Device_independent_file_format
 
-.. [#] If you do not know what this is all about, you can just ignore this
-       paragraph. But be sure that the ``pyxgraphics`` keyword argument is
-       always set!
+.. [#] Unless you specifically need custom driver configuration in your local
+       TeX tree, leave ``pyxgraphics=True`` (the default) and omit the ``[pyx]``
+       package option in ``\usepackage{color,graphicx}``.
 
-.. [#] The text is actually passed as an argument of a TeX command defined by
-       PyX, but this is a minor detail and has no effect regarding possible
-       attacks.
-
+.. [#] Although PyX wraps user text inside an internal TeX macro argument,
+       catcode changes and macro expansion still allow arbitrary TeX primitives
+       to be executed.

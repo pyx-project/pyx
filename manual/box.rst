@@ -1,110 +1,164 @@
-
 .. module:: box
+   :synopsis: Convex polygon and rectangular boxes for alignment and connectors
+
+.. _box:
 
 **************************************
 Module :mod:`box`: Convex box handling
 **************************************
 
-This module has a quite internal character, but might still be useful from the
-users point of view. It might also get further enhanced to cover a broader range
-of standard arranging problems.
+The :mod:`box` module provides convex polygon (:class:`polygon`) and rectangular
+(:class:`rect`) box classes with an associated reference point (``center``).
+Boxes are used throughout PyX to represent the outer boundary and anchor point of
+text labels (:class:`text.textbox`), align multiple objects along lines or
+circles, tile objects with uniform spacing, and compute boundary intersections
+for :mod:`connector` paths.
 
-In the context of this module a box is a convex polygon having optionally a
-center coordinate, which plays an important role for the box alignment. The
-center might not at all be central, but it should be within the box. The
-convexity is necessary in order to keep the problems to be solved by this module
-quite a bit easier and unambiguous.
-
-Directions (for the alignment etc.) are usually provided as pairs (dx, dy)
-within this module. It is required, that at least one of these two numbers is
-unequal to zero. No further assumptions are taken.
+All direction arguments ``(dx, dy)`` in :mod:`box` are 2D direction vectors where
+at least one of *dx* or *dy* must be non-zero (their length is normalized
+automatically).
 
 
-Polygon
-=======
+Class :class:`polygon`
+======================
 
-A polygon is the most general case of a box. It is an instance of the class
-``polygon``. The constructor takes a list of points (which are (x, y) tuples) in
-the keyword argument ``corners`` and optionally another (x, y) tuple as the
-keyword argument ``center``. The corners have to be ordered counterclockwise. In
-the following list some methods of this ``polygon`` class are explained:
+.. class:: polygon(corners=None, center=None)
 
-``path(centerradius=None, bezierradius=None, beziersoftness=1)``:
-   returns a path of the box; the center might be marked by a small circle of
-   radius ``centerradius``; the corners might be rounded using the parameters
-   ``bezierradius`` and ``beziersoftness``. For each corner of the box there may be
-   one value for beziersoftness and two bezierradii. For convenience, it is not
-   necessary to specify the whole list (for beziersoftness) and the whole list of
-   lists (bezierradius) here. You may give a single value and/or a 2-tuple instead.
+   Represents a convex polygon defined by a sequence of ``(x, y)`` vertex tuples
+   in *corners* ordered counter-clockwise, and an optional reference point
+   ``(x, y)`` in *center* (in user units or PyX lengths). If *center* is
+   ``None``, the arithmetic mean (centroid) of *corners* is used.
 
-``transform(*trafos)``:
-   performs a list of transformations to the box
+   A point-based base class :class:`polygon_pt` takes all coordinates in
+   PostScript points.
 
-``reltransform(*trafos)``:
-   performs a list of transformations to the box relative to the box center
+   .. method:: path(centerradius=None)
 
-.. _fig_boxalign:
-.. figure:: boxalign.*
-   :align:  center
+      Returns a closed :class:`path.path` tracing the polygon's perimeter. If
+      *centerradius* is given, an additional small circle of radius
+      *centerradius* is included at the box's ``center``.
 
-   circle and line alignment examples (equal direction and distance)
+      .. tip::
 
-``circlealignvector(a, dx, dy)``:
-   returns a vector (a tuple (x, y)) to align the box at a circle with radius ``a``
-   in the direction (``dx``, ``dy``); see figure :ref:`fig_boxalign`
+         To round the corners of a box path, apply :class:`deformer.smoothed` to
+         the returned path—for example,
+         ``deformer.smoothed(0.2).deform(mybox.path())``.
 
-``linealignvector(a, dx, dy)``:
-   as above, but align at a line with distance ``a``
+   .. method:: transform(*trafos, keep_anchor=False)
 
-``circlealign(a, dx, dy)``:
-   as circlealignvector, but perform the alignment instead of returning the vector
+      Applies one or more :class:`trafo.trafo` transformations in place to the
+      polygon's corners (and to ``center``, unless ``keep_anchor=True``).
 
-``linealign(a, dx, dy)``:
-   as linealignvector, but perform the alignment instead of returning the vector
+   .. method:: reltransform(*trafos)
 
-``extent(dx, dy)``:
-   extent of the box in the direction (``dx``, ``dy``)
+      Applies one or more transformations in place relative to the box's
+      ``center`` (translating ``center`` to the origin, applying *trafos*, and
+      translating back).
 
-``pointdistance(x, y)``:
-   distance of the point (``x``, ``y``) to the box; the point must be outside of
-   the box
+   .. _fig_boxalign:
+   .. figure:: boxalign.*
+      :align: center
 
-``boxdistance(other)``:
-   distance of the box to the box ``other``; when the boxes are overlapping,
-   ``BoxCrossError`` is raised
+      Aligning boxes on a circle (:meth:`circlealign`) and along a line
+      (:meth:`linealign`) for identical direction vectors and distances.
 
-``bbox()``:
-   returns a bounding box instance appropriate to the box
+   .. method:: circlealignvector(a, dx, dy)
+   .. method:: circlealignvector_pt(a_pt, dx, dy)
+
+      Returns the displacement vector ``(vx, vy)`` required to move the box along
+      the direction ``(dx, dy)`` so that its boundary touches a circle of radius
+      *a* centered at the box's current ``center`` (see figure
+      :ref:`fig_boxalign`).
+
+   .. method:: linealignvector(a, dx, dy)
+   .. method:: linealignvector_pt(a_pt, dx, dy)
+
+      Returns the displacement vector ``(vx, vy)`` required to move the box along
+      the direction ``(dx, dy)`` so that its boundary touches a line perpendicular
+      to ``(dx, dy)`` at distance *a* from the box's current ``center`` (see
+      figure :ref:`fig_boxalign`).
+
+   .. method:: circlealign(a, dx, dy)
+   .. method:: circlealign_pt(a_pt, dx, dy)
+
+      Translates the box in place by :meth:`circlealignvector` and returns
+      ``self``.
+
+   .. method:: linealign(a, dx, dy)
+   .. method:: linealign_pt(a_pt, dx, dy)
+
+      Translates the box in place by :meth:`linealignvector` and returns
+      ``self``.
+
+   .. method:: extent(dx, dy)
+   .. method:: extent_pt(dx, dy)
+
+      Returns the total projected width of the box along the direction
+      ``(dx, dy)``.
+
+   .. method:: pointdistance(x, y)
+   .. method:: pointdistance_pt(x_pt, y_pt)
+
+      Returns the shortest Euclidean distance from an exterior point ``(x, y)``
+      to the boundary of the box.
+
+   .. method:: boxdistance(other)
+   .. method:: boxdistance_pt(other, epsilon=1e-10)
+
+      Returns the shortest Euclidean distance between ``self`` and another box
+      *other*. Raises :exc:`BoxCrossError` if the two boxes intersect.
+
+   .. method:: bbox()
+
+      Returns the axis-aligned :class:`bbox.bbox_pt` enclosing the box.
+
+.. exception:: BoxCrossError
+
+   Raised by :meth:`polygon.boxdistance` when two boxes have intersecting edges.
 
 
-Functions working on a box list
-===============================
+Aligning and Tiling Lists of Boxes
+==================================
 
-``circlealignequal(boxes, a, dx, dy)``:
-   Performs a circle alignment of the boxes ``boxes`` using the parameters ``a``,
-   ``dx``, and ``dy`` as in the ``circlealign`` method. For the length of the
-   alignment vector its largest value is taken for all cases.
+.. function:: circlealignequal(polygons, a, dx, dy)
+.. function:: circlealignequal_pt(polygons, a_pt, dx, dy)
 
-``linealignequal(boxes, a, dx, dy)``:
-   as above, but performing a line alignment
+   Computes the :meth:`~polygon.circlealignvector` for each box in *polygons* and
+   translates all boxes by the longest of those vectors.
 
-``tile(boxes, a, dx, dy)``:
-   tiles the boxes ``boxes`` with a distance ``a`` between the boxes (in addition
-   the maximal box extent in the given direction (``dx``, ``dy``) is taken into
-   account)
+.. function:: linealignequal(polygons, a, dx, dy)
+.. function:: linealignequal_pt(polygons, a_pt, dx, dy)
+
+   Computes the :meth:`~polygon.linealignvector` for each box in *polygons* and
+   translates all boxes by the longest of those vectors. Axis painters use this
+   function when ``labelvequalize`` or ``labelhequalize`` is enabled so that all
+   tick labels share a uniform baseline alignment.
+
+.. function:: tile(polygons, a, dx, dy)
+.. function:: tile_pt(polygons, a_pt, dx, dy)
+
+   Translates the boxes in *polygons* sequentially along ``(dx, dy)`` with step
+   size equal to the maximum box extent in direction ``(dx, dy)`` plus separation
+   *a*, and returns the step size.
 
 
-Rectangular boxes
-=================
+Class :class:`rect`
+===================
 
-For easier creation of rectangular boxes, the module provides the specialized
-class ``rect``. Its constructor first takes four parameters, namely the x, y
-position and the box width and height. Additionally, for the definition of the
-position of the center, two keyword arguments are available. The parameter
-``relcenter`` takes a tuple containing a relative x, y position of the center
-(they are relative to the box extent, thus values between ``0`` and ``1`` should
-be used). The parameter ``abscenter`` takes a tuple containing the x and y
-position of the center. This values are measured with respect to the lower left
-corner of the box. By default, the center of the rectangular box is set to this
-lower left corner.
+.. class:: rect(x, y, width, height, relcenter=(0, 0), abscenter=(0, 0))
 
+   Convenience subclass of :class:`polygon` representing an axis-aligned
+   rectangle with lower-left corner ``(x, y)`` and dimensions *width* and
+   *height* (in user units or PyX lengths). A point-based variant
+   :class:`rect_pt` takes coordinates in PostScript points.
+
+   The reference ``center`` of the rectangle is placed at
+
+   .. math::
+
+      (x + \text{relcenter}_x \cdot \text{width} + \text{abscenter}_x,\;
+       y + \text{relcenter}_y \cdot \text{height} + \text{abscenter}_y)\ ,
+
+   which defaults to the lower-left corner ``(x, y)`` when ``relcenter=(0, 0)``
+   and ``abscenter=(0, 0)``. Set ``relcenter=(0.5, 0.5)`` to place the anchor at
+   the geometric center of the rectangle.

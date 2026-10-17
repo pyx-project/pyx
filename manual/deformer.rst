@@ -1,126 +1,170 @@
+.. _deformer:
+
+*********
+Deformers
+*********
 
 .. module:: deformer
+   :synopsis: Geometric path deformers
 
-======================================
-Module :mod:`deformer`: Path deformers
-======================================
+Deformers take an existing path and replace it with a geometrically modified
+:class:`normpath.normpath`—for example, rounding sharp corners, constructing an
+offset curve at a constant parallel distance, or wrapping a spring-like cycloid
+along the path.
 
-The :mod:`deformer` module provides techniques to generate modulated paths. All
-classes in the :mod:`deformer` module can be used as attributes when
-drawing/stroking paths onto a canvas. Alternatively new paths can be created by
-deforming an existing path by means of the :meth:`deform` method.
+All deformers inherit from :class:`baseclasses.deformer` and can be used in two
+ways:
 
-All classes of the :mod:`deformer` module provide the following methods:
+1. **As drawing attributes** passed to :meth:`canvas.canvas.stroke`,
+   :meth:`canvas.canvas.fill`, or :meth:`canvas.canvas.draw`. When drawing a path,
+   PyX applies all deformers in the attribute list in order before applying
+   decorators and styles::
+
+      from pyx import *
+
+      c = canvas.canvas()
+      p = path.rect(0, 0, 3, 2)
+      c.stroke(p, [style.linestyle.dotted])
+      c.stroke(p, [deformer.smoothed(0.5), color.rgb.red])
+      c.writePDFfile("smoothed")
+
+2. **Directly as path transformations** by calling the deformer's
+   :meth:`~smoothed.deform` method on a path or normalized path to obtain the
+   deformed :class:`normpath.normpath` for further geometric operations (such as
+   intersections or splitting)::
+
+      rounded_rect = deformer.smoothed(0.5).deform(path.rect(0, 0, 3, 2))
+
+Every deformer instance is also callable: calling an existing instance with
+keyword arguments returns a new deformer with those parameters updated. Each
+deformer class also provides a ``.clear`` attribute (e.g.
+``deformer.smoothed.clear``, ``deformer.cycloid.clear``) to remove preceding
+instances of that deformer from an attribute list.
 
 
-.. class:: deformer()
-
-.. method:: deformer.__call__((specific parameters for the class))
-
-   Returns a deformer with modified parameters
-
-
-.. method:: deformer.deform(path)
-
-   Returns the deformed normpath on the basis of the *path*. This method allows
-   using the deformers outside of a drawing call.
-
-The deformer classes are the following:
-
-
-.. class:: cycloid(radius, halfloops=10, skipfirst=1*unit.t_cm, skiplast=1*unit.t_cm, curvesperhloop=3, sign=1, turnangle=45)
-
-   This deformer creates a cycloid around a path. The outcome looks similar to a 3D
-   spring stretched along the original path.
-
-   *radius*: the radius of the cycloid (this is the radius of the 3D spring)
-
-   *halfloops*: the number of half-loops of the cycloid
-
-   *skipfirst* and *skiplast*: the lengths on the original path not to be bent to a
-   cycloid
-
-   *curvesperhloop*: the number of Bezier curves to approximate a half-loop
-
-   *sign*: for ``sign>=0`` the cycloid starts to the left of the path, whereas
-   for ``sign<0`` it starts to the right.
-
-   *turnangle*: the angle of perspective on the 3D spring. At ``turnangle=0``
-   results in a sinusoidal curve, whereas for ``turnangle=90`` one essentially
-   obtains a circle.
-
+Corner smoothing: :class:`smoothed`
+===================================
 
 .. class:: smoothed(radius, softness=1, obeycurv=0, relskipthres=0.01)
+           cornersmoothed(radius, softness=1, obeycurv=0, relskipthres=0.01)
 
-   This deformer creates a smoothed variant of the original path. The smoothing is
-   done on the basis of the corners of the original path, not on a global scope!
-   Therefore, the result might not be what one would draw by hand. At each corner
-   (or wherever two path elements meet) a piece of twice the *radius*
-   is taken out of the original path and replaced by a curve. This curve is
-   determined by the tangent directions and the curvatures at its endpoints. Both
-   are taken from the original path, and therefore, the new curve fits into the gap
-   in a *geometrically smooth* way. Path elements that are shorter than
-   *radius* :math:`\times` *relskipthres* are ignored.
+   Replaces corners between consecutive segments of a path with smooth cubic
+   Bézier curves. Within each subpath item, the path is cut back at arc length
+   *radius* from the corner (or at the midpoint of the segment if the segment is
+   shorter than ``2 * radius``), and the removed corner is bridged as follows:
 
-   The new curve smoothing the corner consists either of one or of two Bezier
-   curves, depending on the surrounding path elements. If there are straight lines
-   before and after the new curve, then two Bezier curves are used. This optimises
-   the bending of curves in rectangular boxes or polygons. Here, the curves have an
-   additional degree of freedom that can be set with *softness* :math:`\in(0,1]`.
-   If one of the concerned path elements is curved, only one Bezier curve is used
-   that is (not always uniquely) determined by its geometrical constraints. There
-   are, nevertheless, some *caveats*:
+   - **Between two straight lines**: Two optimized cubic Bézier curves are
+     inserted whose curvature vanishes at the transition points to the straight
+     lines and whose curvature derivative vanishes at the midpoint of the corner.
+     The shape is controlled by *softness* :math:`\in (0, 1]`.
+   - **When at least one adjacent segment is curved**: A single cubic Bézier
+     curve is inserted that matches the tangents and curvatures of the adjacent
+     segments at the cut points.
 
-   A curve that strictly obeys the sign and magnitude of the curvature might not
-   look very smooth in some cases. Especially when connecting a curved with a
-   straight piece, the smoothed path contains unwanted overshootings. To prevent
-   this, the parameter default *obeycurv=0* releases the curvature constraints a
-   little: The curvature may then change its sign (still looks smooth for human
-   eyes) or, in more extreme cases, even its magnitude (does not look so smooth).
-   If you really need a geometrically smooth path on the basis of Bezier curves,
-   then set *obeycurv=1*.
+   Parameters:
+
+   - *radius*: Arc-length distance from each corner at which the original path is
+     cut and replaced by the smoothing curve(s).
+   - *softness*: Factor in :math:`(0, 1]` controlling how tightly corners between
+     straight lines are rounded (default ``1``). Smaller values produce sharper
+     bends closer to the original corner.
+   - *obeycurv*: When ``0`` (the default), only the magnitude of the curvature is
+     matched at curved segments while its sign is chosen to avoid cusps or loops;
+     when ``1``, the signed curvature of the adjacent curve is strictly
+     preserved.
+   - *relskipthres*: Segments shorter than ``relskipthres * radius`` are skipped
+     during smoothing (default ``0.01``).
+
+   :class:`cornersmoothed` is the canonical class name; :class:`smoothed` is
+   provided as a convenient alias.
+
+   .. method:: deform(basepath)
+
+      Returns a new :class:`normpath.normpath` with all corners of *basepath*
+      smoothed.
 
 
-.. class:: parallel(distance, relerr=0.05, sharpoutercorners=0, dointersection=1, checkdistanceparams=[0.5], lookforcurvatures=11)
+Parallel offset curves: :class:`parallel`
+=========================================
 
-   This deformer creates a parallel curve to a given path. The result is similar to
-   what is usually referred to as the *set with constant distance* to the set of
-   points on the path. It differs in one important respect, because the *distance*
-   parameter in the deformer is a signed distance. The resulting parallel normpath
-   is constructed on the level of the original pathitems. For each of them a
-   parallel pathitem is constructed. Then, they are connected by circular arcs (or
-   by sharp edges) around the corners of the original path. Later, everything that
-   is nearer to the original path than distance is cut away.
+.. class:: parallel(distance, relerr=0.05, sharpoutercorners=False, dointersection=True, checkdistanceparams=[0.5], lookforcurvatures=11, searchstep=0.01, debug=None)
 
-   There are some caveats:
+   Constructs a parallel offset curve at a constant normal *distance* from the
+   original path.
 
-   * When the original path is too curved then the parallel path would contain
-     points with infinte curvature. The resulting path stops at such points and
-     leaves the too strongly curved piece out.
+   A positive *distance* offsets the curve to the **left** of the original path
+   (relative to its parameterization direction); a negative *distance* offsets
+   it to the **right**. For a counter-clockwise closed path (such as
+   :class:`path.rect` or :class:`path.circle`), a negative *distance* therefore
+   expands the shape outward, while a positive *distance* shrinks it inward.
 
-   * When the original path contains on or more self-intersections, then the
-     resulting parallel path is not continuous in the parameterisation of the
-     original path. This may result in the surprising behaviour that a piece
-     that corresponding to a "later" parameter value is followed by an
-     "earlier" one.
+   The parallel path is constructed in two stages:
 
-   The parameters are the following:
+   1. For each segment of the normalized path, an offset line or cubic Bézier
+      approximation is built. At convex corners, either a circular arc of radius
+      ``abs(distance)`` is inserted around the corner (default) or the offset
+      segments are extended to a sharp corner (*sharpoutercorners=True*). Regions
+      where the original curve bends more tightly than ``1 / distance`` toward
+      the offset side are split at points of infinite curvature.
+   2. When *dointersection* is ``True`` (the default), self-intersections and
+      loops in the offset path are detected and trimmed away so that only the
+      true envelope at distance ``abs(distance)`` from the original path remains.
 
-   *distance* is the minimal (signed) distance between the original and the
-   parallel paths.
+   Parameters:
 
-   *relerr* is the allowed relative error in the distance.
+   - *distance*: Signed normal offset distance (PyX length).
+   - *relerr*: Maximum allowed relative error ``relerr * abs(distance)`` when
+     approximating offset Bézier curves (default ``0.05``).
+   - *sharpoutercorners*: When ``True``, outer (convex) corners are joined with
+     sharp mitered lines instead of circular arcs (default ``False``).
+   - *dointersection*: When ``True`` (default), self-intersecting loops in the
+     offset curve are removed. Set to ``False`` to keep the raw untrimmed offset
+     curve.
+   - *checkdistanceparams*: List of parameter values in :math:`(0, 1)` at which
+     the normal distance between the original curve and its cubic Bézier
+     approximation is verified before subdividing (default ``[0.5]``).
+   - *lookforcurvatures*: Number of sample points per curve segment used to
+     locate critical curvature crossings :math:`\kappa = 1 / \text{distance}`
+     (default ``11``).
 
-   *sharpoutercorners* connects the parallel pathitems by a wegde made of
-   straight lines, instead of taking circular arcs. This preserves the angle of
-   the original corners.
+   .. method:: deform(basepath)
 
-   *dointersection* is a boolean for performing the last step, the intersection
-   step, in the path construction. Setting this to 0 gives the full parallel path,
-   which can be favourable for self-intersecting paths.
+      Returns the offset :class:`normpath.normpath` at *distance* from
+      *basepath*.
 
-   *checkdistanceparams* is a list of parameter values in the interval (0,1) where
-   the distance is checked on each parallel pathitem.
 
-   *lookforcurvatures* is the number of points per normpathitem where its curvature
-   is checked for critical values.
+Spring / coil paths: :class:`cycloid`
+=====================================
+
+.. class:: cycloid(radius=0.5*unit.t_cm, halfloops=10, skipfirst=1*unit.t_cm, skiplast=1*unit.t_cm, curvesperhloop=3, sign=1, turnangle=45)
+
+   Wraps a cycloid (the 2D projection of a 3D helical spring) along the path,
+   using the original path as the central axis of the coil. This deformer is
+   commonly used in physics and engineering diagrams to draw springs, inductors,
+   or gluons.
+
+   Parameters:
+
+   - *radius*: Radius of the cycloid loops perpendicular to the base path
+     (default ``0.5 * unit.t_cm``).
+   - *halfloops*: Total number of half-loops along the deformed portion of the
+     path (default ``10``).
+   - *skipfirst*: Arc length at the beginning of each subpath left undeformed as
+     a lead-in segment (default ``1 * unit.t_cm``).
+   - *skiplast*: Arc length at the end of each subpath left undeformed as a
+     lead-out segment (default ``1 * unit.t_cm``).
+   - *curvesperhloop*: Number of cubic Bézier segments used to approximate each
+     half-loop (default ``3``).
+   - *sign*: ``1`` (default) to start the first half-loop to the left of the
+     path, or ``-1`` to start to the right.
+   - *turnangle*: Viewing angle in degrees of the 3D helix projection (default
+     ``45``). Setting ``turnangle=0`` produces a sine-like wave without loops;
+     increasing ``turnangle`` toward ``90`` produces tightly overlapping circular
+     coils.
+
+   .. method:: deform(basepath)
+
+      Returns a new :class:`normpath.normpath` with the cycloid wrapped along
+      each subpath of *basepath* (subpaths shorter than
+      ``skipfirst + skiplast + 2 * radius * sin(turnangle)`` are left unchanged
+      with a warning).

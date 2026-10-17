@@ -1,188 +1,237 @@
+.. _canvas:
+
+******
+Canvas
+******
 
 .. module:: canvas
+   :synopsis: Canvas container and drawing operations
 
-====================
-Module :mod:`canvas`
-====================
+A :class:`canvas` is the central workspace in PyX. It acts both as a drawing
+surface—providing methods to stroke, fill, and draw paths and to typeset
+text—and as a hierarchical container that groups canvas items (paths, text boxes,
+sub-canvases, bitmaps, and embedded EPS, PDF, or SVG files) with shared visual
+attributes, transformations, clipping paths, and drawing layers.
 
-.. sectionauthor:: Jörg Lehmann <joerg@pyx-project.org>
+
+Working with canvases
+=====================
+
+Drawing and grouping
+--------------------
+
+Every drawing operation on a canvas (:meth:`canvas.stroke`, :meth:`canvas.fill`,
+:meth:`canvas.draw`, :meth:`canvas.text`) creates a :class:`baseclasses.canvasitem`
+and inserts it into the canvas via :meth:`canvas.insert`, returning the inserted
+item.
+
+Because a :class:`canvas` is itself a :class:`baseclasses.canvasitem`, you can
+create sub-canvases, draw on them in local coordinates, and insert them into a
+parent canvas with transformations or styles applied to the entire group::
+
+   from pyx import *
+
+   # Create a reusable sub-canvas in local coordinates
+   badge = canvas.canvas()
+   badge.fill(path.circle(0, 0, 0.5), [color.rgb.red])
+   badge.text(0, 0, "1", [text.halign.center, text.valign.middle, color.gray.white])
+
+   # Insert the sub-canvas multiple times at different positions and scales
+   c = canvas.canvas()
+   c.insert(badge, [trafo.translate(1, 1)])
+   c.insert(badge, [trafo.scale(1.5), trafo.translate(3, 1)])
+
+   c.writePDFfile("badges")
 
 
-In addition it
-contains the class ``canvas.clip`` which allows clipping of the output.
+Layers
+------
+
+By default, items on a canvas are drawn in the exact order in which they are
+inserted (later items paint over earlier items). When constructing complex
+figures, it is often convenient to organize drawing operations into named
+*layers* (such as ``"background"``, ``"fill"``, ``"main"``, ``"labels"``) whose
+back-to-front order is independent of when individual items are added.
+
+The :meth:`canvas.layer` method creates or retrieves a sub-canvas associated with
+a layer name and allows you to position it relative to existing layers using the
+*above* and *below* parameters::
+
+   c = canvas.canvas()
+   bg = c.layer("background")
+   fg = c.layer("foreground", above="background")
+
+   # Even if we draw on fg first and bg second, bg is rendered behind fg
+   fg.text(1, 1, "Foreground text", [text.halign.center, text.valign.middle])
+   bg.fill(path.rect(0, 0.5, 2, 1), [color.rgb.yellow])
+
+
+Clipping
+--------
+
+A canvas can be clipped to the interior of an arbitrary closed :class:`path.path`
+by passing a :class:`clip` instance in the canvas constructor's *attrs* list::
+
+   clipped = canvas.canvas([canvas.clip(path.circle(1, 1, 1))])
+   clipped.fill(path.rect(0, 0, 2, 2), [color.rgb.blue])
+
+   c = canvas.canvas()
+   c.insert(clipped)
 
 
 Class :class:`canvas`
----------------------
+=====================
 
-This is the basic class of the canvas module. Instances of this class collect
-visual elements like paths, other canvases, TeX or LaTeX elements. A canvas may
-also be embedded in another one using its ``insert`` method. This may be useful
-when you want to apply a transformation on a whole set of operations.
+.. class:: canvas(attrs=[], textengine=None)
 
-.. class:: canvas(attrs=[], texrunner=None, ipython_bboxenlarge=1*unit.t_pt)
+   Constructs a new canvas.
 
-   Construct a new canvas, applying the given *attrs*, which can be instances of
-   :class:`trafo.trafo`, :class:`canvas.clip`, :class:`style.strokestyle` or
-   :class:`style.fillstyle`.  The *texrunner* argument can be used to specify the
-   texrunner instance used for the :meth:`text` method of the canvas.  If not
-   specified, it defaults to *text.defaulttexrunner*. *ipython_bboxenlarge* defines
-   the `bboxenlarge` :class:`document.page` for IPython's `_repr_png_` and `_repr_svg_`.
+   - *attrs*: Optional list of canvas-wide attributes applied to all contents of
+     the canvas. Allowed attributes are :class:`style.strokestyle`,
+     :class:`style.fillstyle` (including :class:`color.color` and
+     :class:`pattern.pattern`), :class:`trafo.trafo_pt`, and :class:`clip`.
+   - *textengine*: Optional text engine instance (such as a custom
+     :class:`text.TexEngine`, :class:`text.LatexEngine`, or
+     :class:`text.UnicodeEngine`) used by :meth:`text` and :meth:`text_pt` on
+     this canvas. When ``None`` (the default), ``text.defaulttextengine`` is used
+     at the time :meth:`text` is called.
 
-Paths can be drawn on the canvas using one of the following methods:
+   .. attribute:: items
 
+      List of :class:`baseclasses.canvasitem` objects contained in the canvas.
 
-.. method:: canvas.draw(path, attrs)
+   .. attribute:: layers
 
-   Draws *path* on the canvas applying the given *attrs*. Depending on the
-   *attrs* the path will be filled, stroked, ornamented, or a combination
-   thereof. For the common first two cases the following two convenience
-   functions are provided.
+      Dictionary mapping layer names to their corresponding sub-canvas instances.
 
+   .. attribute:: trafo
 
-.. method:: canvas.fill(path, attrs=[])
+      The cumulative :class:`trafo.trafo_pt` transformation applied to the
+      canvas.
 
-   Fills the given *path* on the canvas applying the given *attrs*.
+   .. method:: bbox()
 
+      Returns the enclosing :class:`bbox.bbox` of all items in the canvas (taking
+      canvas transformations and any :class:`clip` path into account). Note that
+      for stroked paths, the bounding box reflects the geometric path rather than
+      the stroke width.
 
-.. method:: canvas.stroke(path, attrs=[])
+   .. method:: draw(path, attrs)
 
-   Strokes the given *path* on the canvas applying the given *attrs*.
+      Draws *path* on the canvas according to the attributes in *attrs*, which
+      may contain :class:`baseclasses.deformer`, :class:`baseclasses.deco`,
+      :class:`style.strokestyle`, :class:`style.fillstyle`, and
+      :class:`trafo.trafo_pt` instances. Returns the inserted
+      :class:`deco.decoratedpath` canvas item.
 
-Arbitrary allowed elements like other :class:`canvas` instances can be inserted
-in the canvas using
+   .. method:: stroke(path, attrs=[])
 
+      Strokes *path* on the canvas; equivalent to
+      ``self.draw(path, [deco.stroked] + list(attrs))``. Returns the inserted
+      :class:`deco.decoratedpath` canvas item.
 
-.. method:: canvas.insert(item, attrs=[])
+   .. method:: fill(path, attrs=[])
 
-   Inserts an instance of :class:`base.canvasitem` into the canvas.  If *attrs* are
-   present, *item* is inserted into a new :class:`canvas` instance with *attrs*
-   as arguments passed to its constructor. Then this :class:`canvas` instance
-   is inserted itself into the canvas.
+      Fills *path* on the canvas; equivalent to
+      ``self.draw(path, [deco.filled] + list(attrs))``. Returns the inserted
+      :class:`deco.decoratedpath` canvas item.
 
-Text output on the canvas is possible using
+   .. method:: insert(item, attrs=[])
 
+      Inserts *item* (an instance of :class:`baseclasses.canvasitem`, such as
+      another :class:`canvas`, a :class:`text.textbox_pt`, a
+      :class:`bitmap.bitmap`, an :class:`epsfile.epsfile`, a
+      :class:`pdffile.pdffile`, or an :class:`svgfile.svgfile`) into the canvas.
+      If *attrs* is non-empty, *item* is wrapped in a sub-canvas with *attrs*
+      applied. Returns *item*.
 
-.. method:: canvas.text(x, y, text, attrs=[])
+   .. method:: layer(name, above=None, below=None)
 
-   Inserts *text* at position (*x*, *y*) into the canvas applying *attrs*. This is
-   a shortcut for ``insert(texrunner.text(x, y, text, attrs))``.
+      Creates or retrieves the layer sub-canvas identified by the string *name*.
+      Dotted names (such as ``"axes.ticks"``) create nested sub-layers inside the
+      parent layer ``"axes"``.
 
-To group drawing operations, layers can be used:
+      - *above*: Name of an existing layer immediately above which the layer
+        should be positioned.
+      - *below*: Name of an existing layer immediately below which the layer
+        should be positioned (cannot be combined with *above*).
 
+      Returns the :class:`canvas` instance representing the layer.
 
-.. method:: canvas.layer( name, above=None, below=None)
+   .. method:: text(x, y, expr, textattrs=[], **kwargs)
+               text_pt(x_pt, y_pt, expr, textattrs=[], **kwargs)
 
-   This method creates or gets a layer with name *name*.
+      Typesets *expr* at :math:`(x, y)` (in PyX user lengths or points) using the
+      canvas's text engine, inserts the resulting text box into the canvas, and
+      returns it. See :meth:`text.SingleEngine.text_pt` for details on
+      *textattrs* and *kwargs*.
 
-   A layer is a canvas itself and can be used to combine drawing operations for
-   ordering purposes, i.e., what is above and below each other. The layer name
-   *name* is a dotted string, where dots are used to form a hierarchy of layer
-   groups. When inserting a layer, it is put on top of its layer group except
-   when another layer instance of this group is specified by means of the
-   parameters *above* or *below*.
+   .. method:: settextengine(textengine)
 
-
-The :class:`canvas` class provides access to the total geometrical size of its
-element:
-
-
-.. method:: canvas.bbox()
-
-   Returns the bounding box enclosing all elements of the canvas (see Sect. :mod:`bbox`).
-
-A canvas also allows to set its TeX runner:
-
-
-.. method:: canvas.settexrunner(texrunner)
-
-   Sets a new *texrunner* for the canvas.
-
-The contents of the canvas can be written to a file using the following
-convenience methods, which wrap the canvas into a single page document.
-
-
-.. method:: canvas.writeEPSfile(file, **kwargs)
-
-   Writes the canvas to *file* using the EPS format. *file* either has to provide a
-   write method or it is used as a string containing the filename (the extension
-   ``.eps`` is appended automatically, if it is not present). This method
-   constructs a single page document, passing *kwargs* to the
-   :class:`document.page` constructor for all *kwargs* starting with ``page_``
-   (without this prefix) and calls the :meth:`writeEPSfile` method of this
-   :class:`document.document` instance passing the *file* and all *kwargs*
-   starting with ``write_`` (without this prefix).
+      Sets the text engine (:class:`text.TexEngine`, :class:`text.LatexEngine`,
+      or :class:`text.UnicodeEngine`) to be used by subsequent :meth:`text` and
+      :meth:`text_pt` calls on this canvas.
 
 
-.. method:: canvas.writePSfile(file, *args, **kwargs)
+Output and Ghostscript conversion methods
+-----------------------------------------
 
-   Similar to :meth:`writeEPSfile` but using the PS format.
+For single-page figures, :class:`canvas` provides shortcut methods that wrap the
+canvas in a :class:`document.page` and a single-page :class:`document.document`
+and write the output directly. Any keyword arguments accepted by
+:class:`document.page` (such as ``paperformat``, ``rotated``, ``centered``,
+``fittosize``, ``margin``, ``bboxenlarge``, ``bbox``) as well as any keyword
+arguments accepted by the respective writer (such as ``title``, ``stripfonts``,
+``textaspath``, ``writebbox``; see :ref:`document`) can be passed directly to
+these methods:
 
+   .. method:: writeEPSfile(file=None, **kwargs)
+               writePSfile(file=None, **kwargs)
+               writePDFfile(file=None, **kwargs)
+               writeSVGfile(file=None, **kwargs)
 
-.. method:: canvas.writePDFfile(file, *args, **kwargs)
+      Writes the canvas to an EPS, PostScript, PDF, or SVG file. *file* can be a
+      filename string (the extension ``.eps``, ``.ps``, ``.pdf``, or ``.svg`` is
+      appended automatically if omitted), a binary writable stream, ``"-"`` to
+      write to ``sys.stdout.buffer``, or ``None`` to derive the filename
+      automatically from ``sys.argv[0]``.
 
-   Similar to :meth:`writeEPSfile` but using the PDF format.
+   .. method:: writetofile(filename, **kwargs)
 
+      Determines the output format from the extension of *filename* (``.eps``,
+      ``.ps``, ``.pdf``, or ``.svg``) and writes the canvas accordingly.
 
-.. method:: canvas.writeSVGfile(file, *args, **kwargs)
+   .. method:: pipeGS(filename=None, device="png16m", resolution=100, gs="gs", gsoptions=[], textalphabits=4, graphicsalphabits=4, ciecolor=False, input="eps", **kwargs)
 
-   Similar to :meth:`writeEPSfile` but using the SVG format.
+      Renders the canvas using Ghostscript (``gs``) into any output format
+      supported by Ghostscript (such as PNG or JPEG).
 
-
-.. method:: canvas.writetofile(filename, *args, **kwargs)
-
-   Determine the file type (EPS, PS, PDF, or SVG) from the file extension of *filename*
-   and call the corresponding write method with the given arguments *arg* and
-   *kwargs*.
-
-
-.. method:: canvas.pipeGS(device, resolution=100, gs="gs", gsoptions=[], textalphabits=4, graphicsalphabits=4, ciecolor=False, input="eps", **kwargs)
-
-   This method pipes the content of a canvas to the ghostscript interpreter
-   to generate other output formats. The output is returned by means of a
-   python BytesIO object. *device* specifies a ghostscript output device by
-   a string. Depending on the ghostscript configuration ``"png16"``,
-   ``"png16m"``, ``"png256"``, ``"png48"``, ``"pngalpha"``, ``"pnggray"``,
-   ``"pngmono"``, ``"jpeg"``, and ``"jpeggray"`` might be available among
-   others. See the output of ``gs --help`` and the ghostscript documentation
-   for more information.
-
-   *resolution* specifies the resolution in dpi (dots per inch). *gs* is the
-   name of the ghostscript executable. *gsoptions* is a list of additional
-   options passed to the ghostscript interpreter. *textalphabits* and
-   *graphicsalphabits* are convenient parameters to set the ``TextAlphaBits``
-   and ``GraphicsAlphaBits`` options of ghostscript. The addition of these
-   options can be skipped by setting their values to ``None``. *ciecolor* adds
-   the ``-dUseCIEColor`` flag to improve the CMYK to RGB color conversion.
-   *input* can be either ``"eps"`` or ``"pdf"`` to select the input type to be
-   passed to ghostscript (note slightly different features available in the
-   different input types regarding e.g. :mod:`epsfile` inclusion and
-   transparency).
-
-   *kwargs* are passed to the :meth:`writeEPSfile` method (not counting the *file*
-   parameter), which is used to generate the input for ghostscript. By that you
-   gain access to the :class:`document.page` constructor arguments.
-
-.. method:: canvas.writeGSfile(filename=None, device=None, **kwargs)
-
-   This method is similar to pipeGS, but the content is written into the file
-   *filename*. If filename is None it is auto-guessed from the script name. If
-   filename is "-", the output is written to stdout. In both cases, a device
-   needs to be specified to define the format (and the file suffix in case the
-   filename is created from the script name).
-
-   If device is None, but a filename with suffix is given, PNG files will
-   be written using the png16m device and JPG files using the jpeg device.
-
-   All other arguments are identical to those of the :meth:`canvas.pipeGS`.
-
-For more information about the possible arguments of the :class:`document.page`
-constructor, we refer to Sect. :mod:`document`.
+      - *filename*: Output filename. If *filename* does not end with a file
+        extension and *device* starts with ``"png"`` or ``"jpeg"``, the extension
+        ``.png`` or ``.jpg`` is appended automatically. If *filename* is ``None``,
+        the base name is derived from ``sys.argv[0]``. If *filename* is ``"-"``,
+        Ghostscript writes to standard output and :meth:`pipeGS` returns the
+        resulting output as a :class:`bytes` object!
+      - *device*: Ghostscript output device (default ``"png16m"`` for 24-bit RGB
+        PNG; use e.g. ``"pngalpha"`` for PNG with transparent background or
+        ``"jpeg"`` for JPEG).
+      - *resolution*: Rendering resolution in DPI (default ``100``).
+      - *gs*: Ghostscript executable name (default ``"gs"``).
+      - *gsoptions*: Additional command-line option strings passed to Ghostscript.
+      - *textalphabits*, *graphicsalphabits*: Antialiasing subsampling factors
+        (default ``4``; pass ``None`` to omit).
+      - *ciecolor*: When ``True``, passes ``-dUseCIEColor`` to Ghostscript.
+      - *input*: Format piped from PyX into Ghostscript: ``"eps"`` (default) or
+        ``"pdf"``.
+      - *kwargs*: Additional keyword arguments forwarded to :class:`document.page`
+        and the EPS/PDF writer.
 
 
 Class :class:`clip`
----------------------
+===================
 
-In addition the canvas module contains the class ``canvas.clip`` which allows for
-clipping of the output by passing a clipping instance to the attrs parameter of
-the canvas constructor.
+.. class:: clip(path)
+
+   Constructs a clipping attribute from the closed :class:`path.path` *path*.
+   When passed in the *attrs* list of :class:`canvas`, all drawing inside that
+   canvas is restricted to the interior of *path*.

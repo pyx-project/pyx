@@ -1,133 +1,146 @@
+.. module:: bitmap
+   :synopsis: Bitmap image containers, JPEG/PNM readers, and canvas placement
+
+.. _bitmap:
 
 *******
 Bitmaps
 *******
 
-
 Introduction
 ============
 
-PyX focuses on the creation of scaleable vector graphics. However, PyX also
-allows for the output of bitmap images. Still, the support for creation and
-handling of bitmap images is quite limited. On the other hand the interfaces are
-built that way, that its trivial to combine PyX with the "Python Image Library",
-also known as "PIL".
+Although PyX is primarily designed for scalable vector graphics, the
+:mod:`bitmap` module provides full support for embedding raster (bitmap) images
+in PostScript, EPS, PDF, and SVG output. You can construct images directly from
+raw byte buffers in Python, load JPEG or PNM (PBM/PGM/PPM/PAM) files natively, or
+pass any `Pillow (PIL) <https://python-pillow.org/>`_ ``Image`` object directly
+to :class:`bitmap`.
 
-The creation of a bitmap can be performed out of some unpacked binary data by
-first creating image instances::
+Example: Creating a Bitmap from Raw Bytes
+-----------------------------------------
+
+To create a bitmap from raw binary pixel data, first wrap the byte buffer in an
+:class:`image` instance and then place it at a canvas position with
+:class:`bitmap`:
+
+.. code-block:: python
 
    from pyx import *
-   image_bw = bitmap.image(2, 2, "L", "\0\377\377\0")
-   image_rgb = bitmap.image(3, 2, "RGB", "\77\77\77\177\177\177\277\277\277"
-                                         "\377\0\0\0\377\0\0\0\377")
 
-Now ``image_bw`` is a :math:`2\times2` grayscale image. The bitmap data is
-provided by a string, which contains two black (``"\0" == chr(0)``) and two
-white (``"\377" == chr(255)``) pixels. Currently the values per (colour) channel
-is fixed to 8 bits. The coloured image ``image_rgb`` has :math:`3\times2` pixels
-containing a row of 3 different gray values and a row of the three colours red,
-green, and blue.
-
-The images can then be wrapped into ``bitmap`` instances by::
+   image_bw = bitmap.image(2, 2, "L", b"\0\377\377\0")
+   image_rgb = bitmap.image(3, 2, "RGB", b"\77\77\77\177\177\177\277\277\277"
+                                         b"\377\0\0\0\377\0\0\0\377")
 
    bitmap_bw = bitmap.bitmap(0, 1, image_bw, height=0.8)
    bitmap_rgb = bitmap.bitmap(0, 0, image_rgb, height=0.8)
-
-When constructing a ``bitmap`` instance you have to specify a certain position
-by the first two arguments fixing the bitmaps lower left corner. Some optional
-arguments control further properties. Since in this example there is no
-information about the dpi-value of the images, we have to specify at least a
-``width`` or a ``height`` of the bitmap.
-
-The bitmaps are now to be inserted into a canvas::
 
    c = canvas.canvas()
    c.insert(bitmap_bw)
    c.insert(bitmap_rgb)
    c.writeEPSfile("bitmap")
 
+Here ``image_bw`` is a :math:`2\times 2` 8-bit grayscale (``"L"``) image
+containing two black (``0``) and two white (``255``) pixels, ordered row by row
+from the top-left corner. ``image_rgb`` is a :math:`3\times 2` RGB image whose
+top row contains three shades of gray and whose bottom row contains red, green,
+and blue pixels. Because raw :class:`image` buffers do not carry DPI metadata,
+we specify ``height=0.8`` when constructing the :class:`bitmap` canvas items.
 Figure :ref:`fig_bitmap` shows the resulting output.
 
 .. _fig_bitmap:
 .. figure:: bitmap.*
-   :align:  center
+   :align: center
 
-   An introductory bitmap example.
-
-
-.. module:: bitmap
-
-Bitmap :mod:`module`: Bitmap support
-====================================
+   Placing grayscale and RGB :class:`bitmap` instances on a canvas.
 
 
-.. class:: image(width, height, mode, data, compressed=None)
+Image Containers and File Readers
+=================================
 
-   This class is a container for image data. *width* and *height* are the size of
-   the image in pixel. *mode* is one of ``"L"``, ``" RGB"`` or ``"CMYK"`` for
-   grayscale, rgb, or cmyk colours, respectively. *data* is the bitmap data as a
-   string, where each single character represents a colour value with ordinal range
-   ``0`` to ``255``. Each pixel is described by the appropriate number of colour
-   components according to *mode*. The pixels are listed row by row one after the
-   other starting at the upper left corner of the image.
+.. class:: image(width, height, mode, data, compressed=None, palette=None)
 
-   *compressed* might be set to ``" Flate"`` or ``"DCT"`` to provide already
-   compressed data. Note that those data will be passed to PostScript without
-   further checks, *i.e.* this option is for experts only.
+   Container for 8-bit-per-channel pixel data.
 
+   * *width*, *height*: Image dimensions in pixels.
+   * *mode*: Color mode string. Supported modes are:
+
+     - ``"L"`` (8-bit grayscale), ``"RGB"`` (24-bit RGB), ``"CMYK"`` (32-bit CMYK)
+     - Modes with an 8-bit alpha channel: ``"LA"``, ``"RGBA"``, ``"CMYKA"``
+       (trailing alpha) or ``"AL"``, ``"ARGB"``, ``"ACMYK"`` (leading alpha)
+     - ``"P"`` (8-bit palette-indexed color, requiring a :class:`palette`
+       instance in *palette*)
+
+   * *data*: A ``bytes`` object containing the pixel values row by row from top
+     left to bottom right. For uncompressed data, ``len(data)`` must equal
+     ``len(mode) * width * height``.
+   * *compressed*: ``None`` for uncompressed pixel bytes, or ``"Flate"`` /
+     ``"DCT"`` if *data* is already Flate- or JPEG-compressed.
+   * *palette*: Optional :class:`palette` instance when ``mode="P"``.
 
 .. class:: jpegimage(file)
 
-   This class is specialized to read data from a JPEG/JFIF-file. *file* is either
-   an open file handle (it only has to provide a :meth:`read` method; the file
-   should be opened in binary mode) or a string. In the latter case
-   :class:`jpegimage` will try to open a file named like *file* for reading.
+   Reads a JPEG/JFIF image from *file* (either a filename string or an open
+   binary file-like object). :class:`jpegimage` parses the JPEG headers to
+   extract the pixel dimensions, color components (``"L"``, ``"RGB"``, or
+   ``"CMYK"``), and embedded DPI resolution (if present), and embeds the
+   DCT-compressed stream directly into the output without decoding and
+   re-encoding—preserving 100% of the original image quality and minimizing file
+   size.
 
-   The contents of the file is checked for some JPEG/JFIF format markers in order
-   to identify the size and dpi resolution of the image for further usage. These
-   checks will typically fail for invalid data. The data are not uncompressed, but
-   directly inserted into the output stream (for invalid data the result will be
-   invalid PostScript). Thus there is no quality loss by recompressing the data as
-   it would occur when recompressing the uncompressed stream with the lossy jpeg
-   compression method.
+.. class:: pnmimage(file)
+
+   Reads a Netpbm PNM image (PBM, PGM, PPM, or PAM, in either ASCII or binary
+   format, including 1-bit, 8-bit, and 16-bit images) from *file* (a filename
+   string or an open binary file-like object).
 
 
-.. class:: bitmap(xpos, ypos, image, width=None, height=None, ratio=None, storedata=0, maxstrlen=4093, compressmode="Flate", flatecompresslevel=6, dctquality=75, dctoptimize=1, dctprogression=0)
+Placing Bitmaps on a Canvas
+===========================
 
-   *xpos* and *ypos* are the position of the lower left corner of the image. This
-   position might be modified by some additional transformations when inserting the
-   bitmap into a canvas. *image* is an instance of :class:`image` or
-   :class:`jpegimage` but it can also be an image instance from the "Python Image
-   Library".
+.. class:: bitmap(xpos, ypos, image, width=None, height=None, ratio=None, PSstoreimage=0, PSmaxstrlen=4093, PSbinexpand=1, compressmode="Flate", flatecompresslevel=6, dctquality=75, dctoptimize=0, dctprogression=0)
 
-   *width*, *height*, and *ratio* adjust the size of the image. At least *width* or
-   *height* needs to be given, when no dpi information is available from *image*.
+   Creates a canvas item that places *image* with its lower-left corner at
+   ``(xpos, ypos)`` (in user units or PyX lengths). A point-based variant
+   :class:`bitmap_pt` takes ``xpos_pt``, ``ypos_pt``, ``width_pt``, and
+   ``height_pt`` in PostScript points, and the lower-level base class
+   :class:`bitmap_trafo` accepts an arbitrary :class:`trafo.trafo_pt` mapping the
+   unit square to the target image rectangle.
 
-   *storedata* is a flag indicating, that the (still compressed) image data should
-   be put into the printers memory instead of writing it as a stream into the
-   PostScript file. While this feature consumes memory of the PostScript
-   interpreter, it allows for multiple usage of the image without including the
-   image data several times in the PostScript file.
+   * *image*: An instance of :class:`image`, :class:`jpegimage`,
+     :class:`pnmimage`, or any Pillow (``PIL.Image``) object.
+   * *width*, *height*, *ratio*: Target physical dimensions of the bitmap on the
+     canvas. If *image* does not provide DPI metadata (in ``image.info["dpi"]``),
+     at least *width* or *height* must be specified. When only one dimension is
+     given, the other is computed from *ratio* (or from the pixel aspect ratio if
+     ``ratio=None``).
+   * *PSstoreimage*: When true, stores the compressed image data in PostScript
+     interpreter memory as a reusable resource rather than streaming it inline.
+     This avoids duplicating image bytes when the same bitmap is drawn multiple
+     times in PostScript output.
+   * *PSmaxstrlen*: Maximum PostScript string length (default ``4093``) used when
+     *PSstoreimage* is enabled.
+   * *PSbinexpand*: Expansion factor (``1`` or ``2``) used when converting
+     low-bit-depth PIL images for PostScript output.
+   * *compressmode*: Stream compression method used in PostScript and PDF output:
+     ``"Flate"`` (lossless zlib compression, the default for uncompressed
+     images), ``"DCT"`` (JPEG compression, supported for :class:`jpegimage` and
+     Pillow images), or ``None`` (uncompressed). When *image* is already
+     compressed (such as a :class:`jpegimage`), *compressmode* is automatically
+     set to ``None`` so the compressed stream is passed through untouched.
+   * *flatecompresslevel*: Zlib compression level (``1``–``9``, default ``6``)
+     when ``compressmode="Flate"``.
+   * *dctquality*, *dctoptimize*, *dctprogression*: JPEG encoding parameters passed
+     to Pillow when ``compressmode="DCT"``. Keep ``dctprogression=0`` and
+     ``dctoptimize=0`` for maximum PostScript printer compatibility.
 
-   *maxstrlen* defines a maximal string length when *storedata* is enabled. Since
-   the data must be kept in the PostScript interpreters memory, it is stored in
-   strings. While most interpreters do not allow for an arbitrary string length (a
-   common limit is 65535 characters), a limit for the string length is set. When
-   more data need to be stored, a list of strings will be used. Note that lists are
-   also subject to some implementation limits. Since a typical value is 65535
-   entries, in combination a huge amount of memory can be used.
+   .. note::
 
-   Valid values for *compressmode* currently are ``"Flate"`` (zlib compression),
-   ``"DCT"`` (jpeg compression), or ``None`` (disabling the compression). The zlib
-   compression makes use of the zlib module as it is part of the standard Python
-   distribution. The jpeg compression is available for those *image* instances
-   only, which support the creation of a jpeg-compressed stream, *e.g.* images from
-   the "Python Image Library" with jpeg support installed. The compression must be
-   disabled when the image data is already compressed.
-
-   *flatecompresslevel* is a parameter of the zlib compression. *dctquality*,
-   *dctoptimize*, and *dctprogression* are parameters of the jpeg compression.
-   Note, that the progression feature of the jpeg compression should be turned off
-   in order to produce valid PostScript. Also the optimization feature is known to
-   produce errors on certain printers.
-
+      * **Alpha channels (transparency)**: Images with an alpha channel
+        (``"LA"``, ``"RGBA"``, ``"CMYKA"``, etc.) are automatically split into a
+        color image and a soft-mask (``/SMask``) in PDF output, or exported as
+        RGBA PNG data in SVG output. Standard PostScript does not support soft
+        masks and logs a warning while ignoring the alpha channel.
+      * **SVG output**: When writing SVG output, :class:`bitmap` embeds the image
+        as a base64-encoded ``data:image/png`` or ``data:image/jpeg`` URI inside
+        an SVG ``<image>`` element.
