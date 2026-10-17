@@ -230,8 +230,8 @@ class epsfile(baseclasses.canvasitem):
     def __init__(self,
                  x, y, filename,
                  width=None, height=None, scale=None, align="bl",
-                 clip=1, translatebbox=1, bbox=None,
-                 kpsearch=0):
+                 clip=1, translatebbox=True, bbox=None,
+                 kpsearch=False):
         """inserts epsfile
 
         Object for an EPS file named filename at position (x,y). Width, height,

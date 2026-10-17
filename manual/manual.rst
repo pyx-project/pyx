@@ -38,6 +38,8 @@
 
    epsfile
 
+   pdffile
+
    svgfile
 
    bitmap
