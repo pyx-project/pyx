@@ -244,10 +244,10 @@ class OTFfileTestCase(unittest.TestCase):
 
     def testUnicodeEngineWithOTF(self):
         ttf_bytes = _make_ttf_bytes()
-        key = ("memory_test.ttf", (config.format.type1.name, config.format.otf.name, config.format.ttf.name))
+        key = ("memory_test.ttf", (config.format.otf.name, config.format.ttf.name))
         config.opener_cache[key] = lambda: io.BytesIO(ttf_bytes)
         try:
-            ue = text.UnicodeEngine(fontname="memory_test.ttf", size=12)
+            ue = text.UnicodeEngine(font=OTFfont.from_fontname("memory_test.ttf"), size=12)
             tb = ue.text(0, 0, ["=", text.StackedText([text.Text("=", shift=0.3), text.Text("V", shift=-0.9)], frac=True, align=0.5)])
             self.assertTrue(tb.bbox().width_pt() > 0)
         finally:
@@ -260,7 +260,7 @@ class OTFfileTestCase(unittest.TestCase):
         ]:
             if not os.path.exists(fontpath):
                 continue
-            ue = text.UnicodeEngine(fontname=fontpath, size=10)
+            ue = text.UnicodeEngine(font=OTFfont.from_fontname(fontpath), size=10)
             c = canvas.canvas()
             c.insert(ue.text(0, 0, "Hello, World!"))
             c.insert(ue.text(0, 1, ["10", text.Text("2", shift=0.5, scale=0.8)]))
