@@ -29,8 +29,6 @@
         <tr><td>time axes</td><td>experimental code</td><td>planned for one of the next releases</td></tr>
         <tr><td>polar graph geometry</td><td>not started</td><td>planned for one of the next releases</td></tr>
         <tr><td>rework axis painters</td><td>not started</td><td>planned for one of the next releases</td></tr>
-        <tr><td colspan=3 class="tablehead">backend</td></tr>
-        <tr><td>pdf embedding in pdf</td><td>not started</td><td>planned for one of the next releases</td></tr>
       </table>
     </div>
 
