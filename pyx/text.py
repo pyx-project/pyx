@@ -22,9 +22,10 @@
 import atexit, errno, functools, glob, inspect, io, itertools, logging, os
 import queue, re, shutil, sys, tempfile, textwrap, threading
 
-from pyx import config, unit, box, baseclasses, trafo, version, attr, style, path, canvas
+from pyx import config, deco, unit, box, baseclasses, trafo, version, attr, style, path, canvas
 from pyx import bbox as bboxmodule
 from pyx.dvi import dvifile
+from pyx.font import T1font
 
 logger = logging.getLogger("pyx")
 
@@ -1532,12 +1533,6 @@ class LatexEngine(MultiEngine):
         super().__init__(SingleLatexEngine, *args, **kwargs)
 
 
-from pyx import deco
-from pyx.font import T1font, OTFfont
-from pyx.font.t1file import T1File
-from pyx.font.otffile import OTFFile
-from pyx.font.afmfile import AFMfile
-from pyx.font.pfmfile import PFMfile
 
 
 class MultiEngineText:
@@ -1705,37 +1700,14 @@ class unicodetextbox_pt(textbox_pt):
         c.processSVG(xml, writer, context, registry, bbox)
 
 
-class FontMetricType:
-
-    #: :meta hide-value:
-    #:
-    #: use afm font metric
-    afm = 1
-
-    #: :meta hide-value:
-    #:
-    #: use pfm font metric
-    pfm = 2
-
-
 class UnicodeEngine:
 
-    def __init__(self, fontname="cmr10", size=10, font_metric_type=FontMetricType.afm):
-        with config.open(fontname, [config.format.type1, config.format.otf, config.format.ttf]) as f:
-            data = f.read()
-        if data[:4] in (b"\x00\x01\x00\x00", b"OTTO", b"true", b"typ1"):
-            self.font = OTFfont(OTFFile(data))
-        else:
-            t1file = T1File.from_PF_bytes(data)
-            if font_metric_type == FontMetricType.afm:
-                with config.open(fontname, [config.format.afm], ascii=True) as f:
-                    metric_file = AFMfile(f)
-            elif font_metric_type == FontMetricType.pfm:
-                with config.open(fontname, [config.format.pfm]) as f:
-                    metric_file = PFMfile(f, t1file)
-            else:
-                raise ValueError("invalid value for font_metric_type")
-            self.font = T1font(t1file, metric_file)
+    def __init__(self, font=_marker, size=10):
+        if font is _marker:
+           # use cmr10 as Type1 font as default
+           font = T1font.from_fontname("cmr10")
+
+        self.font = font
         self.size = size
 
     def preamble(self):

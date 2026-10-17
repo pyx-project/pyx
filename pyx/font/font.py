@@ -22,8 +22,12 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 import logging
-from pyx import bbox, baseclasses, deco, path, pswriter, pdfwriter, svgwriter, trafo, unit
-from . import t1file, otffile, afmfile
+from pyx import bbox, baseclasses, config, deco, path, pswriter, pdfwriter, svgwriter, trafo, unit
+from . import otffile, afmfile
+from pyx.font.t1file import T1File
+from pyx.font.afmfile import AFMfile
+from pyx.font.pfmfile import PFMfile
+from pyx.font.otffile import OTFFile
 
 logger = logging.getLogger("pyx")
 
@@ -428,14 +432,42 @@ class font:
     def text(self, x, y, charcodes, size_pt, **kwargs):
         return self.text_pt(unit.topt(x), unit.topt(y), charcodes, size_pt, **kwargs)
 
+class FontMetricType:
+
+    #: :meta hide-value:
+    #:
+    #: use afm font metric
+    afm = 1
+
+    #: :meta hide-value:
+    #:
+    #: use pfm font metric
+    pfm = 2
+
 
 class T1font(font):
 
-    def __init__(self, t1file, metric=None):
+    def __init__(self, t1file, metric):
         super().__init__(t1file.name, t1file, metric)
 
     def text_pt(self, x, y, charcodes, size_pt, **kwargs):
         return T1text_pt(self, x, y, charcodes, size_pt, **kwargs)
+
+    @classmethod
+    def from_fontname(cls, fontname, font_metric_type=FontMetricType.afm):
+        """ construct T1 font from fontname and given font_metric_type """
+        with config.open(fontname, [config.format.type1]) as f:
+            data = f.read()
+        t1file = T1File.from_PF_bytes(data)
+        if font_metric_type == FontMetricType.afm:
+            with config.open(fontname, [config.format.afm], ascii=True) as f:
+                metric = AFMfile(f)
+        elif font_metric_type == FontMetricType.pfm:
+            with config.open(fontname, [config.format.pfm]) as f:
+                metric = PFMfile(f, t1file)
+        else:
+            raise ValueError("invalid value for font_metric_type")
+        return cls(t1file, metric)
 
 
 class T1builtinfont(T1font):
@@ -446,11 +478,18 @@ class T1builtinfont(T1font):
 
 class OTFfont(font):
 
-    def __init__(self, otffile, metric=None):
-        super().__init__(otffile.name, otffile, metric if metric is not None else otffile)
+    def __init__(self, otffile):
+        super().__init__(otffile.name, otffile, otffile)
 
     def text_pt(self, x, y, charcodes, size_pt, **kwargs):
         return OTFtext_pt(self, x, y, charcodes, size_pt, **kwargs)
+
+    @classmethod
+    def from_fontname(cls, fontname):
+        with config.open(fontname, [config.format.otf, config.format.ttf]) as f:
+            data = f.read()
+        otffile = OTFFile(data)
+        return cls(otffile)
 
 
 class selectedfont:
