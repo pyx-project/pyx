@@ -14,7 +14,7 @@ PyX Manual
    PyX is a Python package for the creation of PostScript, PDF, and SVG files. It
    combines an abstraction of the PostScript drawing model with a TeX/LaTeX
    interface and direct Type 1 / OpenType font support. Complex tasks such as
-   2D and 3D publication-quality data plots in笛cartesian or curvilinear
+   2D and 3D publication-quality data plots in cartesian or curvilinear
    coordinates, path deformations, and box-and-connector diagrams are built on
    top of these primitives in a modular, extensible architecture.
 
