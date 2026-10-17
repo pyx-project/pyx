@@ -634,7 +634,7 @@ T1setcurrentpoint = _T1setcurrentpoint()
 class FontFormatError(Exception):
     pass
 
-class T1File:
+class T1file:
 
     eexecr = 55665
     charstringr = 4330
@@ -1003,7 +1003,7 @@ class T1File:
         # when UniqueID is commented out (as in modern latin), prepare to remove the comment character as well
 
     def getstrippedfont(self, glyphs, charcodes):
-        """create a T1File instance containing only certain glyphs
+        """create a T1file instance containing only certain glyphs
 
         glyphs is a set of the glyph names. It might be modified *in place*!
         """
@@ -1041,7 +1041,7 @@ class T1File:
         data3 = self.newlinepattern.subn("\n", self.data3)[0]
 
         # create and return the new font instance
-        return T1File(data1.rstrip() + "\n", self._eexecencode(data2), data3.rstrip() + "\n")
+        return T1file(data1.rstrip() + "\n", self._eexecencode(data2), data3.rstrip() + "\n")
 
     # The following two methods, writePDFfontinfo and getglyphinfo,
     # extract informtion which should better be taken from the afm file.
@@ -1088,7 +1088,7 @@ class T1File:
         return context.wx, context.wy, bbox.llx_pt, bbox.lly_pt, bbox.urx_pt, bbox.ury_pt
 
     def outputPFA(self, file, remove_UniqueID_lookup=False):
-        """output the T1File in PFA format"""
+        """output the T1file in PFA format"""
         data1 = self.data1
         data3 = self.data3
         if remove_UniqueID_lookup:
@@ -1109,7 +1109,7 @@ class T1File:
         file.write(data3)
 
     def outputPFB(self, file):
-        """output the T1File in PFB format"""
+        """output the T1file in PFB format"""
         data2eexec = self.getdata2eexec()
         def pfblength(data):
             l = len(data)
@@ -1129,7 +1129,7 @@ class T1File:
         file.write("\200\3")
 
     def outputPS(self, file, writer):
-        """output the PostScript code for the T1File to the file file"""
+        """output the PostScript code for the T1file to the file file"""
         self.outputPFA(file, remove_UniqueID_lookup=True)
 
     def outputPDF(self, file, writer):
@@ -1161,7 +1161,7 @@ class T1File:
 
     @classmethod
     def from_PFA_bytes(cls, bytes):
-        """create a T1File instance from a string of bytes corresponding to a PFA file"""
+        """create a T1file instance from a string of bytes corresponding to a PFA file"""
         try:
             m1 = bytes.index("eexec") + 6
             m2 = bytes.index("0"*40)
@@ -1175,14 +1175,14 @@ class T1File:
 
     @classmethod
     def from_PFA_filename(cls, filename):
-        """create a T1File instance from PFA font file of given name"""
+        """create a T1file instance from PFA font file of given name"""
         with open(filename, "rb") as file:
             t1file = cls.from_PFA_bytes(file.read())
         return t1file
 
     @classmethod
     def from_PFB_bytes(cls, bytes):
-        """create a T1File instance from a string of bytes corresponding to a PFB file"""
+        """create a T1file instance from a string of bytes corresponding to a PFB file"""
 
         def pfblength(s):
             if len(s) != 4:
@@ -1225,7 +1225,7 @@ class T1File:
 
     @classmethod
     def from_PFB_filename(cls, filename):
-        """create a T1File instance from PFB font file of given name"""
+        """create a T1file instance from PFB font file of given name"""
         with open(filename, "rb") as file:
             t1file = cls.from_PFB_bytes(file.read())
         return t1file
@@ -1239,7 +1239,7 @@ class T1File:
 
     @classmethod
     def from_PF_filename(cls, filename):
-        """create a T1File instance from PFA or PFB font file of given name"""
+        """create a T1file instance from PFA or PFB font file of given name"""
         with open(filename, "rb") as file:
             t1file = cls.from_PF_bytes(file.read())
         return t1file

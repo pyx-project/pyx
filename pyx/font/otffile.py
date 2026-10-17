@@ -309,7 +309,7 @@ def _cff_subr_bias(n):
     return 32768
 
 
-class OTFFile(metric.metric):
+class OTFfile(metric.metric):
 
     def __init__(self, otffile):
         if isinstance(otffile, (bytes, bytearray)):

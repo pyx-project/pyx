@@ -9,7 +9,7 @@ import unittest
 
 from pyx import canvas, config, text, trafo
 from pyx.font import OTFfont
-from pyx.font.otffile import OTFFile, _encode_cff_fixed_int, _encode_cff_float, _encode_cff_int, _make_cff_index, checksum
+from pyx.font.otffile import OTFfile, _encode_cff_fixed_int, _encode_cff_float, _encode_cff_int, _make_cff_index, checksum
 
 
 def _make_sfnt(sfnt_version, tables):
@@ -200,10 +200,10 @@ def _make_cff_otf_bytes():
     return _make_sfnt(b"OTTO", tables)
 
 
-class OTFFileTestCase(unittest.TestCase):
+class OTFfileTestCase(unittest.TestCase):
 
     def _check_otf_instance(self, data, expect_cff):
-        otf = OTFFile(data)
+        otf = OTFfile(data)
         self.assertEqual(otf.is_cff, expect_cff)
         self.assertEqual(otf.name, "TestOTF-Regular")
         self.assertEqual(otf.width_ds("equal"), 600)

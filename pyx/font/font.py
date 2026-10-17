@@ -24,10 +24,10 @@
 import logging
 from pyx import bbox, baseclasses, config, deco, path, pswriter, pdfwriter, svgwriter, trafo, unit
 from . import otffile, afmfile
-from pyx.font.t1file import T1File
+from pyx.font.t1file import T1file
 from pyx.font.afmfile import AFMfile
 from pyx.font.pfmfile import PFMfile
-from pyx.font.otffile import OTFFile
+from pyx.font.otffile import OTFfile
 
 logger = logging.getLogger("pyx")
 
@@ -458,7 +458,7 @@ class T1font(font):
         """ construct T1 font from fontname and given font_metric_type """
         with config.open(fontname, [config.format.type1]) as f:
             data = f.read()
-        t1file = T1File.from_PF_bytes(data)
+        t1file = T1file.from_PF_bytes(data)
         if font_metric_type == FontMetricType.afm:
             with config.open(fontname, [config.format.afm], ascii=True) as f:
                 metric = AFMfile(f)
@@ -488,7 +488,7 @@ class OTFfont(font):
     def from_fontname(cls, fontname):
         with config.open(fontname, [config.format.otf, config.format.ttf]) as f:
             data = f.read()
-        otffile = OTFFile(data)
+        otffile = OTFfile(data)
         return cls(otffile)
 
 
