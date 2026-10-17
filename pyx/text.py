@@ -22,9 +22,10 @@
 import atexit, errno, functools, glob, inspect, io, itertools, logging, os
 import queue, re, shutil, sys, tempfile, textwrap, threading
 
-from pyx import config, unit, box, baseclasses, trafo, version, attr, style, path, canvas
+from pyx import config, deco, unit, box, baseclasses, trafo, version, attr, style, path, canvas
 from pyx import bbox as bboxmodule
 from pyx.dvi import dvifile
+from pyx.font import T1font
 
 logger = logging.getLogger("pyx")
 
@@ -1532,11 +1533,6 @@ class LatexEngine(MultiEngine):
         super().__init__(SingleLatexEngine, *args, **kwargs)
 
 
-from pyx import deco
-from pyx.font import T1font
-from pyx.font.t1file import T1File
-from pyx.font.afmfile import AFMfile
-from pyx.font.pfmfile import PFMfile
 
 
 class MultiEngineText:
@@ -1704,33 +1700,14 @@ class unicodetextbox_pt(textbox_pt):
         c.processSVG(xml, writer, context, registry, bbox)
 
 
-class FontMetricType:
-
-    #: :meta hide-value:
-    #:
-    #: use afm font metric
-    afm = 1
-
-    #: :meta hide-value:
-    #:
-    #: use pfm font metric
-    pfm = 2
-
-
 class UnicodeEngine:
 
-    def __init__(self, fontname="cmr10", size=10, font_metric_type=FontMetricType.afm):
-        with config.open(fontname, [config.format.type1]) as f:
-            t1file = T1File.from_PF_bytes(f.read())
-        if font_metric_type == FontMetricType.afm:
-            with config.open(fontname, [config.format.afm], ascii=True) as f:
-                metric_file = AFMfile(f)
-        elif font_metric_type == FontMetricType.pfm:
-            with config.open(fontname, [config.format.pfm]) as f:
-                metric_file = PFMfile(f, t1file)
-        else:
-            raise ValueError("invalid value for matric")
-        self.font = T1font(t1file, metric_file)
+    def __init__(self, font=_marker, size=10):
+        if font is _marker:
+           # use cmr10 as Type1 font as default
+           font = T1font.from_fontname("cmr10")
+
+        self.font = font
         self.size = size
 
     def preamble(self):
@@ -1760,28 +1737,6 @@ class UnicodeEngine:
 
     def text(self, x, y, *args, **kwargs):
         return self.text_pt(unit.topt(x), unit.topt(y), *args, **kwargs)
-
-
-# from pyx.font.otffile import OpenTypeFont
-# 
-# class OTFUnicodeText:
-# 
-#     def __init__(self, fontname, size=10):
-#         self.font = OpenTypeFont(config.open(fontname, [config.format.ttf]))
-#         self.size = size
-# 
-#     def preamble(self):
-#         raise NotImplemented()
-# 
-#     def reset(self):
-#         raise NotImplemented()
-# 
-#     def text_pt(self, x_pt, y_pt, text, textattrs=[], texmessages=[], fontmap=None, singlecharmode=False):
-#     # def text_pt(self, x_pt, y_pt, text, *args, **kwargs):
-#         return unicodetextbox_pt(x_pt, y_pt, text, self.font, self.size)
-# 
-#     def text(self, x, y, *args, **kwargs):
-#         return self.text_pt(unit.topt(x), unit.topt(y), *args, **kwargs)
 
 
 # old, deprecated names:

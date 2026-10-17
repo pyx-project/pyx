@@ -22,8 +22,12 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 import logging
-from pyx import bbox, baseclasses, deco, path, pswriter, pdfwriter, svgwriter, trafo, unit
-from . import t1file, afmfile
+from pyx import bbox, baseclasses, config, deco, path, pswriter, pdfwriter, svgwriter, trafo, unit
+from . import otffile, afmfile
+from pyx.font.t1file import T1file
+from pyx.font.afmfile import AFMfile
+from pyx.font.pfmfile import PFMfile
+from pyx.font.otffile import OTFfile
 
 logger = logging.getLogger("pyx")
 
@@ -31,15 +35,14 @@ logger = logging.getLogger("pyx")
 # PS resources
 ##############################################################################
 
-class PST1file(pswriter.PSresource):
+class PSfontfile(pswriter.PSresource):
 
     """ PostScript font definition included in the prolog """
 
-    def __init__(self, t1file, glyphnames, charcodes):
-        """ include type 1 font t1file stripped to the given glyphnames"""
-        self.type = "t1file"
-        self.t1file = t1file
-        self.id = t1file.name
+    def __init__(self, fontfile, glyphnames, charcodes):
+        """ include font file stripped to the given glyphnames"""
+        self.fontfile = fontfile
+        self.id = fontfile.name
         self.glyphnames = set(glyphnames)
         self.charcodes = set(charcodes)
 
@@ -48,16 +51,26 @@ class PST1file(pswriter.PSresource):
         self.charcodes.update(other.charcodes)
 
     def output(self, file, writer, registry):
-        file.write("%%%%BeginFont: %s\n" % self.t1file.name)
+        file.write("%%%%BeginFont: %s\n" % self.fontfile.name)
         if writer.stripfonts:
             if self.glyphnames:
                 file.write("%%Included glyphs: %s\n" % " ".join(self.glyphnames))
             if self.charcodes:
                 file.write("%%Included charcodes: %s\n" % " ".join([str(charcode) for charcode in self.charcodes]))
-            self.t1file.getstrippedfont(self.glyphnames, self.charcodes).outputPS(file, writer)
+            self.fontfile.getstrippedfont(self.glyphnames, self.charcodes).outputPS(file, writer)
         else:
-            self.t1file.outputPS(file, writer)
+            self.fontfile.outputPS(file, writer)
         file.write("\n%%EndFont\n")
+
+
+class PST1file(PSfontfile):
+
+    type = "t1file"
+
+
+class PSOTFfile(PSfontfile):
+
+    type = "otffile"
 
 
 _ReEncodeFont = pswriter.PSdefinition("ReEncodeFont", b"""{
@@ -158,7 +171,7 @@ class PSchangefontmatrix(pswriter.PSresource):
 
 class PDFfont(pdfwriter.PDFobject):
 
-    def __init__(self, fontname, basefontname, charcodes, fontdescriptor, encoding, metric):
+    def __init__(self, fontname, basefontname, charcodes, fontdescriptor, encoding, metric, subtype="Type1"):
         pdfwriter.PDFobject.__init__(self, "font", _id=fontname)
 
         self.fontname = fontname
@@ -167,6 +180,7 @@ class PDFfont(pdfwriter.PDFobject):
         self.fontdescriptor = fontdescriptor
         self.encoding = encoding
         self.metric = metric
+        self.subtype = subtype
 
     def merge(self, other):
         self.charcodes.update(other.charcodes)
@@ -174,7 +188,7 @@ class PDFfont(pdfwriter.PDFobject):
     def write(self, file, writer, registry):
         file.write("<<\n"
                    "/Type /Font\n"
-                   "/Subtype /Type1\n")
+                   "/Subtype /%s\n" % self.subtype)
         file.write("/Name /%s\n" % self.fontname)
         file.write("/BaseFont /%s\n" % self.basefontname)
         firstchar = min(self.charcodes)
@@ -186,9 +200,9 @@ class PDFfont(pdfwriter.PDFobject):
         if self.encoding:
             encoding = self.encoding.getvector()
         else:
-            if self.fontdescriptor.fontfile.t1file.encoding is None:
-                self.fontdescriptor.fontfile.t1file._encoding()
-            encoding = self.fontdescriptor.fontfile.t1file.encoding
+            if self.fontdescriptor.fontfile.fontfile.encoding is None:
+                self.fontdescriptor.fontfile.fontfile._encoding()
+            encoding = self.fontdescriptor.fontfile.fontfile.encoding
         for i in range(firstchar, lastchar+1):
             if i:
                 if not (i % 8):
@@ -199,7 +213,7 @@ class PDFfont(pdfwriter.PDFobject):
                 if self.metric is not None:
                     file.write("%i" % self.metric.width_ds(encoding[i]))
                 else:
-                    file.write("%i" % self.fontdescriptor.fontfile.t1file.getglyphinfo(encoding[i])[0])
+                    file.write("%i" % self.fontdescriptor.fontfile.fontfile.getglyphinfo(encoding[i])[0])
             else:
                 file.write("0")
         file.write(" ]\n")
@@ -242,11 +256,12 @@ PDFZapfDingbats         = PDFstdfont("ZapfDingbats")
 
 class PDFfontdescriptor(pdfwriter.PDFobject):
 
-    def __init__(self, fontname, fontfile, metric):
+    def __init__(self, fontname, fontfile, metric, fontfilekey="FontFile"):
         pdfwriter.PDFobject.__init__(self, "fontdescriptor", _id=fontname)
         self.fontname = fontname
         self.fontfile = fontfile
         self.metric = metric
+        self.fontfilekey = fontfilekey
 
     def write(self, file, writer, registry):
         file.write("<<\n"
@@ -255,17 +270,17 @@ class PDFfontdescriptor(pdfwriter.PDFobject):
         if self.metric is not None:
             self.metric.writePDFfontinfo(file)
         else:
-            self.fontfile.t1file.writePDFfontinfo(file)
+            self.fontfile.fontfile.writePDFfontinfo(file)
         if self.fontfile is not None:
-            file.write("/FontFile %d 0 R\n" % registry.getrefno(self.fontfile))
+            file.write("/%s %d 0 R\n" % (self.fontfilekey, registry.getrefno(self.fontfile)))
         file.write(">>\n")
 
 
 class PDFfontfile(pdfwriter.PDFobject):
 
-    def __init__(self, t1file, glyphnames, charcodes):
-        pdfwriter.PDFobject.__init__(self, "fontfile", _id=t1file.name)
-        self.t1file = t1file
+    def __init__(self, fontfile, glyphnames, charcodes):
+        pdfwriter.PDFobject.__init__(self, "fontfile", _id=fontfile.name)
+        self.fontfile = fontfile
         self.glyphnames = set(glyphnames)
         self.charcodes = set(charcodes)
 
@@ -275,9 +290,9 @@ class PDFfontfile(pdfwriter.PDFobject):
 
     def write(self, file, writer, registry):
         if writer.stripfonts:
-            self.t1file.getstrippedfont(self.glyphnames, self.charcodes).outputPDF(file, writer)
+            self.fontfile.getstrippedfont(self.glyphnames, self.charcodes).outputPDF(file, writer)
         else:
-            self.t1file.outputPDF(file, writer)
+            self.fontfile.outputPDF(file, writer)
 
 
 class PDFencoding(pdfwriter.PDFobject):
@@ -352,14 +367,14 @@ class SVGT1mapping:
                     self.private_charcode += 1
 
 
-class SVGT1file(svgwriter.SVGresource, SVGT1mapping):
+class SVGfontfile(svgwriter.SVGresource, SVGT1mapping):
 
-    """ PostScript font definition included in the prolog """
+    """ Font definition included in the prolog """
 
-    def __init__(self, t1file, glyphnames, charcodes):
-        """ include type 1 font t1file stripped to the given glyphnames"""
-        self.t1file = t1file
-        svgwriter.SVGresource.__init__(self, "t1file", t1file.name)
+    def __init__(self, fontfile, glyphnames, charcodes):
+        """ include font file stripped to the given glyphnames"""
+        self.fontfile = fontfile
+        svgwriter.SVGresource.__init__(self, self.type, fontfile.name)
         SVGT1mapping.__init__(self, glyphnames, charcodes)
 
     def merge(self, other):
@@ -374,17 +389,17 @@ class SVGT1file(svgwriter.SVGresource, SVGT1mapping):
 
     def output(self, xml, writer, registry):
         xml.startSVGElement("font", {})
-        xml.startSVGElement("font-face", {"font-family": self.t1file.name})
+        xml.startSVGElement("font-face", {"font-family": self.fontfile.name})
         xml.endSVGElement("font-face")
         for glyphname in self.glyphnames:
-            glyphpath = self.t1file.getglyphpath_pt(0, 0, glyphname, 1000, convertcharcode=False)
+            glyphpath = self.fontfile.getglyphpath_pt(0, 0, glyphname, 1000, convertcharcode=False)
             attrs = {"unicode": self.glyphnames[glyphname],
                      "horiz-adv-x": "%f" % glyphpath.wx_pt,
                      "d": glyphpath.path.returnSVGdata(inverse_y=False)}
             xml.startSVGElement("glyph", attrs)
             xml.endSVGElement("glyph")
         for charcode in self.charcodes:
-            glyphpath = self.t1file.getglyphpath_pt(0, 0, charcode, 1000, convertcharcode=True)
+            glyphpath = self.fontfile.getglyphpath_pt(0, 0, charcode, 1000, convertcharcode=True)
             attrs = {"unicode": self.charcodes[charcode],
                      "horiz-adv-x": "%f" % glyphpath.wx_pt,
                      "d": glyphpath.path.returnSVGdata(inverse_y=False)}
@@ -393,33 +408,88 @@ class SVGT1file(svgwriter.SVGresource, SVGT1mapping):
         xml.endSVGElement("font")
 
 
+class SVGT1file(SVGfontfile):
+
+    type = "t1file"
+
+
+class SVGOTFfile(SVGfontfile):
+
+    type = "otffile"
+
+
 ##############################################################################
 # basic PyX text output
 ##############################################################################
 
 class font:
 
+    def __init__(self, name, fontfile, metric):
+        self.name = name
+        self.fontfile = fontfile
+        self.metric = metric
+
     def text(self, x, y, charcodes, size_pt, **kwargs):
         return self.text_pt(unit.topt(x), unit.topt(y), charcodes, size_pt, **kwargs)
+
+class FontMetricType:
+
+    #: :meta hide-value:
+    #:
+    #: use afm font metric
+    afm = 1
+
+    #: :meta hide-value:
+    #:
+    #: use pfm font metric
+    pfm = 2
 
 
 class T1font(font):
 
-    def __init__(self, t1file, metric=None):
-        self.t1file = t1file
-        self.name = t1file.name
-        self.metric = metric
+    def __init__(self, t1file, metric):
+        super().__init__(t1file.name, t1file, metric)
 
     def text_pt(self, x, y, charcodes, size_pt, **kwargs):
         return T1text_pt(self, x, y, charcodes, size_pt, **kwargs)
+
+    @classmethod
+    def from_fontname(cls, fontname, font_metric_type=FontMetricType.afm):
+        """ construct T1 font from fontname and given font_metric_type """
+        with config.open(fontname, [config.format.type1]) as f:
+            data = f.read()
+        t1file = T1file.from_PF_bytes(data)
+        if font_metric_type == FontMetricType.afm:
+            with config.open(fontname, [config.format.afm], ascii=True) as f:
+                metric = AFMfile(f)
+        elif font_metric_type == FontMetricType.pfm:
+            with config.open(fontname, [config.format.pfm]) as f:
+                metric = PFMfile(f, t1file)
+        else:
+            raise ValueError("invalid value for font_metric_type")
+        return cls(t1file, metric)
 
 
 class T1builtinfont(T1font):
 
     def __init__(self, name, metric):
-        self.name = name
-        self.t1file = None
-        self.metric = metric
+        font.__init__(self, name, None, metric)
+
+
+class OTFfont(font):
+
+    def __init__(self, otffile):
+        super().__init__(otffile.name, otffile, otffile)
+
+    def text_pt(self, x, y, charcodes, size_pt, **kwargs):
+        return OTFtext_pt(self, x, y, charcodes, size_pt, **kwargs)
+
+    @classmethod
+    def from_fontname(cls, fontname):
+        with config.open(fontname, [config.format.otf, config.format.ttf]) as f:
+            data = f.read()
+        otffile = OTFfile(data)
+        return cls(otffile)
 
 
 class selectedfont:
@@ -439,12 +509,6 @@ class selectedfont:
 
 
 class text_pt(baseclasses.canvasitem):
-
-    def requiretextregion(self):
-        return True
-
-
-class T1text_pt(text_pt):
 
     def __init__(self, font, x_pt, y_pt, charcodes, size_pt, decoding=afmfile.unicodestring, slant=None, ignorebbox=False, kerning=False, ligatures=False, spaced_pt=0):
         if decoding is not None:
@@ -470,6 +534,9 @@ class T1text_pt(text_pt):
             raise ValueError("decoding required for font metric access (ligatures)")
         if self.ligatures:
             self.glyphnames = self.font.metric.resolveligatures(self.glyphnames)
+
+    def requiretextregion(self):
+        return True
 
     def bbox(self):
         if self.font.metric is None:
@@ -528,7 +595,7 @@ class T1text_pt(text_pt):
                 else:
                     if i:
                         x_pt += self.spaced_pt
-                    glyphpath = self.font.t1file.getglyphpath_pt(x_pt, y_pt, value, self.size_pt, convertcharcode=not self.decode)
+                    glyphpath = self.font.fontfile.getglyphpath_pt(x_pt, y_pt, value, self.size_pt, convertcharcode=not self.decode)
                     self._textpath += glyphpath.path
                     x_pt += glyphpath.wx_pt
                     y_pt += glyphpath.wy_pt
@@ -538,17 +605,17 @@ class T1text_pt(text_pt):
         if not self.ignorebbox:
             bbox += self.bbox()
 
-        if writer.textaspath and not self.font.t1file:
+        if writer.textaspath and not self.font.fontfile:
             logger.warning("Cannot output text as path when font not given by a font file (like for builtin fonts).")
-        if writer.textaspath and self.font.t1file:
+        if writer.textaspath and self.font.fontfile:
             deco.decoratedpath(self.textpath(), fillstyles=[]).processPS(file, writer, context, registry, bbox)
         else:
             # register resources
-            if self.font.t1file is not None:
+            if self.font.fontfile is not None:
                 if self.decode:
-                    registry.add(PST1file(self.font.t1file, self.glyphnames, []))
+                    registry.add(self.psfontfile(self.font.fontfile, self.glyphnames, []))
                 else:
-                    registry.add(PST1file(self.font.t1file, [], self.charcodes))
+                    registry.add(self.psfontfile(self.font.fontfile, [], self.charcodes))
 
             fontname = self.font.name
             if self.decode:
@@ -561,8 +628,8 @@ class T1text_pt(text_pt):
 
             if self.slant:
                 newfontmatrix = trafo.trafo_pt(matrix=((1, self.slant), (0, 1)))
-                if self.font.t1file is not None:
-                    newfontmatrix = newfontmatrix * self.font.t1file.fontmatrix
+                if self.font.fontfile is not None:
+                    newfontmatrix = newfontmatrix * self.font.fontfile.fontmatrix
                 newfontname = "%s-slant%f" % (fontname, self.slant)
                 registry.add(_ChangeFontMatrix)
                 registry.add(PSchangefontmatrix(fontname, newfontname, newfontmatrix))
@@ -603,9 +670,9 @@ class T1text_pt(text_pt):
         if not self.ignorebbox:
             bbox += self.bbox()
 
-        if writer.textaspath and not self.font.t1file:
+        if writer.textaspath and not self.font.fontfile:
             logger.warning("Cannot output text as path when font not given by a font file (like for builtin fonts).")
-        if writer.textaspath and self.font.t1file:
+        if writer.textaspath and self.font.fontfile:
             deco.decoratedpath(self.textpath(), fillstyles=[]).processPDF(file, writer, context, registry, bbox)
         else:
             if self.decode:
@@ -623,15 +690,15 @@ class T1text_pt(text_pt):
                 fontname = newfontname
             else:
                 _encoding = None
-            if self.font.t1file is not None:
+            if self.font.fontfile is not None:
                 if self.decode:
-                    fontfile = PDFfontfile(self.font.t1file, self.glyphnames, [])
+                    fontfile = PDFfontfile(self.font.fontfile, self.glyphnames, [])
                 else:
-                    fontfile = PDFfontfile(self.font.t1file, [], self.charcodes)
+                    fontfile = PDFfontfile(self.font.fontfile, [], self.charcodes)
             else:
                 fontfile = None
-            fontdescriptor = PDFfontdescriptor(self.font.name, fontfile, self.font.metric)
-            font = PDFfont(fontname, self.font.name, charcodes, fontdescriptor, _encoding, self.font.metric)
+            fontdescriptor = PDFfontdescriptor(self.font.name, fontfile, self.font.metric, fontfilekey=self.pdffontfilekey)
+            font = PDFfont(fontname, self.font.name, charcodes, fontdescriptor, _encoding, self.font.metric, subtype=self.pdfsubtype)
 
             # register resources
             if fontfile is not None:
@@ -696,23 +763,23 @@ class T1text_pt(text_pt):
         # this is too common to be warned about as textaspath is the
         # default for svg due to the missing font support by current browsers
         #
-        # if writer.textaspath and not self.font.t1file:
+        # if writer.textaspath and not self.font.fontfile:
         #     logger.warning("Cannot output text as path when font not given by a font file (like for builtin fonts).")
 
-        if writer.textaspath and self.font.t1file:
+        if writer.textaspath and self.font.fontfile:
             deco.decoratedpath(self.textpath(), fillstyles=[]).processSVG(xml, writer, context, registry, bbox)
         else:
-            if self.font.t1file is not None:
+            if self.font.fontfile is not None:
                 if self.decode:
-                    t1mapping = SVGT1file(self.font.t1file, self.glyphnames, [])
+                    svgmapping = self.svgfontfile(self.font.fontfile, self.glyphnames, [])
                 else:
-                    t1mapping = SVGT1file(self.font.t1file, [], self.charcodes)
-                registry.add(t1mapping)
+                    svgmapping = self.svgfontfile(self.font.fontfile, [], self.charcodes)
+                registry.add(svgmapping)
             else:
                 if self.decode:
-                    t1mapping = SVGT1mapping(self.glyphnames, [])
+                    svgmapping = SVGT1mapping(self.glyphnames, [])
                 else:
-                    t1mapping = SVGT1mapping([], self.charcodes)
+                    svgmapping = SVGT1mapping([], self.charcodes)
 
             fontname = self.font.name
 
@@ -731,7 +798,7 @@ class T1text_pt(text_pt):
             if context.fillopacity:
                 attrs["opacity"] = "%f" % context.fillopacity
             if self.slant:
-                trafo.trafo_pt(matrix=((1, self.slant), (0, 1))).outputSVGattrs(attrs, writer, context, registry)
+                trafo.trafo_pt(matrix=((1, self.slant), (0, 1))).processSVGattrs(attrs, writer, context, registry)
             xml.startSVGElement("text", attrs)
             tspan = False
             for i, value in enumerate(data):
@@ -753,9 +820,31 @@ class T1text_pt(text_pt):
                         xml.startSVGElement("tspan", {"dx": "%f" % (self.spaced_pt)})
                         tspan = True
                     if self.decode:
-                        xml.characters(t1mapping.glyphnames[value])
+                        xml.characters(svgmapping.glyphnames[value])
                     else:
-                        xml.characters(t1mapping.charcodes[value])
+                        xml.characters(svgmapping.charcodes[value])
             if tspan:
                 xml.endSVGElement("tspan")
             xml.endSVGElement("text")
+
+
+class T1text_pt(text_pt):
+
+    psfontfile = PST1file
+    svgfontfile = SVGT1file
+    pdffontfilekey = "FontFile"
+    pdfsubtype = "Type1"
+
+
+class OTFtext_pt(text_pt):
+
+    psfontfile = PSOTFfile
+    svgfontfile = SVGOTFfile
+
+    def __init__(self, font, x_pt, y_pt, charcodes, size_pt, decoding=afmfile.unicodestring, **kwargs):
+        if decoding is afmfile.unicodestring and font.fontfile is not None and hasattr(font.fontfile, "unicodestring"):
+            decoding = font.fontfile.unicodestring
+        super().__init__(font, x_pt, y_pt, charcodes, size_pt, decoding=decoding, **kwargs)
+        self.pdffontfilekey = "FontFile3" if font.fontfile.is_cff else "FontFile2"
+        self.pdfsubtype = "Type1" if font.fontfile.is_cff else "TrueType"
+
