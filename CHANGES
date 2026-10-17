@@ -1,6 +1,9 @@
 0.18 (unreleased):
   - new pdffile module:
     - embed PDF pages in PDF output
+  - font and text modules:
+    - add OpenType font support (TrueType and CFF) including UnicodeEngine
+      integration
 
 0.17 (2025/11/02):
   - Move metadata from setup.py to pyproject.toml

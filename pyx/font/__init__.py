@@ -21,7 +21,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 from . import font
-__allfont__ = ["T1font", "T1builtinfont", "text_pt", "font"]
+__allfont__ = ["T1font", "T1builtinfont", "OTFfont", "text_pt", "font"]
 for importfromfont in __allfont__:
     locals()[importfromfont] = getattr(font, importfromfont)
 

@@ -1533,8 +1533,9 @@ class LatexEngine(MultiEngine):
 
 
 from pyx import deco
-from pyx.font import T1font
+from pyx.font import T1font, OTFfont
 from pyx.font.t1file import T1File
+from pyx.font.otffile import OTFFile
 from pyx.font.afmfile import AFMfile
 from pyx.font.pfmfile import PFMfile
 
@@ -1720,17 +1721,21 @@ class FontMetricType:
 class UnicodeEngine:
 
     def __init__(self, fontname="cmr10", size=10, font_metric_type=FontMetricType.afm):
-        with config.open(fontname, [config.format.type1]) as f:
-            t1file = T1File.from_PF_bytes(f.read())
-        if font_metric_type == FontMetricType.afm:
-            with config.open(fontname, [config.format.afm], ascii=True) as f:
-                metric_file = AFMfile(f)
-        elif font_metric_type == FontMetricType.pfm:
-            with config.open(fontname, [config.format.pfm]) as f:
-                metric_file = PFMfile(f, t1file)
+        with config.open(fontname, [config.format.type1, config.format.otf, config.format.ttf]) as f:
+            data = f.read()
+        if data[:4] in (b"\x00\x01\x00\x00", b"OTTO", b"true", b"typ1"):
+            self.font = OTFfont(OTFFile(data))
         else:
-            raise ValueError("invalid value for matric")
-        self.font = T1font(t1file, metric_file)
+            t1file = T1File.from_PF_bytes(data)
+            if font_metric_type == FontMetricType.afm:
+                with config.open(fontname, [config.format.afm], ascii=True) as f:
+                    metric_file = AFMfile(f)
+            elif font_metric_type == FontMetricType.pfm:
+                with config.open(fontname, [config.format.pfm]) as f:
+                    metric_file = PFMfile(f, t1file)
+            else:
+                raise ValueError("invalid value for font_metric_type")
+            self.font = T1font(t1file, metric_file)
         self.size = size
 
     def preamble(self):
@@ -1760,28 +1765,6 @@ class UnicodeEngine:
 
     def text(self, x, y, *args, **kwargs):
         return self.text_pt(unit.topt(x), unit.topt(y), *args, **kwargs)
-
-
-# from pyx.font.otffile import OpenTypeFont
-# 
-# class OTFUnicodeText:
-# 
-#     def __init__(self, fontname, size=10):
-#         self.font = OpenTypeFont(config.open(fontname, [config.format.ttf]))
-#         self.size = size
-# 
-#     def preamble(self):
-#         raise NotImplemented()
-# 
-#     def reset(self):
-#         raise NotImplemented()
-# 
-#     def text_pt(self, x_pt, y_pt, text, textattrs=[], texmessages=[], fontmap=None, singlecharmode=False):
-#     # def text_pt(self, x_pt, y_pt, text, *args, **kwargs):
-#         return unicodetextbox_pt(x_pt, y_pt, text, self.font, self.size)
-# 
-#     def text(self, x, y, *args, **kwargs):
-#         return self.text_pt(unit.topt(x), unit.topt(y), *args, **kwargs)
 
 
 # old, deprecated names:
