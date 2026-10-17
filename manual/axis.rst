@@ -266,22 +266,17 @@ The :mod:`graph.axis.timeaxis` module provides classes for plotting Python
 :class:`datetime.datetime` (or :class:`datetime.date`) objects along a
 continuous axis:
 
-.. class:: timeaxis(min=None, max=None, reverse=0, divisor=None, title=None, parter=timeparter(), manualticks=[], rater=rater.linear(), maxworse=2, texter=timetexter(), painter=painter.regular(), linkpainter=painter.linked(), fallbackrange=None, **kwargs)
+.. class:: timeaxis(parter=None, rater=rater.linear(), **args)
 
-   A continuous axis whose data bounds and values are Python
-   :class:`datetime.datetime` instances.
+   A continuous axis (inheriting from :class:`~graph.axis.linear`) whose data
+   bounds and values are Python :class:`datetime.datetime` instances.
 
-.. class:: timetick(dt, ticklevel=0, labellevel=0, label=None, labelattrs=[])
+.. class:: timetick(year, month, day, ticklevel=0, labellevel=0, label=None, labelattrs=[], **kwargs)
 
-   A tick positioned at a :class:`datetime.datetime` value (or initialized from
-   ``(year, month, day[, hour[, minute[, second]]])`` positional arguments).
+   A tick subclassing :class:`datetime.datetime` with tick and label hierarchy
+   levels *ticklevel* and *labellevel* and optional explicit *label*.
 
-.. class:: timeparter(variants=defaultvariants)
-
-   Partitioner that places ticks and subticks at calendar-aligned intervals (days,
-   weeks, months, hours, etc.).
-
-.. class:: timetexter(format="%Y-%m-%d")
+.. class:: timetexter(format="%c")
 
    Formats :class:`timetick` positions using :meth:`datetime.datetime.strftime`
    with the given *format* string.
@@ -387,11 +382,8 @@ Logarithmic Partitioners
    * :attr:`logarithmic.pre1exp` — powers of 10 (:math:`10^n`)
    * :attr:`logarithmic.pre125exp` — :math:`1, 2, 5 \times 10^n`
    * :attr:`logarithmic.pre1to9exp` — :math:`1, 2, \dots, 9 \times 10^n`
-   * :attr:`logarithmic.pre1exp2`, :attr:`~logarithmic.pre1exp3`,
-     :attr:`~logarithmic.pre1exp4`, :attr:`~logarithmic.pre1exp5` — steps of
-     :math:`10^{2n}`, :math:`10^{3n}`, :math:`10^{4n}`, :math:`10^{5n}`
 
-.. class:: autologarithmic(variants=defaultvariants, extendtick=0, extendlabel=None, epsilon=1e-10)
+.. class:: autologarithmic(variants=defaultvariants, extendtick=0, extendlabel=None, autoexponent=10, epsilon=1e-10)
 .. class:: autolog(...)
 
    Evaluates candidate logarithmic tick and label patterns from *variants* (ordered

@@ -455,52 +455,48 @@ you can use :class:`UnicodeEngine`.
 
    from pyx import *
 
-   text.set(cls=text.UnicodeEngine, fontname="cmr10", size=12)
+   text.set(text.UnicodeEngine, size=12)
 
    c = canvas.canvas()
-   c.text(0, 0, "Direct Unicode text rendering", [text.halign.center])
+   c.text(0, 0, "Direct Unicode text rendering", [color.rgb.blue])
 
-.. class:: UnicodeEngine(fontname="cmr10", size=10, prepend_fontpath=None)
+.. class:: UnicodeEngine(font=_marker, size=10)
 
    A pure-Python text engine that renders Unicode strings directly using Type 1
-   or OpenType/TrueType (``.otf``/``.ttf``) fonts.
+   (:class:`font.T1font`) or OpenType/TrueType (:class:`font.OTFfont`) fonts.
 
-   * *fontname*: Name of the font to load (looked up via ``psfonts.map`` /
-     ``pdftex.map`` or directly as ``<fontname>.otf`` / ``<fontname>.ttf``).
+   * *font*: Font instance (defaults to ``T1font.from_fontname("cmr10")``).
    * *size*: Base font size in PostScript points (default ``10``).
-   * *prepend_fontpath*: Optional list of directory paths to search for font
-     files before searching standard TeX/system font paths.
 
-   .. method:: text_pt(x_pt, y_pt, text, textattrs=[], **kwargs)
+   .. method:: text_pt(x_pt, y_pt, text, textattrs=[], texmessages=[], fontmap=None, singlecharmode=False)
    .. method:: text(x, y, text, textattrs=[], **kwargs)
 
       Typesets *text* (which may be a string, :class:`Text`, :class:`StackedText`,
       :class:`MultiEngineText`, or a list thereof) at ``(x, y)`` and returns a
-      :class:`textbox_pt` instance. Supports :class:`halign`, :class:`valign`,
-      :class:`vshift`, :class:`size`, :class:`trafo.trafo_pt`, and
-      :class:`color.color` attributes in *textattrs*.
+      :class:`unicodetextbox_pt` instance. Supports :data:`mathmode`,
+      :class:`trafo.trafo_pt`, and :class:`style.fillstyle` (such as
+      :class:`color.color`) attributes in *textattrs*.
 
 .. class:: Text(text, scale=1, shift=0)
 
    Wraps a string *text* for :class:`UnicodeEngine` with a relative font *scale*
-   factor and a vertical baseline *shift* (as a fraction of the font size). This
-   is useful for superscripts and subscripts when using :class:`UnicodeEngine`,
-   for example ``["10", text.Text("-3", scale=0.7, shift=0.4)]``.
+   factor and a vertical baseline *shift* (in units of the unscaled text size).
+   This is useful for superscripts and subscripts when using
+   :class:`UnicodeEngine`, for example
+   ``["10", text.Text("-3", scale=0.7, shift=0.4)]``.
 
-.. class:: StackedText(texts, halign=0, sep=2)
+.. class:: StackedText(texts, frac=False, align=0)
 
-   Stacks a sequence of *texts* vertically (for example, to render a fraction or
-   multi-line label in :class:`UnicodeEngine`) with horizontal alignment *halign*
-   (``0`` for left, ``0.5`` for center, ``1`` for right) and vertical separation
-   *sep* in points.
+   Stacks a sequence of *texts* vertically for :class:`UnicodeEngine` with
+   horizontal alignment *align* (``0`` for left, ``0.5`` for center, ``1`` for
+   right) and optional fraction bar *frac* (when ``len(texts) == 2``).
 
-.. class:: MultiEngineText(text_tex, text_unicode)
+.. class:: MultiEngineText(tex, unicode)
 
-   Holds two representations of a text fragment: *text_tex* (passed when a
-   TeX/LaTeX engine is active) and *text_unicode* (passed when
-   :class:`UnicodeEngine` is active). PyX's axis texters use
-   :class:`MultiEngineText` so that exponential tick labels work seamlessly with
-   both TeX engines and :class:`UnicodeEngine`.
+   Holds two representations of a text fragment: *tex* (passed when a TeX/LaTeX
+   engine is active) and *unicode* (passed when :class:`UnicodeEngine` is
+   active). PyX's axis texters use :class:`MultiEngineText` so that exponential
+   tick labels work seamlessly with both TeX engines and :class:`UnicodeEngine`.
 
 
 .. _pyxgraphics:

@@ -1,5 +1,5 @@
 .. module:: bitmap
-   :synopsis: Bitmap image containers, JPEG/PNM readers, and canvas placement
+   :synopsis: Bitmap image containers, JPEG reader, and canvas placement
 
 .. _bitmap:
 
@@ -13,7 +13,7 @@ Introduction
 Although PyX is primarily designed for scalable vector graphics, the
 :mod:`bitmap` module provides full support for embedding raster (bitmap) images
 in PostScript, EPS, PDF, and SVG output. You can construct images directly from
-raw byte buffers in Python, load JPEG or PNM (PBM/PGM/PPM/PAM) files natively, or
+raw byte buffers in Python, load JPEG files natively via :class:`jpegimage`, or
 pass any `Pillow (PIL) <https://python-pillow.org/>`_ ``Image`` object directly
 to :class:`bitmap`.
 
@@ -78,6 +78,12 @@ Image Containers and File Readers
      ``"DCT"`` if *data* is already Flate- or JPEG-compressed.
    * *palette*: Optional :class:`palette` instance when ``mode="P"``.
 
+.. class:: palette(mode, data)
+
+   Container for palette color tables used by indexed-color (``mode="P"``)
+   :class:`image` instances, where *mode* is ``"L"``, ``"RGB"``, or ``"CMYK"``
+   and *data* is a ``bytes`` object containing the palette entries.
+
 .. class:: jpegimage(file)
 
    Reads a JPEG/JFIF image from *file* (either a filename string or an open
@@ -87,12 +93,6 @@ Image Containers and File Readers
    DCT-compressed stream directly into the output without decoding and
    re-encoding—preserving 100% of the original image quality and minimizing file
    size.
-
-.. class:: pnmimage(file)
-
-   Reads a Netpbm PNM image (PBM, PGM, PPM, or PAM, in either ASCII or binary
-   format, including 1-bit, 8-bit, and 16-bit images) from *file* (a filename
-   string or an open binary file-like object).
 
 
 Placing Bitmaps on a Canvas
@@ -107,8 +107,8 @@ Placing Bitmaps on a Canvas
    :class:`bitmap_trafo` accepts an arbitrary :class:`trafo.trafo_pt` mapping the
    unit square to the target image rectangle.
 
-   * *image*: An instance of :class:`image`, :class:`jpegimage`,
-     :class:`pnmimage`, or any Pillow (``PIL.Image``) object.
+   * *image*: An instance of :class:`image`, :class:`jpegimage`, or any Pillow
+     (``PIL.Image``) object.
    * *width*, *height*, *ratio*: Target physical dimensions of the bitmap on the
      canvas. If *image* does not provide DPI metadata (in ``image.info["dpi"]``),
      at least *width* or *height* must be specified. When only one dimension is

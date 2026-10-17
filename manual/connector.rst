@@ -9,8 +9,9 @@ Module :mod:`connector`
 
 The :mod:`connector` module constructs paths (:class:`normpath.normpath`
 subclasses) that connect two :class:`box.polygon` instances (such as
-:class:`text.textbox` objects or :class:`box.rect` boxes) using straight lines,
-circular arcs, cubic Bézier curves, or two-segment polylines.
+:class:`text.textextbox_pt` / :class:`text.unicodetextbox_pt` objects or
+:class:`box.rect` boxes) using straight lines, circular arcs, cubic Bézier
+curves, or two-segment polylines.
 
 Geometry, Angles, and Bulges
 ============================
@@ -18,8 +19,8 @@ Geometry, Angles, and Bulges
 All connector classes take two box instances (*box1* and *box2*) as their first
 two arguments and construct a path leading from *box1* to *box2*:
 
-1. The geometric curve is constructed between the centers (`box1.center` and
-   `box2.center`) of the two boxes.
+1. The geometric curve is constructed between the centers (``box1.center`` and
+   ``box2.center``) of the two boxes.
 2. The path is then trimmed at its intersections with the boundary outlines of
    *box1* and *box2*.
 3. Finally, the trimmed path can be shortened at its start and end by the
@@ -71,12 +72,12 @@ Each connector class is available both in user units (e.g. :class:`line`,
 :class:`arc`, :class:`curve`, :class:`twolines`) and in PostScript points (with a
 ``_pt`` suffix, where *boxdists* and *absbulge* are given in points).
 
-.. class:: line(box1, box2, boxdists=[0, 0])
+.. class:: line(box1, box2, boxdists=(0, 0))
 
    Connects *box1* and *box2* with a straight line segment between their centers,
    trimmed at the box outlines and shortened by *boxdists*.
 
-.. class:: arc(box1, box2, boxdists=[0, 0], relangle=45, absbulge=None, relbulge=None)
+.. class:: arc(box1, box2, relangle=45, absbulge=None, relbulge=None, boxdists=[0, 0])
 
    Connects *box1* and *box2* with a circular arc.
 
@@ -86,7 +87,7 @@ Each connector class is available both in user units (e.g. :class:`line`,
      arc and the straight chord connecting the box centers. Specifying either
      *absbulge* or *relbulge* overrides *relangle*.
 
-.. class:: curve(box1, box2, boxdists=[0, 0], relangle1=45, relangle2=45, absangle1=None, absangle2=None, absbulge=None, relbulge=0.39)
+.. class:: curve(box1, box2, relangle1=45, relangle2=45, absangle1=None, absangle2=None, absbulge=0, relbulge=0.39, boxdists=[0, 0])
 
    Connects *box1* and *box2* with a cubic Bézier curve. Here the bulge specifies
    the distance from each box center to the corresponding Bézier control point
@@ -100,7 +101,7 @@ Each connector class is available both in user units (e.g. :class:`line`,
    * *absbulge*, *relbulge*: Control-point distances (default ``relbulge=0.39``,
      which closely approximates a circular arc when ``relangle1 = relangle2 = 45``).
 
-.. class:: twolines(box1, box2, boxdists=[0, 0], relangle1=None, relangle2=None, absangle1=None, absangle2=None, relangleM=None, length1=None, length2=None)
+.. class:: twolines(box1, box2, absangle1=None, absangle2=None, relangle1=None, relangle2=None, relangleM=None, length1=None, length2=None, bezierradius=None, beziersoftness=1, arcradius=None, boxdists=[0, 0])
 
    Connects *box1* and *box2* with a two-segment polyline meeting at an
    intermediate corner point. You must supply an unambiguous combination of two

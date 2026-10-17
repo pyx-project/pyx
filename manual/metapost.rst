@@ -135,8 +135,8 @@ Links
 Links are placed between consecutive knots in the list passed to :class:`path`
 and determine how the two knots are connected.
 
-.. class:: tensioncurve(ltension=1, rtension=None, atleast=False)
-           curve(ltension=1, rtension=None, atleast=False)
+.. class:: tensioncurve(ltension=1, latleast=False, rtension=None, ratleast=None)
+           curve(ltension=1, latleast=False, rtension=None, ratleast=None)
 
    Connects two knots with a cubic Bézier spline segment determined by the
    MetaPost solver.
@@ -144,11 +144,13 @@ and determine how the two knots are connected.
    - *ltension*: Tension at the starting (left) knot of the segment (default
      ``1``; must be at least ``0.75``). Higher tension pulls the curve tighter
      toward a straight line between the knots.
+   - *latleast*: When ``True``, corresponds to MetaPost's ``tension atleast``
+     directive at the starting knot, which increases the tension automatically
+     if needed to avoid inflection points near the knot.
    - *rtension*: Tension at the ending (right) knot of the segment (defaults to
      *ltension* when ``None``).
-   - *atleast*: When ``True``, corresponds to MetaPost's ``tension atleast``
-     directive, which increases the tension automatically if needed to avoid
-     inflection points near the knots.
+   - *ratleast*: When ``True``, applies ``tension atleast`` at the ending knot
+     (defaults to *latleast* when ``None``).
 
    :class:`curve` is an alias for :class:`tensioncurve`.
 

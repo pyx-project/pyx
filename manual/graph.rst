@@ -387,7 +387,7 @@ delegate directly to ``self.axes["x"]`` and ``self.axes["y"]`` (see
 3D Graphs (:class:`graphxyz`)
 -----------------------------
 
-.. class:: graphxyz(xpos=0, ypos=0, size=None, xscale=1, yscale=1, zscale=1/goldenmean, xy12axesat=None, xy12axesatname="z", projector=central(10, -30, 30), key=None, **axes)
+.. class:: graphxyz(xpos=0, ypos=0, size=None, xscale=1, yscale=1, zscale=1/goldenmean, xy12axesat=None, xy12axesatname="z", projector=central(10, -30, 30), axesdist=0.8*unit.v_cm, key=None, **axes)
 
    Constructs a three-dimensional *x*–*y*–*z* graph projected onto the 2D canvas.
 
@@ -402,6 +402,7 @@ delegate directly to ``self.axes["x"]`` and ``self.axes["y"]`` (see
      (perspective projection) or :class:`parallel` (orthographic/parallel
      projection), also accessible as class attributes ``graphxyz.central`` and
      ``graphxyz.parallel``.
+   * *axesdist*: Distance between stacked axes in the same position.
    * *\*\*axes*: Supports up to four axes per dimension (``x``, ``x2``, ``x3``,
      ``x4``, ``y``, ``y2``, ``y3``, ``y4``, ``z``, ``z2``, ``z3``, ``z4``).
      ``x``, ``x2``, ``y``, ``y2`` border the bottom *x*–*y* plane (with ``x`` and
@@ -425,22 +426,22 @@ delegate directly to ``self.axes["x"]`` and ``self.axes["y"]`` (see
       ``(vx1, vy1, vz1)`` and the plane spanned by the three points
       ``(vx1, vy1, vz1)``, ``(vx2, vy2, vz2)``, and ``(vx3, vy3, vz3)``.
 
-.. class:: central(distance, phi, theta, anglefactor=math.pi/180)
+   .. class:: graphxyz.central(distance, phi, theta, anglefactor=math.pi/180)
 
-   Central (perspective) 3D-to-2D projector.
+      Central (perspective) 3D-to-2D projector.
 
-   * *distance*: Distance of the viewer from the center of the graph in units of
-     *xscale* / *yscale* / *zscale* (values around ``10`` give natural perspective;
-     larger values approach parallel projection).
-   * *phi*: Azimuthal viewing angle in the *x*–*y* plane (in degrees by default).
-   * *theta*: Elevation angle above the *x*–*y* plane (in degrees by default).
-   * *anglefactor*: Conversion factor from the angle unit of *phi* and *theta* to
-     radians (default ``math.pi / 180``).
+      * *distance*: Distance of the viewer from the center of the graph in units of
+        *xscale* / *yscale* / *zscale* (values around ``10`` give natural perspective;
+        larger values approach parallel projection).
+      * *phi*: Azimuthal viewing angle in the *x*–*y* plane (in degrees by default).
+      * *theta*: Elevation angle above the *x*–*y* plane (in degrees by default).
+      * *anglefactor*: Conversion factor from the angle unit of *phi* and *theta* to
+        radians (default ``math.pi / 180``).
 
-.. class:: parallel(phi, theta, anglefactor=math.pi/180)
+   .. class:: graphxyz.parallel(phi, theta, anglefactor=math.pi/180)
 
-   Parallel (orthographic) 3D-to-2D projector with azimuthal angle *phi* and
-   elevation angle *theta*.
+      Parallel (orthographic) 3D-to-2D projector with azimuthal angle *phi* and
+      elevation angle *theta*.
 
 
 .. module:: graph.data
@@ -465,16 +466,16 @@ Tabular Data from Python Lists and Dictionaries
 
       g.plot(graph.data.values(x=[1, 2, 3, 4], y=[1, 4, 9, 16], title="Squares"))
 
-.. class:: points(data, title="user provided points", addlinenumbers=1, **columns)
+.. class:: points(points, title="user provided points", addlinenumbers=1, **columns)
 
-   Creates a dataset from a list of rows (*data*), where each row is a sequence
+   Creates a dataset from a list of rows (*points*), where each row is a sequence
    of values ``[v1, v2, ...]``.
 
    * *\*\*columns*: Maps column names (such as ``x=1, y=2``) to column indices in
      each row.
    * *addlinenumbers*: When true (default), 1-based row numbers are placed in
-     virtual column ``0``, and data columns in *data* are indexed starting at
-     ``1``. When false, data columns in *data* are indexed starting at ``0``.
+     virtual column ``0``, and data columns in *points* are indexed starting at
+     ``1``. When false, data columns in *points* are indexed starting at ``0``.
 
 Reading Data from Files
 -----------------------
@@ -844,9 +845,9 @@ Histograms and Bar Charts
    by :class:`barpos` or :class:`stackedbarpos`. *barattrs* is merged with
    ``[color.gradient.Rainbow, deco.stroked([color.gray.black])]``, so multiple
    bar series in a grouped or stacked bar chart automatically receive distinct
-   colors from ``gradient.Rainbow``.
+   colors from ``color.gradient.Rainbow``.
 
-.. class:: changebar(barattrs=[])
+.. class:: changebar(barattrs=[], epsilon=1e-10, gradient=color.gradient.RedBlack)
 
    Variant of :class:`bar` that cycles the changeable attributes in *barattrs*
    from bar to bar *within* a single dataset rather than across multiple
@@ -855,7 +856,7 @@ Histograms and Bar Charts
 Rectangles, Grids, Surfaces, and Density Plots
 ----------------------------------------------
 
-.. class:: rect(colorname="color", gradient=color.gradient.Gray, coloraxis=None, keygraph=_autokeygraph, mincolor=None, maxcolor=None)
+.. class:: rect(colorname="color", gradient=color.gradient.Grey, coloraxis=None, keygraph=_autokeygraph)
 
    Fills axis-aligned rectangles (defined by :class:`range` bounds on *x* and
    *y*) with colors mapped from column *colorname* via *gradient*.
@@ -865,20 +866,18 @@ Rectangles, Grids, Surfaces, and Density Plots
    * *keygraph*: A :class:`graph.graphx` instance drawn beside the main graph as
      a color bar legend. By default, a vertical :class:`graph.graphx` is created
      automatically; pass ``keygraph=None`` to omit the color bar.
-   * *mincolor*, *maxcolor*: Optional colors used for values falling below or
-     above the range of *coloraxis*.
 
 .. class:: gridpos(index1=0, index2=1, epsilon=1e-10)
 
    Hidden style that organizes point data along graph dimensions *index1* and
    *index2* into a structured 2D rectangular mesh.
 
-.. class:: grid(gridlines1=1, gridlines2=1, gridattrs=[], epsilon=1e-10)
+.. class:: grid(gridlines1=1, gridlines2=1, gridattrs=[], **kwargs)
 
    Strokes a wireframe mesh in 2D or 3D along the first (*gridlines1*) and/or
    second (*gridlines2*) mesh directions provided by :class:`gridpos`.
 
-.. class:: surface(gridlines1=0.05, gridlines2=0.05, gridcolor=None, backcolor=color.gray.black, mincolor=None, maxcolor=None, **kwargs)
+.. class:: surface(gridlines1=0.05, gridlines2=0.05, gridcolor=None, backcolor=color.gray.black, **kwargs)
 
    Draws a smoothly shaded 2D or 3D surface over the rectangular mesh provided by
    :class:`gridpos` using a Gouraud-shaded triangle mesh (each grid cell is
@@ -889,22 +888,21 @@ Rectangles, Grids, Surfaces, and Density Plots
      *gridcolor* along the cell boundaries.
    * *backcolor*: Color used for triangles facing away from the viewer (or
      ``None`` to color both sides identically).
-   * **Coloring**: Accepts the same *colorname*, *gradient*, *coloraxis*,
-     *keygraph*, *mincolor*, and *maxcolor* arguments as :class:`rect`. If no
-     *colorname* column is present in the data, :class:`surface` automatically
-     computes 3D lighting from the viewing angle and distance using
-     :meth:`lighting`. Note that Gouraud shading meshes in PostScript/PDF require
-     Gray, RGB, or CMYK colors; wrap HSB gradients in :class:`color.rgbgradient`
-     or :class:`color.cmykgradient`.
+   * **Coloring**: Accepts the same *colorname*, *gradient*, *coloraxis*, and
+     *keygraph* arguments as :class:`rect`. If no *colorname* column is present
+     in the data, :class:`surface` automatically computes 3D lighting from the
+     viewing angle and distance using :meth:`lighting`. Note that Gouraud
+     shading meshes in PostScript/PDF require Gray, RGB, or CMYK colors; wrap
+     HSB gradients in :class:`color.rgbgradient` or :class:`color.cmykgradient`.
 
-.. class:: density(epsilon=1e-10, Nearest=False, **kwargs)
+.. class:: density(epsilon=1e-10, **kwargs)
 
    Renders a 2D pseudocolor heatmap as an embedded :mod:`bitmap` image over an
    equidistantly spaced grid (in graph coordinates). Accepts the same
-   *colorname*, *gradient*, *coloraxis*, *keygraph*, *mincolor*, and *maxcolor*
-   arguments as :class:`rect`. Because :class:`density` embeds a compact raster
-   bitmap rather than a triangle mesh, it produces much smaller files than
-   :class:`surface` for large 2D grids and avoids PDF viewer anti-aliasing seams.
+   *colorname*, *gradient*, *coloraxis*, and *keygraph* arguments as
+   :class:`rect`. Because :class:`density` embeds a compact raster bitmap rather
+   than a triangle mesh, it produces much smaller files than :class:`surface`
+   for large 2D grids and avoids PDF viewer anti-aliasing seams.
 
 
 .. module:: graph.key

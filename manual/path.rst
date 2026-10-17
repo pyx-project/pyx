@@ -154,7 +154,7 @@ Circular arcs
    y_{t,1})`, followed by the tangent arc ending at the second point of tangency
    :math:`(x_{t,2}, y_{t,2})`, which becomes the new current point:
 
-   .. image:: arct.*
+   .. figure:: arct.*
       :align: center
 
 

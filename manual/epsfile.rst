@@ -23,55 +23,49 @@ scaling, alignment, and clipping:
 Class :class:`epsfile`
 ======================
 
-.. class:: epsfile(x, y, filename, width=None, height=None, ratio=None, scale=None, align="bl", clip=1, translatebbox=1, bbox=None, kpsearch=0)
+.. class:: epsfile(x, y, filename, width=None, height=None, scale=None, align="bl", clip=1, translatebbox=True, bbox=None, kpsearch=False)
 
    Creates a canvas item representing the external EPS file *filename* placed at
-   ``(x, y)`` (in user units or PyX lengths). A point-based variant
-   :class:`epsfile_pt` takes ``x``, ``y``, ``width``, and ``height`` in
-   PostScript points.
+   ``(x, y)`` (in user units or PyX lengths).
 
-   +------------------------+---------------------------------------------------------------+
-   | Argument               | Description                                                   |
-   +========================+===============================================================+
-   | ``x``, ``y``           | Coordinates of the reference point at which the EPS graphic   |
-   |                        | is placed.                                                    |
-   +------------------------+---------------------------------------------------------------+
-   | ``filename``           | Path to the EPS file.                                         |
-   +------------------------+---------------------------------------------------------------+
-   | ``width=None``         | Desired width of the graphic, or ``None`` to use its natural  |
-   |                        | bounding-box width (or compute from *height* and *ratio*).    |
-   |                        | Cannot be combined with *scale*.                              |
-   +------------------------+---------------------------------------------------------------+
-   | ``height=None``        | Desired height of the graphic, or ``None`` to use its natural |
-   |                        | bounding-box height (or compute from *width* and *ratio*).    |
-   |                        | Cannot be combined with *scale*.                              |
-   +------------------------+---------------------------------------------------------------+
-   | ``ratio=None``         | Aspect ratio ``width / height`` used when only *width* or     |
-   |                        | only *height* is specified. If ``None``, the EPS file's       |
-   |                        | original aspect ratio is preserved.                           |
-   +------------------------+---------------------------------------------------------------+
-   | ``scale=None``         | Uniform scaling factor, or ``None`` for no scaling. Cannot be |
-   |                        | combined with *width*, *height*, or *ratio*.                  |
-   +------------------------+---------------------------------------------------------------+
-   | ``align="bl"``         | Two-character alignment string specifying how the graphic is  |
-   |                        | aligned relative to ``(x, y)``. The first character sets      |
-   |                        | vertical alignment (``"b"`` bottom, ``"c"`` center, ``"t"``   |
-   |                        | top) and the second sets horizontal alignment (``"l"`` left,  |
-   |                        | ``"c"`` center, ``"r"`` right).                               |
-   +------------------------+---------------------------------------------------------------+
-   | ``clip=1``             | When true (default), clips the EPS graphic to its bounding    |
-   |                        | box.                                                          |
-   +------------------------+---------------------------------------------------------------+
-   | ``translatebbox=1``    | When true (default), translates the EPS graphic so that the   |
-   |                        | lower-left corner of its bounding box sits at the reference   |
-   |                        | origin before scaling and alignment.                          |
-   +------------------------+---------------------------------------------------------------+
-   | ``bbox=None``          | Optional :class:`bbox.bbox` overriding the ``%%BoundingBox``  |
-   |                        | / ``%%HiResBoundingBox`` comments read from the EPS file.     |
-   +------------------------+---------------------------------------------------------------+
-   | ``kpsearch=0``         | When true, locates *filename* via the TeX ``kpathsea`` file   |
-   |                        | search system (:mod:`filelocator`).                           |
-   +------------------------+---------------------------------------------------------------+
+   +--------------------------+---------------------------------------------------------------+
+   | Argument                 | Description                                                   |
+   +==========================+===============================================================+
+   | ``x``, ``y``             | Coordinates of the reference point at which the EPS graphic   |
+   |                          | is placed.                                                    |
+   +--------------------------+---------------------------------------------------------------+
+   | ``filename``             | Path to the EPS file.                                         |
+   +--------------------------+---------------------------------------------------------------+
+   | ``width=None``           | Desired width of the graphic, or ``None`` to use its natural  |
+   |                          | bounding-box width (or scale proportionally from *height*).   |
+   |                          | Cannot be combined with *scale*.                              |
+   +--------------------------+---------------------------------------------------------------+
+   | ``height=None``          | Desired height of the graphic, or ``None`` to use its natural |
+   |                          | bounding-box height (or scale proportionally from *width*).   |
+   |                          | Cannot be combined with *scale*.                              |
+   +--------------------------+---------------------------------------------------------------+
+   | ``scale=None``           | Uniform scaling factor, or ``None`` for no scaling. Cannot be |
+   |                          | combined with *width* or *height*.                            |
+   +--------------------------+---------------------------------------------------------------+
+   | ``align="bl"``           | Two-character alignment string specifying how the graphic is  |
+   |                          | aligned relative to ``(x, y)``. The first character sets      |
+   |                          | vertical alignment (``"b"`` bottom, ``"c"`` center, ``"t"``   |
+   |                          | top) and the second sets horizontal alignment (``"l"`` left,  |
+   |                          | ``"c"`` center, ``"r"`` right).                               |
+   +--------------------------+---------------------------------------------------------------+
+   | ``clip=1``               | When true (default), clips the EPS graphic to its bounding    |
+   |                          | box.                                                          |
+   +--------------------------+---------------------------------------------------------------+
+   | ``translatebbox=True``   | When true (default), translates the EPS graphic so that the   |
+   |                          | lower-left corner of its bounding box sits at the reference   |
+   |                          | origin before scaling and alignment.                          |
+   +--------------------------+---------------------------------------------------------------+
+   | ``bbox=None``            | Optional :class:`bbox.bbox` overriding the ``%%BoundingBox``  |
+   |                          | / ``%%HiResBoundingBox`` comments read from the EPS file.     |
+   +--------------------------+---------------------------------------------------------------+
+   | ``kpsearch=False``       | When true, locates *filename* via the TeX ``kpathsea`` file   |
+   |                          | search system (:mod:`config`).                                |
+   +--------------------------+---------------------------------------------------------------+
 
 Output Format Compatibility
 ---------------------------

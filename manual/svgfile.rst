@@ -24,20 +24,20 @@ native PyX canvas that can be exported to PostScript, EPS, PDF, and SVG:
 Class :class:`svgfile`
 ======================
 
-.. class:: svgfile(x, y, filename, width=None, height=None, ratio=None, align="bl", parsed=False, resolution=96)
+.. class:: svgfile(x, y, filename, width=None, height=None, ratio=None, parsed=False, resolution=96)
+           svgfile_pt(x_pt, y_pt, filename, width_pt=None, height_pt=None, ratio=None, parsed=False, resolution=96)
 
-   Creates a canvas item representing the SVG file *filename* placed at ``(x, y)``
-   (in user units or PyX lengths). A point-based variant :class:`svgfile_pt`
-   takes ``x_pt``, ``y_pt``, ``width_pt``, and ``height_pt`` in PostScript
-   points.
+   Creates a canvas item representing the SVG file *filename* placed with its
+   lower-left corner at ``(x, y)`` (in user units or PyX lengths, or in
+   PostScript points for :class:`svgfile_pt`).
 
    +---------------------+---------------------------------------------------------------+
    | Argument            | Description                                                   |
    +=====================+===============================================================+
-   | ``x``, ``y``        | Coordinates of the reference point at which the SVG graphic   |
+   | ``x``, ``y``        | Coordinates of the lower-left corner at which the SVG graphic |
    |                     | is placed.                                                    |
    +---------------------+---------------------------------------------------------------+
-   | ``filename``        | Path to the SVG file, or an open binary file-like object.     |
+   | ``filename``        | Path to the SVG file.                                         |
    +---------------------+---------------------------------------------------------------+
    | ``width=None``      | Desired width of the graphic, or ``None`` to use its original |
    |                     | width (or compute from *height* and *ratio*).                 |
@@ -48,12 +48,6 @@ Class :class:`svgfile`
    | ``ratio=None``      | Aspect ratio ``width / height`` used when only *width* or     |
    |                     | only *height* is specified. If ``None``, the SVG file's       |
    |                     | original aspect ratio is preserved.                           |
-   +---------------------+---------------------------------------------------------------+
-   | ``align="bl"``      | Two-character alignment string specifying how the SVG graphic |
-   |                     | is aligned relative to ``(x, y)``. The first character sets   |
-   |                     | vertical alignment (``"b"`` bottom, ``"c"`` center, ``"t"``   |
-   |                     | top) and the second sets horizontal alignment (``"l"`` left,  |
-   |                     | ``"c"`` center, ``"r"`` right).                               |
    +---------------------+---------------------------------------------------------------+
    | ``parsed=False``    | When ``False`` (default), embeds the raw SVG XML into SVG     |
    |                     | output. When ``True``, parses the SVG elements into a native  |
