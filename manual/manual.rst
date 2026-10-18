@@ -14,6 +14,8 @@
 
    intro
 
+   tikz
+
    graphics
 
    path
