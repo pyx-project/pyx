@@ -4,6 +4,10 @@
   - font and text modules:
     - add OpenType font support (TrueType and CFF) including UnicodeEngine
       integration
+  - deformer module:
+    - Fix parallel deformer continuation at normsubpath endpoints (thanks to
+      NicolasW1 for reporting this in issue #48)
+  - rework the manual
 
 0.17 (2025/11/02):
   - Move metadata from setup.py to pyproject.toml
