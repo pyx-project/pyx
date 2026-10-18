@@ -171,7 +171,7 @@ class PSchangefontmatrix(pswriter.PSresource):
 
 class PDFfont(pdfwriter.PDFobject):
 
-    def __init__(self, fontname, basefontname, charcodes, fontdescriptor, encoding, metric, subtype="Type1"):
+    def __init__(self, fontname, basefontname, charcodes, fontdescriptor, encoding, metric, subtype):
         pdfwriter.PDFobject.__init__(self, "font", _id=fontname)
 
         self.fontname = fontname
@@ -180,7 +180,7 @@ class PDFfont(pdfwriter.PDFobject):
         self.fontdescriptor = fontdescriptor
         self.encoding = encoding
         self.metric = metric
-        self.subtype = subtype
+        self.subtype = subtype # e.g. Type1
 
     def merge(self, other):
         self.charcodes.update(other.charcodes)
@@ -256,8 +256,8 @@ PDFZapfDingbats         = PDFstdfont("ZapfDingbats")
 
 class PDFfontdescriptor(pdfwriter.PDFobject):
 
-    def __init__(self, fontname, fontfile, metric, fontfilekey="FontFile"):
-        pdfwriter.PDFobject.__init__(self, "fontdescriptor", _id=fontname)
+    def __init__(self, fontname, fontfile, metric, fontfilekey, subtype):
+        pdfwriter.PDFobject.__init__(self, "fontdescriptor", _id=f"{subtype}-{fontname}")
         self.fontname = fontname
         self.fontfile = fontfile
         self.metric = metric
@@ -278,8 +278,8 @@ class PDFfontdescriptor(pdfwriter.PDFobject):
 
 class PDFfontfile(pdfwriter.PDFobject):
 
-    def __init__(self, fontfile, glyphnames, charcodes):
-        pdfwriter.PDFobject.__init__(self, "fontfile", _id=fontfile.name)
+    def __init__(self, fontfile, glyphnames, charcodes, subtype):
+        pdfwriter.PDFobject.__init__(self, "fontfile", _id=f"{subtype}-{fontfile.name}")
         self.fontfile = fontfile
         self.glyphnames = set(glyphnames)
         self.charcodes = set(charcodes)
@@ -491,6 +491,13 @@ class OTFfont(font):
         otffile = OTFfile(data)
         return cls(otffile)
 
+    @classmethod
+    def from_filename(cls, filename):
+        with open(filename, "rb") as f:
+            data = f.read()
+        otffile = OTFfile(data)
+        return cls(otffile)
+
 
 class selectedfont:
 
@@ -683,7 +690,7 @@ class text_pt(baseclasses.canvasitem):
                 charcodes = self.charcodes
 
             # create resources
-            fontname = self.font.name
+            fontname = f"{self.subtype}-{self.font.name}"
             if self.decode:
                 newfontname = "%s-%s" % (fontname, encodingname)
                 _encoding = PDFencoding(encoding, newfontname)
@@ -692,13 +699,13 @@ class text_pt(baseclasses.canvasitem):
                 _encoding = None
             if self.font.fontfile is not None:
                 if self.decode:
-                    fontfile = PDFfontfile(self.font.fontfile, self.glyphnames, [])
+                    fontfile = PDFfontfile(self.font.fontfile, self.glyphnames, [], self.subtype)
                 else:
-                    fontfile = PDFfontfile(self.font.fontfile, [], self.charcodes)
+                    fontfile = PDFfontfile(self.font.fontfile, [], self.charcodes, self.subtype)
             else:
                 fontfile = None
-            fontdescriptor = PDFfontdescriptor(self.font.name, fontfile, self.font.metric, fontfilekey=self.pdffontfilekey)
-            font = PDFfont(fontname, self.font.name, charcodes, fontdescriptor, _encoding, self.font.metric, subtype=self.pdfsubtype)
+            fontdescriptor = PDFfontdescriptor(self.font.name, fontfile, self.font.metric, self.pdffontfilekey, self.subtype)
+            font = PDFfont(fontname, self.font.name, charcodes, fontdescriptor, _encoding, self.font.metric, self.pdfsubtype)
 
             # register resources
             if fontfile is not None:
@@ -833,6 +840,7 @@ class T1text_pt(text_pt):
     psfontfile = PST1file
     svgfontfile = SVGT1file
     pdffontfilekey = "FontFile"
+    subtype = "Type1"
     pdfsubtype = "Type1"
 
 
@@ -846,5 +854,6 @@ class OTFtext_pt(text_pt):
             decoding = font.fontfile.unicodestring
         super().__init__(font, x_pt, y_pt, charcodes, size_pt, decoding=decoding, **kwargs)
         self.pdffontfilekey = "FontFile3" if font.fontfile.is_cff else "FontFile2"
-        self.pdfsubtype = "Type1" if font.fontfile.is_cff else "TrueType"
+        self.subtype = "OpenType" if font.fontfile.is_cff else "TrueType"
+        self.pdfsubtype = "TrueType"
 
