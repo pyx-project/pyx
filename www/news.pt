@@ -9,6 +9,13 @@
     <h1>PyX — News</h1>
 
     <dl>
+      <dt>2026-10-18: PyX 0.18 released</dt>
+      <dd>
+        This release adds the pdffile module to embed other PDF files in the
+        PDF output of PyX. It also adds OpenType and TrueType font support,
+        including the integration in the UnicodeEngine. A fix to the parallel
+        deformer and a major rework of the manual complete this release.
+      </dd>
       <dt>2025-11-02: PyX 0.17 released</dt>
       <dd>
         This release contains various fixes and improvements. In particular, it
