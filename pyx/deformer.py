@@ -1624,8 +1624,11 @@ class parallel(baseclasses.deformer): # <<<
             curv2 = -curv2
             # endpoints of normsubpaths must be treated differently:
 
-        if (not running_back) and param1.is_end_of_nsp(epsilon):
-            return True
+        if not running_back:
+            if param1.is_end_of_nsp(epsilon):
+                return True
+            if param2.is_end_of_nsp(epsilon):
+                return False
 
         if curv1 == curv2:
             raise IntersectionError("Cannot determine whether curves intersect (parallel and equally curved)")
