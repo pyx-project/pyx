@@ -380,7 +380,7 @@ class PDFwriter:
         registry.add(pdfinfo)
 
         file = writer.writer(file)
-        file.write_bytes(b"%PDF-1.4\n%\xc3\xb6\xc3\xa9\n")
+        file.write_bytes(b"%PDF-1.6\n%\xc3\xb6\xc3\xa9\n")
         registry.write(file, self, catalog, pdfinfo)
 
     def getfontmap(self):
