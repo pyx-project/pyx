@@ -466,6 +466,8 @@ you can use :class:`UnicodeEngine`.
    (:class:`font.T1font`) or OpenType/TrueType (:class:`font.OTFfont`) fonts.
 
    * *font*: Font instance (defaults to ``T1font.from_fontname("cmr10")``).
+     Other options would be ``T1font.from_fontfile(filename)``,
+     ``OTFfont.from_fontname(fontname)``, and ``OTFfont.from_fontfile(filename)``.
    * *size*: Base font size in PostScript points (default ``10``).
 
    .. method:: text_pt(x_pt, y_pt, text, textattrs=[], texmessages=[], fontmap=None, singlecharmode=False)
